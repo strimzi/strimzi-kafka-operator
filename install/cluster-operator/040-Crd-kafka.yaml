@@ -2935,26 +2935,18 @@ spec:
                   type:
                     type: string
             listeners:
-              type: object
-              properties:
-                plain:
-                  type: object
-                  properties:
-                    host:
-                      type: string
-                    port:
-                      type: integer
-                tls:
-                  type: object
-                  properties:
-                    host:
-                      type: string
-                    port:
-                      type: integer
-                external:
-                  type: object
-                  properties:
-                    host:
-                      type: string
-                    port:
-                      type: integer
+              type: array
+              items:
+                type: object
+                properties:
+                  addresses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        host:
+                          type: string
+                        port:
+                          type: integer
+                  type:
+                    type: string

@@ -2,62 +2,55 @@
  * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
+/**
+ * Represents a single listener
+ */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "plain", "tls", "external"})
+@JsonPropertyOrder({ "authentication" })
 @EqualsAndHashCode
-public class ListenersStatus implements UnknownPropertyPreserving, Serializable {
-    private ListenerStatus plain;
-    private ListenerStatus tls;
-    private ListenerStatus external;
+public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
+    private String type;
+    private List<ListenerAddress> addresses;
     private Map<String, Object> additionalProperties;
 
-    public ListenersStatus() {
+    @Description("The type of the listener. " +
+            "Can be one of the following three types: `plain`, `tls`, and `external`.")
+    public String getType() {
+        return type;
     }
 
-    @Description("The Kafka boostrap address for unencrypted listeners")
-    public ListenerStatus getPlain() {
-        return plain;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public void setPlain(ListenerStatus plain) {
-        this.plain = plain;
+    @Description("A list of the addresses for this listener.")
+    public List<ListenerAddress> getAddresses() {
+        return addresses;
     }
 
-    @Description("The Kafka bootstrap address for tls encrypted listeners")
-    public ListenerStatus getTls() {
-        return tls;
-    }
-
-    public void setTls(ListenerStatus tls) {
-        this.tls = tls;
-    }
-
-    @Description("The Kafka bootstrap address for external listeners")
-    public ListenerStatus getExternal() {
-        return external;
-    }
-
-    public void setExternal(ListenerStatus external) {
-        this.external = external;
+    public void setAddresses(List<ListenerAddress> addresses) {
+        this.addresses = addresses;
     }
 
     @Override

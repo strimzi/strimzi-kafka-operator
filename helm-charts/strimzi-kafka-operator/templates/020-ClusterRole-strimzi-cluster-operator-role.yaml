@@ -46,6 +46,7 @@ rules:
   - "kafka.strimzi.io"
   resources:
   - kafkas
+  - kafkas/status
   - kafkaconnects
   - kafkaconnects2is
   - kafkamirrormakers

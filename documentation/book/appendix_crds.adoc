@@ -1041,9 +1041,60 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field         |Description
-|state  1.2+<.<|the state.
+|Field              |Description
+|conditions  1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|listeners   1.2+<.<|Addresses of the internal and external listeners.
+|xref:type-ListenerStatus-{context}[`ListenerStatus`] array
+|====
+
+[id='type-Condition-{context}']
+### `Condition` schema reference
+
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+
+
+[options="header"]
+|====
+|Field                      |Description
+|lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
 |string
+|reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
+|string
+|status              1.2+<.<|The status of the condition, one of True, False, Unknown.
+|string
+|type                1.2+<.<|The unique identifier of a condition, used to distinguish between other conditions in the resource.
+|string
+|====
+
+[id='type-ListenerStatus-{context}']
+### `ListenerStatus` schema reference
+
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|addresses  1.2+<.<|A list of the addresses for this listener.
+|xref:type-ListenerAddress-{context}[`ListenerAddress`] array
+|type       1.2+<.<|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
+|string
+|====
+
+[id='type-ListenerAddress-{context}']
+### `ListenerAddress` schema reference
+
+Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
+
+
+[options="header"]
+|====
+|Field        |Description
+|host  1.2+<.<|The DNS name or IP address of Kafka bootstrap service.
+|string
+|port  1.2+<.<|The port of the Kafka bootstrap service.
+|integer
 |====
 
 [id='type-KafkaConnect-{context}']

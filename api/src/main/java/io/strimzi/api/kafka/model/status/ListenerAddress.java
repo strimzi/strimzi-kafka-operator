@@ -2,50 +2,53 @@
  * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
+/**
+ * Represents a single address of particular listener
+ */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({ "address", "host", "port" })
 @EqualsAndHashCode
-public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
-
-    private boolean ready;
-    private ListenersStatus listeners;
-    private List<Condition> conditions;
+public class ListenerAddress implements UnknownPropertyPreserving, Serializable {
+    private String host;
+    private Integer port;
     private Map<String, Object> additionalProperties;
 
-    @Description("Kafka Bootstrap addresses for internal and external listeners")
-    public ListenersStatus getListeners() {
-        return listeners;
+    @Description("The DNS name or IP address of Kafka bootstrap service")
+    public String getHost() {
+        return host;
     }
 
-    public void setListeners(ListenersStatus listeners) {
-        this.listeners = listeners;
+    public void setHost(String host) {
+        this.host = host;
     }
 
-    @Description("List of status conditions")
-    public List<Condition> getConditions() {
-        return conditions;
+    @Description("The port of the Kafka bootstrap service")
+    public Integer getPort() {
+        return port;
     }
 
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
+    public void setPort(Integer port) {
+        this.port = port;
     }
 
     @Override
