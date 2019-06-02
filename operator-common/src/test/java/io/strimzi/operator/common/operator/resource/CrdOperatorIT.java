@@ -104,7 +104,7 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
                 } else {
                     // k1 needs the same resourceID as k0 in order to update it
                     Kafka k1 = new KafkaBuilder(k0).withNewStatus().withConditions().addNewCondition().withStatus("test").endCondition().endStatus().build();
-                    crdOperator.updateStatus(k1);
+                    crdOperator.updateStatusAsync(k1);
                     Kafka k2 = crdOperator.get(namespace, RESOURCE_NAME);
                     assertEquals(k1.getStatus().toString(), k2.getStatus().toString());
 

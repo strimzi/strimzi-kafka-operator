@@ -1462,6 +1462,13 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * @return  The listener object from the CRD
+     */
+    public KafkaListeners getListeners() {
+        return listeners;
+    }
+
+    /**
      * Sets the object with Kafka authorization configuration
      *
      * @param authorization

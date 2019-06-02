@@ -33,6 +33,8 @@ spec:
     JSONPath: .spec.zookeeper.replicas
     type: integer
     priority: 0
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -2727,3 +2729,35 @@ spec:
           required:
           - kafka
           - zookeeper
+        status:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  lastTransitionTime:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+            listeners:
+              type: array
+              items:
+                type: object
+                properties:
+                  addresses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        host:
+                          type: string
+                        port:
+                          type: integer
+                  type:
+                    type: string

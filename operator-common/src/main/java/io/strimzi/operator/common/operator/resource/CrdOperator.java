@@ -15,13 +15,12 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
-import java.io.IOException;
 
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
@@ -59,33 +58,50 @@ public class CrdOperator<C extends KubernetesClient,
         return Crds.operation(client, cls, listCls, doneableCls);
     }
 
-    public void updateStatus(T resource) {
-        try {
-            OkHttpClient client = this.client.adapt(OkHttpClient.class);
-            RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
+    public Future<Void> updateStatusAsync(T resource) {
+        Future<Void> blockingFuture = Future.future();
 
-            Request request = new Request.Builder().put(postBody).url(
-                    this.baseUrl + "apis/" + resource.getApiVersion() + "/namespaces/" + resource.getMetadata().getNamespace()
-                    + "/" + this.plural + "/" + resource.getMetadata().getName() + "/status").build();
-
-            String method = request.method();
-            log.debug("Making {} request {}", method, request);
-            Response response = client.newCall(request).execute();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             try {
-                log.debug("Got {} response {}", method, response);
-                final int code = response.code();
-                if (code != 200) {
-                    throw new KubernetesClientException("Got unexpected " + request.method() + " status code " + code + ": " + response.message(),
-                            code, OperationSupport.createStatus(response));
-                }
+                OkHttpClient client = this.client.adapt(OkHttpClient.class);
+                RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
 
-            } finally {
-                if (response.body() != null) {
-                    response.close();
+                Request request = new Request.Builder().put(postBody).url(
+                        this.baseUrl + "apis/" + resource.getApiVersion() + "/namespaces/" + resource.getMetadata().getNamespace()
+                                + "/" + this.plural + "/" + resource.getMetadata().getName() + "/status").build();
+
+                String method = request.method();
+                log.debug("Making {} request {}", method, request);
+                Response response = client.newCall(request).execute();
+
+                try {
+                    log.debug("Got {} response {}", method, response);
+                    final int code = response.code();
+
+                    if (code == 200) {
+                        future.complete();
+                    } else {
+                        log.debug("Got unexpected {} status code {}: {}", method, code, response.message());
+                        future.fail(new KubernetesClientException("Got unexpected " + method + " status code " + code + ": " + response.message(),
+                                code, OperationSupport.createStatus(response)));
+                    }
+                } finally {
+                    if (response.body() != null) {
+                        response.close();
+                    }
                 }
+            } catch (Exception e) {
+                log.debug("Updating status failed", e);
+                future.fail(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        }, res -> {
+                if (res.succeeded()) {
+                    blockingFuture.complete();
+                } else {
+                    blockingFuture.fail(res.cause());
+                }
+            });
+
+        return blockingFuture;
     }
 }
