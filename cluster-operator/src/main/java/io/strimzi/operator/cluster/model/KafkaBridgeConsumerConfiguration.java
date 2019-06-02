@@ -13,7 +13,6 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 
-
 /**
  * Class for handling Kafka Bridge consumer configuration passed by the user
  */

@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -482,7 +483,7 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, Map<String, Object> metricsCm) {
+    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, Map<String, Object> metricsCm) {
         return new KafkaBridgeBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
@@ -497,6 +498,7 @@ public class ResourceUtils {
                     .withProducer(producer)
                     .withConsumer(consumer)
                     .withMetrics(metricsCm)
+                    .withHttp(http)
                 .endSpec()
                 .build();
     }

@@ -117,11 +117,7 @@ public class ClusterOperator extends AbstractVerticle {
                     log.info("Started operator for {} kind", "KafkaConnectS2I");
                     watchByKind.put("KafkaS2IConnect", w);
                 }
-                if (kafkaBridgeAssemblyOperator != null) {
-                    return kafkaBridgeAssemblyOperator.createWatch(namespace, recreateWatch(kafkaBridgeAssemblyOperator));
-                } else {
-                    return Future.succeededFuture(null);
-                }
+                return kafkaBridgeAssemblyOperator.createWatch(namespace, recreateWatch(kafkaBridgeAssemblyOperator));
             }).compose(w -> {
                 log.info("Started operator for {} kind", "KafkaBridge");
                 watchByKind.put("KafkaBridge", w);

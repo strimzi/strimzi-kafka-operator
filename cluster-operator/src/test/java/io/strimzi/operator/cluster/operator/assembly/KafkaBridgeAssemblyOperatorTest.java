@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -73,6 +74,7 @@ public class KafkaBridgeAssemblyOperatorTest {
     private static final String BOOTSTRAP_SERVERS = "foo-kafka:9092";
     private static final KafkaBridgeConsumerSpec KAFKA_BRIDGE_CONSUMER_SPEC = new KafkaBridgeConsumerSpec();
     private static final KafkaBridgeProducerSpec KAFKA_BRIDGE_PRODUCER_SPEC = new KafkaBridgeProducerSpec();
+    private static final KafkaBridgeHttpConfig KAFKA_BRIDGE_HTTP_SPEC = new KafkaBridgeHttpConfig();
     private final String image = "kafka-bridge:latest";
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
@@ -101,7 +103,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
@@ -178,7 +180,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
 
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
@@ -254,7 +256,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCmP = new HashMap<>();
         metricsCmP.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCmP);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCmP);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
@@ -371,7 +373,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm,
                 VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
@@ -534,9 +536,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         metricsCm.put("foo", "bar");
 
         KafkaBridge foo = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, "foo", image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
         KafkaBridge bar = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, "bar", image, 1,
-                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, metricsCm);
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
 
         when(mockBridgeOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
         // when requested ConfigMap for a specific Kafka Bridge cluster

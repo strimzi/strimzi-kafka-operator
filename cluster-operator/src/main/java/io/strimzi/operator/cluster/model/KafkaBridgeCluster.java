@@ -388,7 +388,6 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
 
-
         if (tls != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
 
@@ -422,7 +421,6 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         return varList;
     }
-
 
     @Override
     protected String getDefaultLogConfigFileName() {
@@ -525,5 +523,4 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
     }
-
 }
