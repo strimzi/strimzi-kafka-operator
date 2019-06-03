@@ -110,8 +110,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class MockKube {
-
     private static final Logger LOGGER = LogManager.getLogger(MockKube.class);
 
     private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
@@ -277,13 +277,19 @@ public class MockKube {
         when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(mockRb);
         when(mockClient.rbac().kubernetesClusterRoleBindings()).thenReturn(mockCrb);
 
+        mockHttpClient(mockClient);
+
+        return mockClient;
+    }
+
+    private void mockHttpClient(KubernetesClient mockClient)   {
         // The CRD status update is build on the HTTP client directly since it is not supported in Fabric8.
         // We have to mock the HTTP client to make it pass.
         URL fakeUrl = null;
         try {
             fakeUrl = new URL("http", "my-host", 9443, "/");
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         when(mockClient.getMasterUrl()).thenReturn(fakeUrl);
@@ -297,8 +303,6 @@ public class MockKube {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        return mockClient;
     }
 
     private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>

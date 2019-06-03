@@ -30,6 +30,8 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "type", "addresses" })
 @EqualsAndHashCode
 public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String type;
     private List<ListenerAddress> addresses;
     private Map<String, Object> additionalProperties;

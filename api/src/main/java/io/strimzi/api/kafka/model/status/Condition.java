@@ -24,6 +24,8 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 public class Condition implements UnknownPropertyPreserving, Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String status;
     private String reason;
     private String type;

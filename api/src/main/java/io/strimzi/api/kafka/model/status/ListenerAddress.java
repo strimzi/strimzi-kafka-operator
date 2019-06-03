@@ -29,6 +29,8 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "address", "host", "port" })
 @EqualsAndHashCode
 public class ListenerAddress implements UnknownPropertyPreserving, Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String host;
     private Integer port;
     private Map<String, Object> additionalProperties;

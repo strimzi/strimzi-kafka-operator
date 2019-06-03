@@ -4,12 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimConditionBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatusBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.storage.StorageClass;
-import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -21,7 +15,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -29,15 +22,12 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.PvcOperator;
-import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 
 import java.io.StringReader;
 import java.text.ParseException;
@@ -50,9 +40,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -135,7 +123,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName),kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
             assertTrue(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());
@@ -196,7 +184,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName),kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
             assertTrue(res.succeeded());
             // The status should not change => we test that updateStatusAsync was not called
             assertEquals(0, kafkaCaptor.getAllValues().size());
@@ -221,7 +209,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName),kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
             assertTrue(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());

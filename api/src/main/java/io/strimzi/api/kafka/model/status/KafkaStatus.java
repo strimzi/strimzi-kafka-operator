@@ -24,6 +24,8 @@ import java.util.List;
 @JsonPropertyOrder({ "conditions", "listeners" })
 @EqualsAndHashCode
 public class KafkaStatus extends Status {
+    private static final long serialVersionUID = 1L;
+
     private List<ListenerStatus> listeners;
 
     @Description("Addresses of the internal and external listeners")

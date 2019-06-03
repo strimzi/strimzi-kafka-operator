@@ -252,7 +252,7 @@ public class CrdGenerator {
         }
         if (crd.subresources().status().length != 0) {
             ObjectNode statusNode = nf.objectNode();
-            for (Crd.Spec.Subresources.Status status : crd.subresources().status()) {
+            if (crd.subresources().status().length > 0) {
                 statusNode.set("status", nf.objectNode());
             }
             result.set("subresources", statusNode);
