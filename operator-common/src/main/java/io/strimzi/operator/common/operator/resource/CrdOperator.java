@@ -84,7 +84,8 @@ public class CrdOperator<C extends KubernetesClient,
                 } catch (Exception e) {
                     throw e;
                 } finally {
-                    if (response != null) {
+                    // Only messages with body should be closed
+                    if (response.body() != null) {
                         response.close();
                     }
                 }
