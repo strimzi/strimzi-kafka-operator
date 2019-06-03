@@ -5,7 +5,7 @@
 [id='assembly-using-the-kafka-bridge-{context}']
 = Using the {ProductName} Kafka Bridge
 
-This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started with using the API. To view the API documentation including example requests and responses, see LINK **{ProductName} Kafka Bridge API resources**. For information on how to configure the Kafka Bridge after deployment, see LINK **{ProductName} Kafka Bridge Configuration**.
+This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started using the REST API. To view the API documentation including example requests and responses, see LINK **{ProductName} Kafka Bridge API resources**. For information on how to configure the Kafka Bridge after deployment, see LINK **{ProductName} Kafka Bridge Configuration**.
 
 ifdef::TechPreview[]
 IMPORTANT: The {ProductName} Kafka Bridge is a Technology Preview feature only. Technology Preview features are not supported with Red Hat production service-level agreements (SLAs) and might not be functionally complete; therefore, Red Hat does not recommend implementing any Technology Preview features in production environments. This Technology Preview feature provides early access to upcoming product innovations, enabling you to test functionality and provide feedback during the development process. For more information about support scope, see {TechPreviewFeatures} on the Red Hat Customer Portal.
