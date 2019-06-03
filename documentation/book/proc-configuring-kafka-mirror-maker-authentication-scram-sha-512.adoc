@@ -19,6 +19,8 @@ The following steps describe how to configure SCRAM-SHA-512 authentication on th
 
 . (Optional) If they do not already exist, prepare a file with the password used for authentication and create the `Secret`.
 +
+NOTE: Secrets created by the User Operator may be used.
++
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:
 [source,shell,subs=+quotes]
