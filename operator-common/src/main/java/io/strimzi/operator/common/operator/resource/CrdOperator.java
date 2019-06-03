@@ -31,7 +31,6 @@ public class CrdOperator<C extends KubernetesClient,
     private final Class<T> cls;
     private final Class<L> listCls;
     private final Class<D> doneableCls;
-    protected final String baseUrl;
     protected final String plural;
 
     /**
@@ -41,7 +40,6 @@ public class CrdOperator<C extends KubernetesClient,
      */
     public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls) {
         super(vertx, client, Crds.kind(cls));
-        this.baseUrl = this.client.getMasterUrl().toString();
         this.cls = cls;
         this.listCls = listCls;
         this.doneableCls = doneableCls;
@@ -67,7 +65,7 @@ public class CrdOperator<C extends KubernetesClient,
                 RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
 
                 Request request = new Request.Builder().put(postBody).url(
-                        this.baseUrl + "apis/" + resource.getApiVersion() + "/namespaces/" + resource.getMetadata().getNamespace()
+                        this.client.getMasterUrl().toString() + "apis/" + resource.getApiVersion() + "/namespaces/" + resource.getMetadata().getNamespace()
                                 + "/" + this.plural + "/" + resource.getMetadata().getName() + "/status").build();
 
                 String method = request.method();

@@ -61,6 +61,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -199,7 +200,7 @@ public class KafkaAssemblyOperatorMockTest {
     private Kafka cluster;
 
     @Before
-    public void before() {
+    public void before() throws MalformedURLException {
         this.vertx = Vertx.vertx();
         this.cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder()

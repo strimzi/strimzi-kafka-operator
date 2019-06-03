@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -96,7 +97,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     @Before
-    public void createClient() {
+    public void createClient() throws MalformedURLException {
         MockKube mockKube = new MockKube();
         init.accept(mockKube);
         client = mockKube.build();

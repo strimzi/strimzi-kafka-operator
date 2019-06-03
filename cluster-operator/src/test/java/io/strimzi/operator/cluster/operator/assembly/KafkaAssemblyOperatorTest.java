@@ -356,6 +356,8 @@ public class KafkaAssemblyOperatorTest {
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
         when(mockKafkaOps.get(clusterCmNamespace, clusterCmName)).thenReturn(null);
+        when(mockKafkaOps.getAsync(eq(clusterCmNamespace), eq(clusterCmName))).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
@@ -785,6 +787,8 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock CM get
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
+        when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
                     .withNamespace(clusterNamespace)
@@ -1012,6 +1016,9 @@ public class KafkaAssemblyOperatorTest {
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockKafkaOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq(clusterCmNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq(clusterCmNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // providing certificates Secrets for existing clusters
         List<Secret> fooSecrets = ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, "foo");
@@ -1097,6 +1104,9 @@ public class KafkaAssemblyOperatorTest {
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
         when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // providing certificates Secrets for existing clusters
         List<Secret> fooSecrets = ResourceUtils.createKafkaClusterInitialSecrets("namespace1", "foo");
