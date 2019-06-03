@@ -5,11 +5,13 @@
 [id='assembly-using-the-kafka-bridge-{context}']
 = Using the {ProductName} Kafka Bridge
 
-This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started using the REST API. To view the API documentation including example requests and responses, see LINK **{ProductName} Kafka Bridge API resources**. For information on how to configure the Kafka Bridge after deployment, see LINK **{ProductName} Kafka Bridge Configuration**.
+This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started using the REST API.
+
+* To view the API documentation including example requests and responses, see LINK **{ProductName} Kafka Bridge API resources**.
+
+* For information on how to configure the Kafka Bridge after deployment, see LINK **{ProductName} Kafka Bridge Configuration**.
 
 include::con-overview-of-kafka-bridge.adoc[leveloffset=+1]
-
-include::con-supported-data-formats-kafka-bridge.adoc[leveloffset=+1]
 
 include::proc-deploying-kafka-bridge.adoc[leveloffset=+1]
 
