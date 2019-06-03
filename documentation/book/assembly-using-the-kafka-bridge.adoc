@@ -13,6 +13,8 @@ This chapter provides an overview of the {ProductName} Kafka Bridge and helps yo
 
 include::con-overview-of-kafka-bridge.adoc[leveloffset=+1]
 
+include::con-requests-kafka-bridge.adoc[leveloffset=+1]
+
 include::proc-deploying-kafka-bridge.adoc[leveloffset=+1]
 
 include::con-configuring-consumer-producer-options-kafka-bridge.adoc[leveloffset=+1]

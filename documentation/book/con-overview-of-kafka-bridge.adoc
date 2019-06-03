@@ -40,13 +40,3 @@ You can integrate two types of clients using the Kafka Bridge:
 Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer service that you create.
 
 For more information on configuring the host and port for the `KafkaBridge` resource, see LINK *Kafka Bridge HTTP configuration*.
-
-== Authentication and encryption
-
-Authentication and encryption between clients and the Kafka Bridge is not yet supported. This means that requests sent from clients to the Kafka Bridge are:
-
-* Not encrypted, and must use HTTP rather than HTTPS
-
-* Sent without authentication
-
-Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. For more information, see LINK TO CHAPTER 3 **Connecting to Kafka brokers with Authentication**. 
