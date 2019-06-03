@@ -15,27 +15,43 @@ Authentication and encryption between clients and the Kafka Bridge is not yet su
 
 Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. For more information, see LINK TO CHAPTER 3 **Connecting to Kafka brokers with Authentication**. 
 
-== Content types
+== Data formats and headers
 
-The quick brown fox.
+Request and response bodies are encoded as JSON. When sending a `POST` request to a resource, you must provide the following `Content-Type` header, which is specific to Kafka:
 
-embedded format
+[source,http,subs=+quotes]
+----
+Content-Type: application/vnd.kafka.v2+json
+----
 
-two formats: 
-1) used for encoding the body of the HTTP request - always JSON to encode the body INSIDE every message. Specified in the HTTP Header of POST requests as content-type: application/vnd.kafka.v2+json
+Sent and received messages can have an **embedded data format** of either JSON or binary. You specify the embedded data format in the `format` field of the request body when creating a consumer using the `/consumers/{groupid}` endpoint. For example:
 
-2) The embedded format of the "Kafka message" sent by the client to Kafka or received from Kafka, which can be JSON *or* binary. This is specified in the body of the request, see `create Consumer`.
-   - JSON: The body of the message and the value of the message are both encoded as JSON.
-   - Binary: Used for sending binary data rather than a simple string. Have to send this value inside the HTTP message encoded as base-64. The message value must be a string because the body is JSON - base-64 allows you to encode the binary data as a string so it can be sent.
+[source,json,subs=attributes+]
+----
+{
+  "name": "my-consumer",
+  "format": "json",
+...
+}
+----
 
-   when you create a consumer, you specify the "format" in the request body: JSON or binary. Let's create a new consumer that will be able to ACCEPT messages created in EITHER JSON or binary - the embedded format. The consumer needs to specify an ACCEPT header
+If you specify `binary` format, you must provide binary data as a base-64 encoded string. 
 
-   On the consumer side, you MUST specify an Accept header that corresponds with the embedded format that was specificed when the consumer was created.
+After creating a consumer, you must provide an `Accept` header that corresponds to the consumer's embedded data format with all subsequent requests. The `Accept` header is in the following format:
 
-   The producer must supply a CONTENT-TYPE header: "I'm sending a message to you and this message is encoded as binary or JSON"
+[source,http,subs=+quotes]
+----
+Accept: application/vnd._embedded-data-format_.kafka.v2+json
+----
 
+For example, when committing a list of consumer offsets for a consumer that has an embedded data format of JSON, include this Accept header:
 
-   From Confluent docs: "You should specify preferred content types in requests and check the content types of responses."
+[source,http,subs=+quotes]
+----
+Accept: application/vnd.json.kafka.v2+json
+----
+
+When using Producer operations, such as the `/topics/{topicname}` endpoint, to produce messages, make sure you provide a `Content-Type` header that corresponds to the embedded data format of the consumer that will consume the messages.
 
 == API version
 
