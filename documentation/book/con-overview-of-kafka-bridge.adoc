@@ -7,7 +7,7 @@
 
 The {ProductName} Kafka Bridge provides a REST API for integrating HTTP-based clients with a Kafka cluster running on {ProductPlatformName}. You can use it to integrate clients that do not have a Kafka client library and so cannot transfer data using the native Kafka protocol.
 
-The Kafka Bridge API consists of two resources -- `consumers` and `topics` -- that together provide several endpoints for interacting with Kafka consumers and producers. You can use the API to: 
+The Kafka Bridge API consists of two resources -- `consumers` and `topics` -- that together provide several endpoints to interact with Kafka consumers and producers. You can use the API to: 
 
 * Send messages to a topic or partition.
 
