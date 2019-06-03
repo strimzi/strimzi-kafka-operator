@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// master.adoc
+
+[id='proc-accessing-resource-status-{context}']
+= Checking the status of a custom resource
+
+This procedure describes how to find the status of a custom resource.
+
+.Prerequisites
+
+* An {OpenShiftName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Specify the custom resource in a JSONPath expression to filter on the `status` property:
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} get kafka _kafka_resource_name_ -o jsonpath=”{.status}
+----
++
+This expression returns all the status information. You can use dot notation, such as `status.listeners`, to fine-tune the information you wish to see.
++
+NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is ready.
+
+.Additional resources
+* For more information about the JSONPath, see ...

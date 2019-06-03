@@ -25,3 +25,5 @@ WARNING: When CRDs are deleted, custom resources of that type are also deleted. 
 * {K8sCRDs}
 
 include::con-custom-resources-example.adoc[leveloffset=+1]
+
+include::con-custom-resources-status.adoc[leveloffset=+1]
