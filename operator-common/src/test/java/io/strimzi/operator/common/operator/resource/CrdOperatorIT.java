@@ -34,7 +34,6 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
     }
 
     protected Kafka getResource() {
-
         return new KafkaBuilder()
                 .withApiVersion("kafka.strimzi.io/v1beta1")
                 .withNewMetadata()
@@ -58,7 +57,8 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
                         .endZookeeper()
                 .endSpec()
                 .withNewStatus()
-                .endStatus().build();
+                .endStatus()
+                .build();
     }
 
     @Override
@@ -69,7 +69,6 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
     @Override
     protected Kafka getModified()  {
         return new KafkaBuilder(getResource()).editSpec().editKafka().withReplicas(2).endKafka().endSpec().build();
-
     }
 
     /**
@@ -96,7 +95,7 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                Kafka k0 = (Kafka) crdOperator.get(namespace, RESOURCE_NAME);
+                Kafka k0 = crdOperator.get(namespace, RESOURCE_NAME);
 
                 if (k0 == null)    {
                     context.fail("Failed to get created Resource");
@@ -104,14 +103,26 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
                 } else {
                     // k1 needs the same resourceID as k0 in order to update it
                     Kafka k1 = new KafkaBuilder(k0).withNewStatus().withConditions().addNewCondition().withStatus("test").endCondition().endStatus().build();
-                    crdOperator.updateStatusAsync(k1);
+
+                    Async updateAsync = context.async();
+                    crdOperator.updateStatusAsync(k1).setHandler(res -> {
+                        if (res.succeeded())    {
+                            updateAsync.complete();
+                        } else {
+                            context.fail(res.cause());
+                        }
+                    });
+
+                    // Wait for the Status update to get done
+                    updateAsync.await();
+
                     Kafka k2 = crdOperator.get(namespace, RESOURCE_NAME);
                     assertEquals(k1.getStatus().toString(), k2.getStatus().toString());
 
                     Future<ReconcileResult<Kafka>> deleteFuture = crdOperator.reconcile(namespace, RESOURCE_NAME, null);
                     deleteFuture.setHandler(delete -> {
                         if (delete.succeeded()) {
-                            Kafka deleted = (Kafka) crdOperator.get(namespace, RESOURCE_NAME);
+                            Kafka deleted = crdOperator.get(namespace, RESOURCE_NAME);
 
                             if (deleted == null)    {
                                 log.info("Resource deleted");
@@ -125,9 +136,7 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
                             async.complete();
                         }
                     });
-
                 }
-
             } else {
                 context.fail(create.cause());
                 async.complete();

@@ -348,7 +348,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean zkAncillaryCmChange;
 
         private KafkaCluster kafkaCluster = null;
-        private KafkaStatus kafkaStatus = new KafkaStatus();
+        /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
         private Service kafkaService;
         private Service kafkaHeadlessService;
