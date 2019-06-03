@@ -99,6 +99,7 @@ spec:
               properties:
                 port:
                   type: integer
+                  minimum: 1023
             consumer:
               type: object
               properties:

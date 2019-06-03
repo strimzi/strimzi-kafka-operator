@@ -24,7 +24,7 @@ public class KafkaBridgeProducerSpec extends KafkaBridgeClientSpec {
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security.";
 
     @Override
-    @Description("The Kafka bridge producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }

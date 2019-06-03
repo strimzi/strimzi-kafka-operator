@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -42,6 +43,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     @Description("The port which is the server listening on. Avoid using port 8081 which is used for readiness checking.")
     @DefaultValue("8080")
+    @Minimum(1023)
     public int getPort() {
         return port;
     }

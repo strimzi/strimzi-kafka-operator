@@ -21,7 +21,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaBridgeClientSpec implements UnknownPropertyPreserving, Serializable {
+public abstract class KafkaBridgeClientSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
