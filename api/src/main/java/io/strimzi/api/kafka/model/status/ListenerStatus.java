@@ -27,7 +27,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "authentication" })
+@JsonPropertyOrder({ "type", "addresses" })
 @EqualsAndHashCode
 public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private String type;
