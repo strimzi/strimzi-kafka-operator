@@ -2944,6 +2944,8 @@ spec:
               items:
                 type: object
                 properties:
+                  type:
+                    type: string
                   addresses:
                     type: array
                     items:
@@ -2953,6 +2955,4 @@ spec:
                           type: string
                         port:
                           type: integer
-                  type:
-                    type: string
 {{- end -}}

@@ -7,13 +7,8 @@
 
 [options="header"]
 |====
-<<<<<<< HEAD
-|Property     |Description
-|spec  1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
-=======
-|Field          |Description
+|Property       |Description
 |spec    1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
->>>>>>> wip
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |status  1.2+<.<|The status of the Kafka and Zookeeper clusters, and Topic Operator.
 |xref:type-KafkaStatus-{context}[`KafkaStatus`]
@@ -1041,7 +1036,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field              |Description
+|Property           |Description
 |conditions  1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
 |listeners   1.2+<.<|Addresses of the internal and external listeners.
@@ -1056,7 +1051,7 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
 |string
 |reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
@@ -1075,11 +1070,11 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 
 [options="header"]
 |====
-|Field             |Description
-|addresses  1.2+<.<|A list of the addresses for this listener.
-|xref:type-ListenerAddress-{context}[`ListenerAddress`] array
+|Property          |Description
 |type       1.2+<.<|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
 |string
+|addresses  1.2+<.<|A list of the addresses for this listener.
+|xref:type-ListenerAddress-{context}[`ListenerAddress`] array
 |====
 
 [id='type-ListenerAddress-{context}']
@@ -1090,7 +1085,7 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |host  1.2+<.<|The DNS name or IP address of Kafka bootstrap service.
 |string
 |port  1.2+<.<|The port of the Kafka bootstrap service.

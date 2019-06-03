@@ -36,12 +36,10 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.ListenersStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -72,8 +70,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
@@ -82,7 +78,6 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -144,12 +139,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
-    private final ConfigMapOperator configMapOperations;
-    private final ServiceAccountOperator serviceAccountOperator;
-    private final RoleBindingOperator roleBindingOperator;
-    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
-    private final KafkaVersion.Lookup versions;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
 
     /**
@@ -175,11 +164,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
-        this.serviceAccountOperator = supplier.serviceAccountOperator;
-        this.roleBindingOperator = supplier.roleBindingOperator;
-        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
-        this.crdOperator = supplier.kafkaOperator;
-        this.versions = versions;
         this.crdOperator = supplier.kafkaOperator;
     }
 
