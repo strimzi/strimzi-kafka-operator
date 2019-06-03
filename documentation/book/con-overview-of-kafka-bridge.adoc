@@ -9,7 +9,7 @@ The {ProductName} Kafka Bridge provides a REST API for integrating HTTP-based cl
 
 The Kafka Bridge API consists of two resources -- `consumers` and `topics` -- that together provide several endpoints to interact with Kafka consumers and producers. You can use the API to: 
 
-* Send messages to a topic or partition.
+* Send messages to a topic.
 
 * Create and delete consumers.
 
@@ -23,7 +23,9 @@ The Kafka Bridge API consists of two resources -- `consumers` and `topics` -- th
 
 * Commit a list of consumer offsets.
 
-* Perform seek operations on consumers, so that they start receiving messages from the first or last offset position, or a given offset position.
+* Seek on a partition, so that the consumer starts receiving messages from the first or last offset position, or a given offset position.
+
+### Actually the seek operations are executed "on a topic partition" by consumers but not "on consumers".
 
 For more information on these tasks, see LINK **{ProductName} Kafka Bridge API resources**.
 
