@@ -27,7 +27,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class Status implements UnknownPropertyPreserving, Serializable {
+public abstract class Status implements UnknownPropertyPreserving, Serializable {
     private List<Condition> conditions;
     private Map<String, Object> additionalProperties;
 
