@@ -3,7 +3,7 @@
 // assembly-kafka-bridge-configuration.adoc
 
 [id='ref-kafka-bridge-http-configuration-{context}']
-= Kafka Bridge Consumer configuration
+= Kafka Bridge HTTP configuration
 
 Kafka Bridge HTTP configuration is set using the properties in `KafkaBridge.spec.http`.
 This property contains the Kafka Bridge HTTP configuration options.
@@ -22,6 +22,7 @@ spec:
   # ...
   http:
     port: 8080
-    host: 0.0.0.0
   # ...
 ----
+
+IMPORTANT: The port must not be set to 8081 as that will cause a conflict with the healthcheck settings.

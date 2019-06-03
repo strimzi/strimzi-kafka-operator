@@ -16,6 +16,8 @@
 
 . (Optional) If they do not already exist, prepare a file with the password used in authentication and create the `Secret`.
 +
+NOTE: Secrets created by the User Operator may be used.
++
 ifdef::Kubernetes[]
 On {KubernetesName} use:
 [source,shell,subs=+quotes]

@@ -10,7 +10,7 @@
 
 = Bootstrap servers
 
-A Kafka Bridge cluster always works in combination with a Kafka cluster.
+A Kafka Bridge always works in combination with a Kafka cluster.
 A Kafka cluster is specified as a list of bootstrap servers.
 On {ProductPlatformName}, the list must ideally contain the Kafka cluster bootstrap service named `_cluster-name_-kafka-bootstrap`, and a port of 9092 for plain traffic or 9093 for encrypted traffic.
 
