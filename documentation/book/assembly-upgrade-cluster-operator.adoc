@@ -5,8 +5,10 @@
 [id='assembly-upgrade-cluster-operator-{context}']
 = Upgrading the Cluster Operator
 
-The steps to upgrade your current Cluster Operator deployment to use {ProductName} {ProductVersion} are outlined in this section.
+The steps to upgrade your Cluster Operator deployment to use {ProductName} {ProductVersion} are outlined in this section.
 
 The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
+
+NOTE: Refer to previous {ProductName} documentation for information on upgrading from earlier Cluster Operation versions.
 
 include::proc-upgrading-the-cluster-operator.adoc[leveloffset=+1]
