@@ -76,29 +76,25 @@ public class CrdOperator<C extends KubernetesClient,
                     log.debug("Got {} response {}", method, response);
                     final int code = response.code();
 
-                    if (code == 200) {
-                        future.complete();
-                    } else {
+                    if (code != 200) {
                         log.debug("Got unexpected {} status code {}: {}", method, code, response.message());
-                        future.fail(new KubernetesClientException("Got unexpected " + method + " status code " + code + ": " + response.message(),
-                                code, OperationSupport.createStatus(response)));
+                        throw new KubernetesClientException("Got unexpected " + method + " status code " + code + ": " + response.message(),
+                                code, OperationSupport.createStatus(response));
                     }
+                } catch (Exception e) {
+                    throw e;
                 } finally {
-                    if (response.body() != null) {
+                    if (response != null) {
                         response.close();
                     }
                 }
+
+                future.complete();
             } catch (Exception e) {
                 log.debug("Updating status failed", e);
                 future.fail(e);
             }
-        }, res -> {
-                if (res.succeeded()) {
-                    blockingFuture.complete();
-                } else {
-                    blockingFuture.fail(res.cause());
-                }
-            });
+        }, true, blockingFuture.completer());
 
         return blockingFuture;
     }
