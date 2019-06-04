@@ -1260,7 +1260,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaService() {
-            Future<ReconciliationState> returnFuture = Future.future();
             Future<ReconcileResult<Service>> serviceFuture = serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService);
 
             return withVoid(serviceFuture.map(res -> {
