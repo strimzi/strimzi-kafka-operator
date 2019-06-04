@@ -7,6 +7,7 @@
 
 FILE=$1
 cat <<EOF
+// Auto generated content - DO NOT EDIT BY HAND
 [table,stripes=none]
 |===
 |Container image |Namespace/Repository |Description
