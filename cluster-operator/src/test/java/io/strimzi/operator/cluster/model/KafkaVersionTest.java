@@ -20,8 +20,10 @@ public class KafkaVersionTest {
     @Test
     public void load() {
         KafkaVersion.Lookup loaded = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        assertTrue(loaded.supportedVersions().contains("2.0.1"));
+        assertTrue(loaded.supportedVersions().contains("2.1.0"));
         assertTrue(loaded.supportedVersions().contains("2.1.1"));
+        assertTrue(loaded.supportedVersions().contains("2.2.0"));
+        assertTrue(loaded.supportedVersions().contains("2.2.1"));
         assertEquals("2.1.1", loaded.version("2.1.1").version());
         assertEquals("2.1", loaded.version("2.1.1").protocolVersion());
         assertEquals("2.1", loaded.version("2.1.1").messageVersion());
