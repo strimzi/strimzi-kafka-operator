@@ -139,6 +139,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final int EXTERNAL_PORT = 9094;
     protected static final String EXTERNAL_PORT_NAME = "external";
 
+    protected static final int ROUTE_PORT = 443;
+    protected static final String ROUTE_PORT_NAME = "route";
+
     protected static final String KAFKA_NAME = "kafka";
     protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
     protected static final String BROKER_CERTS_VOLUME = "broker-certs";
@@ -957,6 +960,22 @@ public class KafkaCluster extends AbstractModel {
         return portList;
     }
 
+    public int getClientPort() {
+        return this.CLIENT_PORT;
+    }
+
+    public int getClientTlsPort() {
+        return this.CLIENT_TLS_PORT;
+    }
+
+    public int getLoadbalancerPort() {
+        return this.EXTERNAL_PORT;
+    }
+
+    public int getRoutePort() {
+        return this.ROUTE_PORT;
+    }
+
     /**
      * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
      * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
@@ -1432,6 +1451,13 @@ public class KafkaCluster extends AbstractModel {
      */
     public void setListeners(KafkaListeners listeners) {
         this.listeners = listeners;
+    }
+
+    /**
+     * @return  The listener object from the CRD
+     */
+    public KafkaListeners getListeners() {
+        return listeners;
     }
 
     /**

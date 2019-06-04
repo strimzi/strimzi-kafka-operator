@@ -250,6 +250,13 @@ public class CrdGenerator {
             }
             result.set("additionalPrinterColumns", cols);
         }
+        if (crd.subresources().status().length != 0) {
+            ObjectNode statusNode = nf.objectNode();
+            if (crd.subresources().status().length > 0) {
+                statusNode.set("status", nf.objectNode());
+            }
+            result.set("subresources", statusNode);
+        }
         result.set("validation", buildValidation(crdClass));
         return result;
     }

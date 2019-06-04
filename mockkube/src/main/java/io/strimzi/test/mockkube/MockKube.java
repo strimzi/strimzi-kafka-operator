@@ -76,12 +76,20 @@ import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.OngoingStubbing;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -102,8 +110,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class MockKube {
-
     private static final Logger LOGGER = LogManager.getLogger(MockKube.class);
 
     private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
@@ -269,7 +277,32 @@ public class MockKube {
         when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(mockRb);
         when(mockClient.rbac().kubernetesClusterRoleBindings()).thenReturn(mockCrb);
 
+        mockHttpClient(mockClient);
+
         return mockClient;
+    }
+
+    private void mockHttpClient(KubernetesClient mockClient)   {
+        // The CRD status update is build on the HTTP client directly since it is not supported in Fabric8.
+        // We have to mock the HTTP client to make it pass.
+        URL fakeUrl = null;
+        try {
+            fakeUrl = new URL("http", "my-host", 9443, "/");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        when(mockClient.getMasterUrl()).thenReturn(fakeUrl);
+        OkHttpClient mockedOkHttp = mock(OkHttpClient.class);
+        when(mockClient.adapt(OkHttpClient.class)).thenReturn(mockedOkHttp);
+        Call mockedCall = mock(Call.class);
+        when(mockedOkHttp.newCall(any(Request.class))).thenReturn(mockedCall);
+        Response response = new Response.Builder().code(200).request(new Request.Builder().url(fakeUrl).build()).message("HTTP OK").protocol(Protocol.HTTP_1_1).build();
+        try {
+            when(mockedCall.execute()).thenReturn(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>

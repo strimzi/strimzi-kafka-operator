@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -26,15 +27,24 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.status.ListenerAddress;
+import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
+import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -47,6 +57,7 @@ import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaUpgrade;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
@@ -59,6 +70,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -75,7 +87,9 @@ import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -125,6 +139,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
 
     /**
      * @param vertx The Vertx instance
@@ -149,17 +164,64 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
+        this.crdOperator = supplier.kafkaOperator;
     }
 
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        Future<Void> chainFuture = Future.future();
+        Future<Void> createOrUpdateFuture = Future.future();
+
         if (kafkaAssembly.getSpec() == null) {
             log.error("{} spec cannot be null", kafkaAssembly.getMetadata().getName());
             return Future.failedFuture("Spec cannot be null");
         }
-        createReconciliationState(reconciliation, kafkaAssembly)
-                .reconcileCas()
+
+        ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
+        reconcile(reconcileState).setHandler(reconcileResult -> {
+            KafkaStatus status = reconcileState.kafkaStatus;
+            Condition readyCondition;
+
+            if (reconcileResult.succeeded())    {
+                readyCondition = new ConditionBuilder()
+                        .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withNewType("Ready")
+                        .withNewStatus("True")
+                        .build();
+            } else {
+                readyCondition = new ConditionBuilder()
+                        .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withNewType("NotReady")
+                        .withNewStatus("True")
+                        .build();
+            }
+
+            status.setConditions(Collections.singletonList(readyCondition));
+            reconcileState.updateStatus(status).setHandler(statusResult -> {
+                if (statusResult.succeeded())    {
+                    log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
+                } else {
+                    log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
+                }
+
+                // If both features succeeded, createOrUpdate succeeded as well
+                // If one or both of them failed, we prefer the reconciliation failure as the main error
+                if (reconcileResult.succeeded() && statusResult.succeeded())    {
+                    createOrUpdateFuture.complete();
+                } else if (reconcileResult.failed())    {
+                    createOrUpdateFuture.fail(reconcileResult.cause());
+                } else {
+                    createOrUpdateFuture.fail(statusResult.cause());
+                }
+            });
+        });
+
+        return createOrUpdateFuture;
+    }
+
+    Future<Void> reconcile(ReconciliationState reconcileState)  {
+        Future<Void> chainFuture = Future.future();
+
+        reconcileState.reconcileCas()
                 .compose(state -> state.clusterOperatorSecret())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
@@ -240,6 +302,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new ReconciliationState(reconciliation, kafkaAssembly);
     }
 
+
+
     /**
      * Hold the mutable state during a reconciliation
      */
@@ -261,6 +325,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean zkAncillaryCmChange;
 
         private KafkaCluster kafkaCluster = null;
+        /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
+
         private Service kafkaService;
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
@@ -287,6 +353,55 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        /**
+         * Updates the Status field of the Kafka CR. It diffs the desired status against the current status and calls
+         * the update only when there is any difference in non-timestamp fields.
+         *
+         * @param desiredStatus The KafkaStatus which should be set
+         *
+         * @return
+         */
+        Future<Void> updateStatus(KafkaStatus desiredStatus) {
+            Future<Void> updateStatusFuture = Future.future();
+
+            crdOperator.getAsync(namespace, name).setHandler(getRes -> {
+                if (getRes.succeeded())    {
+                    Kafka kafka = getRes.result();
+
+                    if (kafka != null) {
+                        KafkaStatus currentStatus = kafka.getStatus();
+
+                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                        if (!ksDiff.isEmpty()) {
+                            Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
+
+                            crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                                if (updateRes.succeeded())  {
+                                    log.debug("{}: Completed status update", reconciliation);
+                                    updateStatusFuture.complete();
+                                } else {
+                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                    updateStatusFuture.fail(updateRes.cause());
+                                }
+                            });
+                        } else {
+                            log.debug("{}: Status did not change", reconciliation);
+                            updateStatusFuture.complete();
+                        }
+                    } else {
+                        log.error("{}: Current Kafka resource not found", reconciliation);
+                        updateStatusFuture.fail("Current Kafka resource not found");
+                    }
+                } else {
+                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
+                    updateStatusFuture.fail(getRes.cause());
+                }
+            });
+
+            return updateStatusFuture;
         }
 
         /**
@@ -1145,7 +1260,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaService() {
-            return withVoid(serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService));
+            Future<ReconcileResult<Service>> serviceFuture = serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService);
+
+            return withVoid(serviceFuture.map(res -> {
+                setPlainAndTlsListenerStatus();
+                return res;
+            }));
         }
 
         Future<ReconciliationState> kafkaHeadlessService() {
@@ -1284,8 +1404,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
-                            }
 
+                                setExternalListenerStatus(new ListenerAddressBuilder()
+                                        .withHost(bootstrapAddress)
+                                        .withPort(kafkaCluster.getLoadbalancerPort())
+                                        .build());
+                            } else if (kafkaCluster.isExposedWithNodePort()) {
+                                ServiceSpec ss = serviceOperations.get(namespace, serviceName).getSpec();
+                                Integer nodePort = ss.getPorts().get(0).getNodePort();
+
+                                setExternalListenerStatus(new ListenerAddressBuilder()
+                                        .withHost("<AnyNodeAddress>")
+                                        .withPort(nodePort)
+                                        .build());
+                            }
                             future.complete();
                         } else {
                             log.warn("{}: No address found for Service {}", reconciliation, serviceName);
@@ -1425,6 +1557,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (res.succeeded()) {
                             String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
                             this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
+
+                            setExternalListenerStatus(new ListenerAddressBuilder()
+                                    .withHost(bootstrapAddress)
+                                    .withPort(kafkaCluster.getRoutePort())
+                                    .build());
 
                             if (log.isTraceEnabled()) {
                                 log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
@@ -2412,6 +2549,71 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             return storage;
+        }
+
+        void setExternalListenerStatus(ListenerAddress... addresses)   {
+            KafkaListeners listeners = kafkaCluster.getListeners();
+
+            if (listeners != null)  {
+                if (listeners.getExternal() != null)   {
+                    ListenerStatus ls = new ListenerStatusBuilder()
+                            .withNewType("external")
+                            .withAddresses(addresses)
+                            .build();
+
+                    addListenerStatus(ls);
+                }
+            }
+        }
+
+        void setPlainAndTlsListenerStatus()   {
+            KafkaListeners listeners = kafkaCluster.getListeners();
+
+            if (listeners != null)  {
+                if (listeners.getPlain() != null)   {
+                    ListenerStatus ls = new ListenerStatusBuilder()
+                            .withNewType("plain")
+                            .withAddresses(new ListenerAddressBuilder()
+                                    .withHost(getInternalServiceHostname(kafkaService.getMetadata().getName()))
+                                    .withPort(kafkaCluster.getClientPort())
+                                    .build())
+                            .build();
+
+                    addListenerStatus(ls);
+                }
+
+                if (listeners.getTls() != null) {
+                    ListenerStatus ls = new ListenerStatusBuilder()
+                            .withNewType("tls")
+                            .withAddresses(new ListenerAddressBuilder()
+                                    .withHost(getInternalServiceHostname(kafkaService.getMetadata().getName()))
+                                    .withPort(kafkaCluster.getClientTlsPort())
+                                    .build())
+                            .build();
+
+                    addListenerStatus(ls);
+                }
+            }
+        }
+
+        void addListenerStatus(ListenerStatus ls)    {
+            List<ListenerStatus> current = kafkaStatus.getListeners();
+            ArrayList<ListenerStatus> desired;
+
+            if (current != null) {
+                desired = new ArrayList<>(current.size() + 1);
+                desired.addAll(current);
+            } else {
+                desired = new ArrayList<>(1);
+            }
+
+            desired.add(ls);
+
+            kafkaStatus.setListeners(desired);
+        }
+
+        String getInternalServiceHostname(String serviceName)    {
+            return serviceName + "." + namespace + ".svc";
         }
     }
 

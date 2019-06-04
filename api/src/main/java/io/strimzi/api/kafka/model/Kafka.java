@@ -14,6 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -44,6 +45,9 @@ import static java.util.Collections.unmodifiableList;
                         @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
                 },
+                subresources = @Crd.Spec.Subresources(
+                               status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired Kafka replicas",
@@ -69,7 +73,7 @@ import static java.util.Collections.unmodifiableList;
         }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class Kafka extends CustomResource implements UnknownPropertyPreserving {
 
@@ -93,6 +97,7 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
     private ObjectMeta metadata;
     private KafkaSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private KafkaStatus status;
 
     @Override
     public String getApiVersion() {
@@ -127,6 +132,15 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
 
     public void setSpec(KafkaSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka and Zookeeper clusters, and Topic Operator.")
+    public KafkaStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaStatus status) {
+        this.status = status;
     }
 
     @Override
