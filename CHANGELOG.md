@@ -6,7 +6,7 @@
 * Log at the warn level when a custom resource uses deprecated or unknown properties
 * Reduce the number of images needed to run Strimzi to just two: `kafka` and `operator`.
 * Add support for unprivileged users to install the operator with Helm
-* Support for Kafka 2.2.0
+* Added support for Kafka 2.2.0 and 2.1.1, dropped support for Kafka 2.0.0 and 2.0.1
 * Support off-cluster access using Kubernetes Nginx Ingress
 * Add ability to configure Image Pull Secrets for all pods in Cluster Operator
 * Support for SASL PLAIN mechanism in Kafka Connect and Mirror Maker (for use with non-Strimzi Kafka cluster)

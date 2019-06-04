@@ -53,7 +53,7 @@ public class Environment {
     private static final String STRIMZI_TAG_DEFAULT = "latest";
     private static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
     private static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
-    private static final String ST_KAFKA_VERSION_DEFAULT = "2.2.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = "2.2.1";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
