@@ -167,7 +167,7 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > (openShift ? 4 : 3) * namespaceList.size()) {
+        if (numWatchers.get() > (openShift ? 5 : 4) * namespaceList.size()) { // we do not have connectS2I on k8s
             context.fail("Looks like there were more watchers than namespaces");
         }
     }
@@ -245,8 +245,8 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > (openShift ? 4 : 3)) {
-            context.fail("Looks like there were more watchers than we should");
+        if (numWatchers.get() > (openShift ? 5 : 4)) { // we do not have connectS2I on k8s
+            context.fail("Looks like there were more watchers than should be");
         }
     }
 }

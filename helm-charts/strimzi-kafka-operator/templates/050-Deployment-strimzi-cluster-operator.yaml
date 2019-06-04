@@ -45,6 +45,8 @@ spec:
               value: "{{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: "{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}"
+            - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+              value: "{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
           livenessProbe:

@@ -14,8 +14,13 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -430,6 +435,22 @@ public class ResourceUtils {
     }
 
     /**
+     * Generate empty Kafka Bridge ConfigMap
+     */
+    public static KafkaBridge createEmptyKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaBridgeBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec()
+                .withNewHttp(8080).endSpec()
+                .build();
+    }
+
+    /**
      * Generate empty Kafka MirrorMaker ConfigMap
      */
     public static KafkaMirrorMaker createEmptyKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName) {
@@ -462,6 +483,25 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, Map<String, Object> metricsCm) {
+        return new KafkaBridgeBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec()
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withBootstrapServers(bootstrapservers)
+                    .withProducer(producer)
+                    .withConsumer(consumer)
+                    .withMetrics(metricsCm)
+                    .withHttp(http)
+                .endSpec()
+                .build();
+    }
 
     public static void cleanUpTemporaryTLSFiles() {
         String tmpString = "/tmp";
@@ -507,7 +547,7 @@ public class ResourceUtils {
                 mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(PodOperator.class),
                 mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
                 mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(CrdOperator.class),
+                mock(CrdOperator.class), mock(CrdOperator.class),
                 mock(StorageClassOperator.class));
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

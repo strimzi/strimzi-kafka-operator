@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
@@ -93,6 +94,9 @@ public class Main {
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
 
+        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
+                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
+
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
             Future<String> fut = Future.future();
@@ -103,7 +107,8 @@ public class Main {
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations,
-                    kafkaMirrorMakerAssemblyOperator);
+                    kafkaMirrorMakerAssemblyOperator,
+                    kafkaBridgeAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

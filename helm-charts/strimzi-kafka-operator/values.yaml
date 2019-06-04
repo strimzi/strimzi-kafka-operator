@@ -68,6 +68,11 @@ kafkaMirrorMaker:
     repository: strimzi
     name: kafka
     tagPrefix: latest
+kafkaBridge:
+  image:
+    repository: strimzi
+    name: kafka-bridge
+    tag: latest
 resources:
   limits:
     memory: 256Mi
