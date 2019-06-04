@@ -171,7 +171,10 @@ public class Crds {
             scope = KafkaBridge.SCOPE;
             crdApiVersion = KafkaBridge.CRD_API_VERSION;
             plural = KafkaBridge.RESOURCE_PLURAL;
+            singular = KafkaBridge.RESOURCE_SINGULAR;
             group = KafkaBridge.RESOURCE_GROUP;
+            kind = KafkaBridge.RESOURCE_KIND;
+            listKind = KafkaBridge.RESOURCE_LIST_KIND;
             if (!KafkaBridge.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }

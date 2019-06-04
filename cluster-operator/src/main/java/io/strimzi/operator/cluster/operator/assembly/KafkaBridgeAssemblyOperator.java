@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
