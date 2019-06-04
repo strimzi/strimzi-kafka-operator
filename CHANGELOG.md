@@ -2,16 +2,24 @@
 
 ## 0.12.0
 
-* Adding and removing volumes in Jbod Storage
-* Log at the warn level when a custom resource uses deprecated or unknown properties
-* Reduce the number of images needed to run Strimzi to just two: `kafka` and `operator`.
-* Add support for unprivileged users to install the operator with Helm
+* **Drop support for Kubernetes 1.9 and 1.10 and OpenShift 3.9 and 3.10.**
+**Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.** 
+**This was required because the CRD versioning and CRD subresources support.** 
 * Added support for Kafka 2.2.0 and 2.1.1, dropped support for Kafka 2.0.0 and 2.0.1
-* Support off-cluster access using Kubernetes Nginx Ingress
+* Persistent storage improvements
+  * Add resizing of persistent volumes
+  * Allow to specify different storage class for every broker
+  * Adding and removing volumes in Jbod Storage
+* Custom Resources improvements
+  * New CRD version `v1beta1`. See documentation for more information about upgrading from `v1alpha1` to `v1beta1`.
+  * Log at the warn level when a custom resource uses deprecated or unknown properties
+  * Add initial support for the `status` sub-resource in the `Kafka` custom resource 
+* Add support for [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge) for HTTP protocol
+* Reduce the number of container images needed to run Strimzi to just two: `kafka` and `operator`.
+* Add support for unprivileged users to install the operator with Helm
+* Support experimental off-cluster access using Kubernetes Nginx Ingress
 * Add ability to configure Image Pull Secrets for all pods in Cluster Operator
 * Support for SASL PLAIN mechanism in Kafka Connect and Mirror Maker (for use with non-Strimzi Kafka cluster)
-* Add resizing of persistent volumes
-* Allow to specify different storage class for every broker
 
 ## 0.11.0
 
