@@ -177,11 +177,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
-        reconcile(reconcileState).setHandler(res -> {
+        reconcile(reconcileState).setHandler(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
             Condition readyCondition;
 
-            if (res.succeeded())    {
+            if (reconcileResult.succeeded())    {
                 readyCondition = new ConditionBuilder()
                         .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
                         .withNewType("Ready")
@@ -196,7 +196,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             status.setConditions(Collections.singletonList(readyCondition));
-            updateStatus(reconciliation, kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(), status).setHandler(createOrUpdateFuture.completer());
+            reconcileState.updateStatus(status).setHandler(statusResult -> {
+                if (statusResult.succeeded())    {
+                    log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
+                } else {
+                    log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
+                }
+
+                // If both features succeeded, createOrUpdate succeeded as well
+                // If one or both of them failed, we prefer the reconciliation failure as the main error
+                if (reconcileResult.succeeded() && statusResult.succeeded())    {
+                    createOrUpdateFuture.complete();
+                } else if (reconcileResult.failed())    {
+                    createOrUpdateFuture.fail(reconcileResult.cause());
+                } else {
+                    createOrUpdateFuture.fail(statusResult.cause());
+                }
+            });
         });
 
         return createOrUpdateFuture;
@@ -286,46 +302,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new ReconciliationState(reconciliation, kafkaAssembly);
     }
 
-    Future<Void> updateStatus(Reconciliation reconciliation, String namespace, String name, KafkaStatus desiredStatus) {
-        Future<Void> updateStatusFuture = Future.future();
 
-        crdOperator.getAsync(namespace, name).setHandler(getRes -> {
-            if (getRes.succeeded())    {
-                Kafka kafka = getRes.result();
-
-                if (kafka != null) {
-                    KafkaStatus currentStatus = kafka.getStatus();
-
-                    StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                    if (!ksDiff.isEmpty()) {
-                        Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
-
-                        crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
-                            if (updateRes.succeeded())  {
-                                log.debug("{}: Completed status update", reconciliation);
-                                updateStatusFuture.complete();
-                            } else {
-                                log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                updateStatusFuture.fail(updateRes.cause());
-                            }
-                        });
-                    } else {
-                        log.debug("{}: Status did not changed", reconciliation);
-                        updateStatusFuture.complete();
-                    }
-                } else {
-                    log.error("{}: Current Kafka resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka resource not found");
-                }
-            } else {
-                log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
-                updateStatusFuture.fail(getRes.cause());
-            }
-        });
-
-        return updateStatusFuture;
-    }
 
     /**
      * Hold the mutable state during a reconciliation
@@ -376,6 +353,55 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        /**
+         * Updates the Status field of the Kafka CR. It diffs the desired status against the current status and calls
+         * the update only when there is any difference in non-timestamp fields.
+         *
+         * @param desiredStatus The KafkaStatus which should be set
+         *
+         * @return
+         */
+        Future<Void> updateStatus(KafkaStatus desiredStatus) {
+            Future<Void> updateStatusFuture = Future.future();
+
+            crdOperator.getAsync(namespace, name).setHandler(getRes -> {
+                if (getRes.succeeded())    {
+                    Kafka kafka = getRes.result();
+
+                    if (kafka != null) {
+                        KafkaStatus currentStatus = kafka.getStatus();
+
+                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                        if (!ksDiff.isEmpty()) {
+                            Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
+
+                            crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                                if (updateRes.succeeded())  {
+                                    log.debug("{}: Completed status update", reconciliation);
+                                    updateStatusFuture.complete();
+                                } else {
+                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                    updateStatusFuture.fail(updateRes.cause());
+                                }
+                            });
+                        } else {
+                            log.debug("{}: Status did not change", reconciliation);
+                            updateStatusFuture.complete();
+                        }
+                    } else {
+                        log.error("{}: Current Kafka resource not found", reconciliation);
+                        updateStatusFuture.fail("Current Kafka resource not found");
+                    }
+                } else {
+                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
+                    updateStatusFuture.fail(getRes.cause());
+                }
+            });
+
+            return updateStatusFuture;
         }
 
         /**
@@ -1237,17 +1263,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future<ReconciliationState> returnFuture = Future.future();
             Future<ReconcileResult<Service>> serviceFuture = serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService);
 
-            serviceFuture.setHandler(res -> {
-                if (res.succeeded())    {
-                    setPlainAndTlsListenerStatus();
-
-                    returnFuture.complete(this);
-                } else {
-                    returnFuture.fail(res.cause());
-                }
-            });
-
-            return returnFuture;
+            return withVoid(serviceFuture.map(res -> {
+                setPlainAndTlsListenerStatus();
+                return res;
+            }));
         }
 
         Future<ReconciliationState> kafkaHeadlessService() {

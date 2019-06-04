@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -16,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.KubernetesVersion;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -40,6 +42,7 @@ public class KafkaCrdOperatorIT {
     public static final String RESOURCE_NAME = "my-test-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
+    protected static CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
     protected static String namespace;
     protected static String defaultNamespace = "my-test-namespace";
 
@@ -47,6 +50,7 @@ public class KafkaCrdOperatorIT {
     public static void before() {
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
+        kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
 
         log.info("Preparing namespace");
         namespace = client.getNamespace();
@@ -105,6 +109,17 @@ public class KafkaCrdOperatorIT {
                 .build();
     }
 
+    private Future<Void> deleteResource()    {
+        // The resource has to be deleted this was and not using reconcile due to https://github.com/fabric8io/kubernetes-client/pull/1325
+        // Fix this override when project is using fabric8 version > 4.1.1
+        kafkaOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).delete();
+
+        return kafkaOperator.waitFor(namespace, RESOURCE_NAME, 1_000, 60_000, (ignore1, ignore2) -> {
+            Kafka deletion = kafkaOperator.get(namespace, RESOURCE_NAME);
+            return deletion == null;
+        });
+    }
+
     @Test
     public void testUpdateStatus(TestContext context)    {
         log.info("Getting Kubernetes version");
@@ -124,9 +139,6 @@ public class KafkaCrdOperatorIT {
             log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
             return;
         }
-
-        log.info("Creating operator");
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
 
         log.info("Creating resource");
         Async createAsync = context.async();
@@ -169,6 +181,167 @@ public class KafkaCrdOperatorIT {
             }
         });
         updateStatusAsync.awaitSuccess();
+
+        log.info("Deleting resource");
+        Async deleteAsync = context.async();
+        deleteResource().setHandler(res -> {
+            if (res.succeeded()) {
+                deleteAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        deleteAsync.awaitSuccess();
+    }
+
+    /**
+     * Tests what happens when the resource is deleted while updating the status
+     *
+     * @param context
+     */
+    @Test
+    public void testUpdateStatusWhileResourceDeleted(TestContext context)    {
+        log.info("Getting Kubernetes version");
+        Async versionAsync = context.async();
+        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
+            if (pfaRes.succeeded())    {
+                PlatformFeaturesAvailability pfa = pfaRes.result();
+                context.put("pfa", pfa);
+                versionAsync.complete();
+            } else {
+                context.fail(pfaRes.cause());
+            }
+        });
+        versionAsync.awaitSuccess();
+
+        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+            return;
+        }
+
+        log.info("Creating resource");
+        Async createAsync = context.async();
+        kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
+            if (res.succeeded())    {
+                createAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        createAsync.awaitSuccess();
+
+        Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
+                .withNewStatus()
+                .withConditions(new ConditionBuilder()
+                        .withType("Ready")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+        log.info("Deleting resource");
+        Async deleteAsync = context.async();
+        deleteResource().setHandler(res -> {
+            if (res.succeeded()) {
+                deleteAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        deleteAsync.awaitSuccess();
+
+        log.info("Updating resource status");
+        Async updateStatusAsync = context.async();
+        kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
+            context.assertFalse(res.succeeded());
+            updateStatusAsync.complete();
+        });
+        updateStatusAsync.awaitSuccess();
+    }
+
+    /**
+     * Tests what happens when the resource is modifed while updating the status
+     *
+     * @param context
+     */
+    @Test
+    public void testUpdateStatusWhileResourceUpdated(TestContext context)    {
+        log.info("Getting Kubernetes version");
+        Async versionAsync = context.async();
+        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
+            if (pfaRes.succeeded())    {
+                PlatformFeaturesAvailability pfa = pfaRes.result();
+                context.put("pfa", pfa);
+                versionAsync.complete();
+            } else {
+                context.fail(pfaRes.cause());
+            }
+        });
+        versionAsync.awaitSuccess();
+
+        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+            return;
+        }
+
+        log.info("Creating resource");
+        Async createAsync = context.async();
+        kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
+            if (res.succeeded())    {
+                createAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        createAsync.awaitSuccess();
+
+        Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
+                .withNewStatus()
+                .withConditions(new ConditionBuilder()
+                        .withType("Ready")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+        log.info("Updating resource");
+        Kafka updated = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
+                .editSpec()
+                    .editKafka()
+                        .addToConfig("xxx", "yyy")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        //Async updateAsync = context.async();
+        kafkaOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
+        /*kafkaOperator.reconcile(namespace, RESOURCE_NAME, updated).setHandler(res -> {
+            if (res.succeeded())    {
+                updateAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        updateAsync.awaitSuccess();*/
+
+        log.info("Updating resource status");
+        Async updateStatusAsync = context.async();
+        kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
+            context.assertFalse(res.succeeded());
+            updateStatusAsync.complete();
+        });
+        updateStatusAsync.awaitSuccess();
+
+        log.info("Deleting resource");
+        Async deleteAsync = context.async();
+        deleteResource().setHandler(res -> {
+            if (res.succeeded()) {
+                deleteAsync.complete();
+            } else {
+                context.fail(res.cause());
+            }
+        });
+        deleteAsync.awaitSuccess();
     }
 }
 

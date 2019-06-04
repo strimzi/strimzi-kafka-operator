@@ -39,6 +39,7 @@ import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -106,7 +107,7 @@ public class KafkaStatusTest {
     }
 
     @Test
-    public void testStatusAfterSuccessfulReconciliation() throws ParseException {
+    public void testStatusAfterSuccessfulReconciliationWithPreviousFailure() throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -192,7 +193,7 @@ public class KafkaStatusTest {
     }
 
     @Test
-    public void testStatusAfterFailedReconciliation() throws ParseException {
+    public void testStatusAfterFailedReconciliationWithPreviousFailure() throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -210,7 +211,65 @@ public class KafkaStatusTest {
                 config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
-            assertTrue(res.succeeded());
+            assertFalse(res.succeeded());
+
+            assertNotNull(kafkaCaptor.getValue());
+            assertNotNull(kafkaCaptor.getValue().getStatus());
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+
+            assertEquals(1, status.getListeners().size());
+            assertEquals("plain", status.getListeners().get(0).getType());
+            assertEquals("my-service.my-namespace.svc", status.getListeners().get(0).getAddresses().get(0).getHost());
+            assertEquals(new Integer(9092), status.getListeners().get(0).getAddresses().get(0).getPort());
+
+            assertEquals(1, status.getConditions().size());
+            assertEquals("NotReady", status.getConditions().get(0).getType());
+            assertEquals("True", status.getConditions().get(0).getStatus());
+        });
+    }
+
+    @Test
+    public void testStatusAfterFailedReconciliationWithPreviousSuccess() throws ParseException {
+        Kafka kafka = getKafkaCrd();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the Kafka Operator
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+
+        Kafka readyKafka = new KafkaBuilder(kafka)
+                .editStatus()
+                    .editCondition(0)
+                        .withType("Ready")
+                    .endCondition()
+                    .withListeners(new ListenerStatusBuilder()
+                                    .withNewType("plain")
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost("my-service.my-namespace.svc")
+                                            .withPort(9092)
+                                            .build())
+                                    .build(),
+                            new ListenerStatusBuilder()
+                                    .withNewType("external")
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost("my-route-address.domain.tld")
+                                            .withPort(443)
+                                            .build())
+                                    .build())
+                .endStatus()
+                .build();
+
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(readyKafka));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                supplier,
+                config);
+
+        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+            assertFalse(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());
             assertNotNull(kafkaCaptor.getValue().getStatus());
