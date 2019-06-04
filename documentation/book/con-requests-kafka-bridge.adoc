@@ -21,12 +21,23 @@ Use the following information to help you submit valid requests to the Kafka Bri
 
 === Content Type headers
 
-API request and response bodies are always encoded as JSON. Therefore, when sending a `POST` request to a resource, you must provide the following JSON `Content-Type` header, which is specific to Kafka:
+API request and response bodies are always encoded as JSON. 
 
+* When performing consumer operations, `POST` requests must provide the following `Content-Type` header:
++
 [source,http,subs=+quotes]
 ----
 Content-Type: application/vnd.kafka.v2+json
 ----
+
+* When performing producer operations, `POST` requests must provide the following `Content-Type` header specifying the *embedded data format* of the consumer, either `json` or `binary`:
++ 
+[source,http,subs=+quotes]
+----
+Content-Type: application/vnd.kafka._embedded-data-format_.v2+json
+----
+
+For more information on the embedded data format, see the next section.
 
 === Embedded data format
 
@@ -43,7 +54,7 @@ When creating a consumer by making a `POST` request to the `/consumers/{groupid}
 
 This is referred to as the **embedded data format**. The embedded data format of a consumer must match the data format of the Kafka messages to be consumed. 
 
-For an embedded data format of `binary`, subsequent producer requests must provide the binary data as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/{topicname}` endpoint, the `POST` request body must specify the `value` of a binary message as Base64:
+For an embedded data format of `binary`, subsequent producer requests must provide the binary data as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/{topicname}` endpoint, the `POST` request body must specify the `value` of a binary message as shown:
 
 [source,json,subs=attributes+]
 ----
@@ -57,7 +68,7 @@ For an embedded data format of `binary`, subsequent producer requests must provi
 }
 ----
 
-In producer requests, make sure you provide a `Content-Type` header that corresponds to the embedded data format of the consumer that will consume the messages. 
+Producer requests must provide a `Content-Type` header (for example, `Content-Type: application/vnd.kafka.binary.v2+json`) that corresponds to the embedded data format of the consumer that will consume the messages. 
 
 === Accept headers
 
@@ -65,16 +76,16 @@ After creating a consumer, all subsequent requests must provide an `Accept` head
 
 [source,http,subs=+quotes]
 ----
-Accept: application/vnd._embedded-data-format_.kafka.v2+json
+Accept: application/vnd.kafka._embedded-data-format_.v2+json
 ----
 
-Where the `embedded-data-format` is the embedded data format of the consumer: `json` or `binary`. The `+json` query parameter is not changed. 
+Where the `embedded-data-format` is the embedded data format of the consumer: either `json` or `binary`. The `+json` query parameter is not changed. 
 
 For example, when committing a list of consumer offsets for a consumer that has an embedded data format of JSON, include this Accept header:
 
 [source,http,subs=+quotes]
 ----
-Accept: application/vnd.json.kafka.v2+json
+Accept: application/vnd.kafka.json.v2+json
 ----
 
 == API version
