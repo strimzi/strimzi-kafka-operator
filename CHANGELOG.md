@@ -5,7 +5,7 @@
 * **Drop support for Kubernetes 1.9 and 1.10 and OpenShift 3.9 and 3.10.**
 **Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.** 
 **This was required because the CRD versioning and CRD subresources support.** 
-* Support for Kafka 2.2.0
+* Added support for Kafka 2.2.0 and 2.1.1, dropped support for Kafka 2.0.0 and 2.0.1
 * Persistent storage improvements
   * Add resizing of persistent volumes
   * Allow to specify different storage class for every broker
