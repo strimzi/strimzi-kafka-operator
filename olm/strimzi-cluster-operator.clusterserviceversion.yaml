@@ -5,7 +5,7 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: |-
-      [{"apiVersion":"kafka.strimzi.io/v1beta1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"version":"2.1.1","replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaMirrorMaker","metadata":{"name":"my-mirror-maker"},"spec":{"version":"2.1.1","replicas":1,"consumer":{"bootstrapServers":"my-source-cluster-kafka-bootstrap:9092","groupId":"my-source-group-id"},"producer":{"bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"},"whitelist":".*"}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
+      [{"apiVersion":"kafka.strimzi.io/v1beta1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"version":"2.1.1","replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaMirrorMaker","metadata":{"name":"my-mirror-maker"},"spec":{"version":"2.1.1","replicas":1,"consumer":{"bootstrapServers":"my-source-cluster-kafka-bootstrap:9092","groupId":"my-source-group-id"},"producer":{"bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"},"whitelist":".*"}},{"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaBridge","metadata":{"name":"my-bridge"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9092","http":{"port":8080}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
     categories: "Streaming & Messaging"
     certified: "false"
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
@@ -150,6 +150,7 @@ spec:
           - kafkaconnects
           - kafkaconnects2is
           - kafkamirrormakers
+          - kafkabridges
           verbs:
           - get
           - list
@@ -493,6 +494,8 @@ spec:
                   value: strimzi/kafka:latest-kafka-2.2.1
                 - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
                   value: strimzi/kafka:latest-kafka-2.2.1
+                - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+                  value: strimzi/kafka-bridge:latest
                 - name: STRIMZI_CREATE_CLUSTER_ROLES
                   value: "TRUE"
                 - name: STRIMZI_LOG_LEVEL
@@ -521,32 +524,37 @@ spec:
   customresourcedefinitions:
     owned:
     - name: kafkas.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: Kafka
       displayName: Kafka
       description: Represents a Kafka cluster
     - name: kafkatopics.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: KafkaTopic
       displayName: Kafka Topic
       description: Represents a topic inside a Kafka cluster
     - name: kafkausers.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: KafkaUser
       displayName: Kafka User
       description: Represents a user inside a Kafka cluster
     - name: kafkaconnects.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: KafkaConnect
       displayName: Kafka Connect
       description: Represents a Kafka Connect cluster
     - name: kafkaconnects2is.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: KafkaConnectS2I
       displayName: Kafka Connect Source to Image
       description: Represents a Kafka Connect cluster with Source 2 Image support
     - name: kafkamirrormakers.kafka.strimzi.io
-      version: v1alpha1
+      version: v1beta1
       kind: KafkaMirrorMaker
       displayName: Kafka Mirror Maker
       description: Represents a Kafka MirrorMaker cluster
+    - name: kafkabridges.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaBridge
+      displayName: Kafka Bridge
+      description: Represents a Kafka Bridge cluster
