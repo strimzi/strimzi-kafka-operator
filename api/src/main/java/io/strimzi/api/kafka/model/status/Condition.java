@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -22,6 +23,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({ "type", "status", "lastTransitionTime", "reason" })
 @EqualsAndHashCode
 public class Condition implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

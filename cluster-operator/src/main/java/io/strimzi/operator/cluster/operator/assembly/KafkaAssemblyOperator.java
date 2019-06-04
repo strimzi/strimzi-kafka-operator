@@ -1413,7 +1413,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 ServiceSpec ss = serviceOperations.get(namespace, serviceName).getSpec();
                                 Integer nodePort = ss.getPorts().get(0).getNodePort();
 
-                                // TODO: This is not the righ address for node ports
                                 setExternalListenerStatus(new ListenerAddressBuilder()
                                         .withHost("<AnyNodeAddress>")
                                         .withPort(nodePort)
