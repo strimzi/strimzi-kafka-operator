@@ -20,7 +20,6 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `sasl.`
 * `security.`
 * `bootstrap.servers`
-* `group.id`
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
 When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
