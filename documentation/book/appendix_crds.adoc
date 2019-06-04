@@ -1052,13 +1052,13 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 [options="header"]
 |====
 |Property                   |Description
-|lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
-|string
-|reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
+|type                1.2+<.<|The unique identifier of a condition, used to distinguish between other conditions in the resource.
 |string
 |status              1.2+<.<|The status of the condition, one of True, False, Unknown.
 |string
-|type                1.2+<.<|The unique identifier of a condition, used to distinguish between other conditions in the resource.
+|lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+|string
+|reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
 |string
 |====
 
