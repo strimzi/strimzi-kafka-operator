@@ -14,6 +14,8 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.KubernetesVersion;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -105,6 +107,24 @@ public class KafkaCrdOperatorIT {
 
     @Test
     public void testUpdateStatus(TestContext context)    {
+        log.info("Getting Kubernetes version");
+        Async versionAsync = context.async();
+        PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
+            if (pfaRes.succeeded())    {
+                PlatformFeaturesAvailability pfa = pfaRes.result();
+                context.put("pfa", pfa);
+                versionAsync.complete();
+            } else {
+                context.fail(pfaRes.cause());
+            }
+        });
+        versionAsync.awaitSuccess();
+
+        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+            return;
+        }
+
         log.info("Creating operator");
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
 
@@ -115,17 +135,16 @@ public class KafkaCrdOperatorIT {
                 createAsync.complete();
             } else {
                 context.fail(res.cause());
-                createAsync.complete();
             }
         });
         createAsync.awaitSuccess();
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
-                    .withConditions(new ConditionBuilder()
-                            .withType("Ready")
-                            .withStatus("True")
-                            .build())
+                .withConditions(new ConditionBuilder()
+                        .withType("Ready")
+                        .withStatus("True")
+                        .build())
                 .endStatus()
                 .build();
 
@@ -143,7 +162,6 @@ public class KafkaCrdOperatorIT {
                         updateStatusAsync.complete();
                     } else {
                         context.fail(res.cause());
-                        updateStatusAsync.complete();
                     }
                 });
             } else {

@@ -20,7 +20,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;

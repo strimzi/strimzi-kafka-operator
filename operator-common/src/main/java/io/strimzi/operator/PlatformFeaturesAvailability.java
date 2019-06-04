@@ -2,11 +2,10 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster;
+package io.strimzi.operator;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
-import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
