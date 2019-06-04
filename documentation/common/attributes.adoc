@@ -50,6 +50,7 @@
 :K8sPersistentVolumeClaims: link:https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/[Persistent Volume Claims^]
 :K8sLocalPersistentVolumes: link:https://kubernetes.io/docs/concepts/storage/volumes/#local[Local persistent volumes^]
 :K8SStorageClass: link:https://kubernetes.io/docs/concepts/storage/storage-classes/[Storage Class^]
+:KBSJsonPath: link:https://kubernetes.io/docs/reference/kubectl/jsonpath/[JSONPath support^]
 :K8sMeaningOfCpu: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu[Meaning of CPU^]
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]

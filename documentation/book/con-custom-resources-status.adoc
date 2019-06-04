@@ -11,7 +11,7 @@ Status information is useful for tracking progress related to a resource achievi
 
 NOTE: The status field is different from the spec field, which describes the _desired_ state of an object.
 
-{ProductName} creates and maintains the status of custom resources. Periodically, {ProductName} evaluates the current state of the custom resource and updates the status of that resource accordingly.
+{ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
 
 Here we see the `status` property specified for a Kafka custom resource.
 
@@ -42,4 +42,5 @@ status:
 <2> The `listeners` describe the current Kafka bootstrap addresses by type.
 <3> The `ready` field indicates whether the resource has been successfully reconciled (approved for traffic by the cluster operator).
 
-You can access status information for a resource from the command line. For more information, see
+.Accessing status information
+You can access status information for a resource from the command line. For more information, see xref:proc-accessing-resource-status-{context}[].
