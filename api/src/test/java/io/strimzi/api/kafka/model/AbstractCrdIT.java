@@ -18,9 +18,8 @@ public abstract class AbstractCrdIT extends BaseITST {
 
     protected void assumeKube1_11Plus() {
         VersionInfo version = new DefaultKubernetesClient().getVersion();
-        String minor = version.getMinor();
         Assume.assumeTrue("1".equals(version.getMajor())
-                && Integer.parseInt(minor.substring(0, minor.indexOf('+'))) >= 11);
+                && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 11);
     }
 
     protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
