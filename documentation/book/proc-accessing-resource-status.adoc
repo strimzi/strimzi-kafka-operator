@@ -9,21 +9,20 @@ This procedure describes how to find the status of a custom resource.
 
 .Prerequisites
 
-* An {OpenShiftName} cluster
+* An {ProductPlatformName} cluster
 * A running Cluster Operator
 
 .Procedure
 
-. Specify the custom resource in a standard JSONPath expression to filter on the `status` property:
+* Specify the custom resource and use `-o jsonpath` option to apply a standard JSONPath expression to select the `status` property:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} get kafka _kafka_resource_name_ -o jsonpath=”{.status}
+{cmdcli} get kafka _<kafka_resource_name>_ -o jsonpath='{.status}'
 ----
 +
-This expression returns all the status information. You can use dot notation, such as `status.listeners`, to fine-tune the status information you wish to see.
-+
-NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a ready state.
+This expression returns all the status information for the specified custom resource. You can use dot notation, such as `status.listeners`, to fine-tune the status information you wish to see.
 
 .Additional resources
+* xref:con-custom-resources-status-{context}[]
 * For more information about using JSONPath, see {KBSJsonPath}.

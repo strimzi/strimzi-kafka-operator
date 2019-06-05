@@ -3,15 +3,16 @@
 // assembly-custom-resources.adoc
 
 [id='con-custom-resources-status-{context}']
+
 = {ProductName} custom resource status
 
-The `status` property of a {ProductName}-specific custom resource is configured to capture the _current_ state of the resource and make that information available.
+The `status` property of a {ProductName}-specific custom resource publishes the _current_ state of the resource to users and tools that need the information.
 
-Status information is useful for tracking progress related to a resource achieving its _desired_ state, providing the time and reason the state of the resource changed and details of events causing delays.
-
-NOTE: The status field is different from the spec field, which describes the _desired_ state of an object.
+Status information is useful for tracking progress related to a resource achieving its _desired_ state, as defined by the `spec` property. The `status` provides the time and reason the state of the resource changed and details of events preventing or delaying the Operator from realizing the desired state.
 
 {ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
+
+IMPORTANT: The status property feature for {ProductName}-specific custom resources is still under development and only available for Kafka resources.
 
 Here we see the `status` property specified for a Kafka custom resource.
 
@@ -25,22 +26,31 @@ spec:
   # ...
 status:
   conditions: <1>
-  listeners: <2>
-    plain:
-      host: my-cluster-kafka-bootstrap.myproject.svc
+  - lastTransitionTime: 2019-06-02T23:46:57+0000
+    status: "True"
+    type: Ready <2>
+  listeners: <3>
+  - addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
       port: 9092
-    tls:
-      host: my-cluster-kafka-bootstrap.myproject.svc
+    type: plain
+  - addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
       port: 9093
-    external::
-      host: my-cluster-kafka-external-bootstrap.myproject.svc
-      Port: 9094
-    ready: true <3>
+    type: tls
+  - addresses:
+    - host: 172.29.49.180
+      port: 9094
+    type: external
     # ...
 ----
 <1> Status `conditions` describe criteria related to the status that cannot be deduced from the existing resource information, or are specific to the instance of a resource.
-<2> The `listeners` describe the current Kafka bootstrap addresses by type.
-<3> The `ready` field indicates whether the resource has been successfully reconciled (approved for traffic by the cluster operator).
+<2> The `Ready` condition indicates whether the Cluster Operator currently considers the Kafka cluster able to handle traffic.
+<3> The `listeners` describe the current Kafka bootstrap addresses by type.
++
+IMPORTANT: The status for `external` listeners is still under development and does not provide a specific IP address.
+
+NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a ready state.
 
 .Accessing status information
 You can access status information for a resource from the command line. For more information, see xref:proc-accessing-resource-status-{context}[].
