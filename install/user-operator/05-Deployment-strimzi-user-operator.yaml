@@ -15,6 +15,8 @@ spec:
       containers:
         - name: strimzi-user-operator
           image: strimzi/user-operator:0.12.0-rc1
+          args:
+          - /opt/strimzi/bin/user_operator_run.sh
           env:
             - name: STRIMZI_NAMESPACE
               valueFrom:
