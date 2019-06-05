@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-topic-operator
       containers:
         - name: strimzi-topic-operator
-          image: strimzi/topic-operator:latest
+          image: strimzi/topic-operator:0.12.0-rc1
           env:
             - name: STRIMZI_RESOURCE_LABELS
               value: "strimzi.io/cluster=my-cluster"
