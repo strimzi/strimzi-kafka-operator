@@ -31,11 +31,11 @@ spec:
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
           value: strimzi/kafka:0.12.0-rc1-kafka-2.2.1
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-          value: strimzi/kafka:0.12.0-rc1
+          value: strimzi/kafka:0.12.0-rc1-kafka-2.2.1
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-          value: strimzi/kafka:0.12.0-rc1
+          value: strimzi/kafka:0.12.0-rc1-kafka-2.2.1
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-          value: strimzi/kafka:0.12.0-rc1
+          value: strimzi/kafka:0.12.0-rc1-kafka-2.2.1
         - name: STRIMZI_KAFKA_IMAGES
           value: |
             2.1.0=strimzi/kafka:0.12.0-rc1-kafka-2.1.0
