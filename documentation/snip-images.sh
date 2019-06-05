@@ -35,7 +35,7 @@ a|
 * {DockerOrg}/operator:{DockerTag}
 
 a|
-AMQ Streams image for running the operators:
+{ProductName} image for running the operators:
 
 * Cluster Operator
 * Topic Operator
