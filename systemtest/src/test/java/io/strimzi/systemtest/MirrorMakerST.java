@@ -294,7 +294,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        Service service = getSystemtestsServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT);
+        Service service = getSystemtestsServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT).build();
         testMethodResources.createServiceResource(service, NAMESPACE).done();
         testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
