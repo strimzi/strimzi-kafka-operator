@@ -3,6 +3,7 @@
 // getting-started.adoc
 
 [id='container-images-{context}']
+
 = Container images
 
 Container images for {ProductName} are available in the {DockerRepository}.

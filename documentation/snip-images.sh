@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Generates documentation/book/ref-kafka-versions.adoc
+# Generates documentation/book/snip-images.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
