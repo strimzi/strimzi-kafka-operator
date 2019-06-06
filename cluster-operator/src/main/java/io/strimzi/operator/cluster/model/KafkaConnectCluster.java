@@ -90,8 +90,8 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM = "KAFKA_CONNECT_SASL_MECHANISM";
 
     protected String bootstrapServers;
-    protected List<ExternalConfigurationEnv> externalEnvs = Collections.EMPTY_LIST;
-    protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.EMPTY_LIST;
+    protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
+    protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
 
     private KafkaConnectTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
@@ -251,6 +251,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return kafkaConnect;
     }
 
+    @SuppressWarnings("deprecation")
     private static <C extends KafkaConnectCluster> List<Toleration> tolerations(KafkaConnectSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null
@@ -264,6 +265,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static <C extends KafkaConnectCluster> Affinity affinity(KafkaConnectSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null

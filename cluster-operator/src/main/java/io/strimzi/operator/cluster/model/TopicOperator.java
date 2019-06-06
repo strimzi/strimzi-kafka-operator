@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 
@@ -42,6 +41,7 @@ import static java.util.Collections.singletonList;
  * Represents the topic operator deployment
  */
 @Deprecated
+@SuppressWarnings("deprecation")
 public class TopicOperator extends AbstractModel {
 
     protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
@@ -73,7 +73,7 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
     public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -96,7 +96,7 @@ public class TopicOperator extends AbstractModel {
 
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
-        this.replicas = TopicOperatorSpec.DEFAULT_REPLICAS;
+        this.replicas = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
@@ -106,10 +106,10 @@ public class TopicOperator extends AbstractModel {
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
-        this.reconciliationIntervalMs = TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
-        this.zookeeperSessionTimeoutMs = TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
+        this.reconciliationIntervalMs = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
+        this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
-        this.topicMetadataMaxAttempts = TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+        this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
@@ -191,11 +191,11 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return KafkaCluster.serviceName(cluster) + ":" + TopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
@@ -222,7 +222,7 @@ public class TopicOperator extends AbstractModel {
                     namespace,
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-            TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+            io.strimzi.api.kafka.model.TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 
             result.setOwnerReference(kafkaAssembly);
             String image = tcConfig.getImage();
@@ -315,7 +315,7 @@ public class TopicOperator extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));

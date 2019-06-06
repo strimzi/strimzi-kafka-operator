@@ -304,7 +304,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     }
                 });
                 future.complete(watch);
-            }, result.completer()
+            }, result
         );
         return result;
     }

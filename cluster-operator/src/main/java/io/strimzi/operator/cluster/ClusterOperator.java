@@ -4,9 +4,13 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
@@ -43,7 +47,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final String namespace;
     private final long reconciliationInterval;
 
-    private final Map<String, Watch> watchByKind = new ConcurrentHashMap();
+    private final Map<String, Watch> watchByKind = new ConcurrentHashMap<>();
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -71,7 +75,12 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
     }
 
-    Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator op) {
+    <C extends KubernetesClient,
+            T extends HasMetadata,
+            L extends KubernetesResourceList/*<T>*/,
+            D extends Doneable<T>,
+            R extends Resource<T, D>>
+        Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator<C, T, L, D, R> op) {
         Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
             @Override
             public void accept(KubernetesClientException e) {

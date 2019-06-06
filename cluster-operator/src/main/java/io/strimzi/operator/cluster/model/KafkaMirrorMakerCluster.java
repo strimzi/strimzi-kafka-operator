@@ -231,6 +231,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return kafkaMirrorMakerCluster;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(KafkaMirrorMakerSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null
@@ -244,6 +245,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(KafkaMirrorMakerSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null

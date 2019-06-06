@@ -43,6 +43,7 @@ public class Crds {
 
     public static final String CRD_KIND = "CustomResourceDefinition";
 
+    @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
         Kafka.class,
         KafkaConnect.class,
@@ -281,6 +282,7 @@ public class Crds {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends CustomResource> List<String> apiVersions(Class<T> cls) {
         try {
             String group = (String) cls.getField("RESOURCE_GROUP").get(null);

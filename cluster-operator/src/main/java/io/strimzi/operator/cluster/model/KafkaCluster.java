@@ -481,6 +481,7 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(KafkaClusterSpec kafkaClusterSpec) {
         if (kafkaClusterSpec.getTemplate() != null
                 && kafkaClusterSpec.getTemplate().getPod() != null
@@ -494,6 +495,7 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(KafkaClusterSpec kafkaClusterSpec) {
         if (kafkaClusterSpec.getTemplate() != null
                 && kafkaClusterSpec.getTemplate().getPod() != null
