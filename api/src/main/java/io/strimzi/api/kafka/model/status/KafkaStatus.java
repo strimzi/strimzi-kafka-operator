@@ -21,7 +21,7 @@ import java.util.List;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "listeners" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners" })
 @EqualsAndHashCode
 public class KafkaStatus extends Status {
     private static final long serialVersionUID = 1L;

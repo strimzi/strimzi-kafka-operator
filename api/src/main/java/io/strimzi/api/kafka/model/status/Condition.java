@@ -23,13 +23,14 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "status", "lastTransitionTime", "reason" })
+@JsonPropertyOrder({ "type", "status", "lastTransitionTime", "reason", "message" })
 @EqualsAndHashCode
 public class Condition implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String status;
     private String reason;
+    private String message;
     private String type;
     private String lastTransitionTime;
     private Map<String, Object> additionalProperties;
@@ -71,8 +72,14 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.lastTransitionTime = lastTransitionTime;
     }
 
-    public void setAdditionalProperties(Map<String, Object> additionalProperties) {
-        this.additionalProperties = additionalProperties;
+    @Description("Human-readable message indicating details about last transition.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     @Override

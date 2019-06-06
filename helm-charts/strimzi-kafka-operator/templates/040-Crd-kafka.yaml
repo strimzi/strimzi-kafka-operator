@@ -2939,6 +2939,10 @@ spec:
                     type: string
                   reason:
                     type: string
+                  message:
+                    type: string
+            observedGeneration:
+              type: integer
             listeners:
               type: array
               items:

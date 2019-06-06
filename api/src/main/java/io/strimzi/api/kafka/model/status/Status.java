@@ -29,6 +29,7 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 public abstract class Status implements UnknownPropertyPreserving, Serializable {
     private List<Condition> conditions;
+    private long observedGeneration;
     private Map<String, Object> additionalProperties;
 
     @Description("List of status conditions")
@@ -38,6 +39,16 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
 
     public void setConditions(List<Condition> conditions) {
         this.conditions = conditions;
+    }
+
+    @Description("The generation of the CRD which was last reconciled by the operator.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public long getObservedGeneration() {
+        return observedGeneration;
+    }
+
+    public void setObservedGeneration(long observedGeneration) {
+        this.observedGeneration = observedGeneration;
     }
 
     @Override

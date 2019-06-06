@@ -1036,10 +1036,12 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Property           |Description
-|conditions  1.2+<.<|List of status conditions.
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|listeners   1.2+<.<|Addresses of the internal and external listeners.
+|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|integer
+|listeners           1.2+<.<|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
 |====
 
@@ -1059,6 +1061,8 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
 |string
 |reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
+|string
+|message             1.2+<.<|Human-readable message indicating details about last transition.
 |string
 |====
 
