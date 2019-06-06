@@ -3,7 +3,7 @@ PROJECT_NAME=operator
 clean:
 	rm -rf lib
 	rm -rf tmp
-	rm .*.tmp
+	rm -f .*.tmp
 
 .topic-operator.tmp: ../../topic-operator/target/*-dist.zip
 	test -d tmp || mkdir tmp
