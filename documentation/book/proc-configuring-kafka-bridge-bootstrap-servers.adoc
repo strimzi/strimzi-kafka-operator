@@ -20,7 +20,7 @@ For example:
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   bootstrapServers: my-cluster-kafka-bootstrap:9092

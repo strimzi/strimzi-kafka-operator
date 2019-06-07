@@ -15,7 +15,7 @@ The certificates must be stored in X509 format.
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   tls:
@@ -35,7 +35,7 @@ When multiple certificates are stored in the same secret, it can be listed multi
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   tls:

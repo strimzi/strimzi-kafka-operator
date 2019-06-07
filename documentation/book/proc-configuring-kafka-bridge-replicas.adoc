@@ -22,7 +22,7 @@ For example:
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   replicas: 3
