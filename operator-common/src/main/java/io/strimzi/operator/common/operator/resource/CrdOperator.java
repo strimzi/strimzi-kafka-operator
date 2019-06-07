@@ -61,6 +61,7 @@ public class CrdOperator<C extends KubernetesClient,
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             try {
+
                 OkHttpClient client = this.client.adapt(OkHttpClient.class);
                 RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
 
@@ -82,6 +83,7 @@ public class CrdOperator<C extends KubernetesClient,
                                 && status.getDetails().getCauses() != null
                                 && status.getDetails().getCauses().size() > 0
                                 && status.getDetails().getCauses().stream().filter(cause -> "FieldValueInvalid".equals(cause.getReason()) && "apiVersion".equals(cause.getField())).findAny().orElse(null) != null)  {
+                            log.debug("Got semi-expected {} status code {}: {}", method, code, status);
                             log.warn("Cannot update status of resource {} named {}. The resource needs to be updated to newer apiVersion first.", resource.getKind(), resource.getMetadata().getName());
                         } else {
                             log.debug("Got unexpected {} status code {}: {}", method, code, status);
