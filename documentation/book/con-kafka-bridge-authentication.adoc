@@ -29,7 +29,7 @@ For more details about TLS configuration in Kafka Bridge see xref:assembly-kafka
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   authentication:
@@ -57,7 +57,7 @@ IMPORTANT: Do not specify the actual password in the `password` field.
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   authentication:
@@ -88,7 +88,7 @@ IMPORTANT: Do not specify the actual password in the `password` field.
 apiVersion: {KafkaApiVersionPrev}
 kind: KafkaBridge
 metadata:
-  name: my-cluster
+  name: my-bridge
 spec:
   # ...
   authentication:

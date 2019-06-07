@@ -40,8 +40,8 @@ spec:
   # ...
   tls:
 	trustedCertificates:
-	  - secretName: my-cluster-cluster-cert
-	    certificate: ca.crt
+	- secretName: my-cluster-cluster-cert
+	  certificate: ca.crt
   # ...
 ----
 +
