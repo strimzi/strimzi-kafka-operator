@@ -1,8 +1,0 @@
-// Module included in the following assemblies:
-//
-// assembly-using-the-kafka-bridge.adoc
-
-[id='proc-deploying-kafka-bridge{context}']
-= Deploying the {ProductName} Kafka Bridge to {ProductPlatformName}
-
-Content goes here.
