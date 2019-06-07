@@ -6,10 +6,10 @@ package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
@@ -77,9 +77,9 @@ public class CrdOperator<C extends KubernetesClient,
                     final int code = response.code();
 
                     if (code != 200) {
-                        log.debug("Got unexpected {} status code {}: {}", method, code, response.message());
-                        throw new KubernetesClientException("Got unexpected " + method + " status code " + code + ": " + response.message(),
-                                code, OperationSupport.createStatus(response));
+                        Status status = OperationSupport.createStatus(response);
+                        log.debug("Got unexpected {} status code {}: {}", method, code, status);
+                        throw OperationSupport.requestFailure(request, status);
                     }
                 } catch (Exception e) {
                     throw e;
