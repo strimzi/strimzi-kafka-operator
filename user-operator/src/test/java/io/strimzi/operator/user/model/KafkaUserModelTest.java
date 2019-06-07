@@ -230,7 +230,7 @@ public class KafkaUserModelTest {
         // 64 characters => Should be still OK
         KafkaUser notTooLong = new KafkaUserBuilder(tlsUser)
                 .editMetadata()
-                .withName("User123456789012345678901234567890123456789012345678901234567890")
+                    .withName("User123456789012345678901234567890123456789012345678901234567890")
                 .endMetadata()
                 .build();
 
@@ -242,7 +242,7 @@ public class KafkaUserModelTest {
         // 65 characters => should work with SCRAM-SHA-512
         KafkaUser tooLong = new KafkaUserBuilder(scramShaUser)
                 .editMetadata()
-                .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
                 .endMetadata()
                 .build();
 

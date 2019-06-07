@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 
 public interface CertManager {
-
     /**
      * Generate a self-signed certificate
      *
