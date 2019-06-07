@@ -13,15 +13,15 @@ Authentication and encryption between external clients and the Kafka Bridge is n
 
 * Sent without authentication
 
-Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. Additionally, you can configure a TLS encrypted connection between the Kafka Bridge and your Kafka cluster. For more information, see xref:con-kafka-bridge-authentication{context}[]. 
+Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. Additionally, you can configure a TLS-encrypted connection between the Kafka Bridge and your Kafka cluster. For more information, see xref:con-kafka-bridge-authentication-{context}[]. 
 
 == Data formats and headers
 
-Use the following information to help you submit valid requests to the Kafka Bridge. 
+Specify data formats and HTTP headers to ensure valid requests are submitted to the Kafka Bridge. 
 
 === Content Type headers
 
-API request and response bodies are always encoded as JSON. 
+API request and response bodies are always encoded as JSON.
 
 * When performing consumer operations, `POST` requests must provide the following `Content-Type` header:
 +
@@ -30,38 +30,44 @@ API request and response bodies are always encoded as JSON.
 Content-Type: application/vnd.kafka.v2+json
 ----
 
-* When performing producer operations, `POST` requests must provide the following `Content-Type` header specifying the desired *embedded data format*, either `json` or `binary`:
+* When performing producer operations, `POST` requests must provide `Content-Type` headers specifying the desired _embedded data format_, either `json` or `binary`, as shown in the following table.
 +
-.Example of JSON embedded data format
-[source,http,subs=+quotes]
-----
-Content-Type: application/vnd.kafka.json.v2+json
-----
-+
-.Example of binary embedded data format
-[source,http,subs=+quotes]
-----
-Content-Type: application/vnd.kafka.binary.v2+json
-----
+[%autowidth,cols="2*",options="header",stripes="none",separator=¦]
+|===
 
-For more information on the embedded data format, see the next section.
+¦Embedded data format
+¦Content-Type header
+
+¦JSON
+m¦Content-Type: application/vnd.kafka.json.v2+json
+
+¦Binary
+m¦Content-Type: application/vnd.kafka.binary.v2+json
+
+|===
+
+You set the embedded data format when creating a consumer using the `consumers/_groupid_` endpoint--for more information, see the next section.
 
 === Embedded data format
 
-When creating a consumer by making a `POST` request to the `/consumers/{groupid}` endpoint, you must specify a data format of either JSON or binary. This is specified in the `format` field of the request body, for example:
+The embedded data format is the format of the Kafka messages that are transmitted, over HTTP, from a producer to a consumer using the Kafka Bridge. Two embedded data formats are supported: JSON and binary.
+
+When creating a consumer using the `/consumers/_groupid_` endpoint, the `POST` request body must specify an embedded data format of either JSON or binary. This is specified in the `format` field, for example:
 
 [source,json,subs=attributes+]
 ----
 {
   "name": "my-consumer",
-  "format": "binary",
+  "format": "binary", <1>
 ...
 }
 ----
 
-This is referred to as the **embedded data format**. The embedded data format specified when creating a consumer must match the data format of the Kafka messages it will consume. 
+<1> A binary embedded data format.
 
-For an embedded data format of `binary`, subsequent producer requests must provide the binary data as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/{topicname}` endpoint, the `POST` request body must specify the `value` of a binary message as shown:
+The embedded data format specified when creating a consumer must match the data format of the Kafka messages it will consume. 
+
+If you choose to specify a binary embedded data format, subsequent producer requests must provide the binary data in the request body as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/_topicname_` endpoint, the `value` must be in Base64:
 
 [source,json,subs=attributes+]
 ----
@@ -75,7 +81,7 @@ For an embedded data format of `binary`, subsequent producer requests must provi
 }
 ----
 
-Producer requests must provide a `Content-Type` header (for example, `Content-Type: application/vnd.kafka.binary.v2+json`) that corresponds to the embedded data format of the consumer that will consume the messages. 
+Producer requests must also provide a `Content-Type` header that corresponds to the embedded data format, for example, `Content-Type: application/vnd.kafka.binary.v2+json`.
 
 === Accept headers
 
@@ -86,22 +92,11 @@ After creating a consumer, all subsequent GET requests must provide an `Accept` 
 Accept: application/vnd.kafka._embedded-data-format_.v2+json
 ----
 
-Where the `embedded-data-format` is the embedded data format of the consumer: either `json` or `binary`. The `+json` query parameter is not changed. 
+The `embedded-data-format` is either `json` or `binary`. The query parameter is always `+json` regardless of the embedded data format.
 
-For example, when retrieving records for a subscribed consumer that has an embedded data format of JSON, include this Accept header:
+For example, when retrieving records for a subscribed consumer using an embedded data format of JSON, include this Accept header:
 
 [source,http,subs=+quotes]
 ----
 Accept: application/vnd.kafka.json.v2+json
 ----
-
-== API version
-
-Using v2.
-
-application/vnd.kafka.[embedded_format].[api_version]+[serialization_format]
-
-
-== HTTP Verbs
-
-The quick brown fox.

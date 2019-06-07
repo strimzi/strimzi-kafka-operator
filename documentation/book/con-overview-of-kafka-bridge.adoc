@@ -3,11 +3,12 @@
 // assembly-using-the-kafka-bridge.adoc
 
 [id='con-overview-of-kafka-bridge-{context}']
+
 = Overview of the {ProductName} Kafka Bridge
 
-The {ProductName} Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster running on {ProductPlatformName}. The API enables these clients to produce and consume messages without the requirement to use the native Kafka protocol.
+The {ProductName} Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster running on {ProductPlatformName}. The API enables such clients to produce and consume messages without the requirement to use the native Kafka protocol.
 
-The API consists of two resources -- `consumers` and `topics` -- that together provide several endpoints to interact with consumers and producers in your Kafka cluster. You can: 
+The API has two resources -- `consumers` and `topics` -- that provide endpoints to interact with consumers and producers in your Kafka cluster. You can: 
 
 * Send messages to a topic.
 
@@ -25,18 +26,6 @@ The API consists of two resources -- `consumers` and `topics` -- that together p
 
 * Seek on a partition, so that a consumer starts receiving messages from the first or last offset position, or a given offset position.
 
-Similar to a Kafka Connect cluster, you can choose to deploy the Kafka Bridge into your {ProductPlatformName} cluster using the Cluster Operator. For deployment instructions, see LINK **Deploying the {ProductName} Kafka Bridge to {ProductPlatformName}**.
+Similar to a Kafka Connect cluster, you can choose to deploy the Kafka Bridge into your {ProductPlatformName} cluster using the Cluster Operator. For deployment instructions, see xref:deploying-kafka-bridge-openshift-{context}[].
 
 After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your {ProductPlatformName} cluster, each named `strimzi-kafka-bridge`.
-
-== Supported clients
-
-You can use the Kafka Bridge to integrate the following two types of clients with your Kafka cluster:
-
-* Container-based client applications running in *the same* {ProductPlatformName} cluster as the Kafka Bridge itself. These are referred to as *internal clients*.
-
-* Client applications running *outside* the {ProductPlatformName} cluster in which the Kafka Bridge is deployed. These are referred to as *external clients*.
-
-Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer service.
-
-For more information on configuring the host and port for the `KafkaBridge` resource, see LINK *Kafka Bridge HTTP configuration*.

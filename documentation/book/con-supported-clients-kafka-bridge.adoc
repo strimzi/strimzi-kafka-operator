@@ -1,0 +1,17 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='con-supported-clients-kafka-bridge-{context}']
+
+== Supported clients for the {ProductName} Kafka Bridge
+
+You can use the Kafka Bridge to integrate the following two types of clients with your Kafka cluster:
+
+* Container-based client applications running in _the same_ {ProductPlatformName} cluster as the Kafka Bridge itself. These are referred to as _internal clients_.
+
+* Client applications running _outside_ the {ProductPlatformName} cluster in which the Kafka Bridge is deployed. These are referred to as _external clients_.
+
+Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer service.
+
+For more information on configuring the host and port for the `KafkaBridge` resource, see xref:ref-kafka-bridge-http-configuration-{context}[].
