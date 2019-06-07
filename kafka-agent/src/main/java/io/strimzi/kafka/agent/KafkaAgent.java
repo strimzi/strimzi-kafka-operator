@@ -150,6 +150,7 @@ public class KafkaAgent {
 
     /**
      * Agent entry point
+     * @param agentArgs The agent arguments
      */
     public static void premain(String agentArgs) {
         int index = agentArgs.indexOf(':');

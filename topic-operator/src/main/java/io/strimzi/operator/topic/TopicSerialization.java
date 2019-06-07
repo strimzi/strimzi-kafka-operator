@@ -32,7 +32,7 @@ import static java.lang.String.format;
 /**
  * Serialization of a {@link }Topic} to and from various other representations.
  */
-public class TopicSerialization {
+class TopicSerialization {
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";

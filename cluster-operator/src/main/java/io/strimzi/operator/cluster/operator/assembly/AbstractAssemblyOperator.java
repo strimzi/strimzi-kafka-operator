@@ -137,6 +137,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
      * @param assemblyResource Resources with the desired cluster configuration.
+     * @return A future which is completed when the resource has been reconciled.
      */
     protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource);
 
@@ -162,6 +163,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if CustomResource is without same-named resources</li>
      * <li>An assembly will be deleted automatically by garbage collection when the custom resoruce is deleted</li>
      * </ul>
+     * @param reconciliation The reconciliation.
+     * @param handler The result handler.
      */
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
@@ -234,6 +237,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      *
      * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
+     * @return A latch for knowing when reconciliation is complete.
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace) {
 
@@ -259,6 +263,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return latch;
     }
 
+    /**
+     * Creates a watch on resources in the given namespace.
+     * @param watchNamespace The namespace to watch.
+     * @param onClose A consumer for any exceptions causing the closing of the watcher.
+     * @return A future which completes when watcher has been created.
+     */
     public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
         vertx.<Watch>executeBlocking(

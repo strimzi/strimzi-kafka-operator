@@ -45,8 +45,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout.
      */
     public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
         this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
@@ -70,6 +71,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * is complete. Starting with pod 0, each pod will be deleted and re-created automatically by the ReplicaSet,
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
+     * @param ss The StatefulSet
+     * @param podRestart Function to test whether a given pod needs to be restarted.
+     * @return A future that completes when any necessary rolling has been completed.
      */
     public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
         String namespace = ss.getMetadata().getNamespace();
@@ -171,6 +175,12 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return resource.getSpec().getTemplate().getMetadata();
     }
 
+    /**
+     * The name of the given pod given by {@code podId} in the given StatefulSet.
+     * @param desired The StatefulSet
+     * @param podId The pod id.
+     * @return The name of the pod.
+     */
     public String getPodName(StatefulSet desired, int podId) {
         return templateMetadata(desired).getName() + "-" + podId;
     }
@@ -190,6 +200,11 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     protected abstract boolean shouldIncrementGeneration(StatefulSetDiff diff);
 
+    /**
+     * Gets the {@code strimzi.io/generation} of the given StatefulSet.
+     * @param resource the StatefulSet.
+     * @return The {@code strimzi.io/generation} of the given StatefulSet.
+     */
     public static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
             return NO_GENERATION;
@@ -198,6 +213,11 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 NO_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
     }
 
+    /**
+     * Gets the {@code strimzi.io/generation} of the given Pod
+     * @param resource the Pod.
+     * @return The {@code strimzi.io/generation} of the given Pod.
+     */
     public static int getPodGeneration(Pod resource) {
         if (resource == null) {
             return NO_GENERATION;

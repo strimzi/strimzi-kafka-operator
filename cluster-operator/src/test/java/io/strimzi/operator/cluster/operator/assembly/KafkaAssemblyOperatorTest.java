@@ -275,6 +275,16 @@ public class KafkaAssemblyOperatorTest {
         return result;
     }
 
+    /**
+     * Find the first secret in the given secrets with the given name.
+     * @param secrets The secrets to search.
+     * @param sname The secret name.
+     * @return The secret with that name.
+     */
+    public static Secret findSecretWithName(List<Secret> secrets, String sname) {
+        return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
+    }
+
     public KafkaAssemblyOperatorTest(Params params) {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
@@ -330,8 +340,8 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
         ClusterCa clusterCa = new ClusterCa(new MockCertManager(), clusterCm.getMetadata().getName(),
-                ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
-                ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
+                findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
+                findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm, VERSIONS);
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm, VERSIONS);
@@ -1027,11 +1037,11 @@ public class KafkaAssemblyOperatorTest {
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
         ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
-                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
+                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
+                findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
         ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
@@ -1114,11 +1124,11 @@ public class KafkaAssemblyOperatorTest {
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
         ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
-                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
+                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
+                findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
         ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);

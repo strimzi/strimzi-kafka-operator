@@ -42,27 +42,27 @@ public class SimpleAclRuleResource {
     }
 
     /**
-     * Returns the name of the resource
+     * Returns the name of the resource.
      *
-     * @return
+     * @return The name.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the type of the resource
+     * Returns the type of the resource.
      *
-     * @return
+     * @return The type.
      */
     public SimpleAclRuleResourceType getType() {
         return type;
     }
 
     /**
-     * Returns the pattern used for this resource
+     * Returns the pattern used for this resource.
      *
-     * @return
+     * @return The pattern.
      */
     public AclResourcePatternType getPattern() {
         return pattern;
@@ -99,7 +99,7 @@ public class SimpleAclRuleResource {
     /**
      * Creates Kafka's Resource class from the current object
      *
-     * @return
+     * @return The resource.
      */
     public Resource toKafkaResource()   {
         ResourceType kafkaType;
@@ -149,7 +149,7 @@ public class SimpleAclRuleResource {
      * Creates SimpleAclRuleResource object based on Kafka's Resource object
      *
      * @param kafkaResource Kafka's Resource object
-     * @return
+     * @return The resource.
      */
     public static SimpleAclRuleResource fromKafkaResource(Resource kafkaResource)   {
         String resourceName;
@@ -220,7 +220,7 @@ public class SimpleAclRuleResource {
      * Creates SimpleAclRuleResource object based on the objects received as part fo the KAfkaUser CR
      *
      * @param resource  AclRuleResource as received in KafkaUser CR
-     * @return
+     * @return The resource.
      */
     public static SimpleAclRuleResource fromCrd(AclRuleResource resource)   {
         if (resource instanceof AclRuleTopicResource)   {

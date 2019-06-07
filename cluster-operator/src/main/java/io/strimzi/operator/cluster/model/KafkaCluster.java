@@ -257,42 +257,64 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates the name of the service used as bootstrap service for external clients
+     * Generates the name of the service used as bootstrap service for external clients.
      *
-     * @param cluster Name of the cluster
-     * @return
+     * @param cluster The name of the cluster.
+     * @return The name of the external bootstrap service.
      */
     public static String externalBootstrapServiceName(String cluster) {
         return KafkaResources.externalBootstrapServiceName(cluster);
     }
 
     /**
-     * Generates the name of the service for exposing individual pods
+     * Generates the name of the service for exposing individual pods.
      *
-     * @param cluster Name of the cluster
-     * @param pod   Pod sequence number assign by StatefulSet
-     * @return
+     * @param cluster The name of the cluster.
+     * @param pod   Pod sequence number assign by StatefulSet.
+     * @return The name of the external service.
      */
     public static String externalServiceName(String cluster, int pod) {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the headless service.
+     */
     public static String headlessServiceName(String cluster) {
         return KafkaResources.brokersServiceName(cluster);
     }
 
+    /**
+     * Gets the name of the given Kafka pod.
+     * @param cluster The name of the cluster.
+     * @param pod The id of the pod
+     * @return The name of the pod.
+     */
     public static String kafkaPodName(String cluster, int pod) {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the clients CA key Secret.
+     */
     public static String clientsCaKeySecretName(String cluster) {
         return KafkaResources.clientsCaKeySecretName(cluster);
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the brokers Secret.
+     */
     public static String brokersSecretName(String cluster) {
         return cluster + KafkaCluster.SECRET_BROKERS_SUFFIX;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the clients CA certificate Secret.
+     */
     public static String clientsCaCertSecretName(String cluster) {
         return KafkaResources.clientsCaCertificateSecretName(cluster);
     }
@@ -901,7 +923,9 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates a StatefulSet according to configured defaults
      * @param isOpenShift True iff this operator is operating within OpenShift.
-     * @return The generate StatefulSet
+     * @param imagePullPolicy  The image pull policy.
+     * @param imagePullSecrets The image pull secrets.
+     * @return The generated StatefulSet.
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         HashMap<String, String> annotations = new HashMap<>(2);
@@ -960,18 +984,30 @@ public class KafkaCluster extends AbstractModel {
         return portList;
     }
 
+    /**
+     * @return The port of the plain listener.
+     */
     public int getClientPort() {
         return this.CLIENT_PORT;
     }
 
+    /**
+     * @return The port of the tls listener
+     */
     public int getClientTlsPort() {
         return this.CLIENT_TLS_PORT;
     }
 
+    /**
+     * @return The port of loadbalancer for the external listener.
+     */
     public int getLoadbalancerPort() {
         return this.EXTERNAL_PORT;
     }
 
+    /**
+     * @return The port of route for the external listener.
+     */
     public int getRoutePort() {
         return this.ROUTE_PORT;
     }
@@ -1016,10 +1052,11 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
-     * storage is of {@link Storage#TYPE_JBOD} type
+     * storage is of {@link Storage#TYPE_JBOD} type.
      *
      * @param storage the Storage instance from which building volumes, persistent volume claims and
-     *                related volume mount paths
+     *                related volume mount paths.
+     * @return The PersistentVolumeClaims.
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
         List<PersistentVolumeClaim> pvcs = new ArrayList<>();
@@ -1290,6 +1327,8 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
+     * @param kafkaResourceName The name of the Kafka resource.
+     * @return The name of the ServiceAccount.
      */
     public static String initContainerServiceAccountName(String kafkaResourceName) {
         return kafkaClusterName(kafkaResourceName);
@@ -1297,6 +1336,9 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Get the name of the kafka init container role binding given the name of the {@code namespace} and {@code cluster}.
+     * @param namespace The namespace.
+     * @param cluster The cluster name.
+     * @return The name of the init container's cluster role binding.
      */
     public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
         return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
@@ -1305,6 +1347,8 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
+     * @param assemblyNamespace The namespace.
+     * @return The cluster role binding.
      */
     public KubernetesClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null || isExposedWithNodePort()) {
@@ -1335,10 +1379,17 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the network policy.
+     */
     public static String policyName(String cluster) {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
+    /**
+     * @return The network policy.
+     */
     public NetworkPolicy generateNetworkPolicy() {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
@@ -1436,52 +1487,52 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates the PodDisruptionBudget
+     * Generates the PodDisruptionBudget.
      *
-     * @return
+     * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
     }
 
     /**
-     * Sets the object with Kafka listeners configuration
+     * Sets the object with Kafka listeners configuration.
      *
-     * @param listeners
+     * @param listeners The listeners.
      */
     public void setListeners(KafkaListeners listeners) {
         this.listeners = listeners;
     }
 
     /**
-     * @return  The listener object from the CRD
+     * @return  The listener object from the CRD.
      */
     public KafkaListeners getListeners() {
         return listeners;
     }
 
     /**
-     * Sets the object with Kafka authorization configuration
+     * Sets the object with Kafka authorization configuration.
      *
-     * @param authorization
+     * @param authorization The authorization.
      */
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
     }
 
     /**
-     * Sets the Map with Kafka pod's external addresses
+     * Sets the Map with Kafka pod's external addresses.
      *
-     * @param externalAddresses Set with external addresses
+     * @param externalAddresses Set with external addresses.
      */
     public void setExternalAddresses(Set<String> externalAddresses) {
         this.externalAddresses = externalAddresses;
     }
 
     /**
-     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes
+     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes.
      *
-     * @return
+     * @return true when the Kafka cluster is exposed.
      */
     public boolean isExposed()  {
         return listeners != null && listeners.getExternal() != null;
@@ -1490,7 +1541,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside of OpenShift using OpenShift routes
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using OpenShift routes.
      */
     public boolean isExposedWithRoute()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute;
@@ -1499,7 +1550,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside using LoadBalancers
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using load balancer.
      */
     public boolean isExposedWithLoadBalancer()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer;
@@ -1508,7 +1559,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside using NodePort type services
      *
-     * @return
+     * @return true when the Kafka cluster is exposed to the outside using NodePort.
      */
     public boolean isExposedWithNodePort()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalNodePort;
@@ -1517,16 +1568,14 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using Ingress
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using Kubernetes Ingress.
      */
     public boolean isExposedWithIngress()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalIngress;
     }
 
     /**
-     * Returns the list broker overrides for external listeners
-     *
-     * @return
+     * Returns the list broker overrides for external listeners.
      */
     private List<ExternalListenerBrokerOverride> getExternalListenerBrokerOverride()  {
         List<ExternalListenerBrokerOverride> brokerOverride = new ArrayList<>();
@@ -1563,7 +1612,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns the bootstrap override for external listeners
      *
-     * @return
+     * @return The ExternalListenerBootstrapOverride.
      */
     public ExternalListenerBootstrapOverride getExternalListenerBootstrapOverride()  {
         ExternalListenerBootstrapOverride bootstrapOverride = null;
@@ -1598,9 +1647,10 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns advertised address of external nodeport service
+     * Returns the advertised address of external nodeport service.
      *
-     * @return
+     * @param podNumber The pod number.
+     * @return The advertised address of the external nodeport service.
      */
     public String getExternalServiceAdvertisedHostOverride(int podNumber) {
         String advertisedHost = null;
@@ -1621,9 +1671,10 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns advertised address of external nodeport service
+     * Returns advertised address of external nodeport service.
      *
-     * @return
+     * @param podNumber The pod number.
+     * @return The advertised address of external nodeport service.
      */
     public Integer getExternalServiceAdvertisedPortOverride(int podNumber) {
         Integer advertisedPort = null;
@@ -1667,7 +1718,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside of OpenShift with TLS enabled
      *
-     * @return
+     * @return True when the Kafka cluster is exposed to the outside of OpenShift with TLS enabled
      */
     public boolean isExposedWithTls() {
         if (isExposed()) {

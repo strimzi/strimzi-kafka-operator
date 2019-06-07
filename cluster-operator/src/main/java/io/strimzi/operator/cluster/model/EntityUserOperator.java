@@ -153,6 +153,8 @@ public class EntityUserOperator extends AbstractModel {
 
     /**
      * Get the name of the UO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The name of the role binding.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-entity-user-operator";

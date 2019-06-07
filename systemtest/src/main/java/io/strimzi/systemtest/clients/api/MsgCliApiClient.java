@@ -98,7 +98,7 @@ public class MsgCliApiClient {
      *
      * @param clientArguments list of arguments for kafka client (together with kafka client name!)
      * @param count           count of clients that will be started
-     * @return
+     * @return Some JSON.
      * @throws InterruptedException
      * @throws ExecutionException
      * @throws TimeoutException

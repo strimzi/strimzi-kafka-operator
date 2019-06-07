@@ -37,6 +37,9 @@ public class CrdOperator<C extends KubernetesClient,
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param cls The class of the CR
+     * @param listCls The class of the list.
+     * @param doneableCls The class of the CR's "doneable".
      */
     public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls) {
         super(vertx, client, Crds.kind(cls));

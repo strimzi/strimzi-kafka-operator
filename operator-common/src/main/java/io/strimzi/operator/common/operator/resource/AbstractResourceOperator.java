@@ -62,6 +62,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * returning a future for the outcome.
      * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
+     * @return A future which completes with the outcome.
      */
     public Future<ReconcileResult<T>> createOrUpdate(T resource) {
         if (resource == null) {
@@ -73,6 +74,10 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     /**
      * Asynchronously reconciles the resource with the given namespace and name to match the given
      * desired resource, returning a future for the result.
+     * @param namespace The namespace of the resource to reconcile
+     * @param name The name of the resource to reconcile
+     * @param desired The desired state of the resource.
+     * @return A future which completes when the resource has been updated.
      */
     public Future<ReconcileResult<T>> reconcile(String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
@@ -296,6 +301,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      * @param predicate The predicate.
+     * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
      */
     public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
         return Util.waitFor(vertx,

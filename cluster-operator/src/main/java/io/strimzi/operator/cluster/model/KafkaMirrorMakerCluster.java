@@ -479,9 +479,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     /**
-     * Generates the PodDisruptionBudget
+     * Generates the PodDisruptionBudget.
      *
-     * @return
+     * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
@@ -535,6 +535,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     /**
      * Get the name of the mirror maker service account given the name of the {@code mirrorMakerResourceName}.
+     * @param mirrorMakerResourceName The resource name
+     * @return The service account name.
      */
     public static String containerServiceAccountName(String mirrorMakerResourceName) {
         return kafkaMirrorMakerClusterName(mirrorMakerResourceName);

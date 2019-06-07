@@ -20,12 +20,13 @@ public @interface Crd {
     /**
      * The {@code apiVersion} of the generated {@code CustomResourceDefinition}.
      * (Not the {@code apiVersion} of your custom resource instances, which is {@link Spec#version()}).
+     * @return The {@code apiVersion} of the generated {@code CustomResourceDefinition}
      */
     String apiVersion();
 
     /**
      * Info for the {@code spec} of the generated {@code CustomResourceDefinition}.
-     * @return
+     * @return The spec.
      */
     Spec spec();
 
@@ -36,7 +37,7 @@ public @interface Crd {
     @interface Spec {
 
         /**
-         * The API group for the custom resource instances
+         * @return The API group for the custom resource instances.
          */
         String group();
 
@@ -45,45 +46,45 @@ public @interface Crd {
         @Target({})
         @interface Names {
             /**
-             * The kind of the resource
+             * @return The kind of the resource
              */
             String kind();
 
             /**
-             * The list kind. Defaults to ${{@linkplain #kind()}}List.
+             * @return The list kind. Defaults to ${{@linkplain #kind()}}List.
              */
             String listKind() default "";
 
             /**
-             * The singular of the resource. Defaults to {@link #kind()}.
+             * @return The singular of the resource. Defaults to {@link #kind()}.
              */
             String singular() default "";
 
             /**
-             * The plural of the resource.
+             * @return The plural of the resource.
              */
             String plural();
 
             /**
-             * Short names (e.g. "svc" is the short name for the K8S "services" kind).
+             * @return Short names (e.g. "svc" is the short name for the K8S "services" kind).
              */
             String[] shortNames() default {};
         }
 
         /**
-         * The scope of the resources. E.g. "Namespaced".
+         * @return The scope of the resources. E.g. "Namespaced".
          */
         String scope();
 
         /**
-         * The version of custom resources that this is the definition for.
+         * @return The version of custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          * @see #versions()
          */
         String version() default "";
 
         /**
-         * The version of custom resources that this is the definition for.
+         * @return The version of custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         Version[] versions() default {};
@@ -99,7 +100,7 @@ public @interface Crd {
         }
 
         /**
-         * The subresources of a custom resources that this is the definition for.
+         * @return The subresources of a custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         Subresources subresources() default @Subresources(status = {});
@@ -116,7 +117,7 @@ public @interface Crd {
         }
 
         /**
-         * Additional printer columns.
+         * @return Additional printer columns.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         AdditionalPrinterColumn[] additionalPrinterColumns() default {};
@@ -126,9 +127,9 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface AdditionalPrinterColumn {
-            /** JSON path into the CR for the value to show */
+            /** @return JSON path into the CR for the value to show */
             String jsonPath();
-            /** The description of the column */
+            /** @return The description of the column */
             String description();
             /**
              * One of:
@@ -140,11 +141,12 @@ public @interface Crd {
              * date
              * date-time
              * password
+             * @return The format
              */
             String format() default "";
-            /** The name of the column */
+            /** @return The name of the column */
             String name();
-            /** 0 to show in standard view, greater than zero to show only in wide view */
+            /** @return 0 to show in standard view, greater than zero to show only in wide view */
             int priority() default 0;
             /**
              * One of:
@@ -153,6 +155,7 @@ public @interface Crd {
              * string,
              * boolean,
              * date
+             * @return The JSON type.
              */
             String type();
         }

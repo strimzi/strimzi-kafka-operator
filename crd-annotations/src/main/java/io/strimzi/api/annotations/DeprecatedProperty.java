@@ -13,17 +13,17 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DeprecatedProperty {
 
-    /** The API version in which this property is scheduled to be removed. */
+    /** @return The API version in which this property is scheduled to be removed. */
     String removalVersion() default "";
 
     /**
-     * If this property has moved to a different location in the Custom Resource this is
+     * @return If this property has moved to a different location in the Custom Resource this is
      * the path it has moved to.
      */
     String movedToPath() default "";
 
     /**
-     * If this property has <strong>not</strong> moved to a different location in the Custom Resource this is
+     * @return If this property has <strong>not</strong> moved to a different location in the Custom Resource this is
      * a description of how the functionality can now be configured.
      */
     String description() default "";

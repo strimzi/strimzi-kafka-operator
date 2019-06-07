@@ -474,7 +474,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     /**
      * Generates the PodDisruptionBudget
      *
-     * @return
+     * @return The pod disruption budget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
@@ -487,6 +487,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     /**
      * Get the name of the bridge service account given the name of the {@code bridgeResourceName}.
+     * @param bridgeResourceName  The name of the bridge resource
+     * @return The name of the service account.
      */
     public static String containerServiceAccountName(String bridgeResourceName) {
         return kafkaBridgeClusterName(bridgeResourceName);

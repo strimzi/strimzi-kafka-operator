@@ -11,7 +11,7 @@ import io.vertx.core.Handler;
  * Represents a persistent data store where the operator can store its copy of the
  * topic state that won't be modified by either K8S or Kafka.
  */
-public interface TopicStore {
+interface TopicStore {
 
     public static class EntityExistsException extends Exception {
 
@@ -26,6 +26,8 @@ public interface TopicStore {
      * and run the given handler on the context with the resulting Topic.
      * If no topic with the given name exists, the handler will be called with
      * a null result.
+     * @param name The name of the topic.
+     * @param handler The result handler.
      */
     void read(TopicName name, Handler<AsyncResult<Topic>> handler);
 
@@ -35,6 +37,8 @@ public interface TopicStore {
      * If a topic with the given name already exists, the handler will be called with
      * a failed result whose {@code cause()} is
      * {@link EntityExistsException}.
+     * @param topic The topic.
+     * @param handler The result handler.
      */
     void create(Topic topic, Handler<AsyncResult<Void>> handler);
 
@@ -44,6 +48,8 @@ public interface TopicStore {
      * If no topic with the given name exists, the handler will be called with
      * a failed result whose {@code cause()} is
      * {@link NoSuchEntityExistsException}.
+     * @param topic The topic.
+     * @param handler The result handler.
      */
     void update(Topic topic, Handler<AsyncResult<Void>> handler);
 
@@ -53,6 +59,8 @@ public interface TopicStore {
      * If no topic with the given name exists, the handler wiil be called with
      * a failed result whose {@code cause()} is
      * {@link NoSuchEntityExistsException}.
+     * @param topic The topic.
+     * @param handler The result handler.
      */
     void delete(TopicName topic, Handler<AsyncResult<Void>> handler);
 }

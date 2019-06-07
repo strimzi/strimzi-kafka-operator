@@ -40,9 +40,9 @@ public class VerifiableClient {
     }
 
     /**
-     * Get all kafka client arguments
+     * Get all kafka client arguments.
      *
-     * @return
+     * @return The kafka client arguments.
      */
     public ArrayList<String> getArguments() {
         return arguments;

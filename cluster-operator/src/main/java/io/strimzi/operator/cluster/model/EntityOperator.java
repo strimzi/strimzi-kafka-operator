@@ -118,6 +118,7 @@ public class EntityOperator extends AbstractModel {
      * Create a Entity Operator from given desired resource
      *
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
+     * @param versions The versions.
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -283,7 +284,8 @@ public class EntityOperator extends AbstractModel {
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Entity Operator private key.
      *
-     * @return The generated Secret
+     * @param clusterCa The cluster CA.
+     * @return The generated Secret.
      */
     public Secret generateSecret(ClusterCa clusterCa) {
         if (!isDeployed()) {
@@ -295,6 +297,8 @@ public class EntityOperator extends AbstractModel {
 
     /**
      * Get the name of the Entity Operator service account given the name of the {@code cluster}.
+     * @param cluster The cluster name
+     * @return The name of the EO service account.
      */
     public static String entityOperatorServiceAccountName(String cluster) {
         return entityOperatorName(cluster);
