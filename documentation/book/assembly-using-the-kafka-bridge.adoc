@@ -15,6 +15,4 @@ include::con-supported-clients-kafka-bridge.adoc[leveloffset=+1]
 
 include::con-requests-kafka-bridge.adoc[leveloffset=+1]
 
-include::con-sending-requests-to-kafka-bridge.adoc[leveloffset=+1]
-
 include::ref-api-resources-kafka-bridge.adoc[leveloffset=+1]
