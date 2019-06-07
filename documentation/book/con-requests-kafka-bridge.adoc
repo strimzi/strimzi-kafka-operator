@@ -5,16 +5,6 @@
 [id='con-requests-kafka-bridge-{context}']
 = Requests to the {ProductName} Kafka Bridge
 
-== Authentication and encryption
-
-Authentication and encryption between external clients and the Kafka Bridge is not yet supported. This means that requests sent from external clients to the Kafka Bridge are:
-
-* Not encrypted, and must use HTTP rather than HTTPS
-
-* Sent without authentication
-
-Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. Additionally, you can configure a TLS-encrypted connection between the Kafka Bridge and your Kafka cluster. For more information, see xref:con-kafka-bridge-authentication-{context}[]. 
-
 == Data formats and headers
 
 Specify data formats and HTTP headers to ensure valid requests are submitted to the Kafka Bridge. 
