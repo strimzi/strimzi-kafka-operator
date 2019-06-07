@@ -41,8 +41,9 @@ public interface Constants {
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    String STRIMZI_BRIDGE_DEPLOYMENT_NAME = "strimzi-kafka-bridge";
     String IMAGE_PULL_POLICY = "Always";
+
+    int HTTP_BRIDGE_DEFAULT_PORT = 8080;
 
     /**
      * Default value which allows execution of tests with any tags

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -51,7 +52,7 @@ public class HttpBridgeST extends MessagingBaseST {
         sendHttpRequests(responsePromise, records, bridgeHost);
         responsePromise.get(60_000, TimeUnit.SECONDS);
 
-        receiveMessages(messageCount, 60000, CLUSTER_NAME, false, TOPIC_NAME, null);
+        receiveMessages(messageCount, Constants.TIMEOUT_RECV_MESSAGES, CLUSTER_NAME, false, TOPIC_NAME, null);
     }
 
     @BeforeAll
@@ -77,11 +78,12 @@ public class HttpBridgeST extends MessagingBaseST {
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
 
         // Deploy http bridge
-        testClassResources.kafkaBridge(CLUSTER_NAME, getBootstrapServer(), 1, 8080).done();
-        service = getSystemtestsServiceResource(bridgeLoadBalancer, 8080)
+        testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
+        // Create load balancer service for expose bridge outside openshift
+        service = getSystemtestsServiceResource(bridgeLoadBalancer, Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()
                 .withType("LoadBalancer")
-                .editPort(0)
+                .editPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .endPort()
                 .withSelector(map)
                 .endSpec().build();
@@ -100,7 +102,7 @@ public class HttpBridgeST extends MessagingBaseST {
     }
 
     JsonObject generateHttpMessages(int messageCount) {
-        LOGGER.info("Creating {} records for Kafka Brdige", messageCount);
+        LOGGER.info("Creating {} records for Kafka Bridge", messageCount);
         JsonArray records = new JsonArray();
         JsonObject json = new JsonObject();
         for (int i = 0; i < messageCount; i++) {
@@ -115,7 +117,7 @@ public class HttpBridgeST extends MessagingBaseST {
 
     void sendHttpRequests(CompletableFuture future, JsonObject records, String bridgeHost) {
         LOGGER.info("Sending records to Kafka Bridge");
-        client.post(8080, bridgeHost, "/topics/" + TOPIC_NAME)
+        client.post(Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeHost, "/topics/" + TOPIC_NAME)
                 .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
                 .putHeader("Content-Type", "application/vnd.kafka.json.v2+json")
                 .as(BodyCodec.jsonObject())
@@ -136,16 +138,6 @@ public class HttpBridgeST extends MessagingBaseST {
                         future.completeExceptionally(ar.cause());
                     }
                 });
-    }
-
-    @Override
-    void tearDownEnvironmentAfterEach() throws Exception {
-        super.tearDownEnvironmentAfterEach();
-    }
-
-    @Override
-    void tearDownEnvironmentAfterAll() {
-        super.tearDownEnvironmentAfterAll();
     }
 
     @Override
