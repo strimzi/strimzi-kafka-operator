@@ -99,8 +99,8 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Async async = context.async();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-           context.assertTrue(res.succeeded());
-           async.complete();
+            context.assertTrue(res.succeeded());
+            async.complete();
         });
 
         async.awaitSuccess();
