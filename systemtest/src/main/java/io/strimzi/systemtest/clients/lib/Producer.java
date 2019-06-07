@@ -53,7 +53,7 @@ public class Producer extends ClientHandlerBase<Integer> {
             KafkaProducerRecord<String, String> record =
                     KafkaProducerRecord.create(topic, "message_" + numSent.get());
 
-            producer.write(record, done -> {
+            producer.send(record, done -> {
                 if (done.succeeded()) {
                     RecordMetadata recordMetadata = done.result();
                     LOGGER.debug("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
