@@ -48,11 +48,47 @@ public class HttpBridgeST extends MessagingBaseST {
         JsonObject records = generateHttpMessages(messageCount);
         String bridgeHost = CLUSTER.client().getClient().services().withName(bridgeLoadBalancer).get().getSpec().getExternalIPs().get(0);
 
-        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+        CompletableFuture<Boolean> responsePromise = new CompletableFuture<>();
         sendHttpRequests(responsePromise, records, bridgeHost);
         responsePromise.get(60_000, TimeUnit.SECONDS);
 
         receiveMessages(messageCount, Constants.TIMEOUT_RECV_MESSAGES, CLUSTER_NAME, false, TOPIC_NAME, null);
+    }
+
+    @Test
+    void testHttpBridgeReceiveSimpleMessage() throws Exception {
+        int messageCount = 50;
+        String bridgeHost = CLUSTER.client().getClient().services().withName(bridgeLoadBalancer).get().getSpec().getExternalIPs().get(0);
+        String name = "my-kafka-consumer";
+        String groupId = "my-group";
+
+        String baseUri = "http://" + bridgeHost + ":" + Constants.HTTP_BRIDGE_DEFAULT_PORT + "/consumers/" + groupId + "/instances/" + name;
+
+        JsonObject config = new JsonObject();
+        config.put("name", name);
+        config.put("format", "json");
+
+        CompletableFuture<Boolean> createConsumer = new CompletableFuture<>();
+        createBridgeConsumer(createConsumer, config, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId);
+        createConsumer.get(60_000, TimeUnit.SECONDS);
+
+        JsonArray topic = new JsonArray();
+        topic.add(TOPIC_NAME);
+
+        JsonObject topics = new JsonObject();
+        topics.put("topics", topic);
+
+        CompletableFuture<Boolean> subscribeConsumer = new CompletableFuture<>();
+        subscribHttpConsumer(subscribeConsumer, topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId);
+        subscribeConsumer.get(60_000, TimeUnit.SECONDS);
+
+        sendMessages(messageCount, Constants.TIMEOUT_RECV_MESSAGES, CLUSTER_NAME, false, TOPIC_NAME, null);
+
+        CompletableFuture<Boolean> consumerData = new CompletableFuture<>();
+        receiveHttpRequests(consumerData, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, baseUri);
+        consumerData.get(60_000, TimeUnit.SECONDS);
+
+
     }
 
     @BeforeAll
@@ -83,8 +119,6 @@ public class HttpBridgeST extends MessagingBaseST {
         service = getSystemtestsServiceResource(bridgeLoadBalancer, Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()
                 .withType("LoadBalancer")
-                .editPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-                .endPort()
                 .withSelector(map)
                 .endSpec().build();
         testClassResources.createServiceResource(service, NAMESPACE).done();
@@ -95,10 +129,6 @@ public class HttpBridgeST extends MessagingBaseST {
                 .setSsl(false)
                 .setTrustAll(true)
                 .setVerifyHost(false));
-    }
-
-    String getBootstrapServer() {
-        return CLUSTER_NAME + "-kafka-bootstrap:9092";
     }
 
     JsonObject generateHttpMessages(int messageCount) {
@@ -115,11 +145,11 @@ public class HttpBridgeST extends MessagingBaseST {
         return root;
     }
 
-    void sendHttpRequests(CompletableFuture future, JsonObject records, String bridgeHost) {
+    void sendHttpRequests(CompletableFuture<Boolean> future, JsonObject records, String bridgeHost) {
         LOGGER.info("Sending records to Kafka Bridge");
         client.post(Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeHost, "/topics/" + TOPIC_NAME)
                 .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
-                .putHeader("Content-Type", "application/vnd.kafka.json.v2+json")
+                .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON_JSON)
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(records, ar -> {
                     if (ar.succeeded()) {
@@ -132,9 +162,71 @@ public class HttpBridgeST extends MessagingBaseST {
                         JsonObject metadata = offsets.getJsonObject(0);
                         LOGGER.debug("partition: {}", metadata.getInteger("partition"));
                         LOGGER.debug("offset size: {}", metadata.getLong("offset"));
-                        future.complete(ar.result().body());
+                        future.complete(true);
                     } else {
                         LOGGER.debug("Server didn't accept post");
+                        future.completeExceptionally(ar.cause());
+                    }
+                });
+    }
+
+    void receiveHttpRequests(CompletableFuture<Boolean> future, String bridgeHost, int bridgePort, String baseUri) {
+        client.get(bridgePort, bridgeHost, baseUri + "/records" + "?timeout=" + String.valueOf(1000))
+                .putHeader("Accept", Constants.KAFKA_BRIDGE_JSON_JSON)
+                .as(BodyCodec.jsonArray())
+                .send(ar -> {
+                    if (ar.succeeded()) {
+                        LOGGER.info("Consuming messages...");
+                        HttpResponse<JsonArray> response = ar.result();
+                        JsonObject jsonResponse = response.body().getJsonObject(0);
+
+                        String kafkaTopic = jsonResponse.getString("topic");
+                        int kafkaPartition = jsonResponse.getInteger("partition");
+                        String key = jsonResponse.getString("key");
+                        String value = jsonResponse.getString("value");
+                        long offset = jsonResponse.getLong("offset");
+                        LOGGER.info("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
+
+                    } else {
+                        LOGGER.info("Cannot consume any messages!");
+                        future.completeExceptionally(ar.cause());
+                    }
+                });
+    }
+
+    void subscribHttpConsumer(CompletableFuture<Boolean> future, JsonObject topics, String bridgeHost, int bridgePort, String baseUri) {
+        client.post(bridgePort, bridgeHost, baseUri + "/subscription")
+                .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
+                .putHeader("Content-type", Constants.KAFKA_BRIDGE_JSON)
+                .as(BodyCodec.jsonObject())
+                .sendJsonObject(topics, ar -> {
+                    if (ar.succeeded()) {
+                        LOGGER.info("Subscribed");
+                        future.complete(true);
+                    } else {
+                        LOGGER.info("Cannot subscribe consumer!");
+                        future.completeExceptionally(ar.cause());
+                    }
+                });
+
+    }
+
+    void createBridgeConsumer(CompletableFuture<Boolean> future, JsonObject config, String bridgeHost, int bridgePort, String groupId) {
+        client.post(bridgePort, bridgeHost, "/consumers/" + groupId)
+                .putHeader("Content-length", String.valueOf(config.toBuffer().length()))
+                .putHeader("Content-type", Constants.KAFKA_BRIDGE_JSON)
+                .as(BodyCodec.jsonObject())
+                .sendJsonObject(config, ar -> {
+                    if (ar.succeeded()) {
+                        HttpResponse<JsonObject> response = ar.result();
+                        JsonObject bridgeResponse = response.body();
+                        String consumerInstanceId = bridgeResponse.getString("instance_id");
+                        String consumerBaseUri = bridgeResponse.getString("base_uri");
+                        LOGGER.info("ConsumerInstanceId: {}", consumerInstanceId);
+                        LOGGER.info("ConsumerBaseUri: {}", consumerBaseUri);
+                        future.complete(true);
+                    } else {
+                        LOGGER.info("Cannot create consumer!");
                         future.completeExceptionally(ar.cause());
                     }
                 });

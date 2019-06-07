@@ -43,6 +43,16 @@ public interface Constants {
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String IMAGE_PULL_POLICY = "Always";
 
+    /**
+     * Kafka Bridge JSON encoding with JSON embedded format
+     */
+    String KAFKA_BRIDGE_JSON_JSON = "application/vnd.kafka.json.v2+json";
+
+    /**
+     * Kafka Bridge JSON encoding
+     */
+    String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
+
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
 
     /**
