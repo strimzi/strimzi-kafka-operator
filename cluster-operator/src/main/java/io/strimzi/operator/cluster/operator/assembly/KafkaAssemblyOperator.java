@@ -89,7 +89,6 @@ import org.quartz.CronExpression;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -178,6 +177,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
         reconcile(reconcileState).setHandler(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
+            List<Condition> conditions = status.getConditions();
+            ArrayList<Condition> desiredConditions;
             Condition readyCondition;
 
             if (kafkaAssembly.getMetadata().getGeneration() != null)    {
@@ -200,7 +201,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .build();
             }
 
-            status.setConditions(Collections.singletonList(readyCondition));
+            if (conditions != null) {
+                desiredConditions = new ArrayList<>(conditions.size() + 1);
+                desiredConditions.addAll(conditions);
+            } else {
+                desiredConditions = new ArrayList<>(1);
+            }
+
+            desiredConditions.add(readyCondition);
+
+            status.setConditions(desiredConditions);
             reconcileState.updateStatus(status).setHandler(statusResult -> {
                 if (statusResult.succeeded())    {
                     log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
@@ -297,6 +307,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
                 .compose(state -> state.entityOperatorSecret())
                 .compose(state -> state.entityOperatorDeployment())
+                .compose(state -> state.entityOperatorReady())
 
                 .compose(state -> chainFuture.complete(), chainFuture);
 
@@ -2391,6 +2402,35 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
+        Future<ReconciliationState> entityOperatorReady() {
+            long pollingIntervalMs = 1_000;
+            long timeoutMs = operationTimeoutMs;
+
+            if (this.entityOperator != null && eoDeployment != null) {
+                Future<Void> future = podOperations.readiness(namespace, this.entityOperator.getName(), 1_000, timeoutMs);
+                future.compose(v -> {
+                    Condition condition;
+                    if (future.succeeded()) {
+                        condition = new ConditionBuilder()
+                            .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                            .withNewType("EntityOperatorReady")
+                            .withNewStatus("True")
+                            .build();
+                    } else {
+                        condition = new ConditionBuilder()
+                            .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                            .withNewType("EntityOperatorReady")
+                            .withNewStatus("False")
+                            .build();
+                    }
+                    addEntityOperatorReadyCondition(condition);
+                    return Future.succeededFuture();
+                }).map(i -> this);
+            }
+
+            return Future.succeededFuture(this);
+        }
+
         Future<ReconciliationState> entityOperatorSecret() {
             return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name),
                     entityOperator == null ? null : entityOperator.generateSecret(clusterCa)));
@@ -2604,6 +2644,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String getInternalServiceHostname(String serviceName)    {
             return serviceName + "." + namespace + ".svc";
         }
+
+        void addEntityOperatorReadyCondition(Condition c) {
+            List<Condition> current = kafkaStatus.getConditions();
+            ArrayList<Condition> desired;
+
+            if (current != null) {
+                desired = new ArrayList<>(current.size() + 1);
+                desired.addAll(current);
+            } else {
+                desired = new ArrayList<>(1);
+            }
+
+            desired.add(c);
+        }
+
     }
 
     private Date dateSupplier() {
