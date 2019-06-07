@@ -79,6 +79,7 @@ public class KafkaStatusTest {
                 .withNewMetadata()
                     .withName(clusterName)
                     .withNamespace(namespace)
+                    .withGeneration(2L)
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -97,6 +98,7 @@ public class KafkaStatusTest {
                     .endZookeeper()
                 .endSpec()
                 .withNewStatus()
+                    .withObservedGeneration(1L)
                     .withConditions(new ConditionBuilder()
                             .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
                             .withNewType("NotReady")
@@ -142,6 +144,8 @@ public class KafkaStatusTest {
             assertEquals(1, status.getConditions().size());
             assertEquals("Ready", status.getConditions().get(0).getType());
             assertEquals("True", status.getConditions().get(0).getStatus());
+
+            assertEquals(2L, status.getObservedGeneration());
         });
     }
 
@@ -155,6 +159,7 @@ public class KafkaStatusTest {
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
+                    .withObservedGeneration(2L)
                     .editCondition(0)
                         .withType("Ready")
                     .endCondition()
@@ -225,6 +230,10 @@ public class KafkaStatusTest {
             assertEquals(1, status.getConditions().size());
             assertEquals("NotReady", status.getConditions().get(0).getType());
             assertEquals("True", status.getConditions().get(0).getStatus());
+            assertEquals("RuntimeException", status.getConditions().get(0).getReason());
+            assertEquals("Something went wrong", status.getConditions().get(0).getMessage());
+
+            assertEquals(2L, status.getObservedGeneration());
         });
     }
 
@@ -238,6 +247,7 @@ public class KafkaStatusTest {
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
+                    .withObservedGeneration(1L)
                     .editCondition(0)
                         .withType("Ready")
                     .endCondition()
@@ -283,6 +293,10 @@ public class KafkaStatusTest {
             assertEquals(1, status.getConditions().size());
             assertEquals("NotReady", status.getConditions().get(0).getType());
             assertEquals("True", status.getConditions().get(0).getStatus());
+            assertEquals("RuntimeException", status.getConditions().get(0).getReason());
+            assertEquals("Something went wrong", status.getConditions().get(0).getMessage());
+
+            assertEquals(2L, status.getObservedGeneration());
         });
     }
 
@@ -336,7 +350,7 @@ public class KafkaStatusTest {
 
             reconcileState.kafkaStatus.setListeners(singletonList(ls));
 
-            return Future.failedFuture("Something went wrong");
+            return Future.failedFuture(new RuntimeException("Something went wrong"));
         }
     }
 }

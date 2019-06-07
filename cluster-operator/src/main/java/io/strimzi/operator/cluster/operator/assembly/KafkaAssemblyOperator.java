@@ -181,6 +181,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             KafkaStatus status = reconcileState.kafkaStatus;
             Condition readyCondition;
 
+            if (kafkaAssembly.getMetadata().getGeneration() != null)    {
+                status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
+            }
+
             if (reconcileResult.succeeded())    {
                 readyCondition = new ConditionBuilder()
                         .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
@@ -192,6 +196,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
                         .withNewType("NotReady")
                         .withNewStatus("True")
+                        .withNewReason(reconcileResult.cause().getClass().getSimpleName())
+                        .withNewMessage(reconcileResult.cause().getMessage())
                         .build();
             }
 
