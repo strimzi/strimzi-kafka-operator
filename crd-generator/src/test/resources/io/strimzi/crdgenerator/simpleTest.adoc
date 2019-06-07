@@ -4,7 +4,7 @@
 
 [options="header"]
 |====
-|Field                          |Description
+|Property                       |Description
 |affinity                1.2+<.<|See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity].
 
 
@@ -81,7 +81,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 [options="header"]
 |====
-|Field|Description
+|Property|Description
 |====
 
 [id='type-ObjectProperty-{context}']
@@ -93,7 +93,7 @@ Example of complex type.
 
 [options="header"]
 |====
-|Field       |Description
+|Property    |Description
 |bar  1.2+<.<|
 |string
 |foo  1.2+<.<|
@@ -110,7 +110,7 @@ The `discrim` property is a discriminator that distinguishes the use of the type
 It must have the value `left` for the type `PolymorphicLeft`.
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |commonProperty  1.2+<.<|
 |string
 |discrim         1.2+<.<|
@@ -129,7 +129,7 @@ The `discrim` property is a discriminator that distinguishes the use of the type
 It must have the value `right` for the type `PolymorphicRight`.
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |commonProperty  1.2+<.<|
 |string
 |discrim         1.2+<.<|

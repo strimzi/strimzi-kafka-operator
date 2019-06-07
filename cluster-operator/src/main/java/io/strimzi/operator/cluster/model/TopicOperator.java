@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.common.Annotations;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -70,6 +73,7 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
     public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -94,11 +98,9 @@ public class TopicOperator extends AbstractModel {
         this.name = topicOperatorName(cluster);
         this.replicas = TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
-        this.readinessTimeout = TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -234,6 +236,12 @@ public class TopicOperator extends AbstractModel {
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
             result.setTlsSidecar(tcConfig.getTlsSidecar());
+            if (tcConfig.getReadinessProbe() != null) {
+                result.setReadinessProbe(tcConfig.getReadinessProbe());
+            }
+            if (tcConfig.getLivenessProbe() != null) {
+                result.setLivenessProbe(tcConfig.getLivenessProbe());
+            }
 
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
@@ -273,8 +281,8 @@ public class TopicOperator extends AbstractModel {
                 .withArgs("/opt/strimzi/bin/topic-operator-run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

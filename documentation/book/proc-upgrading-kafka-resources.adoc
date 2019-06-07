@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* A Cluster Operator supporting the {ApiVersion} API version is up and running.
+* A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
 Execute the following steps for each `Kafka` resource in your deployment.

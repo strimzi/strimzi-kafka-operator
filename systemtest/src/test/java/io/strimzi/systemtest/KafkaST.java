@@ -15,14 +15,15 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -44,10 +45,12 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -111,7 +114,6 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
-        long kafkaRollingUpdateTimeout = 600000;
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -141,7 +143,7 @@ class KafkaST extends MessagingBaseST {
         String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods, kafkaRollingUpdateTimeout);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
 
         String firstTopicName = "test-topic";
         testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
@@ -161,7 +163,7 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods, kafkaRollingUpdateTimeout);
+        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
 
         final int finalReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
@@ -878,7 +880,7 @@ class KafkaST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
@@ -899,7 +901,7 @@ class KafkaST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
@@ -1040,87 +1042,73 @@ class KafkaST extends MessagingBaseST {
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
 
-        List<SingleVolumeStorage> volumes = new ArrayList<>();
-        volumes.add(new PersistentClaimStorageBuilder()
-                .withId(0)
-                .withDeleteClaim(true)
-                .withSize(diskSizeGi + "Gi").build());
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        volumes.add(new PersistentClaimStorageBuilder()
-                .withId(1)
-                .withDeleteClaim(false)
-                .withSize(diskSizeGi + "Gi").build());
-
-        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
-        verifyPVCDeletion(2, volumes);
+        verifyPVCDeletion(2, jbodStorage);
     }
 
     @Test
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrue() {
-        int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
 
-        List<SingleVolumeStorage> volumes = new ArrayList<>();
-        for (int i = 0; i < diskCountPerReplica; i++) {
-            volumes.add(new PersistentClaimStorageBuilder()
-                    .withId(i)
-                    .withDeleteClaim(true)
-                    .withSize(diskSizeGi + "Gi").build());
-        }
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
 
-        verifyVolumeNamesAndLabels(2, 2, 10);
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
-        verifyPVCDeletion(2, volumes);
+        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
+        LOGGER.info("Deleting Kafka cluster {}", CLUSTER_NAME);
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
+        LOGGER.info("Waiting for Kafka pods deletion");
+        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
     @Test
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsFalse() {
-        int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
 
-        List<SingleVolumeStorage> volumes = new ArrayList<>();
-        for (int i = 0; i < diskCountPerReplica; i++) {
-            volumes.add(new PersistentClaimStorageBuilder()
-                    .withId(i)
-                    .withDeleteClaim(false)
-                    .withSize(diskSizeGi + "Gi").build());
-        }
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(2, 2, 10);
+        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
         LOGGER.info("Deleting cluster");
-        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
-        verifyPVCDeletion(2, volumes);
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
+        LOGGER.info("Waiting for Kafka pods deletion");
+        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
-    void verifyPVCDeletion(int kafkaReplicas, List<SingleVolumeStorage> volumes) {
-        ArrayList pvcs = new ArrayList();
-        kubeClient().listPersistentVolumeClaims().stream()
-                .forEach(pvc -> pvcs.add(pvc.getMetadata().getName()));
+    void verifyPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage) {
+        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toList());
 
-        volumes.forEach(volume -> {
+        jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
             for (int i = 0; i < kafkaReplicas; i++) {
-                String volumeName = "data-" + volume.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
+                String volumeName = "data-" + singleVolumeStorage.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
                 LOGGER.info("Verifying volume: " + volumeName);
-                if (((PersistentClaimStorage) volume).isDeleteClaim()) {
-                    assertFalse(pvcs.contains(volumeName));
+                if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
+                    assertThat(pvcs, not(hasItem(volumeName)));
                 } else {
-                    assertTrue(pvcs.contains(volumeName));
+                    assertThat(pvcs, hasItem(volumeName));
                 }
-
             }
         });
     }

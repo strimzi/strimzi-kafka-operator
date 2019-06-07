@@ -124,11 +124,11 @@ public class DocGenerator {
 
         out.append("[options=\"header\"]").append(NL);
         out.append("|====").append(NL);
-        out.append("|Field");
+        out.append("|Property");
         String gunk = "1.2+<.<";
         final Map<String, Property> properties = properties(cls);
         int maxLen = computePadding(gunk, properties);
-        appendRepeated(' ', maxLen - "Field".length() + 1);
+        appendRepeated(' ', maxLen - "Property".length() + 1);
         out.append("|Description");
         out.append(NL);
 

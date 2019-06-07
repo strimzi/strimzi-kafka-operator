@@ -33,6 +33,8 @@ import io.strimzi.operator.common.model.Labels;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
+
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     // Kafka Connect S2I configuration
@@ -76,8 +78,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withEnv(getEnvVars())
                 .withCommand("/opt/kafka/s2i/run")
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))

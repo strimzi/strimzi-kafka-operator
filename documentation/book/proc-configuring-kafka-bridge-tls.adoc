@@ -39,9 +39,9 @@ metadata:
 spec:
   # ...
   tls:
-	trustedCertificates:
-	- secretName: my-cluster-cluster-cert
-	  certificate: ca.crt
+	  trustedCertificates:
+	  - secretName: my-cluster-cluster-cert
+	    certificate: ca.crt
   # ...
 ----
 +

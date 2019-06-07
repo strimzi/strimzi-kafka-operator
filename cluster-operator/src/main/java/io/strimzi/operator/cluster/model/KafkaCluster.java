@@ -49,19 +49,16 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
@@ -79,6 +76,11 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerOverride;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
@@ -186,8 +188,8 @@ public class KafkaCluster extends AbstractModel {
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
+            .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     /**
@@ -217,10 +219,8 @@ public class KafkaCluster extends AbstractModel {
         this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
@@ -317,13 +317,11 @@ public class KafkaCluster extends AbstractModel {
         result.setImage(image);
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
-            result.setReadinessInitialDelay(kafkaClusterSpec.getReadinessProbe().getInitialDelaySeconds());
-            result.setReadinessTimeout(kafkaClusterSpec.getReadinessProbe().getTimeoutSeconds());
+            result.setReadinessProbe(kafkaClusterSpec.getReadinessProbe());
         }
 
         if (kafkaClusterSpec.getLivenessProbe() != null) {
-            result.setLivenessInitialDelay(kafkaClusterSpec.getLivenessProbe().getInitialDelaySeconds());
-            result.setLivenessTimeout(kafkaClusterSpec.getLivenessProbe().getTimeoutSeconds());
+            result.setLivenessProbe(kafkaClusterSpec.getLivenessProbe());
         }
 
         result.setRack(kafkaClusterSpec.getRack());
@@ -1144,21 +1142,15 @@ public class KafkaCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withNewLivenessProbe()
-                    .withInitialDelaySeconds(livenessInitialDelay)
-                    .withTimeoutSeconds(livenessTimeout)
+                .withLivenessProbe(ModelUtils.newProbeBuilder(livenessProbeOptions)
                     .withNewExec()
                         .withCommand("/opt/kafka/kafka_liveness.sh")
-                    .endExec()
-                .endLivenessProbe()
-                .withNewReadinessProbe()
-                    .withInitialDelaySeconds(readinessInitialDelay)
-                    .withTimeoutSeconds(readinessTimeout)
+                    .endExec().build())
+                .withReadinessProbe(ModelUtils.newProbeBuilder(readinessProbeOptions)
                     .withNewExec()
                         // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
                         .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
-                    .endExec()
-                .endReadinessProbe()
+                    .endExec().build())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withCommand("/opt/kafka/kafka_run.sh")
