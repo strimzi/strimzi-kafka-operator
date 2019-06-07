@@ -182,8 +182,9 @@ Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) and the H
   For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
   * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
 9. Update the website
-  * Add release documentation to `strimzi.github.io/docs/`.  Update references to docs in 
-  `strimzi.github.io/documentation/index.md` and `strimzi.github.io/documentation/archive/index.md`.
+  * Add release documentation to `strimzi.github.io/docs/`.
+  Update references to docs in `strimzi.github.io/documentation/index.md` and `strimzi.github.io/documentation/archive/index.md`.
+  Update also the link from the start page: `strimzi.github.io/index.md`.
   * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to
   `strimzi.github.io/charts/index.yaml`.
   * Update the Quickstarts for OKD and Minikube to use the latest stuff.
