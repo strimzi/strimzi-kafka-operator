@@ -48,7 +48,7 @@ status:
 <2> The `Ready` condition indicates whether the Cluster Operator currently considers the Kafka cluster able to handle traffic.
 <3> The `listeners` describe the current Kafka bootstrap addresses by type.
 +
-IMPORTANT: The status for `external` listeners is still under development and does not provide a specific IP address.
+IMPORTANT: The status for `external` listeners is still under development and does not provide a specific IP address for external listeners of type `nodeport`.
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a ready state.
 
