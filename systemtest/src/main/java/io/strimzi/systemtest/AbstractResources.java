@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.BaseClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationContext;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -65,7 +66,20 @@ abstract class AbstractResources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((BaseClient) client().getClient()).getHttpClient(), client().getClient().getConfiguration());
+
+        CustomResourceOperationContext croc = new CustomResourceOperationContext().withOkhttpClient(((BaseClient) client().getClient()).getHttpClient()).withConfig(client().getClient().getConfiguration())
+            .withApiGroupName(Crds.kafka().getSpec().getGroup())
+            .withApiGroupVersion(Crds.kafka().getSpec().getVersion())
+            .withNamespace(client().getNamespace())
+            .withCascading(true)
+            .withReloadingFromServer(false)
+            .withPlural("kafkas")
+            .withType(resourceType)
+            .withListType(listClass)
+            .withDoneableType(doneClass)
+            .withCrd(Crds.kafka());
+
+        return new CustomResourceOperationsImpl<T, L, D>(croc);
     }
 
     MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {

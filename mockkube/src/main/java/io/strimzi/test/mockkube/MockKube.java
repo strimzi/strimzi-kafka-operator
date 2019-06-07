@@ -70,7 +70,6 @@ import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
@@ -208,7 +207,7 @@ public class MockKube {
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
                 RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods, mockPvcs);
-        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+        MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment,
                 DoneableDeployment>> mockDep = buildDeployments(mockPods);
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
         MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount,
@@ -274,8 +273,8 @@ public class MockKube {
         RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(rbac);
         when(mockClient.policy().podDisruptionBudget()).thenReturn(mockPdb);
-        when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(mockRb);
-        when(mockClient.rbac().kubernetesClusterRoleBindings()).thenReturn(mockCrb);
+        when(mockClient.rbac().roleBindings()).thenReturn(mockRb);
+        when(mockClient.rbac().clusterRoleBindings()).thenReturn(mockCrb);
 
         mockHttpClient(mockClient);
 
@@ -305,13 +304,13 @@ public class MockKube {
         }
     }
 
-    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>
+    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>>
             buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
-        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment,
                 DoneableDeployment>>(
-            Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(ScalableResource.class), depDb) {
+            Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(RollableScalableResource.class), depDb) {
             @Override
-            protected void nameScopedMocks(ScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
+            protected void nameScopedMocks(RollableScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockWatch(resourceName, resource);
                 //mockCreate(resourceName, resource);
