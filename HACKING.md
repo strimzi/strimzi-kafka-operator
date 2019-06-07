@@ -183,7 +183,7 @@ Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) and the H
   * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
 9. Update the website
   * Add release documentation to `strimzi.github.io/docs/`.  Update references to docs in 
-  `strimzi.github.io/documentation/index.md`.
+  `strimzi.github.io/documentation/index.md` and `strimzi.github.io/documentation/archive/index.md`.
   * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to
   `strimzi.github.io/charts/index.yaml`.
   * Update the Quickstarts for OKD and Minikube to use the latest stuff.
