@@ -9,7 +9,7 @@ public class InvalidResourceException extends RuntimeException {
         super();
     }
 
-    protected InvalidResourceException(String s) {
+    public InvalidResourceException(String s) {
         super(s);
     }
 }

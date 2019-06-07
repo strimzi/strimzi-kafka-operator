@@ -9,9 +9,11 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.ResourceUtils;
@@ -209,5 +211,41 @@ public class KafkaUserModelTest {
     public void testGetUsername()    {
         assertEquals("CN=my-user", KafkaUserModel.getTlsUserName("my-user"));
         assertEquals("my-user", KafkaUserModel.getScramUserName("my-user"));
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void test65CharTlsUsername()    {
+        // 65 characters => Should throw exception with TLS
+        KafkaUser tooLong = new KafkaUserBuilder(tlsUser)
+                .editMetadata()
+                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
+    }
+
+    @Test
+    public void test64CharTlsUsername()    {
+        // 64 characters => Should be still OK
+        KafkaUser notTooLong = new KafkaUserBuilder(tlsUser)
+                .editMetadata()
+                .withName("User123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, notTooLong, clientsCaCert, clientsCaKey, null);
+    }
+
+    @Test
+    public void test65CharSaslUsername()    {
+        // 65 characters => should work with SCRAM-SHA-512
+        KafkaUser tooLong = new KafkaUserBuilder(scramShaUser)
+                .editMetadata()
+                .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
     }
 }
