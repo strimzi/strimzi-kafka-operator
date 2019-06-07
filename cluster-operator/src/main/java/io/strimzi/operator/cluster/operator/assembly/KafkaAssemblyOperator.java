@@ -371,25 +371,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Kafka kafka = getRes.result();
 
                     if (kafka != null) {
-                        KafkaStatus currentStatus = kafka.getStatus();
-
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                        if (!ksDiff.isEmpty()) {
-                            Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
-
-                            crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
-                                if (updateRes.succeeded())  {
-                                    log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusFuture.complete();
-                                } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusFuture.fail(updateRes.cause());
-                                }
-                            });
-                        } else {
-                            log.debug("{}: Status did not change", reconciliation);
+                        if ("kafka.strimzi.io/v1alpha1".equals(kafka.getApiVersion()))   {
+                            log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafka.getApiVersion());
                             updateStatusFuture.complete();
+                        } else {
+                            KafkaStatus currentStatus = kafka.getStatus();
+
+                            StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                            if (!ksDiff.isEmpty()) {
+                                Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
+
+                                crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                                    if (updateRes.succeeded()) {
+                                        log.debug("{}: Completed status update", reconciliation);
+                                        updateStatusFuture.complete();
+                                    } else {
+                                        log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                        updateStatusFuture.fail(updateRes.cause());
+                                    }
+                                });
+                            } else {
+                                log.debug("{}: Status did not change", reconciliation);
+                                updateStatusFuture.complete();
+                            }
                         }
                     } else {
                         log.error("{}: Current Kafka resource not found", reconciliation);
