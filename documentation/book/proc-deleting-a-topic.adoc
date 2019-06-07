@@ -12,9 +12,9 @@ This procedure describes how to delete a Kafka topic using a `KafkaTopic` {Produ
 * A running Kafka cluster.
 * A running Topic Operator.
 * An existing `KafkaTopic` to be deleted.
-* `delete.topic.enable=true`
+* `delete.topic.enable=true` (default)
 
-NOTE: The `delete.topic.enable` property must be set to `true` in `Kafka.spec.kafka.config`. Otherwise, the steps outlined here will delete the `KafkaTopic` resource, but the Kafka topic and its data will remain. After reconciliation by the Cluster Operator, the custom resource is then recreated.
+NOTE: The `delete.topic.enable` property must be set to `true` in `Kafka.spec.kafka.config`. Otherwise, the steps outlined here will delete the `KafkaTopic` resource, but the Kafka topic and its data will remain. After reconciliation by the Topic Operator, the custom resource is then recreated.
 
 .Procedure
 
