@@ -12,7 +12,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
-- Kubernetes 1.9+
+- Kubernetes 1.11+
 - PV provisioner support in the underlying infrastructure
 
 ## Installing the Chart
@@ -50,44 +50,44 @@ the documentation for more details.
 
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
-| `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []                    |
+| `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []             |
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
-| `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
-| `image.tag`                          | Cluster Operator image tag                | `0.12.0-rc1`                                             |
+| `image.name`                         | Cluster Operator image name               | `operator`                                           |
+| `image.tag`                          | Cluster Operator image tag                | `0.12.0-rc2`                                         |
 | `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPresent`                                       |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
-| `zookeeper.image.name`               | ZooKeeper image name                      | `zookeeper`                                          |
-| `zookeeper.image.tag`                | ZooKeeper image tag                       | `0.12.0-rc1`                                             |
+| `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
+| `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `0.12.0-rc2`                                         |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
-| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `0.12.0-rc1`                                             |
+| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `0.12.0-rc2`                                         |
 | `kafkaConnect.image.repository`      | Kafka Connect image repository            | `strimzi`                                            |
-| `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka-connect`                                      |
-| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.12.0-rc1`                                             |
+| `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
+| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.12.0-rc2`                                         |
 | `kafkaConnects2i.image.repository`   | Kafka Connect s2i image repository        | `strimzi`                                            |
-| `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka-connect-s2i`                                  |
-| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.12.0-rc1`                                             |
+| `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka`                                              |
+| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.12.0-rc2`                                         |
 | `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
-| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `0.12.0-rc1`                                             |
+| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `0.12.0-rc2`                                         |
 | `topicOperator.image.repository`     | Topic Operator image repository           | `strimzi`                                            |
-| `topicOperator.image.name`           | Topic Operator s2i image name             | `topic-operator`                                     |
-| `topicOperator.image.tag`            | Topic Operator s2i image tag              | `0.12.0-rc1`                                             |
+| `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
+| `topicOperator.image.tag`            | Topic Operator image tag                  | `0.12.0-rc2`                                         |
 | `kafkaInit.image.repository`         | Init Kafka image repository               | `strimzi`                                            |
-| `kafkaInit.image.name`               | Init Kafka image name                     | `kafka-init`                                         |
-| `kafkaInit.image.tag`                | Init Kafka image tag                      | `0.12.0-rc1`                                             |
+| `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
+| `kafkaInit.image.tag`                | Init Kafka image tag                      | `0.12.0-rc2`                                         |
 | `tlsSidecarZookeeper.image.repository` | TLS Sidecar for ZooKeeper image repository | `strimzi`                                         |
-| `tlsSidecarZookeeper.image.name`     | TLS Sidecar for ZooKeeper image name      | `zookeeper-stunnel`                                  |
-| `tlsSidecarZookeeper.image.tag`      | TLS Sidecar for ZooKeeper image tag       | `0.12.0-rc1`                                             |
+| `tlsSidecarZookeeper.image.name`     | TLS Sidecar for ZooKeeper image name      | `kafka`                                              |
+| `tlsSidecarZookeeper.image.tag`      | TLS Sidecar for ZooKeeper image tag prefix | `0.12.0-rc2`                                        |
 | `tlsSidecarKafka.image.repository`   | TLS Sidecar for Kafka image repository    | `strimzi`                                            |
-| `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka-stunnel`                                      |
-| `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag           | `0.12.0-rc1`                                             |
+| `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka`                                              |
+| `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `0.12.0-rc2`                                         |
 | `tlsSidecarTopicOperator.image.repository` | TLS Sidecar for Topic Operator image repository | `strimzi`                                |
-| `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `topic-operator-stunnel`                             |
-| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag  | `0.12.0-rc1`                                             |
+| `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
+| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix  | `0.12.0-rc2`                                  |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

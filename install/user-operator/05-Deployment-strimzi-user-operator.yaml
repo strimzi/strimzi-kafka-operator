@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-user-operator
       containers:
         - name: strimzi-user-operator
-          image: strimzi/user-operator:0.12.0-rc1
+          image: strimzi/operator:0.12.0-rc2
           args:
           - /opt/strimzi/bin/user_operator_run.sh
           env:
