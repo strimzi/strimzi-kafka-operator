@@ -17,7 +17,9 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -95,6 +97,11 @@ public class KafkaUserModel {
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
+            //if (kafkaUser.getMetadata().getName().length() > 64)    {
+            if (kafkaUser.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
+                throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
+            }
+
             result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret,
                     UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {

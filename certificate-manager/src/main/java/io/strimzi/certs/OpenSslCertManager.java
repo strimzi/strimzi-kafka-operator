@@ -28,6 +28,7 @@ import static java.util.Arrays.asList;
  * An OpenSSL based certificates manager
  */
 public class OpenSslCertManager implements CertManager {
+    public static final int MAXIMUM_CN_LENGTH = 64;
 
     private static final Logger log = LogManager.getLogger(OpenSslCertManager.class);
 
