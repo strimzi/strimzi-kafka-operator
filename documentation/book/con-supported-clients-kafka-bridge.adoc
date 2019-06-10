@@ -12,6 +12,6 @@ You can use the Kafka Bridge to integrate the following two types of clients wit
 
 * Client applications running _outside_ the {ProductPlatformName} cluster in which the Kafka Bridge is deployed. These are referred to as _external clients_.
 
-Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer service.
+Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer Service.
 
 For more information on configuring the host and port for the `KafkaBridge` resource, see xref:ref-kafka-bridge-http-configuration-{context}[].
