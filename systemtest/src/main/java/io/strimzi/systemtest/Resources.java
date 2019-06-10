@@ -74,6 +74,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.stream.IntStream;
 
 import static io.strimzi.systemtest.utils.StUtils.changeOrgAndTag;
@@ -92,7 +93,7 @@ public class Resources extends AbstractResources {
     private static final String INGRESS = "Ingress";
     private static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
 
-    private List<Runnable> resources = new ArrayList<>();
+    private Stack<Runnable> resources = new Stack<>();
 
     Resources(KubeClient client) {
         super(client);
@@ -102,35 +103,35 @@ public class Resources extends AbstractResources {
         LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((Kafka) resource);
                 });
                 break;
             case KafkaConnect.RESOURCE_KIND:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaConnect) resource);
                 });
                 break;
             case KafkaConnectS2I.RESOURCE_KIND:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
                 break;
             case KafkaMirrorMaker.RESOURCE_KIND:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
                 break;
             case DEPLOYMENT:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client().deleteDeployment((Deployment) resource);
@@ -138,28 +139,28 @@ public class Resources extends AbstractResources {
                 });
                 break;
             case CLUSTER_ROLE_BINDING:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client().deleteKubernetesClusterRoleBinding((KubernetesClusterRoleBinding) resource);
                 });
                 break;
             case SERVICE:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client().deleteService((Service) resource);
                 });
                 break;
             case INGRESS:
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client().deleteIngress((Ingress) resource);
                 });
                 break;
             default :
-                resources.add(() -> {
+                resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                 });
@@ -212,8 +213,8 @@ public class Resources extends AbstractResources {
     }
 
     void deleteResources() {
-        for (Runnable resource : resources) {
-            resource.run();
+        while (!resources.empty()) {
+            resources.pop().run();
         }
     }
 
