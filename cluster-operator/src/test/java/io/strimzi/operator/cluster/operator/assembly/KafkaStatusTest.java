@@ -109,6 +109,36 @@ public class KafkaStatusTest {
     }
 
     @Test
+    public void testStatusEntityOperatorReadiness() throws ParseException {
+        Kafka kafka = getKafkaCrd();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the Kafka Operator
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                supplier,
+                config);
+
+        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+            assertTrue(res.succeeded());
+
+            assertNotNull(kafkaCaptor.getValue());
+            assertNotNull(kafkaCaptor.getValue().getStatus());
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+
+            assertEquals("NotReady", status.getConditions().get(0).getType());
+            assertEquals("True", status.getConditions().get(0).getStatus());
+        });
+    }
+
+    @Test
     public void testStatusAfterSuccessfulReconciliationWithPreviousFailure() throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
