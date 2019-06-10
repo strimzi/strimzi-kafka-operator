@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static io.strimzi.systemtest.utils.StUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -906,7 +905,7 @@ public class Resources extends AbstractResources {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
                 .withName(Constants.KAFKA_CLIENTS)
-                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-" + KAFKA_VERSION))
+                .withImage("strimzi/test-client:" + Environment.STRIMZI_TAG + "-kafka-" + KAFKA_VERSION)
                 .addNewPort()
                     .withContainerPort(4242)
                 .endPort()
