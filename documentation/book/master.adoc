@@ -25,6 +25,8 @@ include::assembly-upgrade-resources.adoc[leveloffset=+1]
 
 include::proc-uninstalling.adoc[leveloffset=+1]
 
+include::proc-accessing-resource-status.adoc[leveloffset=+1]
+
 include::ref-kafka-logging.adoc[leveloffset=+1]
 [appendix]
 include::faq.adoc[leveloffset=+1]
