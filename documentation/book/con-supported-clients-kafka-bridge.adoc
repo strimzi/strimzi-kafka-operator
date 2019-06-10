@@ -4,7 +4,7 @@
 
 [id='con-supported-clients-kafka-bridge-{context}']
 
-== Supported clients for the {ProductName} Kafka Bridge
+= Supported clients for the {ProductName} Kafka Bridge
 
 You can use the Kafka Bridge to integrate the following two types of clients with your Kafka cluster:
 
