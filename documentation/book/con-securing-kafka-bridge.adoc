@@ -16,11 +16,11 @@ However, you can secure the Kafka Bridge using other methods, such as:
 
 * {ProductPlatformName} Network Policies that define which pods can access the Kafka Bridge.
 
-* Reverse proxies with authentication and/or authorization (e.g. OAuth2 proxies).
+* Reverse proxies with authentication and/or authorization, for example, OAuth2 proxies.
 
 * API Gateways.
 
-* Kubernetes Ingress or OpenShift Routes with TLS termination.
+* {KubernetesName} Ingress or {OpenShiftName} Routes with TLS termination.
 
 The Kafka Bridge supports TLS encryption and TLS and SASL authentication when connecting to the Kafka Brokers. Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. Additionally, you can configure a TLS-encrypted connection between the Kafka Bridge and your Kafka cluster. For more information, see xref:con-kafka-bridge-authentication-{context}[]. 
 
