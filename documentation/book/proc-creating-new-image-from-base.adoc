@@ -5,9 +5,9 @@
 [id='creating-new-image-from-base-{context}']
 = Creating a Docker image from the Kafka Connect base image
 
-A container image for running Kafka Connect using {ProductName} is available on {DockerRepository} as `{DockerKafkaConnect}`. You can use this as a base image for creating your own custom image with additional connector plug-ins. 
+You can use the Kafka container image on {DockerRepository} as a base image for creating your own custom image with additional connector plug-ins. 
 
-The following procedure explains how to create your custom image and add it to the `/opt/kafka/plugins` directory. At startup, the AMQ Streams version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
+The following procedure explains how to create your custom image and add it to the `/opt/kafka/plugins` directory. At startup, the {ProductName} version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
 
 .Prerequisites
 
