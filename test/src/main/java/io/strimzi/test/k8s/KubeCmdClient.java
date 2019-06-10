@@ -97,7 +97,7 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     /**
      * Wait for the deployment with the given {@code name} to
-     * have replicas==readyReplicas && replicas==expected.
+     * have {@code replicas==readyReplicas && replicas==expected}.
      * @param name The deployment name.
      * @param expected Number of expected pods
      * @return This kube client.
