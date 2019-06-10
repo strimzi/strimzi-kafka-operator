@@ -101,6 +101,7 @@ public class OrderedProperties {
      * @param is The UTF-8 input stream containing name=value pairs separated by newlines.
      *
      * @return this instance for chaining
+     * @throws IOException If the input stream could not be read.
      */
     public OrderedProperties addStringPairs(InputStream is) throws IOException {
         new PropertiesReader(pairs).read(is);

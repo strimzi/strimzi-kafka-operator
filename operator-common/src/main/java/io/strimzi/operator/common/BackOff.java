@@ -34,6 +34,7 @@ public class BackOff {
 
     /**
      * Computes delays according to {@code 200 * 2^attempt} with the given maximum number of attempts.
+     * @param maxAttempts The maximum number of attempts.
      */
     public BackOff(int maxAttempts) {
         this(DEFAULT_SCALE_MS, DEFAULT_BASE, maxAttempts);
@@ -41,6 +42,9 @@ public class BackOff {
 
     /**
      * Computes delays according to {@code scaleMs * base^attempt} with the given maximum number of attempts.
+     * @param scaleMs The scale.
+     * @param base The base.
+     * @param maxAttempts The maximum number of attempts to make before {@code MaxAttemptsExceededException} is thrown.
      */
     public BackOff(long scaleMs, int base, int maxAttempts) {
         if (scaleMs <= 0) {
@@ -58,14 +62,14 @@ public class BackOff {
     }
 
     /**
-     * The maximum number of attempts.
+     * @return The maximum number of attempts.
      */
     public int maxAttempts() {
         return maxAttempts;
     }
 
     /**
-     * The maximum number of delays.
+     * @return The maximum number of delays.
      */
     public int maxNumDelays() {
         return maxAttempts - 1;
@@ -74,6 +78,7 @@ public class BackOff {
     /**
      * Return the next delay to use, in milliseconds.
      * The first delay is always zero, the 2nd delay is scaleMs, and the delay increases exponentially from there.
+     * @return Return the next delay to use, in milliseconds.
      * @throws MaxAttemptsExceededException if the next attempt would exceed the configured number of attempts.
      */
     public long delayMs() {
@@ -84,14 +89,14 @@ public class BackOff {
     }
 
     /**
-     * Returns whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
+     * @return Whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
      */
     public boolean done() {
         return attempt >= maxAttempts;
     }
 
     /**
-     * How much delay for attempt n?
+     * @return How much delay for attempt n?
      */
     private long delay(int n) {
         if (n == 0) {
@@ -116,7 +121,7 @@ public class BackOff {
     }
 
     /**
-     * The cumulative delay issued by {@link #delayMs()} so far.
+     * @return The cumulative delay issued by {@link #delayMs()} so far.
      */
     public long cumulativeDelayMs() {
         return cumulativeDelayAttemptMs(attempt);
@@ -125,6 +130,7 @@ public class BackOff {
     /**
      * The total possible delay for this BackOff.
      * This does not depend on how much delay has already been issued.
+     * @return The total possible delay for this BackOff.
      */
     public long totalDelayMs() {
         return cumulativeDelayAttemptMs(maxAttempts);

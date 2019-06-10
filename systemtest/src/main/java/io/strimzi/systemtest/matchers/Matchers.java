@@ -18,6 +18,7 @@ public class Matchers {
     /**
      * A matcher checks that examined object has a full match of reasons for actual events.
      * @param eventReasons - expected events for resource
+     * @return The matcher.
      */
     public static Matcher<List<Event>> hasAllOfReasons(Events... eventReasons) {
         return new HasAllOfReasons(eventReasons);
@@ -26,6 +27,7 @@ public class Matchers {
     /**
      * A matcher checks that examined object has at least one match of reasons for actual events.
      * @param eventReasons - expected events for resource
+     * @return The matcher.
      */
     public static Matcher<List<Event>> hasAnyOfReasons(Events... eventReasons) {
         return new HasAnyOfReasons(eventReasons);
@@ -42,6 +44,7 @@ public class Matchers {
 
     /**
      * A matcher checks that log doesn't have unexpected errors
+     * @return The matcher.
      */
     public static Matcher<String> logHasNoUnexpectedErrors() {
         return new LogHasNoUnexpectedErrors();

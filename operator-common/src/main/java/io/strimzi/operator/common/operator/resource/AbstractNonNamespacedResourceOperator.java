@@ -61,6 +61,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * returning a future for the outcome.
      * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
+     * @return A future which completes when the resource was created or updated.
      */
     public Future<ReconcileResult<T>> createOrUpdate(T resource) {
         if (resource == null) {
@@ -72,6 +73,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     /**
      * Asynchronously reconciles the resource with the given name to match the given
      * desired resource, returning a future for the result.
+     * @param name The name of the resource to reconcile.
+     * @param desired The desired state of the resource.
+     * @return A future which completes when the resource was reconciled.
      */
     public Future<ReconcileResult<T>> reconcile(String name, T desired) {
 
@@ -229,6 +233,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      * @param predicate The predicate.
+     * @return a future that completes when the resource identified by the given {@code name} is ready.
      */
     public Future<Void> waitFor(String name, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
         return Util.waitFor(vertx,

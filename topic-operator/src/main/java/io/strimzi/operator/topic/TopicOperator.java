@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.disjoint;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
-public class TopicOperator {
+class TopicOperator {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
     private final static Logger EVENT_LOGGER = LogManager.getLogger("Event");

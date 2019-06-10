@@ -55,6 +55,7 @@ public class ResourceVisitor {
          * @param member The getter method or field for the property.
          * @param property abstraction for using the method.
          * @param propertyValue The value of the property.
+         * @param <M> The type of member ({@code Field} or {@code Method}).
          */
         <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object owner,
                                         M member, Property<M> property, Object propertyValue);

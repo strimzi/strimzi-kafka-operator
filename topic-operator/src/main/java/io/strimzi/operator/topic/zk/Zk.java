@@ -20,7 +20,7 @@ import java.util.List;
  */
 public interface Zk {
 
-    public static void create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout,
+    static void create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout,
                               Handler<AsyncResult<Zk>> handler) {
         vertx.executeBlocking(f -> {
             try {
@@ -32,7 +32,7 @@ public interface Zk {
                 handler);
     }
 
-    public static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+    static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
         return new ZkImpl(vertx,
                 new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
                         new BytesPushThroughSerializer()));
@@ -40,18 +40,30 @@ public interface Zk {
 
     /**
      * Disconnect from the ZooKeeper server, asynchronously.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk disconnect(Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously create the znode at the given path and with the given data and ACL, using the
      * given createMode, then invoke the given handler with the result.
+     * @param path The path.
+     * @param data The data.
+     * @param acls The ACLs.
+     * @param createMode The create mode.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously delete the znode at the given path, iff the given version is -1 or matches the version of the znode,
      * then invoke the given handler with the result.
+     * @param path The path.
+     * @param version The version.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk delete(String path, int version, Handler<AsyncResult<Void>> handler);
 
@@ -59,12 +71,20 @@ public interface Zk {
      * Asynchronously set the data in the znode at the given path to the
      * given data iff the given version is -1, or matches the version of the znode,
      * then invoke the given handler with the result.
+     * @param path The path.
+     * @param data The data.
+     * @param version The version.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously fetch the children of the znode at the given {@code path}, calling the given
      * handler with the result.
+     * @param path The path.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk children(String path, Handler<AsyncResult<List<String>>> handler);
 
@@ -74,17 +94,25 @@ public interface Zk {
      * A subsequent call to {@link #children(String, Handler)} with the same path will register the child {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the children of the given {@code path} change.
+     * @param path The path.
+     * @param watcher The watcher.
+     * @return This instance.
      */
     Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
 
     /**
      * Remove the children watcher, if any, for the given {@code path}.
+     * @param path The path.
+     * @return This instance.
      */
     Zk unwatchChildren(String path);
 
     /**
      * Asynchronously fetch the data of the given znode at the given path, calling the given handler
      * with the result.
+     * @param path The path.
+     * @param handler The result handler.
+     * @return This instance.
      */
     Zk getData(String path, Handler<AsyncResult<byte[]>> handler);
 
@@ -94,11 +122,16 @@ public interface Zk {
      * A subsequent call to {@link #getData(String, Handler)} with the same path will register the data {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the data of the given {@code path} changes.
+     * @param path The path.
+     * @param watcher The result handler.
+     * @return This instance
      */
     Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher);
 
     /**
      * Remove the data watcher, if any, for the given {@code path}.
+     * @param path The path.
+     * @return This instance.
      */
     Zk unwatchData(String path);
 

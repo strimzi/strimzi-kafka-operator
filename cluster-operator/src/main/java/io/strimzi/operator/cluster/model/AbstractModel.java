@@ -216,23 +216,30 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Returns the Docker image which should be used by this cluster
-     *
-     * @return
+     * @return the Docker image which should be used by this cluster
      */
     public String getName() {
         return name;
     }
 
+    /**
+     * @return The service name.
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * @return The name of the headless service.
+     */
     public String getHeadlessServiceName() {
         return headlessServiceName;
     }
 
 
+    /**
+     * @return The selector labels.
+     */
     public Map<String, String> getSelectorLabels() {
         return labels.withName(name).strimziLabels().toMap();
     }
@@ -254,6 +261,9 @@ public abstract class AbstractModel {
         return labels.withName(name).withUserLabels(userLabels).toMap();
     }
 
+    /**
+     * @return Whether metrics are enabled.
+     */
     public boolean isMetricsEnabled() {
         return isMetricsEnabled;
     }
@@ -276,6 +286,10 @@ public abstract class AbstractModel {
         return getOrderedProperties(getDefaultLogConfigFileName());
     }
 
+    /**
+     * @param configFileName The filename
+     * @return The OrderedProperties
+     */
     @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION") // InputStream is closed by properties.addStringPairs
     public static OrderedProperties getOrderedProperties(String configFileName) {
         OrderedProperties properties = new OrderedProperties();
@@ -303,6 +317,9 @@ public abstract class AbstractModel {
         return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
     }
 
+    /**
+     * @return The logging.
+     */
     public Logging getLogging() {
         return logging;
     }
@@ -311,6 +328,11 @@ public abstract class AbstractModel {
         this.logging = logging;
     }
 
+    /**
+     * @param logging The logging to parse.
+     * @param externalCm The external ConfigMap.
+     * @return The logging properties as a String in log4j properties file format.
+     */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             // validate all entries
@@ -379,8 +401,9 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generates a metrics and logging ConfigMap according to configured defaults
-     * @return The generated ConfigMap
+     * Generates a metrics and logging ConfigMap according to configured defaults.
+     * @param cm The ConfigMap.
+     * @return The generated ConfigMap.
      */
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
         Map<String, String> data = new HashMap<>();
@@ -396,18 +419,6 @@ public abstract class AbstractModel {
         return createConfigMap(getAncillaryConfigName(), data);
     }
 
-    public String getLogConfigName() {
-        return logConfigName;
-    }
-
-    /**
-     * Sets name of field in cluster config map, where logging configuration is stored
-     * @param logConfigName
-     */
-    protected void setLogConfigName(String logConfigName) {
-        this.logConfigName = logConfigName;
-    }
-
     protected Iterable<Map.Entry<String, Object>>  getMetricsConfig() {
         return metricsConfig;
     }
@@ -417,21 +428,20 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Returns name of config map used for storing metrics and logging configuration
-     * @return
+     * Returns name of config map used for storing metrics and logging configuration.
+     * @return The name of config map used for storing metrics and logging configuration.
      */
     public String getAncillaryConfigName() {
         return ancillaryConfigName;
-    }
-
-    protected void setMetricsConfigName(String metricsAndLogsConfigName) {
-        this.ancillaryConfigName = metricsAndLogsConfigName;
     }
 
     protected List<EnvVar> getEnvVars() {
         return null;
     }
 
+    /**
+     * @return The storage.
+     */
     public Storage getStorage() {
         return storage;
     }
@@ -482,10 +492,9 @@ public abstract class AbstractModel {
         this.configuration = configuration;
     }
 
-    public String getVolumeName() {
-        return this.VOLUME_NAME;
-    }
-
+    /**
+     * @return The image name.
+     */
     public String getImage() {
         return this.image;
     }
@@ -504,6 +513,11 @@ public abstract class AbstractModel {
         return cluster;
     }
 
+    /**
+     * Gets the name of a given pod in a StatefulSet.
+     * @param podId The Id of the pod.
+     * @return The name of the pod with the given name.
+     */
     public String getPodName(int podId) {
         return name + "-" + podId;
     }
@@ -525,6 +539,7 @@ public abstract class AbstractModel {
 
     /**
      * Gets the tolerations as configured by the user in the cluster CR
+     * @return The tolerations.
      */
     public List<Toleration> getTolerations() {
         return tolerations;
@@ -533,7 +548,7 @@ public abstract class AbstractModel {
     /**
      * Sets the tolerations as configured by the user in the cluster CR
      *
-     * @param tolerations
+     * @param tolerations The tolerations.
      */
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
@@ -907,6 +922,8 @@ public abstract class AbstractModel {
 
     /**
      * Gets the given container's environment.
+     * @param container The container
+     * @return The environment of the given container.
      */
     public static Map<String, String> containerEnvVars(Container container) {
         return container.getEnv().stream().collect(
@@ -915,14 +932,23 @@ public abstract class AbstractModel {
                 (u, v) -> v));
     }
 
+    /**
+     * @param resources The resource requirements.
+     */
     public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
+    /**
+     * @return The resource requirements.
+     */
     public ResourceRequirements getResources() {
         return resources;
     }
 
+    /**
+     * @param jvmOptions The JVM options.
+     */
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
     }
@@ -1089,10 +1115,18 @@ public abstract class AbstractModel {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 
+    /**
+     * @param cluster The cluster name
+     * @return The name of the Cluster CA certificate secret.
+     */
     public static String clusterCaCertSecretName(String cluster)  {
         return KafkaResources.clusterCaCertificateSecretName(cluster);
     }
 
+    /**
+     * @param cluster The cluster name
+     * @return The name of the Cluster CA key secret.
+     */
     public static String clusterCaKeySecretName(String cluster)  {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
@@ -1121,6 +1155,9 @@ public abstract class AbstractModel {
         return merged;
     }
 
+    /**
+     * @return The service account.
+     */
     public ServiceAccount generateServiceAccount() {
         return new ServiceAccountBuilder()
                 .withNewMetadata()

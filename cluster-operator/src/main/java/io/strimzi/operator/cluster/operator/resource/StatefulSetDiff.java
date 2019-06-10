@@ -145,31 +145,32 @@ public class StatefulSetDiff extends AbstractResourceDiff {
      *
      * @return true when the StatefulSets are identical
      */
+    @Override
     public boolean isEmpty() {
         return isEmpty;
     }
 
-    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} but not to {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
+    /** @return True if there's a difference in {@code /spec/volumeClaimTemplates} but not to {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
     public boolean changesVolumeClaimTemplates() {
         return changesVolumeClaimTemplate;
     }
 
-    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
+    /** @return True if there's a difference in {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
     public boolean changesVolumeSize() {
         return changesVolumeSize;
     }
 
-    /** Returns true if there's a difference in {@code /spec/template/spec} */
+    /** @return True if there's a difference in {@code /spec/template/spec} */
     public boolean changesSpecTemplate() {
         return changesSpecTemplate;
     }
 
-    /** Returns true if there's a difference in {@code /metadata/labels} */
+    /** @return True if there's a difference in {@code /metadata/labels} */
     public boolean changesLabels() {
         return changesLabels;
     }
 
-    /** Returns true if there's a difference in {@code /spec/replicas} */
+    /** @return True if there's a difference in {@code /spec/replicas} */
     public boolean changesSpecReplicas() {
         return changesSpecReplicas;
     }

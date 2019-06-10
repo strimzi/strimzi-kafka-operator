@@ -33,6 +33,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      *
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
+     * @param leaderFinder The Zookeeper leader finder.
+     * @param operationTimeoutMs The timeout.
      */
     public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs) {
         super(vertx, client, operationTimeoutMs);

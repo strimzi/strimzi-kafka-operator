@@ -76,13 +76,15 @@ public class KafkaUserModel {
     }
 
     /**
-     * Creates instance of KafkaUserModel from CRD definition
+     * Creates instance of KafkaUserModel from CRD definition.
      *
-     * @param certManager   CertManager instance for work with certificates
-     * @param passwordGenerator A password generator
-     * @param kafkaUser     The Custom Resource based on which the model should be created
-     * @param userSecret    Kubernetes secret with existing user certificate
-     * @return
+     * @param certManager CertManager instance for work with certificates.
+     * @param passwordGenerator A password generator.
+     * @param kafkaUser The Custom Resource based on which the model should be created.
+     * @param clientsCaCert The clients CA certificate Secret.
+     * @param clientsCaKey The clients CA key Secret.
+     * @param userSecret Kubernetes secret with existing user certificate.
+     * @return The user model.
      */
     public static KafkaUserModel fromCrd(CertManager certManager,
                                          PasswordGenerator passwordGenerator,
@@ -120,7 +122,7 @@ public class KafkaUserModel {
      * Generates secret containing the certificate for TLS client auth when TLS client auth is enabled for this user.
      * Returns null otherwise.
      *
-     * @return
+     * @return The secret.
      */
     public Secret generateSecret()  {
         if (authentication instanceof KafkaUserTlsClientAuthentication) {
@@ -142,7 +144,11 @@ public class KafkaUserModel {
      * Manage certificates generation based on those already present in the Secrets
      *
      * @param certManager CertManager instance for handling certificates creation
+     * @param clientsCaCertSecret The clients CA certificate Secret.
+     * @param clientsCaKeySecret The clients CA key Secret.
      * @param userSecret Secret with the user certificate
+     * @param validityDays The number of days the certificate should be valid for.
+     * @param renewalDays The renewal days.
      */
     public void maybeGenerateCertificates(CertManager certManager,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret,
@@ -190,6 +196,10 @@ public class KafkaUserModel {
         }
     }
 
+    /**
+     * @param generator The password generator.
+     * @param userSecret The Secret containing any existing password.
+     */
     public void maybeGeneratePassword(PasswordGenerator generator, Secret userSecret) {
         if (userSecret != null) {
             // Secret already exists -> lets verify if it has a password
@@ -218,7 +228,7 @@ public class KafkaUserModel {
     /**
      * Creates secret with the data
      * @param data Map with the Secret content
-     * @return
+     * @return The secret.
      */
     protected Secret createSecret(Map<String, String> data) {
         Secret s = new SecretBuilder()
@@ -237,7 +247,7 @@ public class KafkaUserModel {
     /**
      * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
      *
-     * @return
+     * @return The owner reference.
      */
     protected OwnerReference createOwnerReference() {
         return new OwnerReferenceBuilder()
@@ -262,9 +272,10 @@ public class KafkaUserModel {
     }
 
     /**
-     * Generates the name of the User secret based on the username
+     * Decodes the name of the User secret based on the username
      *
-     * @return
+     * @param username The username.
+     * @return The decoded user name.
      */
     public static String decodeUsername(String username) {
         if (username.contains("CN="))   {
@@ -283,7 +294,8 @@ public class KafkaUserModel {
     /**
      * Generates the name of the User secret based on the username
      *
-     * @return
+     * @param username The username.
+     * @return The TLS user name.
      */
     public static String getTlsUserName(String username)    {
         return "CN=" + username;
@@ -292,7 +304,8 @@ public class KafkaUserModel {
     /**
      * Generates the name of the User secret based on the username
      *
-     * @return
+     * @param username The username.
+     * @return The SCRAM user name.
      */
     public static String getScramUserName(String username)    {
         return username;
@@ -301,7 +314,7 @@ public class KafkaUserModel {
     /**
      * Gets the Username
      *
-     * @return
+     * @return The user name.
      */
     public String getUserName()    {
         if (isTlsUser()) {
@@ -313,54 +326,54 @@ public class KafkaUserModel {
         }
     }
 
+    /**
+     * @return The name of the user.
+     */
     public String getName() {
         return name;
     }
 
     /**
-     * Generates the name of the USer secret based on the username
+     * Generates the name of the User secret based on the username.
      *
-     * @return
+     * @param username The username.
+     * @return The name of the user.
      */
     public static String getSecretName(String username)    {
         return username;
     }
 
     /**
-     * Gets the name of the User secret
+     * Gets the name of the User secret.
      *
-     * @return
+     * @return The name of the user secret.
      */
     public String getSecretName()    {
         return KafkaUserModel.getSecretName(name);
     }
 
     /**
-     * Sets authentication method
+     * Sets the authentication method.
      *
-     * @param authentication Authentication method
+     * @param authentication Authentication method.
      */
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
     }
 
-    public KafkaUserAuthentication getAuthentication() {
-        return this.authentication;
-    }
-
     /**
-     * Get list of ACL rules for Simple Authorization which should apply to this user
+     * Get the list of ACL rules for Simple Authorization which should apply to this user.
      *
-     * @return
+     * @return The ACL rules.
      */
     public Set<SimpleAclRule> getSimpleAclRules() {
         return simpleAclRules;
     }
 
     /**
-     * Sets list of ACL rules for Simple authorization
+     * Sets the list of ACL rules for Simple authorization.
      *
-     * @param rules List of ACL rules which should be applied to this user
+     * @param rules List of ACL rules which should be applied to this user.
      */
     public void setSimpleAclRules(List<AclRule> rules) {
         Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
@@ -373,18 +386,18 @@ public class KafkaUserModel {
     }
 
     /**
-     * Returns true if the user is using TLS authentication
+     * Returns true if the user is using TLS authentication.
      *
-     * @return
+     * @return true if the user is using TLS authentication.
      */
     public boolean isTlsUser()  {
         return authentication instanceof KafkaUserTlsClientAuthentication;
     }
 
     /**
-     * Returns true if the user is using SCRAM-SHA-512 authentication
+     * Returns true if the user is using SCRAM-SHA-512 authentication.
      *
-     * @return
+     * @return true if the user is using SCRAM-SHA-512 authentication.
      */
     public boolean isScramUser()  {
         return authentication instanceof KafkaUserScramSha512ClientAuthentication;

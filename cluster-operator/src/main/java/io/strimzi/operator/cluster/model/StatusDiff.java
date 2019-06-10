@@ -55,6 +55,7 @@ public class StatusDiff extends AbstractResourceDiff {
      *
      * @return true when the storage configurations are the same
      */
+    @Override
     public boolean isEmpty() {
         return isEmpty;
     }

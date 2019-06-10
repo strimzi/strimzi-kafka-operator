@@ -98,10 +98,8 @@ public class MsgCliApiClient {
      *
      * @param clientArguments list of arguments for kafka client (together with kafka client name!)
      * @param count           count of clients that will be started
-     * @return
-     * @throws InterruptedException
-     * @throws ExecutionException
-     * @throws TimeoutException
+     * @return Some JSON.
+     * @throws Exception If something went wrong.
      */
     public JsonObject startClients(List<String> clientArguments, int count) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
@@ -176,6 +174,7 @@ public class MsgCliApiClient {
      * Send request with one kafka client and receive result
      * @param client kafka client
      * @return result of kafka client
+     * @throws Exception If something went wrong.
      */
     public JsonObject sendAndGetStatus(VerifiableClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();
@@ -197,6 +196,7 @@ public class MsgCliApiClient {
      * Send request with one kafka client and receive id
      * @param client kafka client
      * @return id of kafka client
+     * @throws Exception If something went wrong.
      */
     public String sendAndGetId(VerifiableClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();

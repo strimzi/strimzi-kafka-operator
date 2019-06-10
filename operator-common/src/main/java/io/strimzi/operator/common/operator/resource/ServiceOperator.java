@@ -97,7 +97,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param name          Name of the service
      * @param pollIntervalMs    Interval in which we poll
      * @param timeoutMs     Timeout
-     * @return
+     * @return A future that succeeds when the Service has an assigned address.
      */
     public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isIngressAddressReady);
@@ -108,6 +108,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      *
      * @param namespace The namespace.
      * @param name The route name.
+     * @return Whether the Service already has assigned ingress address.
      */
     public boolean isIngressAddressReady(String namespace, String name) {
         ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
@@ -129,7 +130,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param name          Name of the service
      * @param pollIntervalMs    Interval in which we poll
      * @param timeoutMs     Timeout
-     * @return
+     * @return A future that succeeds when the Service has an assigned node port
      */
     public Future<Void> hasNodePort(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isNodePortReady);
@@ -140,6 +141,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      *
      * @param namespace The namespace.
      * @param name The route name.
+     * @return Whether the Service already has assigned node ports.
      */
     public boolean isNodePortReady(String namespace, String name) {
         ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
