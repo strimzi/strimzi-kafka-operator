@@ -28,4 +28,4 @@ Solid-state drives (SSDs), though not essential, can improve the performance of 
 NOTE: You do not need to provision replicated storage because Kafka and Zookeeper both have built-in data replication.
 
 == File systems
-It is recommended that you configure your storage system to use the XFS file system. AMQ Streams is also compatible with the ext4 file system, but this might require additional configuration for best results.
+It is recommended that you configure your storage system to use the XFS file system. {ProductName} is also compatible with the ext4 file system, but this might require additional configuration for best results.
