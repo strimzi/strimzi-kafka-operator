@@ -111,7 +111,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return defaultVersion;
         }
 
-        /** Find the version from the given version string */
+        /** Find the version from the given version string.
+         * @param version The version.
+         * @return The KafkaVersion.
+         */
         public KafkaVersion version(String version) {
             KafkaVersion result;
             if (version == null) {
@@ -230,8 +233,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     /**
      * Compare two decimal version strings, e.g. 1.10.1 &gt; 1.9.2
-     * @param version1
-     * @param version2
+     * @param version1 The first version.
+     * @param version2 The second version.
      * @return Zero if version1 == version2;
      * less than 1 if version1 &gt; version2;
      * greater than 1 if version1 &gt; version2.

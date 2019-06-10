@@ -18,13 +18,12 @@ public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
 
     /**
-     * Returns a future that completes when the given {@code ready} indicates readiness.
-     *
-     * @param vertx The vertx instance
-     * @param logContext A string used for context in logging
+     * @param vertx The vertx instance.
+     * @param logContext A string used for context in logging.
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      * @param ready Determines when the wait is complete by returning true.
+     * @return A future that completes when the given {@code ready} indicates readiness.
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
         Future<Void> fut = Future.future();

@@ -408,7 +408,7 @@ public final class TestUtils {
      *
      * @param retry count of remaining retries
      * @param fn    request function
-     * @return
+     * @return The result of the successful call to {@code fn}.
      */
     public static <T> T doRequestTillSuccess(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
         try {

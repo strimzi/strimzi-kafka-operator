@@ -183,6 +183,8 @@ public class TopicOperator extends AbstractModel {
 
     /**
      * Get the name of the TO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The role binding name.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-topic-operator";
@@ -209,6 +211,7 @@ public class TopicOperator extends AbstractModel {
      * Create a Topic Operator from given desired resource
      *
      * @param kafkaAssembly desired resource with cluster configuration containing the topic operator one
+     * @param versions The versions.
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
     public static TopicOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -325,6 +328,8 @@ public class TopicOperator extends AbstractModel {
 
     /**
      * Get the name of the topic operator service account given the name of the {@code cluster}.
+     * @param cluster The cluster name
+     * @return The service account name.
      */
     public static String topicOperatorServiceAccountName(String cluster) {
         return topicOperatorName(cluster);
@@ -389,6 +394,7 @@ public class TopicOperator extends AbstractModel {
     /**
      * Generate the Secret containing CA self-signed certificates for internal communication
      * It also contains the private key-certificate (signed by internal CA) for communicating with Zookeeper and Kafka
+     * @param clusterCa The cluster CA
      * @return The generated Secret
      */
     public Secret generateSecret(ClusterCa clusterCa) {

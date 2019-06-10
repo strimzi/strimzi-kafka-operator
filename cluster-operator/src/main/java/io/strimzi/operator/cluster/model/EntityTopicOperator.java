@@ -166,6 +166,8 @@ public class EntityTopicOperator extends AbstractModel {
 
     /**
      * Get the name of the TO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The name of the role binding.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-entity-topic-operator";

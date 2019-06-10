@@ -68,7 +68,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Generate new DeploymentConfig
      *
-     * @return      Source ImageStream resource definition
+     * @param annotations The annotations.
+     * @param isOpenShift Whether we're on OpenShift.
+     * @param imagePullPolicy The image pull policy.
+     * @param imagePullSecrets The image pull secrets.
+     * @return Source ImageStream resource definition
      */
     public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy,
                                                      List<LocalObjectReference> imagePullSecrets) {

@@ -606,7 +606,7 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Generates the PodDisruptionBudget
      *
-     * @return
+     * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
@@ -619,6 +619,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
     /**
      * Get the name of the connect service account given the name of the {@code connectResourceName}.
+     * @param connectResourceName  The resource name.
+     * @return The service account name.
      */
     public static String containerServiceAccountName(String connectResourceName) {
         return kafkaConnectClusterName(connectResourceName);

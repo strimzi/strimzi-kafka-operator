@@ -53,12 +53,9 @@ public class ModelUtils {
             System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
 
     /**
-     * Find the first secret in the given secrets with the given name
+     * @param certificateAuthority The CA configuration.
+     * @return The cert validity.
      */
-    public static Secret findSecretWithName(List<Secret> secrets, String sname) {
-        return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
-    }
-
     public static int getCertificateValidity(CertificateAuthority certificateAuthority) {
         int validity = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
         if (certificateAuthority != null
@@ -68,6 +65,10 @@ public class ModelUtils {
         return validity;
     }
 
+    /**
+     * @param certificateAuthority The CA configuration.
+     * @return The renewal days.
+     */
     public static int getRenewalDays(CertificateAuthority certificateAuthority) {
         int renewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
 
@@ -99,8 +100,8 @@ public class ModelUtils {
      * image ::= [, \t\r\n]+
      * </code></pre>
      * For example {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}.
-     * @param str
-     * @return
+     * @param str The string to parse.
+     * @return The parsed map.
      */
     public static Map<String, String> parseImageMap(String str) {
         if (str != null) {
@@ -119,6 +120,10 @@ public class ModelUtils {
         }
     }
 
+    /**
+     * @param ss The StatefulSet
+     * @return The environment of the Kafka container in the SS.
+     */
     public static Map<String, String> getKafkaContainerEnv(StatefulSet ss) {
         for (Container container : ss.getSpec().getTemplate().getSpec().getContainers()) {
             if ("kafka".equals(container.getName())) {
@@ -294,6 +299,7 @@ public class ModelUtils {
      * a JBOD containing at least one persistent volume.
      *
      * @param storage the Storage instance to check
+     * @return Whether the give Storage contains any persistent storage.
      */
     public static boolean containsPersistentStorage(Storage storage) {
         boolean isPersistentClaimStorage = storage instanceof PersistentClaimStorage;
@@ -309,6 +315,7 @@ public class ModelUtils {
      * Returns the prefix used for volumes and persistent volume claims
      *
      * @param id identification number of the persistent storage
+     * @return The volume prefix.
      */
     public static String getVolumePrefix(Integer id) {
         return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;

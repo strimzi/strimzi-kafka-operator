@@ -40,7 +40,7 @@ public class SecretCertProvider {
      * @param annotations annotations to add to the Secret
      * @param ownerReference owner of the Secret
      * @return the Secret
-     * @throws IOException
+     * @throws IOException If a file could not be read.
      */
     public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
         return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels, annotations, ownerReference);
@@ -59,7 +59,7 @@ public class SecretCertProvider {
      * @param annotations annotations to add to the Secret
      * @param ownerReference owner of the Secret
      * @return the Secret
-     * @throws IOException
+     * @throws IOException If a file could not be read.
      */
     public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
         byte[] key = Files.readAllBytes(keyFile.toPath());
@@ -149,7 +149,7 @@ public class SecretCertProvider {
      * @param keyFile private key to store
      * @param certFile certificate to store
      * @return the Secret
-     * @throws IOException
+     * @throws IOException If a file could not be read.
      */
     public Secret addSecret(Secret secret, String keyKey, String certKey, File keyFile, File certFile) throws IOException {
         byte[] key = Files.readAllBytes(keyFile.toPath());

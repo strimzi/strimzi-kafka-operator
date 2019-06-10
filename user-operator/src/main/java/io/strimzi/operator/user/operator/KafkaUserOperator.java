@@ -64,14 +64,15 @@ public class KafkaUserOperator {
                     "0123456789");
 
     /**
-     * @param vertx The Vertx instance
-     * @param certManager For managing certificates
-     * @param crdOperator For operating on Custom Resources
-     * @param secretOperations For operating on Secrets
-     * @param scramShaCredentialOperator For operating on SCRAM SHA credentials
-     * @param aclOperations For operating on ACLs
-     * @param caCertName The name of the Secret containing the clients CA certificate and private key
-     * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key
+     * @param vertx The Vertx instance.
+     * @param certManager For managing certificates.
+     * @param crdOperator For operating on Custom Resources.
+     * @param secretOperations For operating on Secrets.
+     * @param scramShaCredentialOperator For operating on SCRAM SHA credentials.
+     * @param aclOperations For operating on ACLs.
+     * @param caCertName The name of the Secret containing the clients CA certificate.
+     * @param caKeyName The name of the Secret containing the clients CA private key.
+     * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key.
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
@@ -168,6 +169,8 @@ public class KafkaUserOperator {
      * Reconcile assembly resources in the given namespace having the given {@code name}.
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaUser}) in the given namespace with the given name and
      * comparing with the corresponding resource.
+     * @param reconciliation The reconciliation.
+     * @param handler The result handler.
      */
     public final void reconcile(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
@@ -232,6 +235,7 @@ public class KafkaUserOperator {
      * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
      * @param selector The labels used to select the resources
+     * @return A latch for awaiting the reconciliation.
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
         List<KafkaUser> desiredResources = crdOperator.list(namespace, selector);
@@ -277,13 +281,13 @@ public class KafkaUserOperator {
     }
 
     /**
-     * Create Kubernetes watch for KafkaUser resources
+     * Create Kubernetes watch for KafkaUser resources.
      *
-     * @param namespace Namespace where to watch for users
-     * @param selector  Labels which the Users should match
-     * @param onClose   Callbeck called when the watch is closed
+     * @param namespace Namespace where to watch for users.
+     * @param selector Labels which the Users should match.
+     * @param onClose Callback called when the watch is closed.
      *
-     * @return
+     * @return A future which completes when the watcher has been created.
      */
     public Future<Watch> createWatch(String namespace, Labels selector, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();

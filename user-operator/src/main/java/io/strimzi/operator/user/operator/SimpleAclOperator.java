@@ -179,10 +179,10 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Returns Set of ACLs applying to single user
+     * Returns Set of ACLs applying to single user.
      *
-     * @param username  Name of the user
-     * @return
+     * @param username  Name of the user.
+     * @return The Set of ACLs applying to single user.
      */
     public Set<SimpleAclRule> getAcls(String username)   {
         log.debug("Searching for ACL rules of user {}", username);
@@ -214,9 +214,9 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Returns set with all usernames which have some ACLs
+     * Returns set with all usernames which have some ACLs.
      *
-     * @return
+     * @return The set with all usernames which have some ACLs.
      */
     public Set<String> getUsersWithAcls()   {
         Set<String> result = new HashSet<String>();

@@ -430,7 +430,9 @@ public class ZookeeperCluster extends AbstractModel {
      * internal communication with Kafka.
      * It also contains the related Zookeeper nodes private keys.
      *
-     * @return The generated Secret
+     * @param clusterCa The cluster CA.
+     * @param kafka The Kafka resource.
+     * @return The generated Secret.
      */
     public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka) {
 
@@ -574,9 +576,9 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generates the PodDisruptionBudget
+     * Generates the PodDisruptionBudget.
      *
-     * @return
+     * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
@@ -593,6 +595,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     /**
      * Get the name of the zookeeper service account given the name of the {@code zookeeperResourceName}.
+     * @param zookeeperResourceName The resource name.
+     * @return The service account name.
      */
     public static String containerServiceAccountName(String zookeeperResourceName) {
         return zookeeperClusterName(zookeeperResourceName);

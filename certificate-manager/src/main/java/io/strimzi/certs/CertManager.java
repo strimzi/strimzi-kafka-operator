@@ -15,7 +15,7 @@ public interface CertManager {
      * @param certFile path to the file which will contain the self signed certificate
      * @param sbj subject information
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
 
@@ -25,7 +25,7 @@ public interface CertManager {
      * @param keyFile path to the file which will contain the private key
      * @param certFile path to the file which will contain the self signed certificate
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException;
 
@@ -35,7 +35,7 @@ public interface CertManager {
      * @param certFile path to the file which will contain the new self signed certificate
      * @param sbj subject information
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
 
@@ -45,6 +45,7 @@ public interface CertManager {
      * @param keyFile path to the file which will contain the private key
      * @param csrFile path to the file which will contain the certificate sign request
      * @param sbj subject information
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException;
 
@@ -56,7 +57,7 @@ public interface CertManager {
      * @param caCert path to the file containing the CA certificate
      * @param crtFile path to the file which will contain the signed certificate
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateCert(File csrFile, File caKey, File caCert, File crtFile, int days) throws IOException;
 
@@ -69,7 +70,7 @@ public interface CertManager {
      * @param crtFile path to the file which will contain the signed certificate
      * @param sbj subject information
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException;
 
@@ -81,7 +82,7 @@ public interface CertManager {
      * @param caCert CA certificate bytes
      * @param crtFile path to the file which will contain the signed certificate
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException;
 
@@ -94,7 +95,7 @@ public interface CertManager {
      * @param crtFile path to the file which will contain the signed certificate
      * @param sbj subject information
      * @param days certificate duration
-     * @throws IOException
+     * @throws IOException If an input or output file could not be read/written.
      */
     void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException;
 }

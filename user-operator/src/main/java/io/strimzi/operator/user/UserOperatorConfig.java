@@ -42,13 +42,14 @@ public class UserOperatorConfig {
     /**
      * Constructor
      *
-     * @param namespace namespace in which the operator will run and create resources
-     * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
-     * @param zookeperConnect Connecton URL for Zookeeper
-     * @param zookeeperSessionTimeoutMs Session timeout for Zookeeper connections
-     * @param labels    Map with labels which should be used to find the KafkaUser resources
-     * @param caCertSecretName    Name of the secret containing the Certification Authority
-     * @param caNamespace   Namespace with the CA secret
+     * @param namespace namespace in which the operator will run and create resources.
+     * @param reconciliationIntervalMs How many milliseconds between reconciliation runs.
+     * @param zookeperConnect Connecton URL for Zookeeper.
+     * @param zookeeperSessionTimeoutMs Session timeout for Zookeeper connections.
+     * @param labels Map with labels which should be used to find the KafkaUser resources.
+     * @param caCertSecretName Name of the secret containing the Certification Authority certificate.
+     * @param caKeySecretName The name of the secret containing the Certification Authority key.
+     * @param caNamespace Namespace with the CA secret.
      */
     public UserOperatorConfig(String namespace,
                               long reconciliationIntervalMs,

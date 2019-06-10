@@ -10,26 +10,27 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Function;
 
 public class ProcessHelper {
 
     private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 
-    public static ProcessResult executeSubprocess(List<String> verifyArgs) throws IOException, InterruptedException {
-        return executeSubprocess(verifyArgs, Function.identity());
-    }
-
     /**
-     * Execute the command given in {@code verifyArgs}.
+     * Execute the command given in {@code args}.
      * Apply the given {@code sanitizer} function to the
-     * {@code verifyArgs} when logging, so that security-sensitive information is not logged.*/
-    public static ProcessResult executeSubprocess(List<String> verifyArgs, Function<List<String>, List<String>> sanitizer) throws IOException, InterruptedException {
-        if (verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
-            throw new RuntimeException("Command " + verifyArgs + " lacks an executable arg[0]");
+     * {@code args} when logging, so that security-sensitive information is not logged.
+     * @param args The executable and its arguments.
+     * @return The result of the subprocess
+     * @throws IOException Reading/writing to the subprocess
+     * @throws InterruptedException If interrupted while waiting for the subprocess to complete
+     */
+    public static ProcessResult executeSubprocess(List<String> args) throws IOException, InterruptedException {
+
+        if (args.isEmpty() || !new File(args.get(0)).canExecute()) {
+            throw new RuntimeException("Command " + args + " lacks an executable arg[0]");
         }
 
-        ProcessBuilder pb = new ProcessBuilder(verifyArgs);
+        ProcessBuilder pb = new ProcessBuilder(args);
         // If we redirect stderr to stdout we could break clients which parse the output because the
         // characters will be jumbled.
         // Reading two pipes without deadlocking on the blocking is difficult, so let's just write stderr to a file.
@@ -39,7 +40,7 @@ public class ProcessHelper {
         pb.redirectOutput(stdout);
         Process p = pb.start();
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Started process {} with command line {}", p, sanitizer.apply(verifyArgs));
+            LOGGER.info("Started process {} with command line {}", p, args);
         }
         p.getOutputStream().close();
         int exitCode = p.waitFor();

@@ -55,6 +55,10 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     /**
      * Asynchronously roll the deployment returning a Future which will complete once all the pods have been rolled
      * and the Deployment is ready.
+     * @param namespace The namespace of the deployment
+     * @param name The name of the deployment
+     * @param operationTimeoutMs The timeout
+     * @return A future which completes when all the pods in the deployment have been restarted.
      */
     public Future<Void> rollingUpdate(String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
@@ -62,6 +66,12 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
                 .compose(ignored -> readiness(namespace, name, 1_000, operationTimeoutMs));
     }
 
+    /**
+     * Asynchronously delete the given pod.
+     * @param namespace The namespace of the pod.
+     * @param name The name of the pod.
+     * @return A Future which will complete once all the pods has been deleted.
+     */
     public Future<ReconcileResult<Pod>> deletePod(String namespace, String name) {
         Labels labels = Labels.fromMap(null).withName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();

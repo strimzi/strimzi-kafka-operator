@@ -20,6 +20,8 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param newTopic The topic to create.
+     * @param handler The result handler.
      */
     void createTopic(Topic newTopic, Handler<AsyncResult<Void>> handler);
 
@@ -28,6 +30,8 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param topicName The name of the topic to delete.
+     * @param handler The result handler.
      */
     void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler);
 
@@ -36,6 +40,8 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param topic The topic config to update.
+     * @param handler The result handler.
      */
     void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler);
 
@@ -44,6 +50,8 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param topic The topic.
+     * @param handler The result handler.
      */
     void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler);
 
@@ -52,6 +60,8 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param topic The topic.
+     * @param handler The result handler.
      */
     void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler);
 
@@ -61,6 +71,8 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * If the topic does not exist the {@link AsyncResult#result()} will be null.
+     * @param topicName The name of the topic to get the metadata of.
+     * @param handler The result handler.
      */
     void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler);
 
@@ -69,6 +81,7 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * @param handler The result handler.
      */
     void listTopics(Handler<AsyncResult<Set<String>>> handler);
 

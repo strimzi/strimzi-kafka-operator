@@ -25,9 +25,9 @@ public abstract class AbstractResourceDiff {
     }
 
     /**
-     * Returns whether the Diff is empty or not
+     * Returns whether the Diff is empty or not.
      *
-     * @return
+     * @return whether the Diff is empty or not.
      */
     public abstract boolean isEmpty();
 }

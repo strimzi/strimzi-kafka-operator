@@ -19,7 +19,7 @@ import java.util.Set;
  *     TopicDiff.diff(topicA, topicB).apply(topicA).equals(topicB)
  * </code></pre>
  */
-public class TopicDiff {
+class TopicDiff {
 
     private final ObjectMeta objectMeta;
 

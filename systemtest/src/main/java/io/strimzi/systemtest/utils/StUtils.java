@@ -55,14 +55,22 @@ public class StUtils {
                             pod -> pod.getMetadata().getUid()));
     }
 
-    /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
+    /**
+     * Returns a map of pod name to resource version for the pods currently in the given statefulset.
+     * @param name  The StatefulSet name
+     * @return A map of pod name to resource version for pods in the given StatefulSet.
+     */
     public static Map<String, String> ssSnapshot(String name) {
         StatefulSet statefulSet = kubeClient().getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return podSnapshot(selector);
     }
 
-    /** Returns a map of pod name to resource version for the pods currently in the given deployment */
+    /**
+     * Returns a map of pod name to resource version for the pods currently in the given deployment.
+     * @param name The Deployment name.
+     * @return A map of pod name to resource version for pods in the given Deployment.
+     */
     public static Map<String, String> depSnapshot(String name) {
         Deployment deployment = kubeClient().getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
@@ -204,7 +212,10 @@ public class StUtils {
     }
 
     /**
-     * Wait until the SS is ready and all of its Pods are also ready
+     *
+     * Wait until the SS is ready and all of its Pods are also ready.
+     * @param name The name of the StatefulSet
+     * @param expectPods The number of pods expected.
      */
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
         LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
@@ -254,7 +265,8 @@ public class StUtils {
     }
 
     /**
-     * Wait until the deployment will be deleted
+     * Wait until the given Deployment has been deleted.
+     * @param name The name of the Deployment.
      */
     public static void waitForDeploymentDeletion(String name) {
         LOGGER.info("Waiting for Deployment deletion {}", name);
@@ -264,7 +276,8 @@ public class StUtils {
     }
 
     /**
-     * Wait until the deployment is ready
+     * Wait until the given Deployment is ready.
+     * @param name The name of the Deployment.
      */
     public static void waitForDeploymentReady(String name) {
         LOGGER.info("Waiting for Deployment {}", name);
@@ -274,7 +287,9 @@ public class StUtils {
     }
 
     /**
-     * Wait until the deployment is ready
+     * Wait until the given Deployment is ready.
+     * @param name The name of the Deployment.
+     * @param expectPods The expected number of pods.
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
         LOGGER.debug("Waiting for Deployment {}", name);
@@ -286,7 +301,8 @@ public class StUtils {
     }
 
     /**
-     * Wait until the deployment config is ready
+     * Wait until the given DeploymentConfig is ready.
+     * @param name The name of the DeploymentConfig.
      */
     public static void waitForDeploymentConfigReady(String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
@@ -296,7 +312,8 @@ public class StUtils {
     }
 
     /**
-     * Wait until the stateful set will be deleted
+     * Wait until the given StatefulSet has been deleted.
+     * @param name The name of the StatefulSet.
      */
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.info("Waiting for StatefulSet deletion {}", name);
@@ -306,7 +323,8 @@ public class StUtils {
     }
 
     /**
-     * Wait until the config map will be deleted
+     * Wait until the config map has been deleted.
+     * @param name The name of the ConfigMap.
      */
     public static void waitForConfigMapDeletion(String name) {
         LOGGER.info("Waiting for config map deletion {}", name);

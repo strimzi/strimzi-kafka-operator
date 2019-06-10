@@ -57,6 +57,8 @@ public class ClusterCa extends Ca {
      * In Strimzi 0.6.0 the Secrets and keys used a different convention.
      * Here we adapt the keys in the {@code *-cluster-ca} Secret to match what
      * 0.7.0 expects.
+     * @param clusterCaKey The cluster CA key Secret
+     * @return The same Secret.
      */
     public static Secret adapt060ClusterCaSecret(Secret clusterCaKey) {
         if (clusterCaKey != null && clusterCaKey.getData() != null) {
