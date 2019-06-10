@@ -10,7 +10,8 @@ metadata:
     certified: "false"
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
     containerImage: docker.io/strimzi/operator:latest
-    createdAt: 2019-02-25T22:09:00Z
+    createdAt: 2019-06-10T11:00:00Z
+    capabilities: Full Lifecycle
     support: Strimzi
 spec:
   displayName: Strimzi
@@ -535,35 +536,267 @@ spec:
       kind: Kafka
       displayName: Kafka
       description: Represents a Kafka cluster
+      resources:
+      - kind: Route
+        name: ''
+        version: route.openshift.io/v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: StatefulSet
+        name: ''
+        version: v1
+      - kind: Deployment
+        name: ''
+        version: v1
+      - kind: ReplicaSet
+        name: ''
+        version: v1
+      - kind: Pod
+        name: ''
+        version: v1
+      - kind: Secret
+        name: ''
+        version: v1
+      specDescriptors:
+        - description: Kafka version
+          displayName: Version
+          path: kafka.version
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The desired number of Kafka brokers.
+          displayName: Kafka Brokers
+          path: kafka.replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - description: The type of storage used by Kafka brokers
+          displayName: Kafka storage
+          path: kafka.storage.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+          displayName: Kafka Resource Requirements
+          path: kafka.resources
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+        - description: The desired number of Zookeeper nodes.
+          displayName: Zookeeper Nodes
+          path: zookeeper.replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - description: The type of storage used by Zookeeper nodes
+          displayName: Zookeeper storage
+          path: zookeeper.storage.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+          displayName: Zookeeper Resource Requirements
+          path: zookeeper.resources
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
       statusDescriptors:
         - description: Kafka cluster conditions
-    - name: kafkatopics.kafka.strimzi.io
-      version: v1beta1
-      kind: KafkaTopic
-      displayName: Kafka Topic
-      description: Represents a topic inside a Kafka cluster
-    - name: kafkausers.kafka.strimzi.io
-      version: v1beta1
-      kind: KafkaUser
-      displayName: Kafka User
-      description: Represents a user inside a Kafka cluster
+          displayName: Conditions
+          path: conditions
+          x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes.conditions'
     - name: kafkaconnects.kafka.strimzi.io
       version: v1beta1
       kind: KafkaConnect
       displayName: Kafka Connect
       description: Represents a Kafka Connect cluster
+      resources:
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: Deployment
+        name: ''
+        version: v1
+      - kind: ReplicaSet
+        name: ''
+        version: v1
+      - kind: Pod
+        name: ''
+        version: v1
+      specDescriptors:
+        - description: The desired number of Kafka Connect nodes.
+          displayName: Connect nodes
+          path: replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - description: Kafka Connect version
+          displayName: Version
+          path: version
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The address of the bootstrap server
+          displayName: Bootstrap server
+          path: bootstrapServers
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+          displayName: Resource Requirements
+          path: resources
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
     - name: kafkaconnects2is.kafka.strimzi.io
       version: v1beta1
       kind: KafkaConnectS2I
-      displayName: Kafka Connect Source to Image
+      displayName: Kafka Connect S2I
       description: Represents a Kafka Connect cluster with Source 2 Image support
+      resources:
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: DeploymentConfig
+        name: ''
+        version: apps.openshift.io/v1
+      - kind: ReplicationController
+        name: ''
+        version: v1
+      - kind: Pod
+        name: ''
+        version: v1
+      - kind: BuildConfig
+        name: ''
+        version: build.openshift.io/v1
+      - kind: ImageStream
+        name: ''
+        version: image.openshift.io/v1
+      specDescriptors:
+        - description: The desired number of Kafka Connect nodes.
+          displayName: Connect nodes
+          path: replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - description: Kafka Connect version
+          displayName: Version
+          path: version
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The address of the bootstrap server
+          displayName: Bootstrap server
+          path: bootstrapServers
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+          displayName: Resource Requirements
+          path: resources
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
     - name: kafkamirrormakers.kafka.strimzi.io
       version: v1beta1
       kind: KafkaMirrorMaker
-      displayName: Kafka Mirror Maker
+      displayName: Kafka MirrorMaker
       description: Represents a Kafka MirrorMaker cluster
+      resources:
+      - kind: Deployment
+        name: ''
+        version: v1
+      - kind: ReplicaSet
+        name: ''
+        version: v1
+      - kind: Pod
+        name: ''
+        version: v1
+      specDescriptors:
+        - description: The desired number of Kafka MirrorMaker nodes.
+          displayName: MirrorMaker nodes
+          path: replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - description: Kafka Mirror Maker version
+          displayName: Version
+          path: version
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The bootstrap address of the Source cluster
+          displayName: Source cluster
+          path: consumer.bootstrapServers
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The bootstrap address of the Target cluster
+          displayName: Target cluster
+          path: producer.bootstrapServers
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Expression specifying the topics which should be mirrored
+          displayName: Mirrored topics
+          path: whitelist
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+          displayName: Resource Requirements
+          path: resources
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+    - name: kafkatopics.kafka.strimzi.io
+      version: v1beta1
+      kind: KafkaTopic
+      displayName: Kafka Topic
+      description: Represents a topic inside a Kafka cluster
+      specDescriptors:
+        - description: The number of partitions
+          displayName: Partitions
+          path: partitions
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The number of replicas
+          displayName: Replication factor
+          path: replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+    - name: kafkausers.kafka.strimzi.io
+      version: v1beta1
+      kind: KafkaUser
+      displayName: Kafka User
+      description: Represents a user inside a Kafka cluster
+      resources:
+      - kind: Secret
+        name: ''
+        version: v1
+      specDescriptors:
+        - description: Authentication type
+          displayName: Authentication type
+          path: authentication.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: Authorization type
+          displayName: Authorization type
+          path: authorization.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
     - name: kafkabridges.kafka.strimzi.io
       version: v1alpha1
       kind: KafkaBridge
       displayName: Kafka Bridge
       description: Represents a Kafka Bridge cluster
+      resources:
+      - kind: Deployment
+        name: ''
+        version: v1
+      - kind: ReplicaSet
+        name: ''
+        version: v1
+      - kind: Pod
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      specDescriptors:
+      - description: The desired number of Kafka Bridge nodes.
+          displayName: Bridge nodes
+          path: replicas
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+      - description: The bootstrap address of the Kafka cluster
+          displayName: Kafka cluster
+          path: bootstrapServers
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - description: The HTTP configuration
+          displayName: HTTP configuration
+          path: http
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
