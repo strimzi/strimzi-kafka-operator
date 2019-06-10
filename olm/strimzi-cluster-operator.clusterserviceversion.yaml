@@ -5,7 +5,7 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: |-
-      [{"apiVersion":"kafka.strimzi.io/v1beta1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"version":"2.1.1","replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaMirrorMaker","metadata":{"name":"my-mirror-maker"},"spec":{"version":"2.1.1","replicas":1,"consumer":{"bootstrapServers":"my-source-cluster-kafka-bootstrap:9092","groupId":"my-source-group-id"},"producer":{"bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"},"whitelist":".*"}},{"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaBridge","metadata":{"name":"my-bridge"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9092","http":{"port":8080}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
+      [{"apiVersion":"kafka.strimzi.io/v1beta1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"version":"2.2.1","replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"log.message.format.version":"2.2"},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaMirrorMaker","metadata":{"name":"my-mirror-maker"},"spec":{"version":"2.1.1","replicas":1,"consumer":{"bootstrapServers":"my-source-cluster-kafka-bootstrap:9092","groupId":"my-source-group-id"},"producer":{"bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"},"whitelist":".*"}},{"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaBridge","metadata":{"name":"my-bridge"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9092","http":{"port":8080}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
     categories: "Streaming & Messaging"
     certified: "false"
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
@@ -73,7 +73,7 @@ spec:
     - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIyLjAuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA1MTIgNTk1IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MTIgNTk1OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6IzE5MkM0Nzt9Cgkuc3Qxe2ZpbGw6dXJsKCNTVkdJRF8xXyk7fQoJLnN0MntmaWxsOnVybCgjU1ZHSURfMl8pO30KCS5zdDN7ZmlsbDp1cmwoI1NWR0lEXzNfKTt9Cgkuc3Q0e2ZpbGw6dXJsKCNTVkdJRF80Xyk7fQoJLnN0NXtmaWxsOnVybCgjU1ZHSURfNV8pO30KCS5zdDZ7ZmlsbDp1cmwoI1NWR0lEXzZfKTt9Cjwvc3R5bGU+CjxnPgoJPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSIyNTYsNSAxLDE1Mi4yIDEsNDQ2LjcgMjU2LDU5My45IDUxMSw0NDYuNyA1MTEsMTUyLjIgMjU2LDUgCSIvPgoJPGxpbmVhckdyYWRpZW50IGlkPSJTVkdJRF8xXyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHgxPSIxMDkuNDk5NiIgeTE9Ijg0Ljk2MjIiIHgyPSI0NDAuOTUxNyIgeTI9Ijc5My44MTAyIj4KCQk8c3RvcCAgb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojRkZGRkZGIi8+CgkJPHN0b3AgIG9mZnNldD0iMSIgc3R5bGU9InN0b3AtY29sb3I6IzU0QkFEOCIvPgoJPC9saW5lYXJHcmFkaWVudD4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik0yNTYsNTYxbDIyNi41LTEzMC44di0yNi4zYy0zNy42LTcuMy04NC45LTE0LjMtMTQzLjUtMTkuM2MtMTk5LjItMTcuMi0xNC44LTU2LjYsNjguOS0xMjcuMQoJCVMxMzAsMTY1LjcsMTMwLDE2NS43czE0Ny42LDMxLDEzMi44LDUwYy0xMC41LDEzLjUtMTM0LjMsNDMuNS0yMzMuMyw4OC4xdjEyNi41TDI1Niw1NjF6Ii8+CjwvZz4KPC9zdmc+Cg==
       mediatype: image/svg+xml
   version: 0.13.0-SNAPSHOT
-  MinKubeVersion: 1.9.0
+  MinKubeVersion: 1.11.0
   maturity: stable
   maintainers:
   - name: Strimzi
@@ -147,6 +147,7 @@ spec:
           - kafka.strimzi.io
           resources:
           - kafkas
+          - kafkas/status
           - kafkaconnects
           - kafkaconnects2is
           - kafkamirrormakers
@@ -360,6 +361,18 @@ spec:
           - patch
           - update
         - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
           - rbac.authorization.k8s.io
           resources:
           - clusterrolebindings
@@ -369,6 +382,12 @@ spec:
           - delete
           - patch
           - update
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
@@ -411,18 +430,6 @@ spec:
           - clusterroles
           verbs:
           - get
-          - create
-          - delete
-          - patch
-          - update
-        - apiGroups:
-          - extensions
-          resources:
-          - ingresses
-          verbs:
-          - get
-          - list
-          - watch
           - create
           - delete
           - patch
@@ -528,6 +535,8 @@ spec:
       kind: Kafka
       displayName: Kafka
       description: Represents a Kafka cluster
+      statusDescriptors:
+        - description: Kafka cluster conditions
     - name: kafkatopics.kafka.strimzi.io
       version: v1beta1
       kind: KafkaTopic
