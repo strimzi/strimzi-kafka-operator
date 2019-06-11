@@ -13,6 +13,7 @@ Affinity can be configured using the `affinity` property in following resources:
 * `Kafka.spec.entityOperator.template.pod`
 * `KafkaConnect.spec.template.pod`
 * `KafkaConnectS2I.spec.template.pod`
+* `KafkaBridge.spec.template.pod`
 
 The affinity configuration can include different types of affinity:
 

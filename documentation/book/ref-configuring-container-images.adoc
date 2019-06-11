@@ -16,6 +16,7 @@ Container image which should be used for given components can be specified using
 * `Kafka.spec.entityOperator.tlsSidecar`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
+* `KafkaBridge.spec`
 
 == Configuring the `Kafka.spec.kafka.image` property
 

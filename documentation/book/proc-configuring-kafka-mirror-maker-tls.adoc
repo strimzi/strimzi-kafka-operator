@@ -18,6 +18,8 @@ The following steps describe how to configure TLS on the consumer side for conne
 
 . (Optional) If they do not already exist, prepare the TLS certificate used for authentication in a file and create a `Secret`.
 +
+NOTE: The secrets created by the Cluster Operator for Kafka cluster may be used directly.
++
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:
 [source,shell,subs=+quotes]

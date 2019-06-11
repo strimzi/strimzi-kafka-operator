@@ -43,6 +43,8 @@ include::assembly-kafka-connect.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker.adoc[leveloffset=+1]
 
+include::assembly-kafka-bridge.adoc[leveloffset=+1]
+
 include::proc-deploying-example-clients.adoc[leveloffset=+1]
 
 include::assembly-getting-started-topic-operator.adoc[leveloffset=+1]
