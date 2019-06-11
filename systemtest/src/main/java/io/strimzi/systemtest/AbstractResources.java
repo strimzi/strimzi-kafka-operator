@@ -64,6 +64,7 @@ abstract class AbstractResources {
         return customResourcesWithCascading(Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
+    @SuppressWarnings("checkstyle:Regexp")
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
 

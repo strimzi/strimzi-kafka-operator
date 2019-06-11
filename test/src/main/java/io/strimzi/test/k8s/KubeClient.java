@@ -284,11 +284,7 @@ public class KubeClient {
     }
 
     public void deleteDeployment(String deploymentName) {
-        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).delete();
-    }
-
-    public void deleteDeployment(Deployment deployment) {
-        client.apps().deployments().inNamespace(getNamespace()).delete(deployment);
+        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).cascading(true).delete();
     }
 
     /**
