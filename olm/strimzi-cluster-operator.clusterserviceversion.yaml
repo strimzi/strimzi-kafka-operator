@@ -5,11 +5,218 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: |-
-      [{"apiVersion":"kafka.strimzi.io/v1beta1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"version":"2.2.1","replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"log.message.format.version":"2.2"},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"version":"2.1.1","replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaMirrorMaker","metadata":{"name":"my-mirror-maker"},"spec":{"version":"2.1.1","replicas":1,"consumer":{"bootstrapServers":"my-source-cluster-kafka-bootstrap:9092","groupId":"my-source-group-id"},"producer":{"bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"},"whitelist":".*"}},{"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaBridge","metadata":{"name":"my-bridge"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9092","http":{"port":8080}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1beta1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
+      [
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"Kafka",
+            "metadata":{
+              "name":"my-cluster"
+            },
+            "spec":{
+              "kafka":{
+                  "version":"2.2.1",
+                  "replicas":3,
+                  "listeners":{
+                    "plain":{
+                     },
+                    "tls":{
+                     }
+                  },
+                  "config":{
+                    "offsets.topic.replication.factor":3,
+                    "transaction.state.log.replication.factor":3,
+                    "transaction.state.log.min.isr":2,
+                    "log.message.format.version":"2.2"
+                  },
+                  "storage":{
+                    "type":"ephemeral"
+                  }
+              },
+              "zookeeper":{
+                  "replicas":3,
+                  "storage":{
+                    "type":"ephemeral"
+                  }
+              },
+              "entityOperator":{
+                  "topicOperator":{
+                   },
+                  "userOperator":{
+                   }
+              }
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"KafkaConnect",
+            "metadata":{
+              "name":"my-connect-cluster"
+            },
+            "spec":{
+              "version":"2.2.1",
+              "replicas":1,
+              "bootstrapServers":"my-cluster-kafka-bootstrap:9093",
+              "tls":{
+                  "trustedCertificates":[
+                    {
+                        "secretName":"my-cluster-cluster-ca-cert",
+                        "certificate":"ca.crt"
+                    }
+                  ]
+              }
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"KafkaConnectS2I",
+            "metadata":{
+              "name":"my-connect-cluster"
+            },
+            "spec":{
+              "version":"2.2.1",
+              "replicas":1,
+              "bootstrapServers":"my-cluster-kafka-bootstrap:9093",
+              "tls":{
+                  "trustedCertificates":[
+                    {
+                        "secretName":"my-cluster-cluster-ca-cert",
+                        "certificate":"ca.crt"
+                    }
+                  ]
+              }
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"KafkaMirrorMaker",
+            "metadata":{
+              "name":"my-mirror-maker"
+            },
+            "spec":{
+              "version":"2.2.1",
+              "replicas":1,
+              "consumer":{
+                  "bootstrapServers":"my-source-cluster-kafka-bootstrap:9092",
+                  "groupId":"my-source-group-id"
+              },
+              "producer":{
+                  "bootstrapServers":"my-target-cluster-kafka-bootstrap:9092"
+              },
+              "whitelist":".*"
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1alpha1",
+            "kind":"KafkaBridge",
+            "metadata":{
+              "name":"my-bridge"
+            },
+            "spec":{
+              "replicas":1,
+              "bootstrapServers":"my-cluster-kafka-bootstrap:9092",
+              "http":{
+                  "port":8080
+              }
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"KafkaTopic",
+            "metadata":{
+              "name":"my-topic",
+              "labels":{
+                  "strimzi.io/cluster":"my-cluster"
+              }
+            },
+            "spec":{
+              "partitions":10,
+              "replicas":3,
+              "config":{
+                  "retention.ms":604800000,
+                  "segment.bytes":1073741824
+              }
+            }
+        },
+        {
+            "apiVersion":"kafka.strimzi.io/v1beta1",
+            "kind":"KafkaUser",
+            "metadata":{
+              "name":"my-user",
+              "labels":{
+                  "strimzi.io/cluster":"my-cluster"
+              }
+            },
+            "spec":{
+              "authentication":{
+                  "type":"tls"
+              },
+              "authorization":{
+                  "type":"simple",
+                  "acls":[
+                    {
+                        "resource":{
+                          "type":"topic",
+                          "name":"my-topic",
+                          "patternType":"literal"
+                        },
+                        "operation":"Read",
+                        "host":"*"
+                    },
+                    {
+                        "resource":{
+                          "type":"topic",
+                          "name":"my-topic",
+                          "patternType":"literal"
+                        },
+                        "operation":"Describe",
+                        "host":"*"
+                    },
+                    {
+                        "resource":{
+                          "type":"group",
+                          "name":"my-group",
+                          "patternType":"literal"
+                        },
+                        "operation":"Read",
+                        "host":"*"
+                    },
+                    {
+                        "resource":{
+                          "type":"topic",
+                          "name":"my-topic",
+                          "patternType":"literal"
+                        },
+                        "operation":"Write",
+                        "host":"*"
+                    },
+                    {
+                        "resource":{
+                          "type":"topic",
+                          "name":"my-topic",
+                          "patternType":"literal"
+                        },
+                        "operation":"Create",
+                        "host":"*"
+                    },
+                    {
+                        "resource":{
+                          "type":"topic",
+                          "name":"my-topic",
+                          "patternType":"literal"
+                        },
+                        "operation":"Describe",
+                        "host":"*"
+                    }
+                  ]
+              }
+            }
+        }
+      ]
     categories: "Streaming & Messaging"
     certified: "false"
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
     containerImage: docker.io/strimzi/operator:latest
+    repository: https://github.com/strimzi/strimzi-kafka-operator
     createdAt: 2019-06-10T11:00:00Z
     capabilities: Full Lifecycle
     support: Strimzi
@@ -599,7 +806,7 @@ spec:
           displayName: Conditions
           path: conditions
           x-descriptors:
-          - 'urn:alm:descriptor:io.kubernetes.conditions'
+           - 'urn:alm:descriptor:io.kubernetes.conditions'
     - name: kafkaconnects.kafka.strimzi.io
       version: v1beta1
       kind: KafkaConnect
@@ -730,6 +937,40 @@ spec:
           path: resources
           x-descriptors:
             - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+    - name: kafkabridges.kafka.strimzi.io
+        version: v1alpha1
+        kind: KafkaBridge
+        displayName: Kafka Bridge
+        description: Represents a Kafka Bridge cluster
+        resources:
+          - kind: Deployment
+            name: ''
+            version: v1
+          - kind: ReplicaSet
+            name: ''
+            version: v1
+          - kind: Pod
+            name: ''
+            version: v1
+          - kind: Service
+            name: ''
+            version: v1
+        specDescriptors:
+          - description: The desired number of Kafka Bridge nodes.
+              displayName: Bridge nodes
+              path: replicas
+              x-descriptors:
+                - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - description: The bootstrap address of the Kafka cluster
+              displayName: Kafka cluster
+              path: bootstrapServers
+              x-descriptors:
+                - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The HTTP configuration
+              displayName: HTTP configuration
+              path: http
+              x-descriptors:
+                - 'urn:alm:descriptor:com.tectonic.ui:label'
     - name: kafkatopics.kafka.strimzi.io
       version: v1beta1
       kind: KafkaTopic
@@ -764,39 +1005,5 @@ spec:
         - description: Authorization type
           displayName: Authorization type
           path: authorization.type
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:label'
-    - name: kafkabridges.kafka.strimzi.io
-      version: v1alpha1
-      kind: KafkaBridge
-      displayName: Kafka Bridge
-      description: Represents a Kafka Bridge cluster
-      resources:
-      - kind: Deployment
-        name: ''
-        version: v1
-      - kind: ReplicaSet
-        name: ''
-        version: v1
-      - kind: Pod
-        name: ''
-        version: v1
-      - kind: Service
-        name: ''
-        version: v1
-      specDescriptors:
-      - description: The desired number of Kafka Bridge nodes.
-          displayName: Bridge nodes
-          path: replicas
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:podCount'
-      - description: The bootstrap address of the Kafka cluster
-          displayName: Kafka cluster
-          path: bootstrapServers
-          x-descriptors:
-            - 'urn:alm:descriptor:com.tectonic.ui:label'
-      - description: The HTTP configuration
-          displayName: HTTP configuration
-          path: http
           x-descriptors:
             - 'urn:alm:descriptor:com.tectonic.ui:label'
