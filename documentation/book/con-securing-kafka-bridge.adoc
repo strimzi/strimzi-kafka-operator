@@ -16,7 +16,7 @@ However, you can secure the Kafka Bridge using other methods, such as:
 
 * {ProductPlatformName} Network Policies that define which pods can access the Kafka Bridge.
 
-* Reverse proxies with authentication and/or authorization, for example, OAuth2 proxies.
+* Reverse proxies with authentication or authorization, for example, OAuth2 proxies.
 
 * API Gateways.
 
