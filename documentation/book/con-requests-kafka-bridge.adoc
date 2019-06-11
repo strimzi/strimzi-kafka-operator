@@ -57,7 +57,7 @@ When creating a consumer using the `/consumers/_groupid_` endpoint, the `POST` r
 
 The embedded data format specified when creating a consumer must match the data format of the Kafka messages it will consume. 
 
-If you choose to specify a binary embedded data format, subsequent producer requests must provide the binary data in the request body as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/_topicname_` endpoint, the `value` must be in Base64:
+If you choose to specify a binary embedded data format, subsequent producer requests must provide the binary data in the request body as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/_topicname_` endpoint, the `value` must be encoded in Base64:
 
 [source,json,subs=attributes+]
 ----

@@ -22,7 +22,8 @@ If you decide to create Services, use the following labels in the `selector` to 
 ----
   # ...
   selector:
-    strimzi.io/cluster: kafka-bridge-name
+    strimzi.io/cluster: kafka-bridge-name <1>
     strimzi.io/kind: KafkaBridge
   #...
 ----
+<1> Name of the Kafka Bridge custom resource in your {ProductPlatformName} cluster.
