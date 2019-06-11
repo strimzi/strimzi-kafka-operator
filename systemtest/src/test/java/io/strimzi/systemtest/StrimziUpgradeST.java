@@ -269,6 +269,8 @@ public class StrimziUpgradeST extends AbstractST {
         deleteNamespaces();
     }
 
+    // There is no value of having teardown logic for class resources due to the fact that
+    // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
     @Override
     void tearDownEnvironmentAfterAll() {
     }
