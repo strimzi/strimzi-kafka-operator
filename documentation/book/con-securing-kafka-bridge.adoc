@@ -22,6 +22,12 @@ However, you can secure the Kafka Bridge using other methods, such as:
 
 * {KubernetesName} Ingress or {OpenShiftName} Routes with TLS termination.
 
-The Kafka Bridge supports TLS encryption and TLS and SASL authentication when connecting to the Kafka Brokers. Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. Additionally, you can configure a TLS-encrypted connection between the Kafka Bridge and your Kafka cluster. For more information, see xref:con-kafka-bridge-authentication-{context}[]. 
+The Kafka Bridge supports TLS encryption and TLS and SASL authentication when connecting to the Kafka Brokers. Within your {ProductPlatformName} cluster, you can configure:
+
+* TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster
+
+* A TLS-encrypted connection between the Kafka Bridge and your Kafka cluster.
+
+For more information, see xref:con-kafka-bridge-authentication-{context}[]. 
 
 You can use ACLs in Kafka brokers to restrict the topics that can be consumed and produced using the Kafka Bridge.
