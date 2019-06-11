@@ -25,4 +25,6 @@ include::assembly-deployment-configuration-kafka-connect-s2i.adoc[leveloffset=+1
 
 include::assembly-deployment-configuration-kafka-mirror-maker.adoc[leveloffset=+1]
 
+include::assembly-deployment-configuration-kafka-bridge.adoc[leveloffset=+1]
+
 include::assembly-customizing-deployments.adoc[leveloffset=+1]
