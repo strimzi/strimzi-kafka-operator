@@ -126,7 +126,8 @@ public class StrimziUpgradeST extends AbstractST {
             // Modify + apply installation files
             if ("HEAD" .equals(toVersion)) {
                 LOGGER.info("Updating");
-                copyModifyApply(new File("../install/cluster-operator"));
+                coDir = new File("../install/cluster-operator");
+                copyModifyApply(coDir);
                 LOGGER.info("Waiting for CO redeployment");
                 StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
                 waitForRollingUpdate(images);
@@ -150,7 +151,7 @@ public class StrimziUpgradeST extends AbstractST {
             }
             throw e;
         } finally {
-            deleteInstalledYamls(new File("../install/cluster-operator"));
+            deleteInstalledYamls(coDir);
         }
 
     }
@@ -266,6 +267,12 @@ public class StrimziUpgradeST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() {
         deleteNamespaces();
+    }
+
+    // There is no value of having teardown logic for class resources due to the fact that
+    // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
+    @Override
+    void tearDownEnvironmentAfterAll() {
     }
 
     @Override
