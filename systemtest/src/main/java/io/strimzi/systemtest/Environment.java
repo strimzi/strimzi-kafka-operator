@@ -27,6 +27,18 @@ public class Environment {
      */
     private static final String STRIMZI_TAG_ENV = "DOCKER_TAG";
     /**
+     * Specify organization which owns test-client used in system tests.
+     */
+    private static final String TEST_CLIENT_ORG_ENV = "TEST_CLIENT_ORG";
+    /**
+     * Specify registry for test-client used in system tests.
+     */
+    private static final String TEST_CLIENT_REGISTRY_ENV = "TEST_CLIENT_REGISTRY";
+    /**
+     * Specify test-client tags used in system tests.
+     */
+    private static final String TEST_CLIENT_TAG_ENV = "TEST_CLIENT_TAG";
+    /**
      * Directory for store logs collected during the tests.
      */
     private static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
@@ -62,6 +74,9 @@ public class Environment {
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = System.getenv().getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
+    public static final String TEST_CLIENT_ORG = System.getenv().getOrDefault(TEST_CLIENT_ORG_ENV, STRIMZI_ORG);
+    public static final String TEST_CLIENT_TAG = System.getenv().getOrDefault(TEST_CLIENT_TAG_ENV, STRIMZI_TAG);
+    public static final String TEST_CLIENT_REGISTRY = System.getenv().getOrDefault(TEST_CLIENT_REGISTRY_ENV, STRIMZI_REGISTRY);
     static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
@@ -78,6 +93,9 @@ public class Environment {
         LOGGER.info(debugFormat, STRIMZI_ORG_ENV, STRIMZI_ORG);
         LOGGER.info(debugFormat, STRIMZI_TAG_ENV, STRIMZI_TAG);
         LOGGER.info(debugFormat, STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY);
+        LOGGER.info(debugFormat, TEST_CLIENT_ORG_ENV, TEST_CLIENT_ORG);
+        LOGGER.info(debugFormat, TEST_CLIENT_TAG_ENV, TEST_CLIENT_TAG);
+        LOGGER.info(debugFormat, TEST_CLIENT_REGISTRY_ENV, TEST_CLIENT_REGISTRY);
         LOGGER.info(debugFormat, TEST_LOG_DIR_ENV, TEST_LOG_DIR);
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
