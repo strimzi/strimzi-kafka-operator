@@ -420,7 +420,7 @@ public final class TestUtils {
                     reconnect.get().run();
                 }
             }
-            if (ex.getCause() instanceof UnknownHostException && retry > 0) {
+            if ((ex.getCause() instanceof UnknownHostException || ex.getCause() instanceof IllegalStateException) && retry > 0) {
                 try {
                     LOGGER.info("{} remaining iterations", retry);
                     return doRequestTillSuccess(retry - 1, fn, reconnect);
@@ -428,6 +428,7 @@ public final class TestUtils {
                     throw ex2;
                 }
             } else {
+                LOGGER.info(ex.getClass().getName());
                 if (ex.getCause() != null) {
                     ex.getCause().printStackTrace();
                 } else {

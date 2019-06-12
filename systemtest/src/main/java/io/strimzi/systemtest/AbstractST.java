@@ -644,6 +644,36 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
+    void sendMessagesConsole(String namespace, String topicName, int messageCount) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    void receiveMessagesConsole(String namespace, String topicName, int messageCount) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
     }
