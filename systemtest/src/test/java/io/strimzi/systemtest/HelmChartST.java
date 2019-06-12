@@ -28,7 +28,7 @@ class HelmChartST extends AbstractST {
     @Test
     void testDeployKafkaClusterViaHelmChart() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME, NAMESPACE).done();
         StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(CLUSTER_NAME), 3);
         StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME), 3);
     }

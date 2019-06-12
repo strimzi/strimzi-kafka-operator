@@ -52,7 +52,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy target kafka
         testMethodResources().kafkaEphemeral(kafkaTargetName, 1, 1).done();
         // Deploy Topic
-        testMethodResources().topic(kafkaSourceName, topicSourceName).done();
+        testMethodResources().topic(kafkaSourceName, topicSourceName, NAMESPACE).done();
 
         testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
 
@@ -134,7 +134,7 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Deploy topic
-        testMethodResources().topic(kafkaClusterSourceName, topicSourceName).done();
+        testMethodResources().topic(kafkaClusterSourceName, topicSourceName, NAMESPACE).done();
 
         // Create Kafka user
         KafkaUser userSource = testMethodResources().tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
@@ -277,7 +277,7 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec().done();
 
         // Deploy topic
-        testMethodResources().topic(kafkaSourceName, topicName).done();
+        testMethodResources().topic(kafkaSourceName, topicName, NAMESPACE).done();
 
         TimeMeasuringSystem.stopOperation(operationID);
 

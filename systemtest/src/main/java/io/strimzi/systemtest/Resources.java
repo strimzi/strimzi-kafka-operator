@@ -139,28 +139,28 @@ public class Resources extends AbstractResources {
             case CLUSTER_ROLE_BINDING:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     client().deleteClusterRoleBinding((ClusterRoleBinding) resource);
                 });
                 break;
             case SERVICE:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     client().deleteService((Service) resource);
                 });
                 break;
             case INGRESS:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     client().deleteIngress((Ingress) resource);
                 });
                 break;
             default :
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                 });
         }
         return resource;
@@ -543,19 +543,19 @@ public class Resources extends AbstractResources {
             () -> client().getPod(name) == null);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
+    DoneableKafkaTopic topic(String clusterName, String topicName, String namespace) {
+        return topic(defaultTopic(clusterName, topicName, 1, 1).build(), namespace);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
-        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, String namespace) {
+        return topic(defaultTopic(clusterName, topicName, partitions, 1).build(), namespace);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas, String namespace) {
         return topic(defaultTopic(clusterName, topicName, partitions, replicas)
             .editSpec()
             .addToConfig("min.insync.replicas", replicas)
-            .endSpec().build());
+            .endSpec().build(), namespace);
     }
 
     private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
@@ -573,9 +573,9 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    DoneableKafkaTopic topic(KafkaTopic topic) {
+    DoneableKafkaTopic topic(KafkaTopic topic, String namespace) {
         return new DoneableKafkaTopic(topic, kt -> {
-            KafkaTopic resource = kafkaTopic().create(kt);
+            KafkaTopic resource = kafkaTopic().inNamespace(namespace).create(kt);
             LOGGER.info("Created KafkaTopic {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });

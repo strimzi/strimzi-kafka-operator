@@ -146,7 +146,7 @@ class KafkaST extends MessagingBaseST {
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
 
         String firstTopicName = "test-topic";
-        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo, NAMESPACE).done();
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
@@ -178,7 +178,7 @@ class KafkaST extends MessagingBaseST {
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         String secondTopicName = "test-topic-2";
-        testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
+        testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas, NAMESPACE).done();
         waitForClusterAvailability(NAMESPACE, secondTopicName);
     }
 
@@ -498,7 +498,7 @@ class KafkaST extends MessagingBaseST {
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName, NAMESPACE).done();
 
         testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
 
@@ -529,7 +529,7 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName, NAMESPACE).done();
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
@@ -559,7 +559,7 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName, NAMESPACE).done();
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
         String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
@@ -600,7 +600,7 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName, NAMESPACE).done();
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
@@ -761,7 +761,7 @@ class KafkaST extends MessagingBaseST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Creating topic without any label
-        testMethodResources().topic(CLUSTER_NAME, "topic-without-labels")
+        testMethodResources().topic(CLUSTER_NAME, "topic-without-labels", NAMESPACE)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()

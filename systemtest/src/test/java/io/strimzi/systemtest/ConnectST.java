@@ -82,7 +82,7 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
             .endSpec().done();
-        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, NAMESPACE).done();
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
