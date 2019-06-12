@@ -422,6 +422,15 @@ public class StUtils {
         return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
     }
 
+    /**
+     * The method to configure docker image to use proper docker registry, docker org and docker tag for test-client image.
+     * @param image Test-client image that needs to be changed
+     * @return Updated test-client image with a proper registry, org, tag
+     */
+    public static String changeTestClientOrgAndTag(String image) {
+        return changeOrgAndTag(image, Environment.TEST_CLIENT_REGISTRY, Environment.TEST_CLIENT_ORG, Environment.TEST_CLIENT_TAG);
+    }
+
     public static String changeOrgAndTagInImageMap(String imageMap) {
         Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
         StringBuffer sb = new StringBuffer();
