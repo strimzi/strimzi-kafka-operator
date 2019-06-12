@@ -91,6 +91,7 @@ public class Resources extends AbstractResources {
     private static final String SERVICE = "Service";
     private static final String INGRESS = "Ingress";
     private static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    private static final String ROLE_BINDING = "RoleBinding";
 
     private Stack<Runnable> resources = new Stack<>();
 
@@ -139,8 +140,13 @@ public class Resources extends AbstractResources {
             case CLUSTER_ROLE_BINDING:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
-                    client().deleteClusterRoleBinding((ClusterRoleBinding) resource);
+                    client().getClient().rbac().clusterRoleBindings().inNamespace(resource.getMetadata().getNamespace()).delete();
+                });
+                break;
+            case ROLE_BINDING:
+                resources.push(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    client().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).delete();
                 });
                 break;
             case SERVICE:
