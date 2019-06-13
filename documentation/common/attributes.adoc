@@ -81,7 +81,6 @@
 :DockerKafkaImageCurrent: strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}
 :DockerKafkaImagePrevious: strimzi/kafka:{DockerTag}-kafka-{KafkaVersionLower}
 :DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaBridge: strimzi/kafka:{DockerTag}-kafka-bridge-{DefaultKafkaVersion}
 :DockerKafkaStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnect: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnectS2I: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
