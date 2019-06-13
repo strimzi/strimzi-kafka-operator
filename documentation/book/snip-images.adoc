@@ -6,9 +6,7 @@
 
 |Kafka
 a|
-* {DockerOrg}/kafka:{DockerTag}-kafka-2.1.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.1.1
-* {DockerOrg}/kafka:{DockerTag}-kafka-2.2.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.2.1
 
 a|
@@ -37,6 +35,6 @@ a|
 * {DockerOrg}/kafka-bridge:{DockerTag}
 
 a|
-{ProductName} image for running the {ProductName} Kafka Bridge
+{ProductName} image for running the {ProductName} kafka Bridge
 
 |===
