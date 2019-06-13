@@ -33,7 +33,7 @@ increased when using {ProductName} on clusters where regular {ProductPlatformNam
 `STRIMZI_KAFKA_IMAGES`:: Required.
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0={DockerKafkaImage}:{DockerTag}-kafka-2.0.0, 2.1.0={DockerKafkaImage}:{DockerTag}-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
@@ -54,19 +54,19 @@ no image is specified as the `Kafka.spec.zookeeper.tlsSidecar.image` in the xref
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0={DockerKafkaImage}:{DockerTag}-kafka-2.0.0, 2.1.0={DockerKafkaImage}:{DockerTag}-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
 
 `STRIMZI_KAFKA_CONNECT_S2I_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0={DockerKafkaImage}:{DockerTag}-kafka-2.0.0, 2.1.0={DockerKafkaImage}:{DockerTag}-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect-s2i[].
 
 `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0={DockerKafkaImage}:{DockerTag}-kafka-2.0.0, 2.1.0={DockerKafkaImage}:{DockerTag}-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-mirror-maker[].
 
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
