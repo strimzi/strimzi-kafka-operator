@@ -122,26 +122,26 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-client</artifactId>
-            <version>3.7.0</version>
+            <version>${vertx.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-common</artifactId>
-            <version>3.7.0</version>
+            <version>${vertx.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
-            <version>3.7.0</version>
+            <version>${vertx.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>3.7.0</version>
+            <version>${vertx.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

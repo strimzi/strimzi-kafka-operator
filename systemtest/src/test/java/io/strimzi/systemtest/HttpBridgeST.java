@@ -94,7 +94,7 @@ public class HttpBridgeST extends MessagingBaseST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertTrue(subscribHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
+        assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
         // Send messages to Kafka
         sendMessagesConsole(NAMESPACE, topicName, messageCount);
         // Try to consume messages
@@ -202,7 +202,7 @@ public class HttpBridgeST extends MessagingBaseST {
                                 LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                             }
                         } else {
-                            LOGGER.warn("Received 0 messages");
+                            LOGGER.debug("Received 0 messages, going to consume again");
                         }
                         future.complete(response.body());
                     } else {
@@ -213,7 +213,7 @@ public class HttpBridgeST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    boolean subscribHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
+    boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost,  "/consumers/" + groupId + "/instances/" + name + "/subscription")
                 .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))

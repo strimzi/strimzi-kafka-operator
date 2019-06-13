@@ -689,7 +689,9 @@ public class Resources extends AbstractResources {
                     envVar.setValue(operationTimeout);
                     break;
                 default:
-                    if (envVar.getName().contains("STRIMZI_DEFAULT")) {
+                    if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
+                        envVar.setValue("strimzi/kafka-bridge:latest");
+                    } else if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(StUtils.changeOrgAndTag(envVar.getValue()));
                     } else if (envVar.getName().contains("IMAGES")) {
                         envVar.setValue(StUtils.changeOrgAndTagInImageMap(envVar.getValue()));
