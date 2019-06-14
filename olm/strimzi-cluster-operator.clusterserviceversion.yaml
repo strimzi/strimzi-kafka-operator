@@ -1,7 +1,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: strimzi-cluster-operator.v0.12.0-rc2
+  name: strimzi-cluster-operator.v0.12.0
   namespace: placeholder
   annotations:
     alm-examples: |-
@@ -9,7 +9,7 @@ metadata:
     categories: "Streaming & Messaging"
     certified: "false"
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
-    containerImage: docker.io/strimzi/operator:0.12.0-rc2
+    containerImage: docker.io/strimzi/operator:0.12.0
     createdAt: 2019-02-25T22:09:00Z
     support: Strimzi
 spec:
@@ -72,7 +72,7 @@ spec:
   icon:
     - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIyLjAuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA1MTIgNTk1IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MTIgNTk1OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6IzE5MkM0Nzt9Cgkuc3Qxe2ZpbGw6dXJsKCNTVkdJRF8xXyk7fQoJLnN0MntmaWxsOnVybCgjU1ZHSURfMl8pO30KCS5zdDN7ZmlsbDp1cmwoI1NWR0lEXzNfKTt9Cgkuc3Q0e2ZpbGw6dXJsKCNTVkdJRF80Xyk7fQoJLnN0NXtmaWxsOnVybCgjU1ZHSURfNV8pO30KCS5zdDZ7ZmlsbDp1cmwoI1NWR0lEXzZfKTt9Cjwvc3R5bGU+CjxnPgoJPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSIyNTYsNSAxLDE1Mi4yIDEsNDQ2LjcgMjU2LDU5My45IDUxMSw0NDYuNyA1MTEsMTUyLjIgMjU2LDUgCSIvPgoJPGxpbmVhckdyYWRpZW50IGlkPSJTVkdJRF8xXyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHgxPSIxMDkuNDk5NiIgeTE9Ijg0Ljk2MjIiIHgyPSI0NDAuOTUxNyIgeTI9Ijc5My44MTAyIj4KCQk8c3RvcCAgb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojRkZGRkZGIi8+CgkJPHN0b3AgIG9mZnNldD0iMSIgc3R5bGU9InN0b3AtY29sb3I6IzU0QkFEOCIvPgoJPC9saW5lYXJHcmFkaWVudD4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik0yNTYsNTYxbDIyNi41LTEzMC44di0yNi4zYy0zNy42LTcuMy04NC45LTE0LjMtMTQzLjUtMTkuM2MtMTk5LjItMTcuMi0xNC44LTU2LjYsNjguOS0xMjcuMQoJCVMxMzAsMTY1LjcsMTMwLDE2NS43czE0Ny42LDMxLDEzMi44LDUwYy0xMC41LDEzLjUtMTM0LjMsNDMuNS0yMzMuMyw4OC4xdjEyNi41TDI1Niw1NjF6Ii8+CjwvZz4KPC9zdmc+Cg==
       mediatype: image/svg+xml
-  version: 0.12.0-rc2
+  version: 0.12.0
   MinKubeVersion: 1.11.0
   maturity: stable
   maintainers:
@@ -442,7 +442,7 @@ spec:
               serviceAccountName: strimzi-cluster-operator
               containers:
               - name: strimzi-cluster-operator
-                image: strimzi/operator:0.12.0-rc2
+                image: strimzi/operator:0.12.0
                 imagePullPolicy: IfNotPresent
                 args:
                 - /opt/strimzi/bin/cluster_operator_run.sh
@@ -456,45 +456,45 @@ spec:
                 - name: STRIMZI_OPERATION_TIMEOUT_MS
                   value: "300000"
                 - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-                  value: strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                  value: strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_KAFKA_IMAGES
                   value: |
-                    2.1.0=strimzi/kafka:0.12.0-rc2-kafka-2.1.0
-                    2.1.1=strimzi/kafka:0.12.0-rc2-kafka-2.1.1
-                    2.2.0=strimzi/kafka:0.12.0-rc2-kafka-2.2.0
-                    2.2.1=strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                    2.1.0=strimzi/kafka:0.12.0-kafka-2.1.0
+                    2.1.1=strimzi/kafka:0.12.0-kafka-2.1.1
+                    2.2.0=strimzi/kafka:0.12.0-kafka-2.2.0
+                    2.2.1=strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_KAFKA_CONNECT_IMAGES
                   value: |
-                    2.1.0=strimzi/kafka:0.12.0-rc2-kafka-2.1.0
-                    2.1.1=strimzi/kafka:0.12.0-rc2-kafka-2.1.1
-                    2.2.0=strimzi/kafka:0.12.0-rc2-kafka-2.2.0
-                    2.2.1=strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                    2.1.0=strimzi/kafka:0.12.0-kafka-2.1.0
+                    2.1.1=strimzi/kafka:0.12.0-kafka-2.1.1
+                    2.2.0=strimzi/kafka:0.12.0-kafka-2.2.0
+                    2.2.1=strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGES
                   value: |
-                    2.1.0=strimzi/kafka:0.12.0-rc2-kafka-2.1.0
-                    2.1.1=strimzi/kafka:0.12.0-rc2-kafka-2.1.1
-                    2.2.0=strimzi/kafka:0.12.0-rc2-kafka-2.2.0
-                    2.2.1=strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                    2.1.0=strimzi/kafka:0.12.0-kafka-2.1.0
+                    2.1.1=strimzi/kafka:0.12.0-kafka-2.1.1
+                    2.2.0=strimzi/kafka:0.12.0-kafka-2.2.0
+                    2.2.1=strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
                   value: |
-                    2.1.0=strimzi/kafka:0.12.0-rc2-kafka-2.1.0
-                    2.1.1=strimzi/kafka:0.12.0-rc2-kafka-2.1.1
-                    2.2.0=strimzi/kafka:0.12.0-rc2-kafka-2.2.0
-                    2.2.1=strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                    2.1.0=strimzi/kafka:0.12.0-kafka-2.1.0
+                    2.1.1=strimzi/kafka:0.12.0-kafka-2.1.1
+                    2.2.0=strimzi/kafka:0.12.0-kafka-2.2.0
+                    2.2.1=strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-                  value: strimzi/operator:0.12.0-rc2
+                  value: strimzi/operator:0.12.0
                 - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-                  value: strimzi/operator:0.12.0-rc2
+                  value: strimzi/operator:0.12.0
                 - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-                  value: strimzi/operator:0.12.0-rc2
+                  value: strimzi/operator:0.12.0
                 - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-                  value: strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                  value: strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-                  value: strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                  value: strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-                  value: strimzi/kafka:0.12.0-rc2-kafka-2.2.1
+                  value: strimzi/kafka:0.12.0-kafka-2.2.1
                 - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-                  value: strimzi/kafka-bridge:0.12.0-rc2
+                  value: strimzi/kafka-bridge:0.12.0
                 - name: STRIMZI_CREATE_CLUSTER_ROLES
                   value: "TRUE"
                 - name: STRIMZI_LOG_LEVEL
