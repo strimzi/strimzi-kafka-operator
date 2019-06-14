@@ -2,7 +2,7 @@
 //
 // assembly-kafka-bridge-tls.adoc
 
-[id='con-kafka-bridge-authentication{context}']
+[id='con-kafka-bridge-authentication-{context}']
 = Authentication support in Kafka Bridge
 
 Authentication is configured through the `authentication` property in `KafkaBridge.spec.kafka`.

@@ -25,7 +25,7 @@ a|
 {ProductName} image for running Kafka, including:
 
 * Kafka Broker
-* Kafka Connect
+* Kafka Connect / S2I
 * Kafka Mirror Maker
 * Zookeeper
 * TLS Sidecars
@@ -42,6 +42,12 @@ a|
 * User Operator
 * Kafka Initializer
 
+|Kafka Bridge
+a|
+* {DockerOrg}/kafka-bridge:{DockerTag}
+
+a|
+{ProductName} image for running the {ProductName} kafka Bridge
+
 |===
 EOF
-
