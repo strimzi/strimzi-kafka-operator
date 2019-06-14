@@ -13,7 +13,7 @@ This section describes the upgrade steps for the resources.
 IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
 .What if the resource upgrade does not take effect?
-If the upgrade does not take effect, a warning is given in the logs on reconciliation to say that the resource cannot be updated until the apiVersion is updated.
+If the upgrade does not take effect, a warning is given in the logs on reconciliation to indicate that the resource cannot be updated until the `apiVersion` is updated.
 
 To trigger the update, make a cosmetic change to the custom resource, such as adding an annotation.
 
