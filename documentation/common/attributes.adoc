@@ -75,6 +75,7 @@
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
+:BridgeDockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
