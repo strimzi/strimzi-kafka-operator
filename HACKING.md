@@ -38,7 +38,12 @@ In order to use `make` these all need to be available in your `$PATH`.
 The `make` build is using GNU versions of `find` and `sed` utilities and is not compatible with the BSD versions available on Mac OS. 
 When using Mac OS, you have to install the GNU versions of `find` and `sed`.
 When using `brew`, you can do `brew install gnu-sed findutils grep coreutils`.
-This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.   
+This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
+
+The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. 
+You can run `brew install bash` to install a compatible version of `bash`.
+If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`  
+                                                                                            
 
 ## Docker images
 
