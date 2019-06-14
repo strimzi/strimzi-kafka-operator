@@ -45,6 +45,9 @@ function build {
     done
 }
 
+# Check for bash >= 4
+if [[ $(echo "${BASH_VERSION}" | cut -c 1) -lt 4 ]]; then echo -e "You need bash version >= 4 to build Strimzi.\nRefer to HACKING.md for more information"; fi
+
 load_checksums
 build $@
 
