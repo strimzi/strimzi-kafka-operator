@@ -31,6 +31,10 @@ public class Environment {
      */
     private static final String TEST_CLIENT_IMAGE_ENV = "TEST_CLIENT_IMAGE";
     /**
+     * Specify test-client image used in system tests.
+     */
+    private static final String BRIDGE_IMAGE_ENV = "BRIDGE_IMAGE";
+    /**
      * Directory for store logs collected during the tests.
      */
     private static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
@@ -75,6 +79,9 @@ public class Environment {
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = System.getenv().getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
+    // variables for test-client image
+    private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka-bridge:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
+    public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
 
     private Environment() {
     }
@@ -86,6 +93,7 @@ public class Environment {
         LOGGER.info(debugFormat, STRIMZI_TAG_ENV, STRIMZI_TAG);
         LOGGER.info(debugFormat, STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY);
         LOGGER.info(debugFormat, TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE);
+        LOGGER.info(debugFormat, BRIDGE_IMAGE_ENV, BRIDGE_IMAGE);
         LOGGER.info(debugFormat, TEST_LOG_DIR_ENV, TEST_LOG_DIR);
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);

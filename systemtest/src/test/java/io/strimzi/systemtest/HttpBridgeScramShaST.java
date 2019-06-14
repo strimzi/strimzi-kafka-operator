@@ -5,7 +5,13 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -20,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -32,15 +39,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @ExtendWith(VertxExtension.class)
-public class HttpBridgeST extends HttpBridgeBaseST {
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
-    public static final String NAMESPACE = "bridge-cluster-test";
+public class HttpBridgeScramShaST extends HttpBridgeBaseST {
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
+    public static final String NAMESPACE = "bridge-scram-sha-cluster-test";
+
+    private String userName = "pepa";
     private String bridgeHost = "";
 
     @Test
-    void testSendSimpleMessage() throws Exception {
+    void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
-        String topicName = "topic-simple-send";
+        String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
@@ -55,18 +64,20 @@ public class HttpBridgeST extends HttpBridgeBaseST {
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
 
-        receiveMessagesConsole(NAMESPACE, topicName, messageCount);
+        receiveMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
     }
 
     @Test
-    void testReceiveSimpleMessage() throws Exception {
+    void testReceiveSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
-        String topicName = "topic-simple-receive";
+        String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
+        // Send messages to Kafka
+        sendMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
 
-        String name = "my-kafka-consumer";
-        String groupId = "my-group";
+        String name = "kafka-consumer-simple-receive";
+        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
         config.put("name", name);
@@ -82,47 +93,76 @@ public class HttpBridgeST extends HttpBridgeBaseST {
         topics.put("topics", topic);
         // Subscribe
         assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
-        // Send messages to Kafka
-        sendMessagesConsole(NAMESPACE, topicName, messageCount);
         // Try to consume messages
         JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         if (bridgeResponse.size() == 0) {
             // Real consuming
             bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         }
-        assertThat("Sent messages are equals", bridgeResponse.size(), is(messageCount));
+
+        assertThat("Sent messages are not equals", bridgeResponse.size(), is(messageCount));
         // Delete consumer
         assertTrue(deleteConsumer(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
     }
 
     @BeforeAll
     void createClassResources() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
+
+        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuth(auth);
+
         // Deploy kafka
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                 .editKafka()
-                .editListeners()
+                .withNewListeners()
                 .withNewKafkaListenerExternalLoadBalancer()
-                .withTls(false)
+                .withTls(true)
+                .withAuth(new KafkaListenerAuthenticationScramSha512())
                 .endKafkaListenerExternalLoadBalancer()
+                .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
                 .endListeners()
                 .endKafka()
                 .endSpec().done();
+
+        // Create Kafka user
+        KafkaUser userSource = testClassResources.scramShaUser(CLUSTER_NAME, userName).done();
+        waitTillSecretExists(userName);
+
+        // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
+        PasswordSecretSource passwordSecret = new PasswordSecretSource();
+        passwordSecret.setSecretName(userName);
+        passwordSecret.setPassword("password");
+
+        // Initialize CertSecretSource with certificate and secret names for consumer
+        CertSecretSource certSecret = new CertSecretSource();
+        certSecret.setCertificate("ca.crt");
+        certSecret.setSecretName(clusterCaCertSecretName(CLUSTER_NAME));
+
+        // Deploy http bridge
+        testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .editSpec()
+            .withNewKafkaBridgeAuthenticationScramSha512()
+                .withNewUsername(userName)
+                .withPasswordSecret(passwordSecret)
+            .endKafkaBridgeAuthenticationScramSha512()
+                .withNewTls()
+                .withTrustedCertificates(certSecret)
+                .endTls()
+            .endSpec().done();
 
         Map<String, String> map = new HashMap<>();
         map.put("strimzi.io/cluster", CLUSTER_NAME);
         map.put("strimzi.io/kind", "KafkaBridge");
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
-
-        // Deploy http bridge
-        testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
         // Create load balancer service for expose bridge outside openshift
         Service service = getSystemtestsServiceResource(bridgeLoadBalancer, Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()

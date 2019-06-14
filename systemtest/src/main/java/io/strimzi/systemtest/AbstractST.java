@@ -596,8 +596,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         KafkaClient testClient = new KafkaClient();
         try {
-            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
-            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
@@ -663,7 +663,22 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         KafkaClient testClient = new KafkaClient();
         try {
-            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    void sendMessagesConsoleScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
         } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
@@ -693,7 +708,22 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         KafkaClient testClient = new KafkaClient();
         try {
-            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    void receiveMessagesConsoleScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
         } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {

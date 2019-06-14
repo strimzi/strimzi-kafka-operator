@@ -956,7 +956,7 @@ public class Resources extends AbstractResources {
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
-            String consumerConfiguration = "auto.offset.reset=earliest\n";
+            String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
 
             containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
             containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
@@ -988,7 +988,7 @@ public class Resources extends AbstractResources {
                     producerConfiguration +=
                             "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                                     "ssl.truststore.type=pkcs12\n";
-                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    consumerConfiguration += ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n" +
                             "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                             "ssl.truststore.type=pkcs12\n";
                 } else {

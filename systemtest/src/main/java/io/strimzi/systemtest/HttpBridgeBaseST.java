@@ -29,6 +29,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     private WebClient client;
 
     protected String bridgeLoadBalancer = CLUSTER_NAME + "-loadbalancer";
+    public static final String NAMESPACE = "bridge-cluster-test";
 
     @BeforeAll
     void prepareEnv(Vertx vertx) {
@@ -163,6 +164,6 @@ public class HttpBridgeBaseST extends MessagingBaseST {
 
     @Override
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
+        LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
     }
 }
