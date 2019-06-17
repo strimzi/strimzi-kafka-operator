@@ -1294,6 +1294,8 @@ public class KafkaCluster extends AbstractModel {
         String logDirs = dataVolumeMountPaths.stream()
                 .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
+        varList.add(buildEnvVar("VAULT_ADDR", "http://vault-deployment:8200"));
+        varList.add(buildEnvVar("VAULT_TOKEN", "root-token"));
 
         return varList;
     }

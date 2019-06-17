@@ -126,6 +126,7 @@ spec:
                               enum:
                               - tls
                               - scram-sha-512
+                              - sasl_plaintext
                           required:
                           - type
                         networkPolicyPeers:
@@ -189,6 +190,7 @@ spec:
                               enum:
                               - tls
                               - scram-sha-512
+                              - sasl_plaintext
                           required:
                           - type
                         networkPolicyPeers:
@@ -252,6 +254,7 @@ spec:
                               enum:
                               - tls
                               - scram-sha-512
+                              - sasl_plaintext
                           required:
                           - type
                         configuration:

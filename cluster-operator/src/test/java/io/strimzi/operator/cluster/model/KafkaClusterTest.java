@@ -29,6 +29,18 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationSslPlaintext;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -43,16 +55,6 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
-import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
-import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -80,6 +82,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1409,6 +1414,35 @@ public class KafkaClusterTest {
 
         StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    @Test
+    public void testSaslCluster() {
+        KafkaListenerAuthenticationSslPlaintext sslPlaintext = new KafkaListenerAuthenticationSslPlaintext();
+        // TODO (mauricio) Add these here?
+        sslPlaintext.setAdditionalProperty("vault_addr", "https://localhost:8200");
+        sslPlaintext.setAdditionalProperty("vault_token", "root-token");
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withKafkaListenerAuthenticationSslPlaintext(sslPlaintext)
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        KafkaConfiguration configuration = kc.getConfiguration();
+        List<EnvVar> envVars = kc.getEnvVars();
+        KafkaListeners listeners = kc.getListeners();
+        EnvVar envVar = new EnvVar();
+        envVar.setName("KAFKA_CLIENT_AUTHENTICATION");
+        envVar.setValue("sasl_plaintext");
+        assertThat(envVars, hasItems(envVar));
+        assertThat(listeners.getPlain().getAuthentication(), instanceOf(KafkaListenerAuthenticationSslPlaintext.class));
     }
 
     @Test

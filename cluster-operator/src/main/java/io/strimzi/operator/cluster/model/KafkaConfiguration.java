@@ -26,7 +26,9 @@ public class KafkaConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList("zookeeper.connection.timeout.ms");
+        EXCEPTIONS = asList("zookeeper.connection.timeout.ms", "listener.name.sasl_plaintext.plain.sasl.server.callback.handler.class",
+            "listener.name.sasl_plaintext.plain.sasl.login.callback.handler.class", "security.inter.broker.protocol", "sasl.mechanism.inter.broker.protocol",
+            "sasl.enabled.mechanisms", "advertised.listeners", "inter.broker.listener.name");
     }
 
     /**

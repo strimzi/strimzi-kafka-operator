@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+set -x
+echo $@
+export
 
 # Parameters:
 # $1: Broker ID
@@ -19,10 +22,23 @@ LISTENER_SECURITY_PROTOCOL_MAP="REPLICATION:SSL"
 SASL_ENABLED_MECHANISMS=""
 
 if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
-  LISTENERS="${LISTENERS},CLIENT://0.0.0.0:9092"
-  ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENT://$(hostname -f):9092"
 
-  if [ "$KAFKA_CLIENT_AUTHENTICATION" = "scram-sha-512" ]; then
+
+  if [ "$KAFKA_CLIENT_AUTHENTICATION" = "sasl_plaintext" ]; then
+    SASL_ENABLED_MECHANISMS="PLAIN\n$SASL_ENABLED_MECHANISMS"
+    LISTENERS="${LISTENERS},SASL_PLAINTEXT://0.0.0.0:9092"
+    ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091,SASL_PLAINTEXT://$(hostname -f):9092"
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},SASL_PLAINTEXT:SASL_PLAINTEXT"
+        CLIENT_LISTENER=$(cat <<EOF
+# vault authentication callback handlers
+listener.name.sasl_plaintext.plain.sasl.server.callback.handler.class=com.ultimatesoftware.dataplatform.vaultjca.VaultAuthenticationLoginCallbackHandler
+listener.name.sasl_plaintext.plain.sasl.login.callback.handler.class=com.ultimatesoftware.dataplatform.vaultjca.VaultAuthenticationLoginCallbackHandler
+listener.name.sasl_plaintext.plain.sasl.jaas.config=com.ultimatesoftware.dataplatform.vaultjca.VaultLoginModule required \
+  admin_path="secret/kafka/admin" \
+  users_path="secret/kafka/users";
+EOF
+)
+  elif [ "$KAFKA_CLIENT_AUTHENTICATION" = "scram-sha-512" ]; then
     SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:SASL_PLAINTEXT"
     CLIENT_LISTENER=$(cat <<EOF
@@ -32,6 +48,8 @@ EOF
 )
   else
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:PLAINTEXT"
+    LISTENERS="${LISTENERS},CLIENT://0.0.0.0:9092"
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENT://$(hostname -f):9092"
   fi
 fi
 
@@ -192,7 +210,8 @@ listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
 
-sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
+#sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
+sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq)
 
 ${CLIENT_LISTENER}
 ${CLIENTTLS_LISTENER}

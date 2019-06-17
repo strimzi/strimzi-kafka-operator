@@ -56,6 +56,7 @@ COPY ./stunnel-scripts/ $STUNNEL_HOME
 
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
+COPY kafka-vault-jca-1.0-SNAPSHOT.jar $KAFKA_HOME/libs/
 
 # Set S2I folder
 ENV S2I_HOME=/opt/kafka/s2i
