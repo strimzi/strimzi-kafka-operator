@@ -41,7 +41,7 @@ public class BaseITST {
 
     public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
 
-    public static KubeClusterResource kubeCluster() {
+    public static synchronized KubeClusterResource kubeCluster() {
         if (cluster == null) {
             try {
                 cluster = KubeClusterResource.getKubeClusterResource();
