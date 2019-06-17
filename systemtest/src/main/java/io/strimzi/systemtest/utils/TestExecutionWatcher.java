@@ -8,26 +8,33 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
 import static io.strimzi.test.BaseITST.kubeClient;
 
-public class TestExecutionWatcher implements AfterTestExecutionCallback {
+public class TestExecutionWatcher implements AfterTestExecutionCallback, TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
 
     @Override
-    public void afterTestExecution(ExtensionContext extensionContext) {
-        Method testMethod = extensionContext.getRequiredTestMethod();
-        Class testClass = extensionContext.getRequiredTestClass();
-        collectLogs(testMethod.getName(), testClass.getName());
+    public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
+        collectLogs(extensionContext);
+        throw throwable;
     }
 
-    void collectLogs(String testMethod, String testClass) {
+    @Override
+    public void afterTestExecution(ExtensionContext extensionContext) {
+        collectLogs(extensionContext);
+    }
+
+    void collectLogs(ExtensionContext extensionContext) {
+        String testMethod = extensionContext.getRequiredTestMethod().getName();
+        String testClass = extensionContext.getRequiredTestClass().getName();
         // Get current date to create a unique folder
         String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
         String logDir = !testMethod.isEmpty() ?
