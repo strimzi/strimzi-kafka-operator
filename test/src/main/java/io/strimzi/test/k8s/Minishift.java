@@ -44,6 +44,7 @@ public class Minishift implements KubeCluster {
         return new Oc();
     }
 
+    @Override
     public KubeClient defaultClient() {
         return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
     }

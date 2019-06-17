@@ -14,8 +14,10 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.test.k8s.KubeCluster;
+import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -24,6 +26,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +50,11 @@ public class KafkaCrdOperatorIT {
 
     @BeforeClass
     public static void before() {
+        try {
+            KubeCluster.bootstrap();
+        } catch (NoClusterException e) {
+            Assume.assumeTrue(e.getMessage(), false);
+        }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
         kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
@@ -74,10 +82,14 @@ public class KafkaCrdOperatorIT {
 
     @AfterClass
     public static void after() {
-        log.info("Deleting CRD");
-        client.customResourceDefinitions().delete(Crds.kafka());
+        if (client != null) {
+            log.info("Deleting CRD");
+            client.customResourceDefinitions().delete(Crds.kafka());
+        }
 
-        vertx.close();
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     protected Kafka getResource() {

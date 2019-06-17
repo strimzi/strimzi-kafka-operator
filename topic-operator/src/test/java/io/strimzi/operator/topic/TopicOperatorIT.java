@@ -24,6 +24,8 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeCluster;
+import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -45,6 +47,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -104,6 +107,11 @@ public class TopicOperatorIT extends BaseITST {
 
     @BeforeClass
     public static void setupKubeCluster() {
+        try {
+            KubeCluster.bootstrap();
+        } catch (NoClusterException e) {
+            Assume.assumeTrue(e.getMessage(), false);
+        }
         cmdKubeClient()
                 .createNamespace(NAMESPACE);
         oldNamespace = setNamespace(NAMESPACE);
@@ -115,18 +123,20 @@ public class TopicOperatorIT extends BaseITST {
 
     @AfterClass
     public static void teardownKubeCluster() {
-        cmdKubeClient()
-                .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete(TestUtils.CRD_TOPIC)
-                .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .deleteNamespace(NAMESPACE);
-        cmdKubeClient().namespace(oldNamespace);
+        if (oldNamespace != null) {
+            cmdKubeClient()
+                    .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
+                    .delete(TestUtils.CRD_TOPIC)
+                    .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
+                    .deleteNamespace(NAMESPACE);
+            cmdKubeClient().namespace(oldNamespace);
+        }
     }
 
     @Before
     public void setup(TestContext context) throws Exception {
         LOGGER.info("Setting up test");
-        CLUSTER.before();
+        kubeCluster().before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         int counts = 3;
         do {

@@ -11,12 +11,15 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.test.k8s.KubeCluster;
+import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +40,11 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
 
     @BeforeClass
     public static void before() {
+        try {
+            KubeCluster.bootstrap();
+        } catch (NoClusterException e) {
+            Assume.assumeTrue(e.getMessage(), false);
+        }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
 
@@ -58,7 +66,9 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
 
     @AfterClass
     public static void after() {
-        vertx.close();
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     abstract AbstractResourceOperator operator();

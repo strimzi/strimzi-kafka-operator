@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
+import org.junit.jupiter.api.Assumptions;
+
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.
@@ -76,7 +78,11 @@ public class KubeClusterResource {
 
     public KubeCluster cluster() {
         if (cluster == null) {
-            this.cluster = KubeCluster.bootstrap();
+            try {
+                this.cluster = KubeCluster.bootstrap();
+            } catch (NoClusterException e) {
+                Assumptions.assumeTrue(false, e.getMessage());
+            }
         }
         return cluster;
     }
@@ -84,7 +90,11 @@ public class KubeClusterResource {
     public void before() {
         if (bootstrap) {
             if (cluster == null) {
-                this.cluster = KubeCluster.bootstrap();
+                try {
+                    this.cluster = KubeCluster.bootstrap();
+                } catch (NoClusterException e) {
+                    Assumptions.assumeTrue(false, e.getMessage());
+                }
             }
             if (cmdClient == null) {
                 this.cmdClient = cluster.defaultCmdClient();

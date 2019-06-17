@@ -41,13 +41,13 @@ public abstract class AbstractCrdIT extends BaseITST {
         RuntimeException thrown2 = null;
         try {
             try {
-                CLUSTER.cmdClient().applyContent(ssStr);
+                kubeCluster().cmdClient().applyContent(ssStr);
             } catch (RuntimeException t) {
                 thrown = t;
             }
         } finally {
             try {
-                CLUSTER.cmdClient().deleteContent(ssStr);
+                kubeCluster().cmdClient().deleteContent(ssStr);
             } catch (RuntimeException t) {
                 thrown2 = t;
             }
@@ -64,6 +64,6 @@ public abstract class AbstractCrdIT extends BaseITST {
 
     @Before
     public void setupTests() {
-        CLUSTER.before();
+        kubeCluster().before();
     }
 }
