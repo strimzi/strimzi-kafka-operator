@@ -83,7 +83,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                 }
             },
             false,
-            fut.completer()
+            fut
         );
         return fut;
     }
@@ -121,7 +121,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                 }
             },
             false,
-            fut.completer()
+            fut
         );
         return fut;
     }

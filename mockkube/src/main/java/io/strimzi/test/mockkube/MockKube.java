@@ -196,7 +196,7 @@ public class MockKube {
         return mockedCrd;
     }
 
-    @SuppressWarnings({"unchecked", "deprecation"})
+    @SuppressWarnings("unchecked")
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
@@ -266,7 +266,7 @@ public class MockKube {
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
-        when(mockClient.extensions().networkPolicies()).thenReturn(mockNetworkPolicy);
+        when(mockClient.network().networkPolicies()).thenReturn(mockNetworkPolicy);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);

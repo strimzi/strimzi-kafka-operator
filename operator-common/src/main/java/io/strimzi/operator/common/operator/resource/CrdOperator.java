@@ -111,7 +111,7 @@ public class CrdOperator<C extends KubernetesClient,
                 log.debug("Updating status failed", e);
                 future.fail(e);
             }
-        }, true, blockingFuture.completer());
+        }, true, blockingFuture);
 
         return blockingFuture;
     }
