@@ -144,8 +144,15 @@ public class KafkaAgent {
     }
 
     private void touch(File file) throws IOException {
-        new FileOutputStream(file).close();
-        file.deleteOnExit();
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(file);
+            file.deleteOnExit();
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
     }
 
     /**
