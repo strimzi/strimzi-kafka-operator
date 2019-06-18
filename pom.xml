@@ -403,16 +403,12 @@
                             </goals>
                             <configuration>
                                 <compilerArgs>
+                                    <arg>-Xlint:unchecked,deprecation</arg>
                                     <arg>-Werror</arg>
                                 </compilerArgs>
                             </configuration>
                         </execution>
                     </executions>
-                    <configuration>
-                        <compilerArgs>
-                            <arg>-Xlint:unchecked,deprecation</arg>
-                        </compilerArgs>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

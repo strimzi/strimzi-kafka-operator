@@ -54,4 +54,9 @@
     <suppress checks="ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
 
+    <suppress checks=".*"
+              files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
+    <suppress checks=".*"
+              files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\](Doneable).*\.java"/>
+
 </suppressions>
