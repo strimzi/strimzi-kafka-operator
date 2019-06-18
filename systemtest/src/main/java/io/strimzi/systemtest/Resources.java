@@ -140,13 +140,13 @@ public class Resources extends AbstractResources {
             case CLUSTER_ROLE_BINDING:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    client().getClient().rbac().clusterRoleBindings().inNamespace(resource.getMetadata().getNamespace()).delete();
+                    client().getClient().rbac().clusterRoleBindings().withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case ROLE_BINDING:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    client().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).delete();
+                    client().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case SERVICE:
