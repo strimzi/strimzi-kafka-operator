@@ -66,7 +66,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                         HttpResponse<JsonObject> response = ar.result();
                         future.complete(response.body());
                     } else {
-                        LOGGER.error("Server didn't accept post: {}", ar.result());
+                        LOGGER.error("Server didn't accept post", ar.cause());
                         future.completeExceptionally(ar.cause());
                     }
                 });
@@ -96,7 +96,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                         }
                         future.complete(response.body());
                     } else {
-                        LOGGER.info("Cannot consume any messages!");
+                        LOGGER.info("Cannot consume any messages!", ar.cause());
                         future.completeExceptionally(ar.cause());
                     }
                 });
@@ -114,7 +114,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                         LOGGER.info("Subscribed");
                         future.complete(ar.succeeded());
                     } else {
-                        LOGGER.error("Cannot subscribe consumer: {}", ar.result());
+                        LOGGER.error("Cannot subscribe consumer", ar.cause());
                         future.completeExceptionally(ar.cause());
                     }
                 });
@@ -137,7 +137,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                         LOGGER.debug("ConsumerBaseUri: {}", consumerBaseUri);
                         future.complete(response.body());
                     } else {
-                        LOGGER.error("Cannot create consumer: {}", ar.result());
+                        LOGGER.error("Cannot create consumer", ar.cause());
                         future.completeExceptionally(ar.cause());
                     }
                 });
@@ -155,7 +155,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                         LOGGER.info("Consumer deleted");
                         future.complete(ar.succeeded());
                     } else {
-                        LOGGER.error("Cannot delete consumer: {}", ar.result());
+                        LOGGER.error("Cannot delete consumer", ar.cause());
                         future.completeExceptionally(ar.cause());
                     }
                 });
