@@ -58,11 +58,17 @@ For users create entries under `users_path/{user}` with an entry `passoword=secr
 - Each client needs a JAAS file with a `KafkaClient` section similar to this and two properties `username` and `password`
 ```
 KafkaClient {
-  com.company.dataplatform.vaultjca.VaultLoginModule required
+  org.apache.kafka.common.security.plain.PlainLoginModule required
   username="alice"
   password="alicepwd";
 };
 ``` 
+- Also the client needs properties so it uses now the SASL configuration, this is usually a property on your client, e.g  for a `kafka-console-[console|producer].sh` create a file
+```
+security.protocol=SASL_PLAINTEXT
+sasl.mechanism=PLAIN
+```
+And use the `--consumer.config ` or `--producer.config` check the documentation for your client
 
 
 
