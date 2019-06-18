@@ -64,6 +64,7 @@ import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationSslPlaintextVault;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
@@ -111,6 +112,8 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
     /** The authentication to configure for the CLIENT listener (PLAIN transport). */
     private static final String ENV_VAR_KAFKA_CLIENT_AUTHENTICATION = "KAFKA_CLIENT_AUTHENTICATION";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR = "VAULT_ADDR";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN = "VAULT_TOKEN";
     /** {@code TRUE} when the CLIENTTLS listener (TLS transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
     /** The authentication to configure for the CLIENTTLS listener (TLS transport) . */
@@ -1260,6 +1263,11 @@ public class KafkaCluster extends AbstractModel {
                 if (listeners.getPlain().getAuthentication() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuthentication().getType()));
                 }
+
+                if (listeners.getPlain().getAuthentication() instanceof KafkaListenerAuthenticationSslPlaintextVault) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR, ((KafkaListenerAuthenticationSslPlaintextVault) listeners.getPlain().getAuthentication()).getVaultAddr()));
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN, ((KafkaListenerAuthenticationSslPlaintextVault) listeners.getPlain().getAuthentication()).getVaultToken()));
+                }
             }
 
             if (listeners.getTls() != null) {
@@ -1294,8 +1302,6 @@ public class KafkaCluster extends AbstractModel {
         String logDirs = dataVolumeMountPaths.stream()
                 .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
-        varList.add(buildEnvVar("VAULT_ADDR", "http://vault-deployment:8200"));
-        varList.add(buildEnvVar("VAULT_TOKEN", "root-token"));
 
         return varList;
     }

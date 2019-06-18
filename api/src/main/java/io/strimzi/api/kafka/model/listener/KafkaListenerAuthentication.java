@@ -25,7 +25,7 @@ import java.util.Map;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaListenerAuthenticationTls.TYPE_TLS, value = KafkaListenerAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaListenerAuthenticationScramSha512.SCRAM_SHA_512, value = KafkaListenerAuthenticationScramSha512.class),
-        @JsonSubTypes.Type(name = KafkaListenerAuthenticationSslPlaintext.SASL_PLAINTEXT, value = KafkaListenerAuthenticationSslPlaintext.class),
+        @JsonSubTypes.Type(name = KafkaListenerAuthenticationSslPlaintextVault.SASL_PLAINTEXT, value = KafkaListenerAuthenticationSslPlaintextVault.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(

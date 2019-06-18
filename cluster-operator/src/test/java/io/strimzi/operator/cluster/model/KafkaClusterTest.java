@@ -31,7 +31,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationSslPlaintext;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationSslPlaintextVault;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
@@ -1418,31 +1418,30 @@ public class KafkaClusterTest {
 
     @Test
     public void testSaslCluster() {
-        KafkaListenerAuthenticationSslPlaintext sslPlaintext = new KafkaListenerAuthenticationSslPlaintext();
-        // TODO (mauricio) Add these here?
-        sslPlaintext.setAdditionalProperty("vault_addr", "https://localhost:8200");
-        sslPlaintext.setAdditionalProperty("vault_token", "root-token");
+        KafkaListenerAuthenticationSslPlaintextVault sslPlaintext = new KafkaListenerAuthenticationSslPlaintextVault();
+        String vaultAddr = "https://localhost:8200";
+        String vaultToken = "root-token";
+        sslPlaintext.setVaultAddr(vaultAddr);
+        sslPlaintext.setVaultToken(vaultToken);
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
                             .withNewPlain()
-                                .withKafkaListenerAuthenticationSslPlaintext(sslPlaintext)
+                                .withKafkaListenerAuthenticationSslPlaintextVault(sslPlaintext)
                             .endPlain()
                         .endListeners()
                     .endKafka()
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        KafkaConfiguration configuration = kc.getConfiguration();
         List<EnvVar> envVars = kc.getEnvVars();
         KafkaListeners listeners = kc.getListeners();
-        EnvVar envVar = new EnvVar();
-        envVar.setName("KAFKA_CLIENT_AUTHENTICATION");
-        envVar.setValue("sasl_plaintext");
-        assertThat(envVars, hasItems(envVar));
-        assertThat(listeners.getPlain().getAuthentication(), instanceOf(KafkaListenerAuthenticationSslPlaintext.class));
+        assertThat(envVars, hasItems(
+                new EnvVar(KafkaCluster.ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR, vaultAddr, null),
+                new EnvVar(KafkaCluster.ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN, vaultToken, null)));
+        assertThat(listeners.getPlain().getAuthentication(), instanceOf(KafkaListenerAuthenticationSslPlaintextVault.class));
     }
 
     @Test

@@ -127,6 +127,10 @@ spec:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            vaultAddr:
+                              type: string
+                            vaultToken:
+                              type: string
                           required:
                           - type
                         networkPolicyPeers:
@@ -191,6 +195,10 @@ spec:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            vaultAddr:
+                              type: string
+                            vaultToken:
+                              type: string
                           required:
                           - type
                         networkPolicyPeers:
@@ -255,6 +263,10 @@ spec:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            vaultAddr:
+                              type: string
+                            vaultToken:
+                              type: string
                           required:
                           - type
                         configuration:
