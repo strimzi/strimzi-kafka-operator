@@ -53,10 +53,10 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return root;
     }
 
-    JsonObject sendHttpRequests(JsonObject records, String bridgeHost, String topic) throws InterruptedException, ExecutionException, TimeoutException {
+    JsonObject sendHttpRequests(JsonObject records, String bridgeHost, int bridgePort, String topic) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Sending records to Kafka Bridge");
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        client.post(Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeHost, "/topics/" + topic)
+        client.post(bridgePort, bridgeHost, "/topics/" + topic)
                 .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
                 .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON_JSON)
                 .as(BodyCodec.jsonObject())
@@ -91,6 +91,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                                 long offset = jsonResponse.getLong("offset");
                                 LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                             }
+                            LOGGER.info("Received {} messages from the bridge", response.body().size());
                         } else {
                             LOGGER.debug("Received 0 messages, going to consume again");
                         }

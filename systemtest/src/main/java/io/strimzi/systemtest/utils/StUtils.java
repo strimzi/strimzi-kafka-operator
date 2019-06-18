@@ -410,6 +410,13 @@ public class StUtils {
             () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
     }
 
+    public static void waitForNodePortService(String serviceName) {
+        LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
+
+        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getPorts().get(0).getNodePort() != null);
+    }
+
     /**
      * The method to configure docker image to use proper docker registry, docker org and docker tag.
      * @param image Image that needs to be changed

@@ -40,8 +40,9 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     public static final String NAMESPACE = "bridge-tls-cluster-test";
 
-    private String userName = "pepa";
     private String bridgeHost = "";
+    private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
+    private String userName = "bob";
 
     @Test
     void testSendSimpleMessageTls() throws Exception {
@@ -51,7 +52,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = generateHttpMessages(messageCount);
-        JsonObject response = sendHttpRequests(records, bridgeHost, topicName);
+        JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
         JsonArray offsets = response.getJsonArray("offsets");
         assertEquals(messageCount, offsets.size());
         for (int i = 0; i < messageCount; i++) {
@@ -79,7 +80,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
-        JsonObject response = createBridgeConsumer(config, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId);
+        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
         // Create topics json
         JsonArray topic = new JsonArray();
@@ -87,18 +88,18 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
+        assertTrue(subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name));
         // Send messages to Kafka
         sendMessagesConsoleTls(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
-        JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
+        JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, bridgePort, groupId, name);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
+            bridgeResponse = receiveHttpRequests(bridgeHost, bridgePort, groupId, name);
         }
-        assertThat("Sent messages are equals", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
         // Delete consumer
-        assertTrue(deleteConsumer(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
+        assertTrue(deleteConsumer(bridgeHost, bridgePort, groupId, name));
     }
 
     @BeforeAll
@@ -120,9 +121,9 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
                 .editSpec()
                 .editKafka()
                 .editListeners()
-                .withNewKafkaListenerExternalLoadBalancer()
+                .withNewKafkaListenerExternalNodePort()
                 .withTls(true)
-                .endKafkaListenerExternalLoadBalancer()
+                .endKafkaListenerExternalNodePort()
                 .withTls(listenerTls)
                 .withNewTls()
                 .endTls()
@@ -155,11 +156,18 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         Service service = getSystemtestsServiceResource(bridgeLoadBalancer, Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()
-                .withType("LoadBalancer")
+                .withType("NodePort")
                 .withSelector(map)
                 .endSpec().build();
         testClassResources.createServiceResource(service, NAMESPACE).done();
-        StUtils.waitForLoadBalancerService(bridgeLoadBalancer);
-        bridgeHost = CLUSTER.client().getClient().services().inNamespace(NAMESPACE).withName(bridgeLoadBalancer).get().getSpec().getExternalIPs().get(0);
+        StUtils.waitForNodePortService(bridgeLoadBalancer);
+
+        Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
+                .inNamespace(NAMESPACE)
+                .withName(bridgeLoadBalancer)
+                .get();
+
+        bridgePort = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
+        bridgeHost = kubeClient(NAMESPACE).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
     }
 }
