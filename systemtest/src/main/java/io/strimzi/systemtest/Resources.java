@@ -99,6 +99,7 @@ public class Resources extends AbstractResources {
         super(client);
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
         LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
         switch (resource.getKind()) {
