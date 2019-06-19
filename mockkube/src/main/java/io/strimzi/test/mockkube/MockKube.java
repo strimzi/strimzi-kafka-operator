@@ -62,8 +62,8 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
-import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
@@ -230,8 +230,6 @@ public class MockKube {
         when(api.statefulSets()).thenReturn(mockSs);
         when(api.deployments()).thenReturn(mockDep);
         when(mockClient.apps()).thenReturn(api);
-        ExtensionsAPIGroupDSL ext = mock(ExtensionsAPIGroupDSL.class);
-        when(mockClient.extensions()).thenReturn(ext);
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
@@ -266,7 +264,9 @@ public class MockKube {
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
-        when(mockClient.network().networkPolicies()).thenReturn(mockNetworkPolicy);
+        NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
+        when(mockClient.network()).thenReturn(network);
+        when(network.networkPolicies()).thenReturn(mockNetworkPolicy);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
