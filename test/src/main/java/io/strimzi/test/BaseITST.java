@@ -12,6 +12,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -34,10 +35,24 @@ public class BaseITST {
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
-    private static String namespace = CLUSTER.defaultNamespace();
+    private static KubeClusterResource cluster;
+    private static String namespace;
+    private static String defaultNamespace;
 
     public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+
+    public static synchronized KubeClusterResource kubeCluster() {
+        if (cluster == null) {
+            try {
+                cluster = KubeClusterResource.getKubeClusterResource();
+                namespace = cluster.defaultNamespace();
+                defaultNamespace = cluster.cmdClient().defaultNamespace();
+            } catch (RuntimeException e) {
+                Assumptions.assumeTrue(false, e.getMessage());
+            }
+        }
+        return cluster;
+    }
 
     /**
      * Sets the namespace value for Kubernetes clients
@@ -63,7 +78,7 @@ public class BaseITST {
      * @return CMD client
      */
     public static KubeCmdClient<?> cmdKubeClient() {
-        return CLUSTER.cmdClient().namespace(namespace);
+        return kubeCluster().cmdClient().namespace(namespace);
     }
 
     /**
@@ -72,7 +87,7 @@ public class BaseITST {
      * @return CMD client with expected namespace in configuration
      */
     public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
-        return CLUSTER.cmdClient().namespace(inNamespace);
+        return kubeCluster().cmdClient().namespace(inNamespace);
     }
 
     /**
@@ -80,7 +95,7 @@ public class BaseITST {
      * @return Kubernetes client
      */
     public static KubeClient kubeClient() {
-        return CLUSTER.client().namespace(namespace);
+        return kubeCluster().client().namespace(namespace);
     }
 
     /**
@@ -89,12 +104,10 @@ public class BaseITST {
      * @return Kubernetes client with expected namespace in configuration
      */
     public static KubeClient kubeClient(String inNamespace) {
-        return CLUSTER.client().namespace(inNamespace);
+        return kubeCluster().client().namespace(inNamespace);
     }
 
-    private static final String DEFAULT_NAMESPACE = CLUSTER.cmdClient().defaultNamespace();
-
-    protected String clusterOperatorNamespace = DEFAULT_NAMESPACE;
+    protected String clusterOperatorNamespace = defaultNamespace;
     protected List<String> bindingsNamespaces = new ArrayList<>();
     public List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
@@ -179,8 +192,8 @@ public class BaseITST {
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
-        LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
-        setNamespace(CLUSTER.defaultNamespace());
+        LOGGER.info("Using namespace {}", defaultNamespace);
+        setNamespace(defaultNamespace);
     }
 
     /**

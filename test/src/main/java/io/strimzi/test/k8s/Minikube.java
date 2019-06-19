@@ -45,6 +45,7 @@ public class Minikube implements KubeCluster {
         return new Kubectl();
     }
 
+    @Override
     public KubeClient defaultClient() {
         return new KubeClient(new DefaultKubernetesClient(CONFIG), "default");
     }

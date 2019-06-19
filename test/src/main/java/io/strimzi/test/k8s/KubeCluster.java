@@ -38,9 +38,9 @@ public interface KubeCluster {
      * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's
      * both installed and running.
      * @return The cluster.
-     * @throws RuntimeException If no running cluster was found.
+     * @throws NoClusterException If no running cluster was found.
      */
-    static KubeCluster bootstrap() {
+    static KubeCluster bootstrap() throws NoClusterException {
         Logger logger = LogManager.getLogger(KubeCluster.class);
 
         KubeCluster[] clusters = null;
@@ -79,7 +79,8 @@ public interface KubeCluster {
             }
         }
         if (cluster == null) {
-            throw new RuntimeException("Unable to find a cluster; tried " + Arrays.toString(clusters));
+            throw new NoClusterException(
+                    "Unable to find a cluster; tried " + Arrays.toString(clusters));
         }
         return cluster;
     }

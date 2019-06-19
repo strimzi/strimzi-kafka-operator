@@ -7,11 +7,14 @@ package io.strimzi.operator.cluster;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
+import io.strimzi.test.k8s.KubeCluster;
+import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +41,11 @@ public class MainIT {
 
     @Test
     public void testCreateClusterRoles(TestContext context) {
+        try {
+            KubeCluster.bootstrap();
+        } catch (NoClusterException e) {
+            Assume.assumeTrue(e.getMessage(), false);
+        }
         Map<String, String> envVars = new HashMap<>(1);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
