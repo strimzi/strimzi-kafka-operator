@@ -906,7 +906,7 @@ public class Resources extends AbstractResources {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
                 .withName(Constants.KAFKA_CLIENTS)
-                .withImage(StUtils.changeTestClientOrgAndTag("strimzi/test-client:latest-kafka-" + KAFKA_VERSION))
+                .withImage(Environment.TEST_CLIENT_IMAGE)
                 .addNewPort()
                     .withContainerPort(4242)
                 .endPort()
