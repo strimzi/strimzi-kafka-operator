@@ -7,6 +7,8 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -226,11 +228,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void deleteWhenResourceExistsStillDeletes(TestContext context) {
         T resource = resource();
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -252,10 +261,17 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void successfulDeletion(TestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);

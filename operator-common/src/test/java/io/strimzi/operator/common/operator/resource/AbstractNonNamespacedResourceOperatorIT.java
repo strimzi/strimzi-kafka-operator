@@ -52,16 +52,15 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         }
     }
 
-    abstract AbstractNonNamespacedResourceOperator operator();
+    abstract AbstractNonNamespacedResourceOperator<C, T, L, D, R> operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract void assertResources(TestContext context, T expected, T actual);
 
     @Test
     public void testFullCycle(TestContext context) {
-        int milisecondsBetweenOperationAndResultCheck = 1000;
         Async async = context.async();
-        AbstractNonNamespacedResourceOperator op = operator();
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
@@ -70,12 +69,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                try {
-                    Thread.sleep(milisecondsBetweenOperationAndResultCheck);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                T created = (T) op.get(RESOURCE_NAME);
+                T created = op.get(RESOURCE_NAME);
 
                 if (created == null)    {
                     context.fail("Failed to get created Resource");
@@ -86,11 +80,6 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
                     Future<ReconcileResult<T>> modifyFuture = op.reconcile(RESOURCE_NAME, modResource);
                     modifyFuture.setHandler(modify -> {
                         if (modify.succeeded()) {
-                            try {
-                                Thread.sleep(milisecondsBetweenOperationAndResultCheck);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
                             T modified = (T) op.get(RESOURCE_NAME);
 
                             if (modified == null)    {
@@ -102,11 +91,6 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
                                 Future<ReconcileResult<T>> deleteFuture = op.reconcile(RESOURCE_NAME, null);
                                 deleteFuture.setHandler(delete -> {
                                     if (delete.succeeded()) {
-                                        try {
-                                            Thread.sleep(milisecondsBetweenOperationAndResultCheck);
-                                        } catch (InterruptedException e) {
-                                            e.printStackTrace();
-                                        }
                                         T deleted = (T) op.get(RESOURCE_NAME);
 
                                         if (deleted == null)    {

@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
@@ -118,15 +119,40 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Deletes the resource with the given name
      * and completes the given future accordingly
      */
-    protected Future<ReconcileResult<T>> internalDelete(String name) {
+    private Future<ReconcileResult<T>> internalDelete(String name) {
+
+        Future<ReconcileResult<T>> result = Future.future();
+        Watcher<T> watcher = new Watcher<T>() {
+            @Override
+            public void eventReceived(Action action, T resource) {
+                if (action == Action.DELETED) {
+                    log.debug("{} {} has been deleted", resourceKind, name);
+                    vertx.runOnContext(ignored -> {
+                        result.tryComplete(ReconcileResult.deleted());
+                    });
+                }
+            }
+
+            @Override
+            public void onClose(KubernetesClientException cause) {
+
+            }
+        };
         try {
+            operation().withName(name).watch(watcher);
             operation().withName(name).delete();
-            log.debug("{} {} has been deleted", resourceKind, name);
-            return Future.succeededFuture(ReconcileResult.deleted());
-        } catch (Exception e) {
-            log.debug("Caught exception while deleting {} {}", resourceKind, name, e);
-            return Future.failedFuture(e);
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 404) {
+                vertx.runOnContext(ignored -> {
+                    result.tryComplete(ReconcileResult.deleted());
+                });
+            } else {
+                log.debug("Caught exception while deleting {} {}", resourceKind, name, e);
+                result.fail(e);
+            }
         }
+        return result;
+
     }
 
     /**
