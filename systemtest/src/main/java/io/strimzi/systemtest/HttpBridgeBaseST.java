@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -15,11 +17,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Base for test classes where HTTP Bridge is used.
@@ -28,7 +35,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
     private WebClient client;
 
-    protected String bridgeLoadBalancer = CLUSTER_NAME + "-loadbalancer";
+    protected String brdigeExternalService = CLUSTER_NAME + "-brdige-external-service";
     public static final String NAMESPACE = "bridge-cluster-test";
 
     @BeforeAll
@@ -40,7 +47,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                 .setVerifyHost(false));
     }
 
-    JsonObject generateHttpMessages(int messageCount) {
+    protected JsonObject generateHttpMessages(int messageCount) {
         LOGGER.info("Creating {} records for Kafka Bridge", messageCount);
         JsonArray records = new JsonArray();
         JsonObject json = new JsonObject();
@@ -53,7 +60,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return root;
     }
 
-    JsonObject sendHttpRequests(JsonObject records, String bridgeHost, int bridgePort, String topic) throws InterruptedException, ExecutionException, TimeoutException {
+    protected JsonObject sendHttpRequests(JsonObject records, String bridgeHost, int bridgePort, String topic) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Sending records to Kafka Bridge");
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost, "/topics/" + topic)
@@ -73,7 +80,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    JsonArray receiveHttpRequests(String bridgeHost, int bridgePort, String groupID, String name) throws Exception {
+    protected JsonArray receiveHttpRequests(String bridgeHost, int bridgePort, String groupID, String name) throws Exception {
         CompletableFuture<JsonArray> future = new CompletableFuture<>();
         client.get(bridgePort, bridgeHost, "/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
                 .putHeader("Accept", Constants.KAFKA_BRIDGE_JSON_JSON)
@@ -104,7 +111,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
+    protected boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost,  "/consumers/" + groupId + "/instances/" + name + "/subscription")
                 .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
@@ -122,7 +129,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId) throws InterruptedException, ExecutionException, TimeoutException {
+    protected JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId) throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost, "/consumers/" + groupId)
                 .putHeader("Content-length", String.valueOf(config.toBuffer().length()))
@@ -145,7 +152,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
+    protected boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Deleting consumer");
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         client.delete(bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + name)
@@ -163,8 +170,55 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
+    protected void deployBridgeNodePortService() {
+        Map<String, String> map = new HashMap<>();
+        map.put("strimzi.io/cluster", CLUSTER_NAME);
+        map.put("strimzi.io/kind", "KafkaBridge");
+        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
+
+        // Create node port service for expose bridge outside openshift
+        Service service = getSystemtestsServiceResource(brdigeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+                .editSpec()
+                .withType("NodePort")
+                .withSelector(map)
+                .endSpec().build();
+        testClassResources.createServiceResource(service, NAMESPACE).done();
+        StUtils.waitForNodePortService(brdigeExternalService);
+    }
+
+    protected void checkSendResponse(JsonObject response, int messageCount) {
+        JsonArray offsets = response.getJsonArray("offsets");
+        assertEquals(messageCount, offsets.size());
+        for (int i = 0; i < messageCount; i++) {
+            JsonObject metadata = offsets.getJsonObject(i);
+            assertEquals(0, metadata.getInteger("partition"));
+            assertEquals(i, metadata.getLong("offset"));
+            LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
+        }
+    }
+
+    protected int getBridgeNodePort() {
+        Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
+                .inNamespace(NAMESPACE)
+                .withName(brdigeExternalService)
+                .get();
+
+        return extBootstrapService.getSpec().getPorts().get(0).getNodePort();
+    }
+
     @Override
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
+    }
+
+    @BeforeAll
+    void deployClusterOperator() {
+        LOGGER.info("Creating resources before the test class");
+        prepareEnvForOperator(NAMESPACE);
+
+        createTestClassResources();
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        testClassResources.clusterOperator(NAMESPACE).done();
     }
 }

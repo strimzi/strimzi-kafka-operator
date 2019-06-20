@@ -235,11 +235,11 @@ public class Resources extends AbstractResources {
         }
     }
 
-    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
+    public DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
         return kafkaEphemeral(name, kafkaReplicas, 3);
     }
 
-    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
@@ -256,11 +256,11 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
-    public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
+    KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
         return defaultKafka(name, kafkaReplicas, 3);
     }
 
-    public KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
+    KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
         String tOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
@@ -575,15 +575,15 @@ public class Resources extends AbstractResources {
             () -> client().getPod(name) == null);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName) {
         return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
         return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
         return topic(defaultTopic(clusterName, topicName, partitions, replicas)
             .editSpec()
             .addToConfig("min.insync.replicas", replicas)
@@ -613,7 +613,7 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaUser tlsUser(String clusterName, String name) {
+    public DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withClusterName(clusterName)
@@ -628,7 +628,7 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
-    DoneableKafkaUser scramShaUser(String clusterName, String name) {
+    public DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withClusterName(clusterName)
@@ -663,7 +663,7 @@ public class Resources extends AbstractResources {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build(), namespace);
     }
 
-    DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -717,7 +717,7 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    DoneableDeployment createNewDeployment(Deployment deployment, String namespace) {
+    private DoneableDeployment createNewDeployment(Deployment deployment, String namespace) {
         return new DoneableDeployment(deployment, co -> {
             TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
@@ -881,7 +881,7 @@ public class Resources extends AbstractResources {
         return createNewDeployment(kafkaClient, namespace);
     }
 
-    protected static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
+    public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)
@@ -898,7 +898,7 @@ public class Resources extends AbstractResources {
             .endSpec();
     }
 
-    DoneableService createServiceResource(Service service, String clientNamespace) {
+    public DoneableService createServiceResource(Service service, String clientNamespace) {
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         client().createService(service);
         deleteLater(service);
@@ -1096,7 +1096,7 @@ public class Resources extends AbstractResources {
         return "";
     }
 
-    DoneableKafkaBridge kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas, int port) {
+    public DoneableKafkaBridge kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas, int port) {
         return kafkaBridge(defaultKafkaBridge(name, bootstrap, kafkaBridgeReplicas, port).build());
     }
 

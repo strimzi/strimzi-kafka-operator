@@ -111,8 +111,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
 
-    Resources testMethodResources;
-    static Resources testClassResources;
+    public Resources testMethodResources;
+    public static Resources testClassResources;
     static String operationID;
     Random rng = new Random();
 
@@ -414,24 +414,24 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .findFirst().get().getImage();
     }
 
-    protected void createTestMethodResources() {
+    public  void createTestMethodResources() {
         LOGGER.info("Creating resources before the test");
         testMethodResources = new Resources(kubeClient());
     }
 
-    protected static void createTestClassResources() {
+    public  static void createTestClassResources() {
         LOGGER.info("Creating test class resources");
         testClassResources = new Resources(kubeClient());
     }
 
-    protected void deleteTestMethodResources() throws Exception {
+    public  void deleteTestMethodResources() throws Exception {
         if (testMethodResources != null) {
             testMethodResources.deleteResources();
             testMethodResources = null;
         }
     }
 
-    Resources testMethodResources() {
+    public Resources testMethodResources() {
         return testMethodResources;
     }
 
@@ -440,11 +440,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return TimeMeasuringSystem.startOperation(operation);
     }
 
-    String clusterCaCertSecretName(String cluster) {
+    public String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
     }
 
-    void waitTillSecretExists(String secretName) {
+    public void waitTillSecretExists(String secretName) {
         waitFor("secret " + secretName + " exists", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getSecret(secretName) != null);
         try {
@@ -454,7 +454,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void waitForPodDeletion(String namespace, String podName) {
+    public void waitForPodDeletion(String namespace, String podName) {
         LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
         TestUtils.waitFor("statefulset " + podName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -515,7 +515,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    private static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+    public  static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
             testClassResources.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
@@ -534,7 +534,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      */
-    static void applyRoleBindings(String namespace) {
+    public static void applyRoleBindings(String namespace) {
         applyRoleBindings(namespace, Collections.singletonList(namespace));
     }
 
@@ -543,14 +543,14 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
+    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
         applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
     }
 
     /**
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
-    void deployClusterOperatorViaHelmChart() {
+    public void deployClusterOperatorViaHelmChart() {
         String dockerOrg = Environment.STRIMZI_ORG;
         String dockerTag = Environment.STRIMZI_TAG;
 
@@ -579,7 +579,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     /**
      * Delete CO deployed via helm chart.
      */
-    void deleteClusterOperatorViaHelmChart() {
+    public  void deleteClusterOperatorViaHelmChart() {
         LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
     }
@@ -590,7 +590,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace cluster namespace
      * @throws Exception
      */
-    void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
+    public void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -614,7 +614,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace cluster namespace
      * @throws Exception
      */
-    void waitForClusterAvailability(String namespace) throws Exception {
+    public void waitForClusterAvailability(String namespace) throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         waitForClusterAvailability(namespace, topicName);
     }
@@ -626,7 +626,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param topicName topic name
      * @throws Exception
      */
-    void waitForClusterAvailability(String namespace, String topicName) throws Exception {
+    public void waitForClusterAvailability(String namespace, String topicName) throws Exception {
         int messageCount = 50;
 
         KafkaClient testClient = new KafkaClient();
@@ -644,7 +644,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void sendMessagesConsole(String namespace, String topicName, int messageCount) throws Exception {
+    public void sendMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -659,7 +659,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void sendMessagesConsoleTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void sendMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -674,7 +674,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void sendMessagesConsoleScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void sendMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -689,7 +689,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void receiveMessagesConsole(String namespace, String topicName, int messageCount) throws Exception {
+    public void receiveMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -704,7 +704,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void receiveMessagesConsoleTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void receiveMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -719,7 +719,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void receiveMessagesConsoleScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+    public void receiveMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
 
         KafkaClient testClient = new KafkaClient();
         try {
