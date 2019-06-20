@@ -548,19 +548,19 @@ public class Resources extends AbstractResources {
             () -> client().getPod(name) == null);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, String namespace) {
-        return topic(defaultTopic(clusterName, topicName, 1, 1).build(), namespace);
+    DoneableKafkaTopic topic(String clusterName, String topicName) {
+        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, String namespace) {
-        return topic(defaultTopic(clusterName, topicName, partitions, 1).build(), namespace);
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
+        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas, String namespace) {
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
         return topic(defaultTopic(clusterName, topicName, partitions, replicas)
             .editSpec()
             .addToConfig("min.insync.replicas", replicas)
-            .endSpec().build(), namespace);
+            .endSpec().build());
     }
 
     private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
@@ -578,9 +578,9 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    DoneableKafkaTopic topic(KafkaTopic topic, String namespace) {
+    DoneableKafkaTopic topic(KafkaTopic topic) {
         return new DoneableKafkaTopic(topic, kt -> {
-            KafkaTopic resource = kafkaTopic().inNamespace(namespace).create(kt);
+            KafkaTopic resource = kafkaTopic().inNamespace(topic.getMetadata().getNamespace()).create(kt);
             LOGGER.info("Created KafkaTopic {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
@@ -673,7 +673,7 @@ public class Resources extends AbstractResources {
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("extensions/v1beta1")
+                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
