@@ -49,6 +49,17 @@ public class ClusterOperatorTest {
 
     private Vertx vertx;
 
+    private static Map<String, String> buildEnv(String namespaces) {
+        Map<String, String> env = new HashMap<>();
+        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
+        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        return env;
+    }
+
     @Before
     public void createClient(TestContext context) {
         vertx = Vertx.vertx();
@@ -143,9 +154,7 @@ public class ClusterOperatorTest {
 
         Async async = context.async();
 
-        Map<String, String> env = new HashMap<>();
-        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
@@ -221,9 +230,7 @@ public class ClusterOperatorTest {
 
         Async async = context.async();
 
-        Map<String, String> env = new HashMap<>();
-        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();

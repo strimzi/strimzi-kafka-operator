@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 
 import java.io.InputStreamReader;
@@ -135,16 +136,23 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return new TreeSet<>(map.keySet());
         }
 
-        private String image(final String crImage, final String crVersion, Map<String, String> images) {
+        private String image(final String crImage, final String crVersion, Map<String, String> images, String envVar)
+                throws NoImageException {
             final String image;
             if (crImage == null) {
                 if (crVersion == null) {
                     image = images.get(defaultVersion().version());
                     if (image == null) {
-                        throw new IllegalStateException("The images map is invalid: It lacks an image for the default version " + defaultVersion());
+                        throw new NoImageException("The images map given by " + envVar + " is invalid: " +
+                                "It lacks an image for the default version " + defaultVersion());
                     }
                 } else {
                     image = images.get(crVersion);
+                    if (image == null) {
+                        throw new NoImageException("No image for version " + crVersion +
+                                ", versions specified in " + envVar + " are " +
+                                String.join(", ", images.keySet()));
+                    }
                 }
             } else {
                 image = crImage;
@@ -152,26 +160,121 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return image;
         }
 
+        /**
+         * The Kafka image to use for a Kafka cluster.
+         * @param image The image given in the CR.
+         * @param version The version given in the CR.
+         * @return The image to use.
+         * @throws InvalidResourceException If no image was given in the CR and the version given
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES}.
+         */
         public String kafkaImage(String image, String version) {
-            return image(image, version, kafkaImages);
+            try {
+                return image(image, version, kafkaImages, ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES);
+            } catch (NoImageException e) {
+                throw new InvalidResourceException(e);
+            }
         }
 
+        /**
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES}.
+         * @param versions The versions to validate.
+         * @throws NoImageException If one of the versions lacks an image.
+         */
+        public void validateKafkaImages(Iterable<String> versions) throws NoImageException {
+            for (String version : versions) {
+                image(null, version, kafkaImages, ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES);
+            }
+        }
+
+        /**
+         * The Kafka Connect image to use for a Kafka Connect cluster.
+         * @param image The image given in the CR.
+         * @param version The version given in the CR.
+         * @return The image to use.
+         * @throws InvalidResourceException If no image was given in the CR and the version given
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES}.
+         */
         public String kafkaConnectVersion(String image, String version) {
-            return image(image,
-                    version,
-                    kafkaConnectImages);
+            try {
+                return image(image,
+                        version,
+                        kafkaConnectImages,
+                        ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES);
+            } catch (NoImageException e) {
+                throw new InvalidResourceException(e);
+            }
         }
 
+        /**
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES}.
+         * @param versions The versions to validate.
+         * @throws NoImageException If one of the versions lacks an image.
+         */
+        public void validateKafkaConnectImages(Iterable<String> versions) throws NoImageException {
+            for (String version : versions) {
+                image(null, version, kafkaConnectImages, ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES);
+            }
+        }
+
+        /**
+         * The Kafka Connect S2I image to use for a Kafka Connect cluster.
+         * @param image The image given in the CR.
+         * @param version The version given in the CR.
+         * @return The image to use.
+         * @throws InvalidResourceException If no image was given in the CR and the version given
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_S2I_IMAGES}.
+         */
         public String kafkaConnectS2iVersion(String image, String version) {
-            return image(image,
-                    version,
-                    kafkaConnectS2iImages);
+            try {
+                return image(image,
+                        version,
+                        kafkaConnectS2iImages,
+                        ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES);
+            } catch (NoImageException e) {
+                throw new InvalidResourceException(e);
+            }
         }
 
+        /**
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_S2I_IMAGES}.
+         * @param versions The versions to validate.
+         * @throws NoImageException If one of the versions lacks an image.
+         */
+        public void validateKafkaConnectS2iImages(Iterable<String> versions) throws NoImageException {
+            for (String version : versions) {
+                image(null, version, kafkaConnectS2iImages, ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES);
+            }
+        }
+
+        /**
+         * The Kafka Connect image to use for a Kafka Mirror Maker cluster.
+         * @param image The image given in the CR.
+         * @param version The version given in the CR.
+         * @return The image to use.
+         * @throws InvalidResourceException If no image was given in the CR and the version given
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
+         */
         public String kafkaMirrorMakerImage(String image, String version) {
-            return image(image,
-                    version,
-                    kafkaMirrorMakerImages);
+            try {
+                return image(image,
+                        version,
+                        kafkaMirrorMakerImages,
+                        ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
+            } catch (NoImageException e) {
+                throw new InvalidResourceException(e);
+            }
+        }
+
+        /**
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
+         * @param versions The versions to validate.
+         * @throws NoImageException If one of the versions lacks an image.
+         */
+        public void validateKafkaMirrorMakerImages(Iterable<String> versions) throws NoImageException {
+            for (String version : versions) {
+                image(null, version, kafkaConnectImages, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
+            }
         }
 
         @Override

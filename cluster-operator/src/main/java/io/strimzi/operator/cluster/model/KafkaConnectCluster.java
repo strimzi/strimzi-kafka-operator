@@ -158,9 +158,6 @@ public class KafkaConnectCluster extends AbstractModel {
         String image = spec instanceof KafkaConnectS2ISpec ?
                 versions.kafkaConnectS2iVersion(spec.getImage(), spec.getVersion())
                 : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-        if (image == null) {
-            throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-        }
         kafkaConnect.setImage(image);
 
         kafkaConnect.setResources(spec.getResources());

@@ -10,7 +10,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,6 +29,10 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
     }
 
     @Test
@@ -69,7 +72,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testEnvVarsDefault() {
 
-        Map<String, String> envVars = new HashMap<>(2);
+        Map<String, String> envVars = envWithImages();
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
@@ -77,6 +80,15 @@ public class ClusterOperatorConfigTest {
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
         assertEquals(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
+    }
+
+    private Map<String, String> envWithImages() {
+        Map<String, String> envVars = new HashMap<>(2);
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo");
+        return envVars;
     }
 
     @Test
@@ -107,8 +119,8 @@ public class ClusterOperatorConfigTest {
     }
 
     @Test
-    public void testEmptyEnvVars() {
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(Collections.emptyMap());
+    public void testMinimalEnvVars() {
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envWithImages());
         assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
     }
 

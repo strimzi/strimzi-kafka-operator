@@ -248,11 +248,7 @@ public class TopicOperator extends AbstractModel {
             }
 
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
-            if (tlsSidecarImage == null) {
-                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-            }
-            result.tlsSidecarImage = tlsSidecarImage;
+            result.tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         } else {
             result = null;
         }

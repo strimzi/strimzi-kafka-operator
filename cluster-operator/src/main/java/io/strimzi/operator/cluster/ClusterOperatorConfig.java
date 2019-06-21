@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import org.apache.logging.log4j.LogManager;
@@ -174,20 +175,14 @@ public class ClusterOperatorConfig {
                 ModelUtils.parseImageMap(connectImages),
                 ModelUtils.parseImageMap(connectS2IImages),
                 ModelUtils.parseImageMap(mirrorMakerImages));
-
-        for (String version : lookup.supportedVersions()) {
-            if (lookup.kafkaImage(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_IMAGES, version);
-            }
-            if (lookup.kafkaConnectVersion(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_CONNECT_IMAGES, version);
-            }
-            // Need to know whether we're on OS to decide whether to valid s2i
-            if (lookup.kafkaMirrorMakerImage(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, version);
-            }
+        try {
+            lookup.validateKafkaImages(lookup.supportedVersions());
+            lookup.validateKafkaConnectImages(lookup.supportedVersions());
+            // TODO Need to know whether we're on OS to decide whether to valid s2i
+            lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
+        } catch (NoImageException e) {
+            throw new InvalidConfigurationException(e);
         }
-
         return lookup;
     }
 
