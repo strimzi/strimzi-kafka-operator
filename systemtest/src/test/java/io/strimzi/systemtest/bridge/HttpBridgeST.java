@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Random;
+
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
@@ -54,7 +56,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
         String name = "my-kafka-consumer";
-        String groupId = "my-group";
+        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
         config.put("name", name);

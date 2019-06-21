@@ -80,7 +80,7 @@ public class Environment {
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = System.getenv().getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
     // variables for test-client image
-    private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka-bridge:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
 
     private Environment() {
