@@ -199,6 +199,15 @@ public class KafkaStatusTest {
 
     @Test
     public void testStatusAfterFailedReconciliationWithPreviousFailure() throws ParseException {
+        testStatusAfterFailedReconciliationWithPreviousFailure(new RuntimeException("Something went wrong"));
+    }
+
+    @Test
+    public void testStatusAfterFailedReconciliationWithPreviousFailure_NPE() throws ParseException {
+        testStatusAfterFailedReconciliationWithPreviousFailure(new NullPointerException());
+    }
+
+    public void testStatusAfterFailedReconciliationWithPreviousFailure(Throwable exception) throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -210,7 +219,9 @@ public class KafkaStatusTest {
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+        MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
+                exception,
+                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 supplier,
                 config);
@@ -230,8 +241,8 @@ public class KafkaStatusTest {
             assertEquals(1, status.getConditions().size());
             assertEquals("NotReady", status.getConditions().get(0).getType());
             assertEquals("True", status.getConditions().get(0).getStatus());
-            assertEquals("RuntimeException", status.getConditions().get(0).getReason());
-            assertEquals("Something went wrong", status.getConditions().get(0).getMessage());
+            assertEquals(exception.getClass().getSimpleName(), status.getConditions().get(0).getReason());
+            assertEquals(exception.getMessage(), status.getConditions().get(0).getMessage());
 
             assertEquals(2L, status.getObservedGeneration());
         });
@@ -273,7 +284,9 @@ public class KafkaStatusTest {
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+        MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
+                new RuntimeException("Something went wrong"),
+                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 supplier,
                 config);
@@ -335,8 +348,11 @@ public class KafkaStatusTest {
 
     // This allows to test the status handling when reconciliation succeeds
     class MockFailingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockFailingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+        private final Throwable exception;
+
+        public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
             super(vertx, pfa, certManager, supplier, config);
+            this.exception = exception;
         }
 
         Future<Void> reconcile(ReconciliationState reconcileState)  {
@@ -350,7 +366,7 @@ public class KafkaStatusTest {
 
             reconcileState.kafkaStatus.setListeners(singletonList(ls));
 
-            return Future.failedFuture(new RuntimeException("Something went wrong"));
+            return Future.failedFuture(exception);
         }
     }
 }
