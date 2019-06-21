@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

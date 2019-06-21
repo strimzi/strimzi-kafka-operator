@@ -1048,7 +1048,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1458,9 +1458,11 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 
 [options="header"]
 |====
-|Property     |Description
-|spec  1.2+<.<|The specification of the user.
+|Property       |Description
+|spec    1.2+<.<|The specification of the user.
 |xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+|status  1.2+<.<|The status of the Kafka User.
+|xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 |====
 
 [id='type-KafkaUserSpec-{context}']
@@ -1614,6 +1616,38 @@ It must have the value `transactionalId` for the type `AclRuleTransactionalIdRes
 |string
 |patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
+|====
+
+[id='type-KafkaUserStatus-{context}']
+### `KafkaUserStatus` schema reference
+
+Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|integer
+|credentials         1.2+<.<|User credentials.
+|xref:type-Credential-{context}[`Credential`]
+|====
+
+[id='type-Credential-{context}']
+### `Credential` schema reference
+
+Used in: xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+
+
+[options="header"]
+|====
+|Property                  |Description
+|credentialsSecret  1.2+<.<|The name of `Secret` where the credentials are stored.
+|string
+|credentials        1.2+<.<|The name of field in `Secret` where the credentials are stored.
+|string
 |====
 
 [id='type-KafkaMirrorMaker-{context}']
