@@ -179,10 +179,13 @@ public class KafkaUserOperator {
                                 .build();
                     }
 
-                    Credential credential = new CredentialBuilder()
+                    Credential credential = null;
+                    if (desired != null) {
+                        credential = new CredentialBuilder()
                                 .withNewCredentials("")
                                 .withCredentialsSecret(desired.getMetadata().getName())
                                 .build();
+                    }
 
                     userStatus.setCredentials(credential);
                     userStatus.setConditions(Collections.singletonList(readyCondition));
@@ -222,11 +225,11 @@ public class KafkaUserOperator {
         Future<Void> updateStatusFuture = Future.future();
 
         crdOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
-            if (getRes.succeeded())    {
+            if (getRes.succeeded()) {
                 KafkaUser user = getRes.result();
 
                 if (user != null) {
-                    if ("kafka.strimzi.io/v1alpha1".equals(user.getApiVersion()))   {
+                    if ("kafka.strimzi.io/v1alpha1".equals(user.getApiVersion())) {
                         log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, user.getApiVersion());
                         updateStatusFuture.complete();
                     } else {
