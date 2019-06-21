@@ -38,7 +38,11 @@ import static io.strimzi.test.BaseITST.kubeClient;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>[0-9.])");
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>.*)$");
+
+    private static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile("^(?<registry>[^/]*)/(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
+    private static final Pattern IMAGE_PATTERN = Pattern.compile("^(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
+
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private StUtils() { }
@@ -399,27 +403,33 @@ public class StUtils {
         );
     }
 
-    private static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
-        image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
-        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
-        StringBuffer sb = new StringBuffer();
-        if (m.find()) {
-            m.appendReplacement(sb, ":" + newTag + m.group("kafka") + m.group("version"));
-            m.appendTail(sb);
-            image = sb.toString();
-        } else {
-            image = image.replaceFirst(":[^:]+$", ":" + newTag);
-        }
-        return image;
-    }
-
     /**
      * The method to configure docker image to use proper docker registry, docker org and docker tag.
      * @param image Image that needs to be changed
      * @return Updated docker image with a proper registry, org, tag
      */
     public static String changeOrgAndTag(String image) {
-        return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
+        String newTag = Environment.STRIMZI_TAG;
+        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
+        if (m.find()) {
+            newTag = newTag + m.group("kafka") + m.group("version");
+        }
+        m = IMAGE_PATTERN_FULL_PATH.matcher(image);
+        if (m.find()) {
+            String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT);
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
+
+            return registry + "/" + org + "/" + m.group("image") + ":" + tag;
+        }
+        m = IMAGE_PATTERN.matcher(image);
+        if (m.find()) {
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
+
+            return org + "/" + m.group("image") + ":" + tag;
+        }
+        return image;
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {
@@ -430,5 +440,12 @@ public class StUtils {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
+        if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
+            return envVar;
+        }
+        return current;
     }
 }
