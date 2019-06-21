@@ -187,17 +187,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 readyCondition = new ConditionBuilder()
-                        .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                        .withNewType("Ready")
-                        .withNewStatus("True")
+                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withType("Ready")
+                        .withStatus("True")
                         .build();
             } else {
                 readyCondition = new ConditionBuilder()
-                        .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                        .withNewType("NotReady")
-                        .withNewStatus("True")
-                        .withNewReason(reconcileResult.cause().getClass().getSimpleName())
-                        .withNewMessage(reconcileResult.cause().getMessage())
+                        .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                        .withType("NotReady")
+                        .withStatus("True")
+                        .withReason(reconcileResult.cause().getClass().getSimpleName())
+                        .withMessage(reconcileResult.cause().getMessage())
                         .build();
             }
 
