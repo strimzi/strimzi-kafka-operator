@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-/*import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
@@ -48,6 +48,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +118,7 @@ public class CertificateRenewalTest {
 
         AtomicReference<Throwable> error = new AtomicReference<>();
         Async async = context.async();
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas().setHandler(ar -> {
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(this::dateSupplier).setHandler(ar -> {
             error.set(ar.cause());
             async.complete();
         });
@@ -451,5 +452,8 @@ public class CertificateRenewalTest {
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
         assertEquals(0, c.getAllValues().size());
     }
+
+    private Date dateSupplier() {
+        return new Date();
+    }
 }
-*/
