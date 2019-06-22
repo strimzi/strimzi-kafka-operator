@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
@@ -62,6 +63,7 @@ public class KafkaUserOperator {
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                     "0123456789");
+    private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
     /**
      * @param vertx The Vertx instance.
@@ -247,7 +249,7 @@ public class KafkaUserOperator {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
+                    Set<String> usersWithAcls = aclOperations.getUsersWithAcls().stream().filter(user -> !IGNORED_USERS.contains(user)).collect(Collectors.toSet());
                     future.complete(usersWithAcls);
                 } catch (Throwable t) {
                     future.failed();
