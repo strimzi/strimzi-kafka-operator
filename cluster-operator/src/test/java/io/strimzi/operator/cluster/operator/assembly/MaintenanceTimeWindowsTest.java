@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Pod;
+/*import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -687,3 +687,4 @@ public class MaintenanceTimeWindowsTest {
         async.await();
     }
 }
+*/
