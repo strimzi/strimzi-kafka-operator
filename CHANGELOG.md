@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.13.0
+
+* Allow users to manually configure ACL rules for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator.
+
 ## 0.12.0
 
 * **Drop support for Kubernetes 1.9 and 1.10 and OpenShift 3.9 and 3.10.**
