@@ -22,6 +22,7 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +38,8 @@ import java.util.Set;
  */
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
+
+    private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
     private final Vertx vertx;
     private final SimpleAclAuthorizer authorizer;
@@ -220,6 +223,7 @@ public class SimpleAclOperator {
      */
     public Set<String> getUsersWithAcls()   {
         Set<String> result = new HashSet<String>();
+        Set<String> ignored = new HashSet<String>(IGNORED_USERS.size());
 
         log.debug("Searching for Users with any ACL rules");
 
@@ -244,11 +248,19 @@ public class SimpleAclOperator {
                     // Username in ACL might keep different format (for example based on user's subject) and need to be decoded
                     String username = KafkaUserModel.decodeUsername(principal.getName());
 
-                    if (log.isTraceEnabled())   {
-                        log.trace("Adding user {} to Set of users with ACLs", username);
-                    }
+                    if (IGNORED_USERS.contains(username))   {
+                        if (!ignored.contains(username)) {
+                            // This info message is loged only once per reocnciliation even if there are multiple rules
+                            log.info("Existing ACLs for user '{}' will be ignored.", username);
+                            ignored.add(username);
+                        }
+                    } else {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Adding user {} to Set of users with ACLs", username);
+                        }
 
-                    result.add(username);
+                        result.add(username);
+                    }
                 }
             }
         }
