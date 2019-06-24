@@ -32,7 +32,7 @@ public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOpera
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList,
             DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
-        return new StorageClassOperator(vertx, mockClient);
+        return new StorageClassOperator(vertx, mockClient, 100);
     }
 
     @Override

@@ -17,13 +17,14 @@ public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOpe
         Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
 
     /**
-     * Constructor
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
+     * Constructor.
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout in milliseconds.
      */
 
-    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ClusterRoleBinding");
+    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "ClusterRoleBinding", operationTimeoutMs);
     }
 
     @Override

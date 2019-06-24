@@ -50,7 +50,7 @@ public class MainIT {
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
 
-        ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
+        ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
 
         Async async = context.async();
         Main.maybeCreateClusterRoles(vertx, config, client).setHandler(res -> {

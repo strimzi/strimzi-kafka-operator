@@ -33,7 +33,7 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, ClusterRoleBinding, ClusterRoleBindingList,
             DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
-        return new ClusterRoleBindingOperator(vertx, mockClient);
+        return new ClusterRoleBindingOperator(vertx, mockClient, 100);
     }
 
     @Override

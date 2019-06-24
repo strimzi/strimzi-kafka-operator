@@ -21,13 +21,14 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
         DoneableClusterRole>> {
 
     /**
-     * Constructor
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
+     * Constructor.
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout in milliseconds.
      */
 
-    public ClusterRoleOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ClusterRole");
+    public ClusterRoleOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "ClusterRole", operationTimeoutMs);
     }
 
     @Override
