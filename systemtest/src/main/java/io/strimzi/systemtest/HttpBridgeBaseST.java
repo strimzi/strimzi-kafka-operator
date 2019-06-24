@@ -35,8 +35,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
     private WebClient client;
 
-    protected String brdigeExternalService = CLUSTER_NAME + "-brdige-external-service";
-    public static final String NAMESPACE = "bridge-cluster-test";
+    protected String brdigeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
     @BeforeAll
     void prepareEnv(Vertx vertx) {
@@ -170,7 +169,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    protected void deployBridgeNodePortService() {
+    protected void deployBridgeNodePortService() throws InterruptedException {
         Map<String, String> map = new HashMap<>();
         map.put("strimzi.io/cluster", CLUSTER_NAME);
         map.put("strimzi.io/kind", "KafkaBridge");
@@ -182,7 +181,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                 .withType("NodePort")
                 .withSelector(map)
                 .endSpec().build();
-        testClassResources.createServiceResource(service, NAMESPACE).done();
+        testClassResources.createServiceResource(service, getBridgeNamespace()).done();
         StUtils.waitForNodePortService(brdigeExternalService);
     }
 
@@ -198,8 +197,8 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     }
 
     protected int getBridgeNodePort() {
-        Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
-                .inNamespace(NAMESPACE)
+        Service extBootstrapService = kubeClient(getBridgeNamespace()).getClient().services()
+                .inNamespace(getBridgeNamespace())
                 .withName(brdigeExternalService)
                 .get();
 
@@ -211,14 +210,18 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
     }
 
+    public String getBridgeNamespace() {
+        return "bridge-cluster-test";
+    }
+
     @BeforeAll
     void deployClusterOperator() {
         LOGGER.info("Creating resources before the test class");
-        prepareEnvForOperator(NAMESPACE);
+        prepareEnvForOperator(getBridgeNamespace());
 
         createTestClassResources();
-        applyRoleBindings(NAMESPACE);
+        applyRoleBindings(getBridgeNamespace());
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        testClassResources.clusterOperator(getBridgeNamespace()).done();
     }
 }

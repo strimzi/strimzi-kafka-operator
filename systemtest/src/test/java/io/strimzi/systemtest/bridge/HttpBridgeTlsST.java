@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(VertxExtension.class)
 class HttpBridgeTlsST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
+    private static final String NAMESPACE = "bridge-cluster-test-tls";
 
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
@@ -91,7 +92,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
     }
 
     @BeforeAll
-    void createClassResources() {
+    void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
@@ -134,5 +135,10 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         bridgePort = getBridgeNodePort();
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+    }
+
+    @Override
+    public String getBridgeNamespace() {
+        return NAMESPACE;
     }
 }

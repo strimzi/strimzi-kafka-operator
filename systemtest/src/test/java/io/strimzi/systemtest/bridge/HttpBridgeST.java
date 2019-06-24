@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpBridgeST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
 
+    public static final String NAMESPACE = "bridge-cluster-test";
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
 
@@ -86,7 +87,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
     }
 
     @BeforeAll
-    void createClassResources() {
+    void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         // Deploy kafka
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -106,5 +107,10 @@ class HttpBridgeST extends HttpBridgeBaseST {
         deployBridgeNodePortService();
         bridgePort = getBridgeNodePort();
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+    }
+
+    @Override
+    public String getBridgeNamespace() {
+        return NAMESPACE;
     }
 }
