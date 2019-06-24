@@ -94,12 +94,15 @@ public class Annotations {
     private static String annotation(String annotation, String defaultValue, Map<String, String> annotations, String... deprecatedAnnotations) {
         String value = annotations.get(annotation);
         if (value == null) {
-            for (String deprecated : deprecatedAnnotations) {
-                value = annotations.get(deprecated);
-                if (value != null) {
-                    break;
+            if (deprecatedAnnotations != null) {
+                for (String deprecated : deprecatedAnnotations) {
+                    value = annotations.get(deprecated);
+                    if (value != null) {
+                        break;
+                    }
                 }
             }
+
             if (value == null) {
                 value = defaultValue;
             }

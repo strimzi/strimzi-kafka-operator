@@ -277,7 +277,7 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
         Secret secret = zc.generateNodesSecret(clusterCa, ka);
         assertEquals(set(
