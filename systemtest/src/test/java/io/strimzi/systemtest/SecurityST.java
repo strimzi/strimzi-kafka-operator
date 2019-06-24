@@ -32,6 +32,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag(REGRESSION)
+@Tag(PR)
 class SecurityST extends AbstractST {
 
     public static final String NAMESPACE = "security-cluster-test";
@@ -160,7 +162,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
     void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
@@ -228,7 +229,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";

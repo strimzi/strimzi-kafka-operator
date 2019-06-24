@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.CM;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.SERVICE;
 
 @Tag(REGRESSION)
+@Tag(PR)
 class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";

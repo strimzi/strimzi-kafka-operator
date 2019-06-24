@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,6 +34,7 @@ class ConnectS2IST extends AbstractST {
     @Test
     @OpenShiftOnly
     @Tag(FLAKY)
+    @Tag(ACCEPTANCE)
     void testDeployS2IWithMongoDBPlugin() throws IOException {
         testClassResources.kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()

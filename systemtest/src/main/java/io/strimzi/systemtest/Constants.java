@@ -69,6 +69,18 @@ public interface Constants {
      */
     String REGRESSION = "regression";
     /**
+     * Tag for tests executed during pull request builds.
+     */
+    String PR = "pr";
+    /**
+     * Tag for upgrade tests.
+     */
+    String UPGRADE = "upgrade";
+    /**
+     * Tag for acceptance tests executed during Travis builds.
+     */
+    String TRAVIS = "travis";
+    /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";

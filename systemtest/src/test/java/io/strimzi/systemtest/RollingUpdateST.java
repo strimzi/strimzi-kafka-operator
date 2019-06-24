@@ -23,11 +23,13 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@Tag(PR)
 class RollingUpdateST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);

@@ -210,11 +210,14 @@ If `junitTags` system property isn't defined, all tests without an explicitly de
 
 | Name | Description |
 | :---: | :---: |
-| acceptance | Marks tests executed on Travis | 
+| travis | Marks tests executed on Travis |
+| acceptance | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
 | regression | Regression tests |
+| upgrade | Execute upgrade tests |
+| pr | Execute subset of tests for pull requests |
 | flaky | Test which are flaky |
 | cci_flaky | Test which are flaky only on specific QE environment |
-| all | Execute all tests with any tag |  
+| systemtests | Execute all system tests with any tag |
 
 ### Helper script
 

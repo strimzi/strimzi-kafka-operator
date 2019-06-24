@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -494,6 +496,8 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
+    @Tag(ACCEPTANCE)
+    @Tag(PR)
     void testSendMessagesPlainAnonymous() throws Exception {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -510,6 +514,7 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
+    @Tag(PR)
     void testSendMessagesTlsAuthenticated() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -542,6 +547,7 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
+    @Tag(PR)
     void testSendMessagesPlainScramSha() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -930,6 +936,8 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
+    @Tag(PR)
     void testNodePortTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -971,6 +979,8 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
+    @Tag(PR)
     void testLoadBalancerTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()

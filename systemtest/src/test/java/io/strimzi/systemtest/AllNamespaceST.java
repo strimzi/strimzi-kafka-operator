@@ -16,12 +16,14 @@ import org.junit.jupiter.api.TestInfo;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
+@Tag(PR)
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
@@ -32,7 +34,6 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
-    @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespce = setNamespace(THIRD_NAMESPACE);
@@ -48,7 +49,6 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
-    @Tag(REGRESSION)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO();
@@ -58,14 +58,12 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
     @Test
-    @Tag(REGRESSION)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO();
     }
 
     @Test
-    @Tag(REGRESSION)
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
@@ -78,7 +76,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testUOWatchingOtherNamespace() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");

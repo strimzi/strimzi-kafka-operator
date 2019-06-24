@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.PR;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TRAVIS;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
@@ -73,6 +75,8 @@ class ConnectST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(TRAVIS)
+    @Tag(PR)
     void testKafkaConnectWithFileSinkPlugin() {
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
@@ -129,6 +133,7 @@ class ConnectST extends AbstractST {
 
     @Test
     @Tag(REGRESSION)
+    @Tag(PR)
     void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
