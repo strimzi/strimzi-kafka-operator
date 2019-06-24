@@ -38,6 +38,8 @@ spec:
     JSONPath: .spec.authorization.type
     type: string
     priority: 0
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -114,4 +116,31 @@ spec:
               - type
           required:
           - authentication
+        status:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  lastTransitionTime:
+                    type: string
+                  reason:
+                    type: string
+                  message:
+                    type: string
+            observedGeneration:
+              type: integer
+            credentials:
+              type: object
+              properties:
+                credentialsSecret:
+                  type: string
+                credentials:
+                  type: string
 {{- end -}}
