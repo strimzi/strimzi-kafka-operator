@@ -256,7 +256,7 @@ public class KafkaUserOperator {
                     }
                 } else {
                     log.error("{}: Current Kafka resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka USer resource not found");
+                    updateStatusFuture.fail("Current Kafka User resource not found");
                 }
             } else {
                 log.error("{}: Failed to get the current Kafka User resource and its status", reconciliation, getRes.cause());

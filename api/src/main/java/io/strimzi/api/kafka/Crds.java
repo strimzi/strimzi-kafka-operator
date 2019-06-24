@@ -154,6 +154,7 @@ public class Crds {
             group = KafkaUser.RESOURCE_GROUP;
             kind = KafkaUser.RESOURCE_KIND;
             listKind = KafkaUser.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatusBuilder().build();
             if (!KafkaUser.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
