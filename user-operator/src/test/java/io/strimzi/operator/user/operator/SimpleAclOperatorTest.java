@@ -71,10 +71,14 @@ public class SimpleAclOperatorTest {
         Acl barAcl = new Acl(bar, Allow$.MODULE$, "*", Read$.MODULE$);
         KafkaPrincipal baz = new KafkaPrincipal("User", "baz");
         Acl bazAcl = new Acl(baz, Allow$.MODULE$, "*", Read$.MODULE$);
+        KafkaPrincipal all = new KafkaPrincipal("User", "*");
+        Acl allAcl = new Acl(all, Allow$.MODULE$, "*", Read$.MODULE$);
+        KafkaPrincipal anonymous = new KafkaPrincipal("User", "ANONYMOUS");
+        Acl anonymousAcl = new Acl(anonymous, Allow$.MODULE$, "*", Read$.MODULE$);
         Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
         Resource res2 = new Resource(Group$.MODULE$, "my-group", PatternType.LITERAL);
-        scala.collection.immutable.Set<Acl> set1 = new scala.collection.immutable.Set.Set2<>(fooAcl, barAcl);
-        scala.collection.immutable.Set<Acl> set2 = new scala.collection.immutable.Set.Set1<>(bazAcl);
+        scala.collection.immutable.Set<Acl> set1 = new scala.collection.immutable.Set.Set3<>(fooAcl, barAcl, allAcl);
+        scala.collection.immutable.Set<Acl> set2 = new scala.collection.immutable.Set.Set2<>(bazAcl, anonymousAcl);
         scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> map = new scala.collection.immutable.Map.Map2<>(res1, set1, res2, set2);
         when(mockAuthorizer.getAcls()).thenReturn(map);
 
