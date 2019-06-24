@@ -16,4 +16,8 @@ public class InvalidResourceException extends RuntimeException {
     public InvalidResourceException(Throwable cause) {
         super(cause);
     }
+
+    public InvalidResourceException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

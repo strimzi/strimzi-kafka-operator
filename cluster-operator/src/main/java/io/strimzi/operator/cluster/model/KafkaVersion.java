@@ -143,15 +143,12 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 if (crVersion == null) {
                     image = images.get(defaultVersion().version());
                     if (image == null) {
-                        throw new NoImageException("The images map given by " + envVar + " is invalid: " +
-                                "It lacks an image for the default version " + defaultVersion());
+                        throw new NoImageException("No image for default version " + defaultVersion());
                     }
                 } else {
                     image = images.get(crVersion);
                     if (image == null) {
-                        throw new NoImageException("No image for version " + crVersion +
-                                ", versions specified in " + envVar + " are " +
-                                String.join(", ", images.keySet()));
+                        throw new NoImageException("No image for version " + crVersion);
                     }
                 }
             } else {
@@ -172,7 +169,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             try {
                 return image(image, version, kafkaImages, ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES);
             } catch (NoImageException e) {
-                throw new InvalidResourceException(e);
+                throw asInvalidResourceException(version, e);
             }
         }
 
@@ -202,7 +199,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         kafkaConnectImages,
                         ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES);
             } catch (NoImageException e) {
-                throw new InvalidResourceException(e);
+                throw asInvalidResourceException(version, e);
             }
         }
 
@@ -225,14 +222,14 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @throws InvalidResourceException If no image was given in the CR and the version given
          * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_S2I_IMAGES}.
          */
-        public String kafkaConnectS2iVersion(String image, String version) {
+        public String kafkaConnectS2IVersion(String image, String version) {
             try {
                 return image(image,
                         version,
                         kafkaConnectS2iImages,
                         ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES);
             } catch (NoImageException e) {
-                throw new InvalidResourceException(e);
+                throw asInvalidResourceException(version, e);
             }
         }
 
@@ -241,7 +238,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @param versions The versions to validate.
          * @throws NoImageException If one of the versions lacks an image.
          */
-        public void validateKafkaConnectS2iImages(Iterable<String> versions) throws NoImageException {
+        public void validateKafkaConnectS2IImages(Iterable<String> versions) throws NoImageException {
             for (String version : versions) {
                 image(null, version, kafkaConnectS2iImages, ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES);
             }
@@ -262,8 +259,14 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         kafkaMirrorMakerImages,
                         ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
             } catch (NoImageException e) {
-                throw new InvalidResourceException(e);
+                throw asInvalidResourceException(version, e);
             }
+        }
+
+        InvalidResourceException asInvalidResourceException(String version, NoImageException e) {
+            return new InvalidResourceException("Version " + version + " is not supported. " +
+                    "Supported versions are: " + String.join(", ", supportedVersions()) + ".",
+                    e);
         }
 
         /**

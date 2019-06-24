@@ -156,7 +156,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
 
         String image = spec instanceof KafkaConnectS2ISpec ?
-                versions.kafkaConnectS2iVersion(spec.getImage(), spec.getVersion())
+                versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
                 : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         kafkaConnect.setImage(image);
 
