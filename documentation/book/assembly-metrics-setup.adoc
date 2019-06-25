@@ -1,0 +1,38 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-metrics-setup-{context}']
+= Metrics
+
+This section describes how to monitor {ProductName} Kafka and ZooKeeper clusters using Prometheus to provide monitoring data for example Grafana dashboards.
+
+To be able to run the example Grafana dashboards, you must:
+
+. xref:assembly-metrics-kafka-{context}[Add metrics configuration to your Kafka cluster resource]
+. xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
+. xref:assembly-configuring-grafana-{context}[Deploy Grafana]
+
+WARNING: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
+If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
+
+ifdef::Kubernetes[]
+.Using metrics with `minikube` or `minishift`
+When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following section <<installing_kubernetes_and_openshift_cluster>>.
+endif::Kubernetes[]
+
+.Additional resources
+* http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka.
+* https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache Zookeeper.
+ifdef::Kubernetes[]
+* https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/[Prometheus - Monitoring Docker Container Metrics using cAdvisor] describes how to use cAdvisor (short for container Advisor) metrics with Prometheus to analyze and expose resource usage (CPU, Memory, and Disk) and performance data from running containers within pods on Kubernetes.
+* https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] provides a full list of cAdvisor metrics as exposed through Prometheus.
+
+NOTE: cAdvisor is bundled along with the kubelet binary so that it is automatically available within Kubernetes clusters.
+endif::Kubernetes[]
+
+include::assembly-metrics-kafka.adoc[leveloffset=+1]
+
+include::assembly-metrics-prometheus.adoc[leveloffset=+1]
+
+include::assembly-metrics-grafana.adoc[leveloffset=+1]

@@ -39,9 +39,8 @@ include::appendix_deploying_kubernetes_cluster.adoc[]
 include::appendix_deploying_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
 
-ifdef::MetricsAppendix[]
-include::appendix_metrics.adoc[]
-endif::MetricsAppendix[]
+[appendix]
+include::assembly-metrics-setup.adoc[leveloffset=+1]
 
 [appendix]
 [id='api_reference-{context}']

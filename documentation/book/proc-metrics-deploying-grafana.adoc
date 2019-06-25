@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-metrics-grafana.adoc
+[id='proc-metrics-deploying-grafana-{context}']
+
+= Deploying Grafana
+
+Deploy Grafana to provide visualizations of Prometheus metrics using the source for the Grafana docker image in the `./metrics/examples/grafana-openshift/` directory.
+
+.Prerequisites
+* xref:assembly-metrics-kafka-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
+
+.Procedure
+
+* Deploy Grafana:
+
+[source,shell,subs="+quotes,attributes"]
+{cmdcli} apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
