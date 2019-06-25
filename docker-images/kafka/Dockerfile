@@ -56,7 +56,11 @@ COPY ./stunnel-scripts/ $STUNNEL_HOME
 
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
-COPY kafka-vault-jca-1.0-SNAPSHOT.jar $KAFKA_HOME/libs/
+# copy jaas client sample and download kafka-vault jar
+COPY kafka_client_alice_jass.conf $KAFKA_HOME/config
+COPY sasl-client.prope $KAFKA_HOME/config
+RUN curl -L -O https://github.com/UltimateSoftware/kafka-vault-jca/releases/download/v1.0-develop/kafka-vault-jca-1.0-SNAPSHOT.jar \
+    && mv kafka-vault-jca-1.0-SNAPSHOT.jar $KAFKA_HOME/libs/
 
 # Set S2I folder
 ENV S2I_HOME=/opt/kafka/s2i

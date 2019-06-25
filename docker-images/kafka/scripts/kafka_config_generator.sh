@@ -29,13 +29,13 @@ if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
     LISTENERS="${LISTENERS},SASL_PLAINTEXT://0.0.0.0:9092"
     ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091,SASL_PLAINTEXT://$(hostname -f):9092"
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},SASL_PLAINTEXT:SASL_PLAINTEXT"
-        CLIENT_LISTENER=$(cat <<EOF
-# vault authentication callback handlers
+    CLIENT_LISTENER=$(cat <<EOF
+# vault authentication callback handlers and jaas config
 listener.name.sasl_plaintext.plain.sasl.server.callback.handler.class=com.ultimatesoftware.dataplatform.vaultjca.VaultAuthenticationLoginCallbackHandler
 listener.name.sasl_plaintext.plain.sasl.login.callback.handler.class=com.ultimatesoftware.dataplatform.vaultjca.VaultAuthenticationLoginCallbackHandler
 listener.name.sasl_plaintext.plain.sasl.jaas.config=com.ultimatesoftware.dataplatform.vaultjca.VaultLoginModule required \
-  admin_path="secret/kafka/admin" \
-  users_path="secret/kafka/users";
+  admin_path="${VAULT_ADMIN_PATH}" \
+  users_path="${VAULT_USERS_PATH}";
 EOF
 )
   elif [ "$KAFKA_CLIENT_AUTHENTICATION" = "scram-sha-512" ]; then

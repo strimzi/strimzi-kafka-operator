@@ -242,12 +242,20 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `sasl_plaintext` for the type `KafkaListenerAuthenticationSslPlaintextVault`.
 [options="header"]
 |====
-|Property           |Description
-|type        1.2+<.<|Must be `sasl_plaintext`.
+|Property             |Description
+|adminPath     1.2+<.<|Optional admin path, defaults to `secret/kafka/private/admin`.
 |string
-|vaultAddr   1.2+<.<|Vault Address Server.
+|cacheEnabled  1.2+<.<|Whether vault cache is enable or not, defaults to false.
+|boolean
+|cacheTTL      1.2+<.<|Optional TTL in minutes when cache is enabled.
+|integer
+|type          1.2+<.<|Must be `sasl_plaintext`.
 |string
-|vaultToken  1.2+<.<|Vault auth token.
+|usersPath     1.2+<.<|Optional users path, defaults to `secret/kafka/private/users`.
+|string
+|vaultAddr     1.2+<.<|Vault Address Server.
+|string
+|vaultToken    1.2+<.<|Vault auth token.
 |string
 |====
 

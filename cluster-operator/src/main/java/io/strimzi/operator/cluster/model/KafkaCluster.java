@@ -114,6 +114,10 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENT_AUTHENTICATION = "KAFKA_CLIENT_AUTHENTICATION";
     protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR = "VAULT_ADDR";
     protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN = "VAULT_TOKEN";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADMIN_PATH = "VAULT_ADMIN_PATH";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_USERS_PATH = "VAULT_USERS_PATH";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_CACHE = "CACHE_VAULT";
+    protected static final String ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_CACHE_TTL = "VAULT_CACHE_TTL_MIN";
     /** {@code TRUE} when the CLIENTTLS listener (TLS transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
     /** The authentication to configure for the CLIENTTLS listener (TLS transport) . */
@@ -1265,8 +1269,16 @@ public class KafkaCluster extends AbstractModel {
                 }
 
                 if (listeners.getPlain().getAuthentication() instanceof KafkaListenerAuthenticationSslPlaintextVault) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR, ((KafkaListenerAuthenticationSslPlaintextVault) listeners.getPlain().getAuthentication()).getVaultAddr()));
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN, ((KafkaListenerAuthenticationSslPlaintextVault) listeners.getPlain().getAuthentication()).getVaultToken()));
+                    KafkaListenerAuthenticationSslPlaintextVault plaintextVault = (KafkaListenerAuthenticationSslPlaintextVault) listeners.getPlain().getAuthentication();
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADDR, plaintextVault.getVaultAddr()));
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_TOKEN, plaintextVault.getVaultToken()));
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_ADMIN_PATH, plaintextVault.getAdminPath()));
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_USERS_PATH, plaintextVault.getUsersPath()));
+
+                    if (plaintextVault.isCacheEnabled()) {
+                        varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_CACHE, Boolean.toString(plaintextVault.isCacheEnabled())));
+                        varList.add(buildEnvVar(ENV_VAR_KAFKA_SASL_PLAINTEXT_VAULT_CACHE_TTL, Integer.toString(plaintextVault.getCacheTTL())));
+                    }
                 }
             }
 

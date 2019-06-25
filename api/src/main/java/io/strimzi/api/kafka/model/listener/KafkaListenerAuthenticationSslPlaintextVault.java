@@ -21,6 +21,10 @@ public class KafkaListenerAuthenticationSslPlaintextVault extends KafkaListenerA
     public static final String SASL_PLAINTEXT = "sasl_plaintext";
     private String vaultAddr;
     private String vaultToken;
+    private String adminPath = "secret/kafka/private/admin";
+    private String usersPath = "secret/kafka/private/users";
+    private boolean cacheEnabled;
+    private int cacheTTL;
 
     @Description("Must be `" + SASL_PLAINTEXT + "`")
     @Override
@@ -44,5 +48,41 @@ public class KafkaListenerAuthenticationSslPlaintextVault extends KafkaListenerA
 
     public void setVaultToken(String vaultToken) {
         this.vaultToken = vaultToken;
+    }
+
+    @Description("Optional admin path, defaults to `secret/kafka/private/admin`")
+    public String getAdminPath() {
+        return adminPath;
+    }
+
+    public void setAdminPath(String adminPath) {
+        this.adminPath = adminPath;
+    }
+
+    @Description("Optional users path, defaults to `secret/kafka/private/users`")
+    public String getUsersPath() {
+        return usersPath;
+    }
+
+    public void setUsersPath(String usersPath) {
+        this.usersPath = usersPath;
+    }
+
+    @Description("Whether vault cache is enable or not, defaults to false")
+    public boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+
+    public void setCacheEnabled(boolean cacheEnabled) {
+        this.cacheEnabled = cacheEnabled;
+    }
+
+    @Description("Optional TTL in minutes when cache is enabled")
+    public int getCacheTTL() {
+        return cacheTTL;
+    }
+
+    public void setCacheTTL(int cacheTTL) {
+        this.cacheTTL = cacheTTL;
     }
 }

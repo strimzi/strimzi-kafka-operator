@@ -121,12 +121,20 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            adminPath:
+                              type: string
+                            cacheEnabled:
+                              type: boolean
+                            cacheTTL:
+                              type: integer
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            usersPath:
+                              type: string
                             vaultAddr:
                               type: string
                             vaultToken:
@@ -189,12 +197,20 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            adminPath:
+                              type: string
+                            cacheEnabled:
+                              type: boolean
+                            cacheTTL:
+                              type: integer
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            usersPath:
+                              type: string
                             vaultAddr:
                               type: string
                             vaultToken:
@@ -257,12 +273,20 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            adminPath:
+                              type: string
+                            cacheEnabled:
+                              type: boolean
+                            cacheTTL:
+                              type: integer
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
                               - sasl_plaintext
+                            usersPath:
+                              type: string
                             vaultAddr:
                               type: string
                             vaultToken:
