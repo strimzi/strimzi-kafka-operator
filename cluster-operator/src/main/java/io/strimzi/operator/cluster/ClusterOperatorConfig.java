@@ -178,7 +178,7 @@ public class ClusterOperatorConfig {
         try {
             lookup.validateKafkaImages(lookup.supportedVersions());
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
-            // TODO Need to know whether we're on OS to decide whether to valid s2i
+            lookup.validateKafkaConnectS2IImages(lookup.supportedVersions());
             lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
         } catch (NoImageException e) {
             throw new InvalidConfigurationException(e);
