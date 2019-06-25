@@ -146,7 +146,10 @@ public class ResourceSupport {
                                 LOGGER.debug("Not yet complete");
                             }
                         } catch (Throwable t) {
-                            f.tryFail(t);
+                            if (!f.tryFail(t)) {
+                                LOGGER.debug("Ignoring exception thrown while " +
+                                        "evaluating watch because the future was already completed", t);
+                            }
                         }
                     },
                     true,
