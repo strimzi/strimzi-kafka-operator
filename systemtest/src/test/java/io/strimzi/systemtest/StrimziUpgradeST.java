@@ -55,10 +55,13 @@ public class StrimziUpgradeST extends AbstractST {
         File kafkaUserYaml = null;
 
         try {
-            String url = urlFrom;
-            File dir = StUtils.downloadAndUnzip(url);
-
-            coDir = new File(dir, "strimzi-" + fromVersion + "/install/cluster-operator/");
+            File dir;
+            if (urlFrom.contains(".zip")) {
+                dir = StUtils.downloadAndUnzip(urlFrom);
+            } else {
+                dir = new File(urlFrom);
+            }
+            coDir = new File(dir, fromVersion + "/install/cluster-operator/");
             // Modify + apply installation files
             copyModifyApply(coDir);
 
@@ -66,15 +69,15 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
 
             // Deploy a Kafka cluster
-            kafkaEphemeralYaml = new File(dir, "strimzi-" + fromVersion + "/examples/kafka/kafka-ephemeral.yaml");
+            kafkaEphemeralYaml = new File(dir, fromVersion + "/examples/kafka/kafka-ephemeral.yaml");
             cmdKubeClient().create(kafkaEphemeralYaml);
             // Wait for readiness
             waitForClusterReadiness();
 
             // And a topic and a user
-            kafkaTopicYaml = new File(dir, "strimzi-" + fromVersion + "/examples/topic/kafka-topic.yaml");
+            kafkaTopicYaml = new File(dir, fromVersion + "/examples/topic/kafka-topic.yaml");
             cmdKubeClient().create(kafkaTopicYaml);
-            kafkaUserYaml = new File(dir, "strimzi-" + fromVersion + "/examples/user/kafka-user.yaml");
+            kafkaUserYaml = new File(dir, fromVersion + "/examples/user/kafka-user.yaml");
             cmdKubeClient().create(kafkaUserYaml);
 
             makeSnapshots();
@@ -131,10 +134,16 @@ public class StrimziUpgradeST extends AbstractST {
                 LOGGER.info("Waiting for CO redeployment");
                 StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
                 waitForRollingUpdate(images);
+            } else if (toVersion.contains(".zip")) {
+                dir = StUtils.downloadAndUnzip(urlTo);
+                coDir = new File(dir, toVersion + "/install/cluster-operator/");
+                copyModifyApply(coDir);
+                LOGGER.info("Waiting for CO deployment");
+                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+                waitForRollingUpdate(images);
             } else {
-                url = urlTo;
-                dir = StUtils.downloadAndUnzip(url);
-                coDir = new File(dir, "strimzi-" + toVersion + "/install/cluster-operator/");
+                dir = new File(urlTo);
+                coDir = new File(dir, toVersion + "/install/cluster-operator/");
                 copyModifyApply(coDir);
                 LOGGER.info("Waiting for CO deployment");
                 StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
