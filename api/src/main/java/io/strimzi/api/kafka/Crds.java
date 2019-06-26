@@ -167,6 +167,7 @@ public class Crds {
             group = KafkaMirrorMaker.RESOURCE_GROUP;
             kind = KafkaMirrorMaker.RESOURCE_KIND;
             listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
             if (!KafkaMirrorMaker.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }

@@ -52,6 +52,7 @@ rules:
   - kafkaconnects2is
   - kafkaconnects2is/status
   - kafkamirrormakers
+  - kafkamirrormakers/status
   - kafkabridges
   - kafkabridges/status
   verbs:

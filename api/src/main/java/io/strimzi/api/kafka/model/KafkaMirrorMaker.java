@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -39,7 +40,7 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
-                version = KafkaConnectS2I.V1BETA1,
+                version = KafkaMirrorMaker.V1BETA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaMirrorMaker.V1BETA1,
@@ -52,6 +53,9 @@ import static java.util.Collections.unmodifiableList;
                                 storage = false
                         )
                 },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
@@ -84,7 +88,7 @@ import static java.util.Collections.unmodifiableList;
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyPreserving {
 
@@ -107,6 +111,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     private String apiVersion;
     private ObjectMeta metadata;
     private KafkaMirrorMakerSpec spec;
+    private KafkaMirrorMakerStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -136,6 +141,15 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
 
     public void setSpec(KafkaMirrorMakerSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka Mirror Maker.")
+    public KafkaMirrorMakerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaMirrorMakerStatus status) {
+        this.status = status;
     }
 
     @Override
