@@ -22,7 +22,7 @@ Copy this configuration to your own `Kafka` resource definition, or run this exa
 
 To deploy the example Kafka cluster the following command should be executed:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
 
 ifdef::Kubernetes[]
@@ -30,7 +30,7 @@ ifdef::Kubernetes[]
 
 To deploy the example Kafka cluster the following command should be executed:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
 
 endif::Kubernetes[]
@@ -103,18 +103,18 @@ If you are using a different namespace, download the resource file and update it
 
 On Linux, use:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 
 On MacOS, use:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 
 To define Prometheus jobs that will scrape the metrics data, you must apply the `ServiceMonitor` resource located in the provided `strimzi-service-monitor.yaml` file.
 Download this file using the following command:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
 
 Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery.
@@ -122,7 +122,7 @@ To use another role, edit the `additionalScrapeConfigs` property in the `prometh
 This takes the name of the `Secret` and the name of the property in a given `Secret` in which additional configuration is stored.
 To create this `Secret` resource, use the following command:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
 oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
@@ -130,12 +130,12 @@ The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample
 
 On Linux, use:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 
 On MacOS, use:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 
 To deploy these resources, run the following commands:
@@ -169,7 +169,7 @@ A Grafana server is necessary to get a visualisation of the Prometheus metrics. 
 
 To deploy Grafana the following commands should be executed:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
 
 ifdef::Kubernetes[]
@@ -177,7 +177,7 @@ ifdef::Kubernetes[]
 
 To deploy Grafana the following commands should be executed:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
 
 endif::Kubernetes[]
@@ -269,7 +269,7 @@ Before deploying the Alertmanager it is needed to update the following parameter
 
 Download `alert-manager.yaml` by a command.
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
 
 To configure Alert Manager hook for sending alerts we need to create a `Secret` resource with configuration.
@@ -277,13 +277,13 @@ Download the `alertmanager.yaml` file and create a `Secret` from it.
 
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using these commands:
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 endif::Kubernetes[]
 
 On {OpenShiftName} this can be done using these commands:
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 
