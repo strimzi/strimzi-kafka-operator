@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -28,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
@@ -294,8 +292,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        Service service = getSystemtestsServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT).build();
-        testMethodResources.createServiceResource(service, NAMESPACE).done();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
         testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 

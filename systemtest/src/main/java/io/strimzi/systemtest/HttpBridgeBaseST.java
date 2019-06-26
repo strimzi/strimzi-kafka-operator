@@ -176,7 +176,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
 
         // Create node port service for expose bridge outside openshift
-        Service service = getSystemtestsServiceResource(brdigeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        Service service = getSystemtestsServiceResource(brdigeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
                 .editSpec()
                 .withType("NodePort")
                 .withSelector(map)

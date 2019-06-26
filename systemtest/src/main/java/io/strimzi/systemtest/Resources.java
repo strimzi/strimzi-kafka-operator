@@ -898,6 +898,14 @@ public class Resources extends AbstractResources {
             .endSpec();
     }
 
+    public DoneableService createServiceResource(String appName, int port, String clientNamespace) {
+        Service service = getSystemtestsServiceResource(appName, port, clientNamespace).build();
+        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        client().createService(service);
+        deleteLater(service);
+        return new DoneableService(service);
+    }
+
     public DoneableService createServiceResource(Service service, String clientNamespace) {
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         client().createService(service);
