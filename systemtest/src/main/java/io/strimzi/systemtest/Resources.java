@@ -554,7 +554,7 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        client().getClient().apps().deployments().withName(kafkaBridge.getMetadata().getName()).delete();
+        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(kafkaBridge.getMetadata().getName()).delete();
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
@@ -569,9 +569,9 @@ public class Resources extends AbstractResources {
     }
 
     private void waitForPodDeletion(String name) {
-        LOGGER.info("Waiting when Pod {} will be deleted", name);
+        LOGGER.info("Waiting when Pod {}  in namespace {} will be deleted", name, client().getNamespace());
 
-        TestUtils.waitFor("pod " + name + "deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("pod " + name + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().getPod(name) == null);
     }
 
