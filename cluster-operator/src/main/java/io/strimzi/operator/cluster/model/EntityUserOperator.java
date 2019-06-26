@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -265,20 +265,20 @@ public class EntityUserOperator extends AbstractModel {
         return singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
                 .withNamespace(namespace)
                 .build();
 
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        KubernetesRoleBinding rb = new KubernetesRoleBindingBuilder()
+        RoleBinding rb = new RoleBindingBuilder()
                 .withNewMetadata()
                     .withName(roleBindingName(cluster))
                     .withNamespace(watchedNamespace)

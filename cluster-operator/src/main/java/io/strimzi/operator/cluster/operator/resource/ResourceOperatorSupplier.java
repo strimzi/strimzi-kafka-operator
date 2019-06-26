@@ -89,7 +89,7 @@ public class ResourceOperatorSupplier {
                 new DeploymentOperator(vertx, client),
                 new ServiceAccountOperator(vertx, client),
                 new RoleBindingOperator(vertx, client),
-                new ClusterRoleBindingOperator(vertx, client),
+                new ClusterRoleBindingOperator(vertx, client, operationTimeoutMs),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
                 new PodOperator(vertx, client),
@@ -102,7 +102,7 @@ public class ResourceOperatorSupplier {
                 pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class) : null,
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class),
                 new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class),
-                new StorageClassOperator(vertx, client));
+                new StorageClassOperator(vertx, client, operationTimeoutMs));
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,

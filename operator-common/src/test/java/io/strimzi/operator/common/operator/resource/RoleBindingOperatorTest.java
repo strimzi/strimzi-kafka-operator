@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
@@ -23,8 +23,8 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList,
-        DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> {
+public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, RoleBinding, RoleBindingList,
+        DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> {
 
 
     @Override
@@ -38,20 +38,20 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
-    protected KubernetesRoleBinding resource() {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    protected RoleBinding resource() {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("some-service-account")
                 .withNamespace(NAMESPACE)
                 .build();
 
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName("some-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesRoleBindingBuilder()
+        return new RoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(NAMESPACE)
@@ -66,12 +66,12 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);
-        when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(op);
+        when(mockClient.rbac().roleBindings()).thenReturn(op);
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, DoneableRoleBinding,
+            Resource<RoleBinding, DoneableRoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleBindingOperator(vertx, mockClient);
     }
 }

@@ -52,15 +52,15 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         }
     }
 
-    abstract AbstractNonNamespacedResourceOperator operator();
+    abstract AbstractNonNamespacedResourceOperator<C, T, L, D, R> operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract void assertResources(TestContext context, T expected, T actual);
 
     @Test
-    public void testFullCycle(TestContext context)    {
+    public void testFullCycle(TestContext context) {
         Async async = context.async();
-        AbstractNonNamespacedResourceOperator op = operator();
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
@@ -69,7 +69,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                T created = (T) op.get(RESOURCE_NAME);
+                T created = op.get(RESOURCE_NAME);
 
                 if (created == null)    {
                     context.fail("Failed to get created Resource");

@@ -15,12 +15,12 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Probe;
@@ -340,20 +340,20 @@ public class TopicOperator extends AbstractModel {
         return topicOperatorServiceAccountName(cluster);
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(getServiceAccountName())
                 .withNamespace(namespace)
                 .build();
 
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName(TO_CLUSTER_ROLE_NAME)
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesRoleBindingBuilder()
+        return new RoleBindingBuilder()
                 .withNewMetadata()
                     .withName(roleBindingName(cluster))
                     .withOwnerReferences(createOwnerReference())

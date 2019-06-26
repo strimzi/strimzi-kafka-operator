@@ -85,7 +85,7 @@ public class ModelUtilsTest {
                 .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
                 .withLabels(Collections.singletonMap("labelKey", "labelValue"))
                 .endMetadata()
-                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                 .withImagePullSecrets(secret1, secret2)
                 .withTerminationGracePeriodSeconds(123)
                 .build();

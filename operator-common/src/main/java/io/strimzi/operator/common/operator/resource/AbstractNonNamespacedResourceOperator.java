@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -41,17 +42,20 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
+    private final long operationTimeoutMs;
 
     /**
      * Constructor.
      * @param vertx The vertx instance.
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
+     * @param operationTimeoutMs Timeout for operations.
      */
-    public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, long operationTimeoutMs) {
         this.vertx = vertx;
         this.client = client;
         this.resourceKind = resourceKind;
+        this.operationTimeoutMs = operationTimeoutMs;
     }
 
     protected abstract MixedOperation<T, L, D, R> operation();
@@ -114,19 +118,48 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return fut;
     }
 
+
+
     /**
-     * Deletes the resource with the given name
-     * and completes the given future accordingly
+     * Asynchronously deletes the resource with the given {@code name}.
+     * @param name The resource to be deleted.
+     * @return A future which will be completed on the context thread
+     * once the resource has been deleted.
      */
-    protected Future<ReconcileResult<T>> internalDelete(String name) {
-        try {
-            operation().withName(name).delete();
-            log.debug("{} {} has been deleted", resourceKind, name);
-            return Future.succeededFuture(ReconcileResult.deleted());
-        } catch (Exception e) {
-            log.debug("Caught exception while deleting {} {}", resourceKind, name, e);
-            return Future.failedFuture(e);
-        }
+    private Future<ReconcileResult<T>> internalDelete(String name) {
+        Future<ReconcileResult<T>> watchForDeleteFuture = new ResourceSupport(vertx).selfClosingWatch(operation().withName(name),
+            (action, resource) -> {
+                if (action == Watcher.Action.DELETED) {
+                    log.debug("{} {} has been deleted", resourceKind, name);
+                    return ReconcileResult.deleted();
+                } else {
+                    return null;
+                }
+            }, operationTimeoutMs);
+
+        Future<Void> deleteFuture = deleteAsync(name);
+
+        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+    }
+
+    private Future<Void> deleteAsync(String name) {
+        Future<Void> deleteFuture = Future.future();
+        vertx.executeBlocking(
+            f -> {
+                try {
+                    Boolean delete = operation().withName(name).delete();
+                    if (!Boolean.TRUE.equals(delete)) {
+                        f.fail(new RuntimeException(resourceKind + "/" + name + " could not be deleted (returned " + delete + ")"));
+                    } else {
+                        f.complete();
+                    }
+                } catch (Throwable t) {
+                    f.fail(t);
+                }
+            },
+            true,
+            deleteFuture);
+        return deleteFuture;
     }
 
     /**

@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.mock;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 
 public class DeploymentOperatorTest extends
         ScalableResourceOperatorTest<KubernetesClient, Deployment, DeploymentList,
-                                DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
+                                DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -27,8 +27,8 @@ public class DeploymentOperatorTest extends
     }
 
     @Override
-    protected Class<ScalableResource> resourceType() {
-        return ScalableResource.class;
+    protected Class<RollableScalableResource> resourceType() {
+        return RollableScalableResource.class;
     }
 
     @Override

@@ -71,7 +71,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
         }
     }
 
-    abstract AbstractResourceOperator operator();
+    abstract AbstractResourceOperator<C, T, L, D, R> operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract void assertResources(TestContext context, T expected, T actual);
@@ -79,7 +79,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
     @Test
     public void testFullCycle(TestContext context)    {
         Async async = context.async();
-        AbstractResourceOperator op = operator();
+        AbstractResourceOperator<C, T, L, D, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
@@ -88,7 +88,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                T created = (T) op.get(namespace, RESOURCE_NAME);
+                T created = op.get(namespace, RESOURCE_NAME);
 
                 if (created == null)    {
                     context.fail("Failed to get created Resource");
@@ -99,7 +99,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                     Future<ReconcileResult<T>> modifyFuture = op.reconcile(namespace, RESOURCE_NAME, modResource);
                     modifyFuture.setHandler(modify -> {
                         if (modify.succeeded()) {
-                            T modified = (T) op.get(namespace, RESOURCE_NAME);
+                            T modified = op.get(namespace, RESOURCE_NAME);
 
                             if (modified == null)    {
                                 context.fail("Failed to get modified Resource");
@@ -110,7 +110,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                                 Future<ReconcileResult<T>> deleteFuture = op.reconcile(namespace, RESOURCE_NAME, null);
                                 deleteFuture.setHandler(delete -> {
                                     if (delete.succeeded()) {
-                                        T deleted = (T) op.get(namespace, RESOURCE_NAME);
+                                        T deleted = op.get(namespace, RESOURCE_NAME);
 
                                         if (deleted == null)    {
                                             async.complete();

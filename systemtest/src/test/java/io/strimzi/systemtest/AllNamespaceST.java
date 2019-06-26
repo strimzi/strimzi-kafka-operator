@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,9 +120,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         applyRoleBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<KubernetesClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
-        clusterRoleBindingList.forEach(kubernetesClusterRoleBinding ->
-                testClassResources.kubernetesClusterRoleBinding(kubernetesClusterRoleBinding, CO_NAMESPACE));
+        List<ClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        clusterRoleBindingList.forEach(clusterRoleBinding ->
+                testClassResources.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
 
         LOGGER.info("Deploying CO to watch all namespaces");
         testClassResources.clusterOperator("*").done();

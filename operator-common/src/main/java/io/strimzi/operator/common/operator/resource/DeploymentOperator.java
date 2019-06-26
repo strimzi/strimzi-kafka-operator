@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Deployment}s.
  */
-public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
+public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> {
 
     private final PodOperator podOperations;
 
@@ -38,7 +38,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     }
 
     @Override
-    protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
+    protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> operation() {
         return client.extensions().deployments();
     }
 

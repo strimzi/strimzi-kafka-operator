@@ -26,13 +26,13 @@ import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.extensions.IngressBackend;
 import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
 import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -91,6 +91,7 @@ public class Resources extends AbstractResources {
     private static final String SERVICE = "Service";
     private static final String INGRESS = "Ingress";
     private static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    private static final String ROLE_BINDING = "RoleBinding";
 
     private Stack<Runnable> resources = new Stack<>();
 
@@ -132,36 +133,39 @@ public class Resources extends AbstractResources {
             case DEPLOYMENT:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client().deleteDeployment((Deployment) resource);
+                    client().deleteDeployment(resource.getMetadata().getName());
                     waitForDeletion((Deployment) resource);
                 });
                 break;
             case CLUSTER_ROLE_BINDING:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client().deleteKubernetesClusterRoleBinding((KubernetesClusterRoleBinding) resource);
+                    client().getClient().rbac().clusterRoleBindings().withName(resource.getMetadata().getName()).delete();
+                });
+                break;
+            case ROLE_BINDING:
+                resources.push(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    client().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case SERVICE:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client().deleteService((Service) resource);
+                    client().getClient().services().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case INGRESS:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     client().deleteIngress((Ingress) resource);
                 });
                 break;
             default :
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                 });
         }
         return resource;
@@ -195,12 +199,12 @@ public class Resources extends AbstractResources {
         return deleteLater(deployment(), resource);
     }
 
-    private KubernetesClusterRoleBinding deleteLater(KubernetesClusterRoleBinding resource) {
-        return deleteLater(kubernetesClusterRoleBinding(), resource);
+    private ClusterRoleBinding deleteLater(ClusterRoleBinding resource) {
+        return deleteLater(clusterRoleBinding(), resource);
     }
 
-    private KubernetesRoleBinding deleteLater(KubernetesRoleBinding resource) {
-        return deleteLater(kubernetesRoleBinding(), resource);
+    private RoleBinding deleteLater(RoleBinding resource) {
+        return deleteLater(roleBinding(), resource);
     }
 
     private Service deleteLater(Service resource) {
@@ -576,7 +580,7 @@ public class Resources extends AbstractResources {
 
     DoneableKafkaTopic topic(KafkaTopic topic) {
         return new DoneableKafkaTopic(topic, kt -> {
-            KafkaTopic resource = kafkaTopic().create(kt);
+            KafkaTopic resource = kafkaTopic().inNamespace(topic.getMetadata().getNamespace()).create(kt);
             LOGGER.info("Created KafkaTopic {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
@@ -705,56 +709,56 @@ public class Resources extends AbstractResources {
         });
     }
 
-    private KubernetesRoleBinding getRoleBindingFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KubernetesRoleBinding.class);
+    private RoleBinding getRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, RoleBinding.class);
     }
 
-    private KubernetesClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KubernetesClusterRoleBinding.class);
+    private ClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, ClusterRoleBinding.class);
     }
 
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(String yamlPath, String namespace, String clientNamespace) {
-        return kubernetesRoleBinding(defaultKubernetesRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    DoneableRoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return roleBinding(defaultRoleBinding(yamlPath, namespace).build(), clientNamespace);
     }
 
-    private KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String yamlPath, String namespace) {
+    private RoleBindingBuilder defaultRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
 
-        return new KubernetesRoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
+        return new RoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
                 .withApiVersion("rbac.authorization.k8s.io/v1")
                 .editFirstSubject()
                     .withNamespace(namespace)
                 .endSubject();
     }
 
-    private DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
+    private DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
-        client().namespace(clientNamespace).createOrReplaceKubernetesRoleBinding(roleBinding);
+        client().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
         deleteLater(roleBinding);
-        return new DoneableKubernetesRoleBinding(roleBinding);
+        return new DoneableRoleBinding(roleBinding);
     }
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
-        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    DoneableClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return clusterRoleBinding(defaultClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
     }
 
-    private KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String yamlPath, String namespace) {
+    private ClusterRoleBindingBuilder defaultClusterRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
 
-        return new KubernetesClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
+        return new ClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
                 .withApiVersion("rbac.authorization.k8s.io/v1")
                 .editFirstSubject()
                     .withNamespace(namespace)
                 .endSubject();
     }
 
-    List<KubernetesClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
+    List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
-        List<KubernetesClusterRoleBinding> kCRBList = new ArrayList<>();
+        List<ClusterRoleBinding> kCRBList = new ArrayList<>();
 
         kCRBList.add(
-            new KubernetesClusterRoleBindingBuilder()
+            new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName("strimzi-cluster-operator-namespaced")
                 .endMetadata()
@@ -763,7 +767,7 @@ public class Resources extends AbstractResources {
                     .withKind("ClusterRole")
                     .withName("strimzi-cluster-operator-namespaced")
                 .endRoleRef()
-                .withSubjects(new KubernetesSubjectBuilder()
+                .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName("strimzi-cluster-operator")
                     .withNamespace(namespace)
@@ -773,7 +777,7 @@ public class Resources extends AbstractResources {
         );
 
         kCRBList.add(
-            new KubernetesClusterRoleBindingBuilder()
+            new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName("strimzi-entity-operator")
                 .endMetadata()
@@ -782,7 +786,7 @@ public class Resources extends AbstractResources {
                     .withKind("ClusterRole")
                     .withName("strimzi-entity-operator")
                 .endRoleRef()
-                .withSubjects(new KubernetesSubjectBuilder()
+                .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName("strimzi-cluster-operator")
                     .withNamespace(namespace)
@@ -792,7 +796,7 @@ public class Resources extends AbstractResources {
         );
 
         kCRBList.add(
-            new KubernetesClusterRoleBindingBuilder()
+            new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName("strimzi-topic-operator")
                 .endMetadata()
@@ -801,7 +805,7 @@ public class Resources extends AbstractResources {
                     .withKind("ClusterRole")
                     .withName("strimzi-topic-operator")
                 .endRoleRef()
-                .withSubjects(new KubernetesSubjectBuilder()
+                .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName("strimzi-cluster-operator")
                     .withNamespace(namespace)
@@ -812,11 +816,11 @@ public class Resources extends AbstractResources {
         return kCRBList;
     }
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+    DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
         LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
-        client().createOrReplaceKubernetesClusterRoleBinding(clusterRoleBinding);
+        client().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
-        return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
+        return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 
     DoneableDeployment deployKafkaClients(String clusterName) {
@@ -845,10 +849,11 @@ public class Resources extends AbstractResources {
         return createNewDeployment(kafkaClient);
     }
 
-    private static Service getSystemtestsServiceResource(String appName, int port) {
+    private static Service getSystemtestsServiceResource(String appName, int port, String namespace) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)
+                .withNamespace(namespace)
                 .addToLabels("run", appName)
             .endMetadata()
             .withNewSpec()
@@ -863,7 +868,7 @@ public class Resources extends AbstractResources {
     }
 
     DoneableService createServiceResource(String appName, int port, String clientNamespace) {
-        Service service = getSystemtestsServiceResource(appName, port);
+        Service service = getSystemtestsServiceResource(appName, port, clientNamespace);
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         client().createService(service);
         deleteLater(service);
