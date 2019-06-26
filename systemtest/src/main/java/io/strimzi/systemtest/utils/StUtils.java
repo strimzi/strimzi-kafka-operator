@@ -427,7 +427,7 @@ public class StUtils {
             String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
             String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
 
-            return org + "/" + m.group("image") + ":" + tag;
+            return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":" + tag;
         }
         return image;
     }
