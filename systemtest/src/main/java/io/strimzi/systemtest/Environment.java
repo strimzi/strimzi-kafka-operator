@@ -54,9 +54,9 @@ public class Environment {
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.2.1";
-    private static final String STRIMZI_ORG_DEFAULT = "strimzi";
-    private static final String STRIMZI_TAG_DEFAULT = "latest";
-    private static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
+    public static final String STRIMZI_ORG_DEFAULT = "strimzi";
+    public static final String STRIMZI_TAG_DEFAULT = "latest";
+    public static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
     private static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
