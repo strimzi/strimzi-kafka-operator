@@ -11,24 +11,33 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.vertx.core.AsyncResult;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Date;
 
 public class StatusUtils {
     private static final String V1ALPHA1 = "kafka.strimzi.io/v1alpha1";
+
+    /**
+     * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     * @return the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     */
+    public static String iso8601Now() {
+        return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+    }
 
     public static Condition buildConditionFromReconciliationResult(AsyncResult<Void> reconciliationResult) {
         Condition readyCondition;
         if (reconciliationResult.succeeded()) {
             readyCondition = new ConditionBuilder()
-                    .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                    .withNewLastTransitionTime(iso8601Now())
                     .withNewType("Ready")
                     .withNewStatus("True")
                     .build();
         } else {
             readyCondition = new ConditionBuilder()
-                    .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                    .withNewLastTransitionTime(iso8601Now())
                     .withNewType("NotReady")
                     .withNewStatus("True")
                     .withNewReason(reconciliationResult.cause().getClass().getSimpleName())
@@ -36,10 +45,6 @@ public class StatusUtils {
                     .build();
         }
         return readyCondition;
-    }
-
-    private static Date dateSupplier() {
-        return new Date();
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {

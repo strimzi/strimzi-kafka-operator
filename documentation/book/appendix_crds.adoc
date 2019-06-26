@@ -1086,7 +1086,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1506,9 +1506,11 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 [options="header"]
 |====
-|Property     |Description
-|spec  1.2+<.<|The specification of the topic.
+|Property       |Description
+|spec    1.2+<.<|The specification of the topic.
 |xref:type-KafkaTopicSpec-{context}[`KafkaTopicSpec`]
+|status  1.2+<.<|The status of the topic.
+|xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`]
 |====
 
 [id='type-KafkaTopicSpec-{context}']
@@ -1528,6 +1530,21 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |map
 |topicName   1.2+<.<|The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
 |string
+|====
+
+[id='type-KafkaTopicStatus-{context}']
+### `KafkaTopicStatus` schema reference
+
+Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
 |====
 
 [id='type-KafkaUser-{context}']

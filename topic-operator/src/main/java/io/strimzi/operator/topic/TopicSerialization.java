@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -152,11 +153,19 @@ class TopicSerialization {
                 .withMetadata(om)
                 // TODO .withUid()
                 .withNewSpec()
-                .withTopicName(topic.getTopicName().toString())
-                .withPartitions(topic.getNumPartitions())
-                .withReplicas((int) topic.getNumReplicas())
-                .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                    .withTopicName(topic.getTopicName().toString())
+                    .withPartitions(topic.getNumPartitions())
+                    .withReplicas((int) topic.getNumReplicas())
+                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
                 .endSpec()
+                .withNewStatus()
+                    .withObservedGeneration(om != null && om.getGeneration() != null ? om.getGeneration() : 0)
+                    .addNewCondition()
+                        .withLastTransitionTime(StatusUtils.iso8601Now())
+                        .withType("Ready")
+                        .withStatus("True")
+                    .endCondition()
+                .endStatus()
                 .build();
         // for some reason when the `topic.getMetadata().getAnnotations()` is null
         // topic is created with annotations={} (empty map but should be null as well)
