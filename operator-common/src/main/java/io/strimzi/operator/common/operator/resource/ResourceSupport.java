@@ -34,8 +34,8 @@ public class ResourceSupport {
      * @param closeable The closeable
      * @return The Future
      */
-    public Future closeOnWorkerThread(Closeable closeable) {
-        Future result = Future.future();
+    public Future<Void> closeOnWorkerThread(Closeable closeable) {
+        Future<Void> result = Future.future();
         vertx.executeBlocking(
             blockingFuture -> {
                 try {
