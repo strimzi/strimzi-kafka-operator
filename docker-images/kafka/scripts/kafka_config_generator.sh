@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-set -x
-echo $@
-export
 
 # Parameters:
 # $1: Broker ID
@@ -210,8 +207,7 @@ listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
 
-#sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
-sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq)
+sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
 
 ${CLIENT_LISTENER}
 ${CLIENTTLS_LISTENER}
