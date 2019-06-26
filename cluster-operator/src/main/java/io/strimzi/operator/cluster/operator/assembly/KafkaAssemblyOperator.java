@@ -59,7 +59,6 @@ import io.strimzi.operator.cluster.model.KafkaUpgrade;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
-import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -343,7 +342,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean kafkaAncillaryCmChange;
 
         @SuppressWarnings("deprecation")
-        /* test */ TopicOperator topicOperator;
+        /* test */ io.strimzi.operator.cluster.model.TopicOperator topicOperator;
         /* test */ Deployment toDeployment = null;
         private ConfigMap toMetricsAndLogsConfigMap = null;
 
@@ -569,11 +568,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 return true;
                             });
                         })
-                        .compose(i -> deploymentOperations.getAsync(namespace, TopicOperator.topicOperatorName(name)))
+                        .compose(i -> deploymentOperations.getAsync(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name)))
                         .compose(dep -> {
                             if (dep != null) {
-                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, TopicOperator.topicOperatorName(name), reasons);
-                                return deploymentOperations.rollingUpdate(namespace, TopicOperator.topicOperatorName(name), operationTimeoutMs);
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), reasons);
+                                return deploymentOperations.rollingUpdate(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), operationTimeoutMs);
                             } else {
                                 return Future.succeededFuture();
                             }
@@ -2165,7 +2164,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        this.topicOperator = TopicOperator.fromCrd(kafkaAssembly, versions);
+                        this.topicOperator = io.strimzi.operator.cluster.model.TopicOperator.fromCrd(kafkaAssembly, versions);
 
                         if (topicOperator != null) {
                             ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
@@ -2175,7 +2174,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
-                                    TopicOperator.ANNO_STRIMZI_IO_LOGGING,
+                                    io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING,
                                     this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
                         } else {
                             this.toDeployment = null;
@@ -2201,7 +2200,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> topicOperatorServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(namespace,
-                    TopicOperator.topicOperatorServiceAccountName(name),
+                    io.strimzi.operator.cluster.model.TopicOperator.topicOperatorServiceAccountName(name),
                     toDeployment != null ? topicOperator.generateServiceAccount() : null));
         }
 
@@ -2215,16 +2214,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     watchedNamespace = topicOperator.getWatchedNamespace();
                 }
 
-                return withVoid(roleBindingOperations.reconcile(watchedNamespace, TopicOperator.roleBindingName(name), topicOperator.generateRoleBinding(namespace, watchedNamespace)));
+                return withVoid(roleBindingOperations.reconcile(watchedNamespace, io.strimzi.operator.cluster.model.TopicOperator.roleBindingName(name), topicOperator.generateRoleBinding(namespace, watchedNamespace)));
             } else {
-                return withVoid(roleBindingOperations.reconcile(namespace, TopicOperator.roleBindingName(name), null));
+                return withVoid(roleBindingOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.roleBindingName(name), null));
             }
         }
 
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> topicOperatorAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
-                    toDeployment != null ? topicOperator.getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
+                    toDeployment != null ? topicOperator.getAncillaryConfigName() : io.strimzi.operator.cluster.model.TopicOperator.metricAndLogConfigsName(name),
                     toMetricsAndLogsConfigMap));
         }
 
@@ -2237,16 +2236,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     int caCertGeneration = getCaCertGeneration(this.clusterCa);
                     Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                    return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
+                    return withVoid(deploymentOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), toDeployment));
                 }).map(i -> this);
             } else  {
-                return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), null));
+                return withVoid(deploymentOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name), null));
             }
         }
 
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> topicOperatorSecret() {
-            return withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret(clusterCa)));
+            return withVoid(secretOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret(clusterCa)));
         }
 
         @SuppressWarnings("deprecation")
@@ -2283,7 +2282,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             }
 
                             Map<String, String> annotations = new HashMap<>();
-                            annotations.put(TopicOperator.ANNO_STRIMZI_IO_LOGGING, configAnnotation);
+                            annotations.put(io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING, configAnnotation);
 
                             this.entityOperator = entityOperator;
                             this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
