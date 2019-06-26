@@ -122,6 +122,7 @@ public class KafkaUserOperator {
      * @param handler Completion handler
      */
     protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCaCert, Secret clientsCaKey, Secret userSecret, Handler<AsyncResult<Void>> handler) {
+        Future<Void> createOrUpdateFuture = Future.future();
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
@@ -155,7 +156,6 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .compose(reconciliationResult -> {
-                    Future<Void> fut = Future.future();
                     Condition readyCondition;
                     KafkaUserStatus userStatus = new KafkaUserStatus();
 
@@ -174,8 +174,8 @@ public class KafkaUserOperator {
                                 .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
                                 .withNewType("NotReady")
                                 .withNewStatus("True")
-                                .withNewReason(fut.cause().getClass().getSimpleName())
-                                .withNewMessage(fut.cause().getMessage())
+                                .withNewReason(reconciliationResult.cause().getClass().getSimpleName())
+                                .withNewMessage(reconciliationResult.cause().getMessage())
                                 .build();
                     }
 
@@ -200,14 +200,14 @@ public class KafkaUserOperator {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded())    {
-                            fut.complete();
+                            createOrUpdateFuture.complete();
                         } else if (reconciliationResult.failed())    {
-                            fut.fail(reconciliationResult.cause());
+                            createOrUpdateFuture.fail(reconciliationResult.cause());
                         } else {
-                            fut.fail(statusResult.cause());
+                            createOrUpdateFuture.fail(statusResult.cause());
                         }
                     });
-                    return reconciliationResult;
+                    return createOrUpdateFuture;
                 }).map((Void) null).setHandler(handler);
     }
 
