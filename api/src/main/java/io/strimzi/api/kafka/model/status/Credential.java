@@ -26,13 +26,14 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "credentialsSecret", "credentials" })
+@JsonPropertyOrder({ "credentialsSecret", "credentials", "password" })
 @EqualsAndHashCode
 public class Credential implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String credentialsSecret;
     private String credentials;
+    private String password;
 
     private Map<String, Object> additionalProperties;
 
@@ -52,6 +53,15 @@ public class Credential implements UnknownPropertyPreserving, Serializable {
 
     public void setCredentialsSecret(String credentialsSecret) {
         this.credentialsSecret = credentialsSecret;
+    }
+
+    @Description("The password for SCRAM-SHA authentication")
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
