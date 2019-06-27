@@ -9,7 +9,7 @@ To deploy the Prometheus Operator to your Kafka cluster, apply the YAML resource
 
 .Procedure
 
-. Download and edit the resource files from the repository to use a different `namespace`:
+. Download the resource files from the repository and replace the example `namespace` with your own:
 +
 On Linux, use:
 +
