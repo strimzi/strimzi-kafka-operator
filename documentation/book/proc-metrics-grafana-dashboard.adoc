@@ -48,7 +48,7 @@ image::grafana_prometheus_data_source.png[Add Prometheus data source]
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
-After importing the dashboards, the Grafana dashboard homepage list two dashboards for you to choose from.  After your Prometheus server has been collecting metrics for a {ProductName} cluster for some time you should see a populated dashboard such as the examples list below.
+After importing the dashboards, the Grafana dashboard homepage will list two dashboards for you to choose from.  After your Prometheus server has been collecting metrics for a {ProductName} cluster for some time you should see a populated dashboard such as the examples shown below.
 
 .Kafka dashboard
 
