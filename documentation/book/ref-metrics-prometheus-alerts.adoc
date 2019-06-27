@@ -5,7 +5,7 @@
 
 = Alerting rules
 
-Alerting rules provide notifications about specific conditions in the metrics. Rules are declared on the Prometheus server, but Prometheus Alertmanager is responsible for alert notifications.
+Alerting rules provide notifications about specific conditions observed in the metrics. Rules are declared on the Prometheus server, but Prometheus Alertmanager is responsible for alert notifications.
 
 Prometheus alerting rules describe conditions using https://prometheus.io/docs/prometheus/latest/querying/basics/[PromQL] expressions that are continuously evaluated.
 
