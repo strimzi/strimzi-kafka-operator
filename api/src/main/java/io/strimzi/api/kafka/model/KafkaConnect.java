@@ -14,6 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -52,6 +53,9 @@ import static java.util.Collections.unmodifiableList;
                                 storage = false
                         )
                 },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
@@ -69,7 +73,7 @@ import static java.util.Collections.unmodifiableList;
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class KafkaConnect extends CustomResource implements UnknownPropertyPreserving {
 
@@ -92,6 +96,7 @@ public class KafkaConnect extends CustomResource implements UnknownPropertyPrese
     private String apiVersion;
     private KafkaConnectSpec spec;
     private ObjectMeta metadata;
+    private KafkaConnectStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -128,6 +133,15 @@ public class KafkaConnect extends CustomResource implements UnknownPropertyPrese
 
     public void setSpec(KafkaConnectSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka Connect.")
+    public KafkaConnectStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaConnectStatus status) {
+        this.status = status;
     }
 
     @Override

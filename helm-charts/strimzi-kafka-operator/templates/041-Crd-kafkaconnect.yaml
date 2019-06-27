@@ -33,6 +33,8 @@ spec:
     JSONPath: .spec.replicas
     type: integer
     priority: 0
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -790,4 +792,26 @@ spec:
               type: string
           required:
           - bootstrapServers
+        status:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  lastTransitionTime:
+                    type: string
+                  reason:
+                    type: string
+                  message:
+                    type: string
+            observedGeneration:
+              type: integer
+            httpRestApiAddress:
+              type: string
 {{- end -}}

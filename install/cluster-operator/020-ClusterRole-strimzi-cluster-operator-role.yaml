@@ -43,7 +43,9 @@ rules:
   - kafkas
   - kafkas/status
   - kafkaconnects
+  - kafkaconnects/status
   - kafkaconnects2is
+  - kafkaconnects2is/status
   - kafkamirrormakers
   - kafkabridges
   verbs:
