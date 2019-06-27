@@ -12,7 +12,7 @@ The certificates must be stored in X509 format.
 .An example showing TLS configuration with multiple certificates
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
@@ -32,7 +32,7 @@ When multiple certificates are stored in the same secret, it can be listed multi
 .An example showing TLS configuration with multiple certificates from the same secret
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

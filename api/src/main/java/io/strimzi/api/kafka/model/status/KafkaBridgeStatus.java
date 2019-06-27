@@ -11,7 +11,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Represents a status of the Kafka resource
+ * Represents a status of the Kafka Bridge resource
  */
 @Buildable(
         editableEnabled = false,
@@ -19,19 +19,19 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "field" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "httpAddress" })
 @EqualsAndHashCode
 public class KafkaBridgeStatus extends Status {
     private static final long serialVersionUID = 1L;
 
-    private String field;
+    private String httpAddress;
 
-    @Description("Field")
-    public String getField() {
-        return field;
+    @Description("HTTP address where the bridge is available.")
+    public String getHttpAddress() {
+        return httpAddress;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setHttpAddress(String httpAddress) {
+        this.httpAddress = httpAddress;
     }
 }

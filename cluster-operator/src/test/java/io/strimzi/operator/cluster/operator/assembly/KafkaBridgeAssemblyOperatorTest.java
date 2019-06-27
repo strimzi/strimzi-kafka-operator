@@ -55,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -108,7 +109,6 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
-        when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -117,11 +117,15 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
+        ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
+        when(mockBridgeOps.updateStatusAsync(bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(),
@@ -164,6 +168,12 @@ public class KafkaBridgeAssemblyOperatorTest {
             context.assertEquals(bridge.getName(), pdb.getMetadata().getName());
             context.assertEquals(bridge.generatePodDisruptionBudget(), pdb, "PodDisruptionBudgets are not equal");
 
+            // Verify status
+            List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getHttpAddress(), "foo-bridge-service.test.svc:8080");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "Ready");
+
             async.complete();
         });
     }
@@ -192,6 +202,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -271,6 +282,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -390,6 +402,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -455,6 +468,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
         Deployment dep = bridge.generateDeployment(new HashMap<String, String>(), true, null, null);
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(dep);
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -508,6 +522,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.get(clusterCmNamespace, bridge.getName())).thenReturn(bridge.generateService());
         Deployment dep = bridge.generateDeployment(new HashMap<String, String>(), true, null, null);
         when(mockDcOps.get(clusterCmNamespace, bridge.getName())).thenReturn(dep);
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -565,6 +580,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaBridgeCluster.fromCrd(bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // providing the list Deployments for already "existing" Kafka Bridge clusters
         Labels barLabels = Labels.forCluster("bar");
@@ -599,6 +615,55 @@ public class KafkaBridgeAssemblyOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
+    }
+
+    @Test
+    public void testCreateClusterStatusNotReady(TestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+
+        String clusterCmName = "foo";
+        String clusterCmNamespace = "test";
+        String failureMsg = "failure";
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaBridge clusterCm = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, clusterCmName, image, 1,
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
+
+        when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockServiceOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.failedFuture(failureMsg));
+        when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
+        ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
+        when(mockBridgeOps.updateStatusAsync(bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
+        KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
+                new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new MockCertManager(),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Async async = context.async();
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+            context.assertFalse(createResult.succeeded());
+
+            // Verify status
+            List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getHttpAddress(), "foo-bridge-service.test.svc:8080");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
+
+            async.complete();
+        });
     }
 
 }

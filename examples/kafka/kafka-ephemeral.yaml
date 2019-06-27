@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta1
 kind: Kafka
 metadata:
-  name: my-target-cluster
+  name: my-cluster
 spec:
   kafka:
     version: 2.3.0

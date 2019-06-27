@@ -32,7 +32,7 @@ In this circumstance, fix the configuration in the `KafkaBridge.spec.consumer.co
 .Example Kafka Bridge consumer configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

@@ -15,7 +15,7 @@ When configuring `port` property avoid the value `8081`. This port is used for t
 .Example Kafka Bridge HTTP configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

@@ -25,7 +25,7 @@ For example:
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

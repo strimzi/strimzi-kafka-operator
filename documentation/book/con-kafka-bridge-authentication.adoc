@@ -26,7 +26,7 @@ For more details about TLS configuration in Kafka Bridge see xref:assembly-kafka
 .An example TLS client authentication configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
@@ -54,7 +54,7 @@ IMPORTANT: Do not specify the actual password in the `password` field.
 .An example SASL based SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
@@ -85,7 +85,7 @@ IMPORTANT: Do not specify the actual password in the `password` field.
 .An example showing SASL based PLAIN client authentication configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

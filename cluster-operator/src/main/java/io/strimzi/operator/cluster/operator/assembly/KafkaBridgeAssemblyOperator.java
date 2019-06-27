@@ -13,8 +13,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.certs.CertManager;
@@ -30,14 +28,12 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,6 +72,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaBridgeCluster bridge;
+        KafkaBridgeStatus kafkaBridgeStatus = new KafkaBridgeStatus();
         if (assemblyResource.getSpec() == null) {
             log.error("{} spec cannot be null", assemblyResource.getMetadata().getName());
             return Future.failedFuture("Spec cannot be null");
@@ -83,7 +80,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         try {
             bridge = KafkaBridgeCluster.fromCrd(assemblyResource, versions);
         } catch (Exception e) {
-            return Future.failedFuture(e);
+            StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));
+            return updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus);
         }
 
         ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(bridge.getLogging() instanceof ExternalLogging ?
@@ -102,41 +100,17 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
+            .compose(i -> deploymentOperations.readiness(namespace, bridge.getName(), 1_000, 30_000))
             .compose(i -> chainFuture.complete(), chainFuture)
             .setHandler(reconciliationResult -> {
-                Condition readyCondition;
-                KafkaBridgeStatus kafkaBridgeStatus = new KafkaBridgeStatus();
-
-                if (assemblyResource.getMetadata().getGeneration() != null) {
-                    kafkaBridgeStatus.setObservedGeneration(assemblyResource.getMetadata().getGeneration());
+                StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
+                int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
+                if (bridge.getHttp() != null) {
+                    port = bridge.getHttp().getPort();
                 }
-
-                if (reconciliationResult.succeeded()) {
-                    readyCondition = new ConditionBuilder()
-                            .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                            .withNewType("Ready")
-                            .withNewStatus("True")
-                            .build();
-                } else {
-                    readyCondition = new ConditionBuilder()
-                            .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                            .withNewType("NotReady")
-                            .withNewStatus("True")
-                            .withNewReason(reconciliationResult.cause().getClass().getSimpleName())
-                            .withNewMessage(reconciliationResult.cause().getMessage())
-                            .build();
-                }
-
-                kafkaBridgeStatus.setField("todo");
-                kafkaBridgeStatus.setConditions(Collections.singletonList(readyCondition));
+                kafkaBridgeStatus.setHttpAddress(bridge.getServiceName() + "." + namespace + ".svc:" + port);
 
                 updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).setHandler(statusResult -> {
-                    if (statusResult.succeeded()) {
-                        log.debug("Status for {} is up to date", assemblyResource.getMetadata().getName());
-                    } else {
-                        log.error("Failed to set status for {}. {}", assemblyResource.getMetadata().getName(), statusResult.cause().getMessage());
-                    }
-
                     // If both features succeeded, createOrUpdate succeeded as well
                     // If one or both of them failed, we prefer the reconciliation failure as the main error
                     if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -169,7 +143,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 KafkaBridge kafkaBridge = getRes.result();
 
                 if (kafkaBridge != null) {
-                    if ("kafka.strimzi.io/v1alpha1".equals(kafkaBridge.getApiVersion())) {
+                    if (StatusUtils.isResourceV1alpha1(kafkaBridge)) {
                         log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafkaBridge.getApiVersion());
                         updateStatusFuture.complete();
                     } else {
@@ -211,9 +185,5 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return serviceAccountOperations.reconcile(namespace,
                 KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
                 bridge.generateServiceAccount());
-    }
-
-    private Date dateSupplier() {
-        return new Date();
     }
 }

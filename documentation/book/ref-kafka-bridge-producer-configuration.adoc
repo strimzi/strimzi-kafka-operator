@@ -28,7 +28,7 @@ In this circumstance, fix the configuration in the `KafkaBridge.spec.producer.co
 .Example Kafka Bridge producer configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
