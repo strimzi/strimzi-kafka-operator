@@ -15,7 +15,7 @@ The deployment process creates a `ClusterRoleBinding` and discovers an Alertmana
 
 .Procedure
 
-. Download and edit the Prometheus resource file from the repository to use a different `namespace`:
+. Download the Prometheus resource file from the repository and replace the example namespace with your own:
 +
 On Linux, use:
 +
