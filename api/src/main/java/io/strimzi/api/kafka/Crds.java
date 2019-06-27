@@ -178,6 +178,7 @@ public class Crds {
             group = KafkaBridge.RESOURCE_GROUP;
             kind = KafkaBridge.RESOURCE_KIND;
             listKind = KafkaBridge.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
             if (!KafkaBridge.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }

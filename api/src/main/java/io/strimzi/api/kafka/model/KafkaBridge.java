@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -39,14 +40,22 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaBridge.RESOURCE_GROUP,
                 scope = KafkaBridge.SCOPE,
-                version = KafkaBridge.V1ALPHA1,
+                version = KafkaBridge.V1BETA1,
                 versions = {
+                        @Crd.Spec.Version(
+                                name = KafkaBridge.V1BETA1,
+                                served = true,
+                                storage = true
+                        ),
                         @Crd.Spec.Version(
                                 name = KafkaBridge.V1ALPHA1,
                                 served = true,
-                                storage = true
+                                storage = false
                         )
                 },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
@@ -72,7 +81,7 @@ import static java.util.Collections.unmodifiableList;
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class KafkaBridge extends CustomResource implements UnknownPropertyPreserving {
 
@@ -80,7 +89,8 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
 
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = "v1alpha1";
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
+    public static final String V1BETA1 = "v1beta1";
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
@@ -94,6 +104,7 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     private String apiVersion;
     private ObjectMeta metadata;
     private KafkaBridgeSpec spec;
+    private KafkaBridgeStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -123,6 +134,15 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
 
     public void setSpec(KafkaBridgeSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka Bridge.")
+    public KafkaBridgeStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaBridgeStatus status) {
+        this.status = status;
     }
 
     @Override
