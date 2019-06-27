@@ -1182,7 +1182,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Override
-    void tearDownEnvironmentAfterEach() throws Exception {
+    protected void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
         waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }

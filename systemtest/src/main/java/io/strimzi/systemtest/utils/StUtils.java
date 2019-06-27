@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
@@ -394,6 +396,15 @@ public class StUtils {
 
         TestUtils.waitFor("namespace " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getNamespaceStatus(name));
+    }
+
+    public static void waitForKafkaCluster(Kafka kafka) {
+        String name = kafka.getMetadata().getName();
+        String namespace = kafka.getMetadata().getNamespace();
+        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
+        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
+        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
+        LOGGER.info("Kafka cluster {} in namesapce {} is ready", name, namespace);
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
