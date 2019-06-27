@@ -10,6 +10,7 @@ image:
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
+kubernetesServiceDnsDomain: cluster.local
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
 # repository name with your registry URL.
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
