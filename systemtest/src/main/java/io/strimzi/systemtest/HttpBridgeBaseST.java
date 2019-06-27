@@ -35,15 +35,13 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeBaseST.class);
     private WebClient client;
 
-    protected String brdigeExternalService = CLUSTER_NAME + "-bridge-external-service";
+    protected String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
 
     @BeforeAll
     void prepareEnv(Vertx vertx) {
         // Create http client
         client = WebClient.create(vertx, new WebClientOptions()
-                .setSsl(false)
-                .setTrustAll(true)
-                .setVerifyHost(false));
+                .setSsl(false));
     }
 
     protected JsonObject generateHttpMessages(int messageCount) {
@@ -176,13 +174,13 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
 
         // Create node port service for expose bridge outside openshift
-        Service service = getSystemtestsServiceResource(brdigeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
+        Service service = getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
                 .editSpec()
                 .withType("NodePort")
                 .withSelector(map)
                 .endSpec().build();
         testClassResources.createServiceResource(service, getBridgeNamespace()).done();
-        StUtils.waitForNodePortService(brdigeExternalService);
+        StUtils.waitForNodePortService(bridgeExternalService);
     }
 
     protected void checkSendResponse(JsonObject response, int messageCount) {
@@ -199,7 +197,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     protected int getBridgeNodePort() {
         Service extBootstrapService = kubeClient(getBridgeNamespace()).getClient().services()
                 .inNamespace(getBridgeNamespace())
-                .withName(brdigeExternalService)
+                .withName(bridgeExternalService)
                 .get();
 
         return extBootstrapService.getSpec().getPorts().get(0).getNodePort();

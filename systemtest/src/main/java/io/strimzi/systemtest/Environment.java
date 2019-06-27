@@ -31,7 +31,7 @@ public class Environment {
      */
     private static final String TEST_CLIENT_IMAGE_ENV = "TEST_CLIENT_IMAGE";
     /**
-     * Specify test-client image used in system tests.
+     * Specify kafka bridge image used in system tests.
      */
     private static final String BRIDGE_IMAGE_ENV = "BRIDGE_IMAGE";
     /**
@@ -79,7 +79,7 @@ public class Environment {
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = System.getenv().getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
-    // variables for test-client image
+    // variables for kafka bridge image
     private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
 
