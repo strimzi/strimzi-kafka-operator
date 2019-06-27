@@ -5,7 +5,7 @@
 [id='assembly-metrics-setup-{context}']
 = Metrics
 
-This section describes how to monitor {ProductName} Kafka and ZooKeeper clusters using Prometheus to provide monitoring data for example Grafana dashboards.
+This section describes how to monitor {ProductName} Kafka and ZooKeeper clusters using Prometheus to provide monitoring data for the example Grafana dashboards.
 
 To be able to run the example Grafana dashboards, you must:
 
