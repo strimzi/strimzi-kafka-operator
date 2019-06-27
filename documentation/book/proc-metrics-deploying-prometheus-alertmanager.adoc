@@ -22,7 +22,7 @@ The sample configuration provided with {ProductName} configures the Alertmanager
 Before deploying Alertmanager, update the https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml[`alertmanager.yaml`] YAML file:
 
 * Replace the `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace.
-* `channel` property with the actual Slack channel on which to send notifications.
+* Replace the `channel` property with the actual Slack channel on which to send notifications.
 
 .Procedure
 
