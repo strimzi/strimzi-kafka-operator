@@ -103,7 +103,7 @@ public class ClusterOperatorConfig {
             if (namespacesList.trim().equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
                 namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
             } else if (namespacesList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
-                namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
+                namespaces = new HashSet<>(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
                 throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE
                         + " is not a valid list of namespaces nor the 'any namespace' wildcard "

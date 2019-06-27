@@ -664,7 +664,7 @@ class TopicOperator {
         Handler<Future<Void>> action = new Reconciliation("onTopicDeleted") {
             @Override
             public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnTopicChange(logContext, topicName, null, fut.completer());
+                TopicOperator.this.reconcileOnTopicChange(logContext, topicName, null, fut);
             }
         };
         executeWithTopicLockHeld(logContext, topicName, action).setHandler(resultHandler);
@@ -681,7 +681,7 @@ class TopicOperator {
                 kafka.topicMetadata(topicName, metadataResult -> {
                     if (metadataResult.succeeded()) {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, topic, fut.completer());
+                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, topic, fut);
                     } else {
                         fut.fail(metadataResult.cause());
                     }
@@ -715,7 +715,7 @@ class TopicOperator {
                                         retry();
                                     } else {
                                         LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut.completer());
+                                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut);
                                     }
 
                                 } else {
@@ -1028,7 +1028,7 @@ class TopicOperator {
     Future<?> reconcileAllTopics(String reconciliationType) {
         LOGGER.info("Starting {} reconciliation", reconciliationType);
         Future<Set<String>> listFut = Future.future();
-        kafka.listTopics(listFut.completer());
+        kafka.listTopics(listFut);
         return listFut.recover(ex -> Future.failedFuture(
                 new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", ex)
         )).compose(topicNamesFromKafka ->
@@ -1038,7 +1038,7 @@ class TopicOperator {
         ).compose(reconcileState -> {
             Future<List<KafkaTopic>> ktFut = Future.future();
             // Find all the topics in kube
-            k8s.listMaps(ktFut.completer());
+            k8s.listMaps(ktFut);
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
@@ -1087,7 +1087,7 @@ class TopicOperator {
                     futs2.add(executeWithTopicLockHeld(logContext, tn, new Reconciliation("delete-remaining") {
                         @Override
                         public void handle(Future<Void> event) {
-                            getKafkaAndReconcile(logContext, tn, null, null).setHandler(event.completer());
+                            getKafkaAndReconcile(logContext, tn, null, null).setHandler(event);
                         }
                     }));
                 }
@@ -1141,12 +1141,17 @@ class TopicOperator {
                     }
                 }));
             }
-            return CompositeFuture.join((List) futures).map(state);
+            return join(futures).map(state);
         } else {
             return Future.succeededFuture(state);
         }
 
 
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> CompositeFuture join(List<T> futures) {
+        return CompositeFuture.join((List) futures);
     }
 
 
@@ -1155,7 +1160,7 @@ class TopicOperator {
      */
     private Future<Void> reconcileWithPrivateTopic(LogContext logContext, TopicName topicName, Topic privateTopic) {
         Future<KafkaTopic> kubeFuture = Future.future();
-        k8s.getFromName(privateTopic.getResourceName(), kubeFuture.completer());
+        k8s.getFromName(privateTopic.getResourceName(), kubeFuture);
         return kubeFuture
             .compose(kafkaTopicResource -> {
                 return getKafkaAndReconcile(logContext, topicName, privateTopic, kafkaTopicResource);
@@ -1203,19 +1208,19 @@ class TopicOperator {
 
     Future<KafkaTopic> getFromKube(ResourceName kubeName) {
         Future<KafkaTopic> f = Future.future();
-        k8s.getFromName(kubeName, f.completer());
+        k8s.getFromName(kubeName, f);
         return f;
     }
 
     Future<Topic> getFromKafka(TopicName topicName) {
         Future<TopicMetadata> f = Future.future();
-        kafka.topicMetadata(topicName, f.completer());
+        kafka.topicMetadata(topicName, f);
         return f.map(TopicSerialization::fromTopicMetadata);
     }
 
     Future<Topic> getFromTopicStore(TopicName topicName) {
         Future<Topic> f = Future.future();
-        topicStore.read(topicName, f.completer());
+        topicStore.read(topicName, f);
         return f;
     }
 
@@ -1249,7 +1254,7 @@ class TopicOperator {
                         }
                     });
             }
-        }).setHandler(result.completer());
+        }).setHandler(result);
         return result;
     }
 

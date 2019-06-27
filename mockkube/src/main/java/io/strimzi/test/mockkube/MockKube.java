@@ -62,8 +62,8 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
-import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
@@ -191,11 +191,12 @@ public class MockKube {
 
     public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D>
             withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
-        MockedCrd mockedCrd = new MockedCrd(crd, instanceClass, instanceListClass, doneableInstanceClass);
+        MockedCrd<T, L, D> mockedCrd = new MockedCrd<>(crd, instanceClass, instanceListClass, doneableInstanceClass);
         this.mockedCrds.add(mockedCrd);
         return mockedCrd;
     }
 
+    @SuppressWarnings("unchecked")
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
@@ -227,10 +228,8 @@ public class MockKube {
         AppsAPIGroupDSL api = mock(AppsAPIGroupDSL.class);
 
         when(api.statefulSets()).thenReturn(mockSs);
+        when(api.deployments()).thenReturn(mockDep);
         when(mockClient.apps()).thenReturn(api);
-        ExtensionsAPIGroupDSL ext = mock(ExtensionsAPIGroupDSL.class);
-        when(mockClient.extensions()).thenReturn(ext);
-        when(ext.deployments()).thenReturn(mockDep);
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
@@ -265,7 +264,9 @@ public class MockKube {
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
-        when(mockClient.extensions().networkPolicies()).thenReturn(mockNetworkPolicy);
+        NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
+        when(mockClient.network()).thenReturn(network);
+        when(network.networkPolicies()).thenReturn(mockNetworkPolicy);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
@@ -383,6 +384,7 @@ public class MockKube {
                 StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
                         mockGet(resourceName, resource);
                         //mockCreate("endpoint", endpointDb, resourceName, resource);
@@ -781,6 +783,7 @@ public class MockKube {
             c -> copyResource(c, cls, doneableClass))));
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends HasMetadata, D extends Doneable<T>> T copyResource(T resource, Class<T> resourceClass, Class<D> doneableClass) {
         try {
             D doneableInstance = doneableClass.getDeclaredConstructor(resourceClass).newInstance(resource);
@@ -853,6 +856,7 @@ public class MockKube {
             this.listClass = listClass;
         }
 
+        @SuppressWarnings("unchecked")
         protected CM copyResource(CM resource) {
             if (resource == null) {
                 return null;
@@ -870,6 +874,7 @@ public class MockKube {
          * Generate a stateful mock for CRUD-like interactions.
          * @return The mock
          */
+        @SuppressWarnings("unchecked")
         public MixedOperation<CM, CML, DCM, R> build() {
             MixedOperation<CM, CML, DCM, R> mixed = mock(MixedOperation.class);
 
@@ -922,6 +927,7 @@ public class MockKube {
             return mixed;
         }
 
+        @SuppressWarnings("unchecked")
         public NonNamespaceOperation<CM, CML, DCM, R> buildNonNamespaced() {
             // TODO factor out common with build(), which is more-or-less identical
             NonNamespaceOperation<CM, CML, DCM, R> mixed = mock(NonNamespaceOperation.class);
@@ -942,7 +948,7 @@ public class MockKube {
 
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Map<String, String> labels) {
             return mockWithLabels(p -> {
-                Map<String, String> m = new HashMap(p.getMetadata().getLabels());
+                Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
                 m.keySet().retainAll(labels.keySet());
                 return labels.equals(m);
             });
@@ -952,6 +958,7 @@ public class MockKube {
             return mockWithLabels(p -> p.getMetadata().getLabels().containsKey(label));
         }
 
+        @SuppressWarnings("unchecked")
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Predicate<CM> predicate) {
             MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
             when(mixedWithLabels.list()).thenAnswer(i2 -> {
@@ -964,6 +971,7 @@ public class MockKube {
             return mixedWithLabels;
         }
 
+        @SuppressWarnings("unchecked")
         private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
             KubernetesResourceList<CM> l = mock(listClass);
             Collection<CM> values;
@@ -1062,7 +1070,7 @@ public class MockKube {
 
         protected void mockCreate(String resourceName, R resource) {
             when(resource.create(any())).thenAnswer(i -> {
-                CM argument = (CM) i.getArguments()[0];
+                CM argument = i.getArgument(0);
                 return mockCreate(resourceName, argument);
             });
         }

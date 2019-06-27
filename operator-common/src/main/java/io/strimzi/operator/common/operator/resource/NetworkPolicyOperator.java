@@ -18,8 +18,9 @@ public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesCl
         super(vertx, client, "NetworkPolicy");
 
     }
+
     @Override
     protected MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> operation() {
-        return client.extensions().networkPolicies();
+        return client.network().networkPolicies();
     }
 }

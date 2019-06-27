@@ -76,7 +76,7 @@ public class PlatformFeaturesAvailability {
                 log.error("Detection of Kuberetes version failed.", e);
                 request.fail(e);
             }
-        }, fut.completer());
+        }, fut);
 
         return fut;
     }
@@ -103,7 +103,7 @@ public class PlatformFeaturesAvailability {
                 log.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
                 request.complete(false);
             }
-        }, fut.completer());
+        }, fut);
 
         return fut;
     }

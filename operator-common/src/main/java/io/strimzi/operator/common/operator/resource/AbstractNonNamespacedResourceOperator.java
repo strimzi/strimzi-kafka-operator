@@ -113,7 +113,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
             },
             false,
-            fut.completer()
+            fut
         );
         return fut;
     }
@@ -197,6 +197,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Creates a resource with the name with the given desired state
      * and completes the given future accordingly.
      */
+    @SuppressWarnings("unchecked")
     protected Future<ReconcileResult<T>> internalCreate(String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().withName(name).create(desired));
@@ -228,7 +229,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             future -> {
                 T resource = get(name);
                 future.complete(resource);
-            }, true, result.completer()
+            }, true, result
         );
         return result;
     }
@@ -238,11 +239,11 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @param selector The selector.
      * @return A list of matching resources.
      */
-    @SuppressWarnings("unchecked")
     public List<T> list(Labels selector) {
         return listInAnyNamespace(selector);
     }
 
+    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
         FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
 

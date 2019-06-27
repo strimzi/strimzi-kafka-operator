@@ -249,6 +249,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
      * @return THe map of key/values
      */
+    @SuppressWarnings("unchecked")
     static Map<String, String> loadProperties(String keyValuePairs) {
         try {
             Properties actual = new Properties();

@@ -173,6 +173,7 @@ public class EntityOperator extends AbstractModel {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
         if (entityOperatorSpec.getTemplate() != null
                 && entityOperatorSpec.getTemplate().getPod() != null
@@ -186,6 +187,7 @@ public class EntityOperator extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(EntityOperatorSpec entityOperatorSpec) {
         if (entityOperatorSpec.getTemplate() != null
                 && entityOperatorSpec.getTemplate().getPod() != null

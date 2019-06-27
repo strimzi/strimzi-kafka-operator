@@ -88,7 +88,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                     null);
 
-            HashMap<String, String> annotations = new HashMap();
+            HashMap<String, String> annotations = new HashMap<>();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
             return connectServiceAccount(namespace, connect)

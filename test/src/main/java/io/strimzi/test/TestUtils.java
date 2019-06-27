@@ -79,6 +79,7 @@ public final class TestUtils {
     }
 
     /** Returns a Map of the given sequence of key, value pairs. */
+    @SafeVarargs
     public static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
@@ -217,9 +218,9 @@ public final class TestUtils {
         assertEquals(r, actual);
     }
 
-
+    @SafeVarargs
     public static <T> Set<T> set(T... elements) {
-        return new HashSet(asList(elements));
+        return new HashSet<>(asList(elements));
     }
 
     public static <T> T fromYaml(String resource, Class<T> c) {

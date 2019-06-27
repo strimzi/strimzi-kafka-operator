@@ -47,6 +47,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     protected abstract String cmd();
 
     @Override
+    @SuppressWarnings("unchecked")
     public K deleteByName(String resourceType, String resourceName) {
         Exec.exec(namespacedCommand(DELETE, resourceType, resourceName));
         return (K) this;
@@ -97,6 +98,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K create(File... files) {
         try (Context context = defaultContext()) {
             KubeClusterException error = execRecursive(CREATE, files, Comparator.comparing(File::getName));
@@ -108,6 +110,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K apply(File... files) {
         try (Context context = defaultContext()) {
             KubeClusterException error = execRecursive(APPLY, files, Comparator.comparing(File::getName));
@@ -119,6 +122,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K delete(File... files) {
         try (Context context = defaultContext()) {
             KubeClusterException error = execRecursive(DELETE, files, Comparator.comparing(File::getName).reversed());
@@ -159,6 +163,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K replace(File... files) {
         try (Context context = defaultContext()) {
             execRecursive("replace", files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
@@ -167,6 +172,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K replaceContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand("replace", "-f", "-"));
@@ -175,6 +181,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
@@ -183,6 +190,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"));
@@ -191,6 +199,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
             Exec.exec(namespacedCommand(CREATE, "namespace", name));
@@ -199,6 +208,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K deleteNamespace(String name) {
         try (Context context = adminContext()) {
             Exec.exec(namespacedCommand(DELETE, "namespace", name));
@@ -231,6 +241,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         THROW
     }
 
+    @SuppressWarnings("unchecked")
     private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
         long timeoutMs = 570_000L;
         long pollMs = 1_000L;
@@ -280,6 +291,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K waitForResourceDeletion(String resourceType, String resourceName) {
         TestUtils.waitFor(resourceType + " " + resourceName + " removal",
             1_000L, 480_000L, () -> {
@@ -294,6 +306,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public K waitForResourceUpdate(String resourceType, String resourceName, Date startTime) {
 
         TestUtils.waitFor(resourceType + " " + resourceName + " update",
