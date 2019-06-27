@@ -37,7 +37,7 @@ image::grafana_home.png[Grafana home]
 . Add Prometheus as a data source.
 +
 * Specifying a name
-* Add _Prometheus_ as type.
+* Add _Prometheus_ as the type.
 * Specify the connection string to the Prometheus server (`http://prometheus-operated:9090`) in the URL field
 
 . Click _Add_ to test the connection to the data source.
