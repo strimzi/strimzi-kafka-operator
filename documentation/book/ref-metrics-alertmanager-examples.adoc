@@ -11,7 +11,7 @@ The rules are defined in a `PrometheusRule` resource in the link:https://raw.git
 
 .Kafka alerting rules
 
-* `UnderReplicatedPartitions`: gives the number of partitions for which the current broker is the lead replica but the follower replicas are behind.
+* `UnderReplicatedPartitions`: gives the number of partitions for which the current broker is the lead replica but which have fewer replicas than the `min.insync.replicas` configured for their topic.
 This metric provides insights about offline brokers that host the follower replicas.
 An alert is raised when this value is greater than zero, providing information on the under-replicated partitions for each broker.
 
