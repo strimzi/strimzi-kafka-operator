@@ -9,7 +9,7 @@
 
 The Grafana dashboard provided with {ProductName} is dependent on Prometheus JMX Exporter relabeling rules, which are defined for Kafka and ZooKeeper as `Kafka` resource configuration in an example `kafka-metrics.yaml` file.
 
-To use the Grafana dashboard, do one of the following:
+To get started using the Grafana dashboard, do one of the following:
 
 * link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[Copy the example configuration to your own `Kafka` resource definition^]
 * xref:proc-metrics-deploying-kafka-{context}[Deploy an example Kafka cluster with the metrics configuration]
