@@ -5,7 +5,7 @@
 
 = Kafka metrics configuration
 
-{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to export JMX metrics from Kafka and ZooKeeper to a Prometheus HTTP metrics endpoint, which is then scraped by the Prometheus server.
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics from Kafka and ZooKeeper using an HTTP endpoint, which is then scraped by the Prometheus server.
 
 The Grafana dashboard provided with {ProductName} is dependent on Prometheus JMX Exporter relabeling rules, which are defined for Kafka and ZooKeeper as `Kafka` resource configuration in an example `kafka-metrics.yaml` file.
 
