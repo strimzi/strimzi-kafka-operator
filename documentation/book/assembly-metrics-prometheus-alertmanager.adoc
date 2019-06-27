@@ -5,7 +5,7 @@
 
 = Prometheus Alertmanager
 
-An essential aspect of monitoring is to be notified of conditions that indicate a potential issue.
+An essential aspect of monitoring is to be notified of conditions that indicate a potential problem.
 
 Prometheus provides an alert system through its link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
 
