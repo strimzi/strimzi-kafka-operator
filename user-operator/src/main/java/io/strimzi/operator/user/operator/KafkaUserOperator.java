@@ -182,11 +182,13 @@ public class KafkaUserOperator {
                     Credential credential = null;
                     if (desired != null) {
                         credential = new CredentialBuilder()
-                                .withNewCredentials("")
+                                .withCredentials("todo")
+                                .withPassword("todo")
                                 .withCredentialsSecret(desired.getMetadata().getName())
                                 .build();
                     }
 
+                    userStatus.setUsername(user.getName());
                     userStatus.setCredentials(credential);
                     userStatus.setConditions(Collections.singletonList(readyCondition));
 

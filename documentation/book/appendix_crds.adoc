@@ -1631,6 +1631,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
 |integer
+|username            1.2+<.<|User name.
+|string
 |credentials         1.2+<.<|User credentials.
 |xref:type-Credential-{context}[`Credential`]
 |====
@@ -1647,6 +1649,8 @@ Used in: xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 |credentialsSecret  1.2+<.<|The name of `Secret` where the credentials are stored.
 |string
 |credentials        1.2+<.<|The name of field in `Secret` where the credentials are stored.
+|string
+|password           1.2+<.<|The password for SCRAM-SHA authentication.
 |string
 |====
 

@@ -136,11 +136,15 @@ spec:
                     type: string
             observedGeneration:
               type: integer
+            username:
+              type: string
             credentials:
               type: object
               properties:
                 credentialsSecret:
                   type: string
                 credentials:
+                  type: string
+                password:
                   type: string
 {{- end -}}
