@@ -24,7 +24,7 @@ ENV JMX_EXPORTER_VERSION=0.11.0
 
 # Set Kafka (SHA512) and Prometheus JMX exporter (SHA1) checksums
 ENV KAFKA_CHECKSUM="${KAFKA_SHA512}  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
-ENV JMX_EXPORTER_CHECKSUM="535a033b38298ee19d4faa458de8af4072e9fd3a jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+ENV JMX_EXPORTER_CHECKSUM="535a033b38298ee19d4faa458de8af4072e9fd3a  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
 
 # Downloading Prometheus JMX exporter
 RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
