@@ -14,7 +14,7 @@ Currently, the only supported authorization method is the Simple authorization.
 
 == Simple authorization
 
-Simple authorization is using the `SimpleAclAuthorizer` plugin.
+Simple authorization uses the `SimpleAclAuthorizer` plugin.
 `SimpleAclAuthorizer` is the default authorization plugin which is part of Apache Kafka.
 To enable simple authorization, the `type` field should be set to `simple`.
 

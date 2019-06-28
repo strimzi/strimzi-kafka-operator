@@ -5,7 +5,7 @@
 [id='ref-list-of-kafka-cluster-resources-{context}']
 = List of resources created as part of Kafka cluster
 
-The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
+The following resources are created by the Cluster Operator in the {ProductPlatformName} cluster:
 
 `_cluster-name_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
 `_cluster-name_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.

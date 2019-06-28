@@ -1,0 +1,27 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-broker-listener-network-policies.adoc
+
+[id='ref-kafka-listener-authentication-example-{context}']
+= Authentication configuration for a listener
+
+The following example shows a `plain` listener configured for SCRAM-SHA authentication and a `tls` listener with mutual TLS authentication
+
+.An example showing listener authentication configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain:
+    authentication:
+      type: scram-sha-512
+  tls:
+    authentication:
+      type: tls
+  external:
+    type: loadbalancer
+    tls: true
+    authentication:
+      type: tls
+# ...
+----

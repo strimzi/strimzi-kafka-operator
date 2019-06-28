@@ -1,0 +1,189 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-configuration.adoc
+
+[id='ref-kafka-bridge-producer-configuration-{context}']
+= Sample Kafka YAML configuration
+
+For help in understanding the configuration options available for your Kafka deployment, refer to sample YAML file provided here.
+
+[source,shell,subs="+quotes,attributes"]
+
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3 <1>
+    version: {ProductVersion} <2>
+    resources: <3>
+      requests: <4>
+        memory: 64Gi
+        cpu: "8"
+      limits: <5>
+        memory: 64Gi
+        cpu: "12"
+    jvmOptions: <6>
+      -Xms: 8192m
+      -Xmx: 8192m
+    listeners: <7>
+      tls: <8>
+        authentication:<9>
+          type: tls
+      external: <10>
+        type: route
+        authentication:
+          type: tls
+    authorization: <11>
+      type: simple
+    config: <12>
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    storage: <13>
+      type: persistent-claim <14>
+      size: 10000Gi <15>
+    rack:
+      topologyKey: failure-domain.beta.kubernetes.io/zone
+    metrics: <16>
+      lowercaseOutputName: true
+      rules: <17>
+      # Special cases and very specific rules
+      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          topic: "$4"
+          partition: "$5"
+        # ...
+      # Some percent metrics use MeanRate attribute
+      # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+      # Generic gauges for percents
+        # ...
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      # Generic per-second counters with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+        # ...
+      # Generic gauges with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+        # ...
+      # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+          quantile: "0.$8"
+        # ...
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          quantile: "0.$4"
+  zookeeper: <18>
+    replicas: 3
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: "2"
+      limits:
+        memory: 8Gi
+        cpu: "2"
+    jvmOptions:
+      -Xms: 4096m
+      -Xmx: 4096m
+    storage:
+      type: persistent-claim
+      size: 1000Gi
+    metrics:
+      # Inspired by Zookeeper rules
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
+      lowercaseOutputName: true
+      rules:
+      # replicated Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
+        name: "zookeeper_$3"
+        labels:
+          replicaId: "$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
+        name: "zookeeper_$4"
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
+        # ...
+      # standalone Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
+        name: "zookeeper_$2_$3"
+  entityOperator: <19>
+    topicOperator:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+    userOperator:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+----
+
+<1> Replicas xref:assembly-kafka-broker-replicas-{context}[specifies the number of broker nodes].
+<2> Kafka version, xref:assembly-upgrade-str[which can be upgraded with no downtime].
+<3> Resources requests xref:ref-resource-limits-and-requests-{context}[specify the resources to reserve for a given container].
+<4> Resources can include `CPU` and `memory`. If there are not enough free resources, the pod is not scheduled.
+<5> Resources limits specify the maximum resources that can be consumed by a container.
+<6> JVM options xref:ref-jvm-options-{context}[specify the minimum (`-Xms`) and maximum (`-Xmx`) memory allocation for JVM].
+<7> Listeners specify the current Kafka bootstrap addresses by type.
+<8> Listeners are xref:assembly-configuring-kafka-broker-listeners-{context}[configured as `plain` (without encryption), `tls` or `external`].
+<9> Listener authentication mechanisms may be configured for each listener, and xref:assembly-kafka-broker-listener-authentication-{context}[specified as mutual TLS or SCRAM-SHA].
+<10> External listener configuration specifies xref:assembly-kafka-broker-external-listeners-{context}[how the Kafka cluster is exposed outside the environment, such as through a `route`, `loadbalancer` or `nodeport`].
+<11> Authorization xref:ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
+<12> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by {ProductName}].
+<13> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
+<14> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
+<15> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
+<16> Kafka metrics configuration for use with Prometheus.
+<17> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with {productName} may be copied to your Kafka resource configuration.
+<18> xref:assembly-zookeeper-node-configuration-{context}[Zookeeper-specific configuration], which contains properties similar to the Kafka configuration.
+<19> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
