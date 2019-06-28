@@ -82,7 +82,6 @@ import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
@@ -90,6 +89,7 @@ import org.quartz.CronExpression;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2609,7 +2609,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String getInternalServiceHostname(String serviceName)    {
             return serviceName + "." + namespace + ".svc";
         }
-
     }
 
     private Date dateSupplier() {
