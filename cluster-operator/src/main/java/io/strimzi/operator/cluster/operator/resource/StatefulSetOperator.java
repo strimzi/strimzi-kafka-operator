@@ -185,12 +185,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return templateMetadata(desired).getName() + "-" + podId;
     }
 
+    @SuppressWarnings("deprecation")
     private void setGeneration(StatefulSet desired, int nextGeneration) {
         Map<String, String> annotations = Annotations.annotations(desired.getSpec().getTemplate());
         annotations.remove(ANNO_OP_STRIMZI_IO_GENERATION);
         annotations.put(ANNO_STRIMZI_IO_GENERATION, String.valueOf(nextGeneration));
     }
 
+    @SuppressWarnings("deprecation")
     protected void incrementGeneration(StatefulSet current, StatefulSet desired) {
         final int generation = Annotations.intAnnotation(current.getSpec().getTemplate(), ANNO_STRIMZI_IO_GENERATION,
                 INIT_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
@@ -205,6 +207,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param resource the StatefulSet.
      * @return The {@code strimzi.io/generation} of the given StatefulSet.
      */
+    @SuppressWarnings("deprecation")
     public static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
             return NO_GENERATION;
@@ -218,6 +221,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param resource the Pod.
      * @return The {@code strimzi.io/generation} of the given Pod.
      */
+    @SuppressWarnings("deprecation")
     public static int getPodGeneration(Pod resource) {
         if (resource == null) {
             return NO_GENERATION;
@@ -365,7 +369,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                     log.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
                     future.fail(e);
                 }
-            }, true, result.completer()
+            }, true, result
         );
         return result;
     }

@@ -38,7 +38,11 @@ import static io.strimzi.test.BaseITST.kubeClient;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>[0-9.])");
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>.*)$");
+
+    private static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile("^(?<registry>[^/]*)/(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
+    private static final Pattern IMAGE_PATTERN = Pattern.compile("^(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
+
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private StUtils() { }
@@ -86,7 +90,7 @@ public class StUtils {
     public static boolean ssHasRolled(String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
-            LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
+            LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
         }
         LabelSelector selector = null;
         int times = 60;
@@ -106,12 +110,12 @@ public class StUtils {
 
         Map<String, String> map = podSnapshot(selector);
         if (log) {
-            LOGGER.debug("Current snapshot: {}", new TreeMap(map));
+            LOGGER.debug("Current snapshot: {}", new TreeMap<>(map));
         }
         // rolled when all the pods in snapshot have a different version in map
         map.keySet().retainAll(snapshot.keySet());
         if (log) {
-            LOGGER.debug("Pods in common: {}", new TreeMap(map));
+            LOGGER.debug("Pods in common: {}", new TreeMap<>(map));
         }
         for (Map.Entry<String, String> e : map.entrySet()) {
             String currentResourceVersion = e.getValue();
@@ -137,9 +141,9 @@ public class StUtils {
      * @return true when the pods for Deployment are recreated
      */
     public static boolean depHasRolled(String name, Map<String, String> snapshot) {
-        LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
+        LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
         Map<String, String> map = podSnapshot(kubeClient().getDeployment(name).getSpec().getSelector());
-        LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
+        LOGGER.debug("Current  snapshot: {}", new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
         if (current == snapshot.size() && map.isEmpty()) {
@@ -399,18 +403,20 @@ public class StUtils {
         );
     }
 
-    private static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
-        image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
-        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
-        StringBuffer sb = new StringBuffer();
-        if (m.find()) {
-            m.appendReplacement(sb, ":" + newTag + m.group("kafka") + m.group("version"));
-            m.appendTail(sb);
-            image = sb.toString();
-        } else {
-            image = image.replaceFirst(":[^:]+$", ":" + newTag);
-        }
-        return image;
+    public static void waitForLoadBalancerService(String serviceName) {
+        LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
+
+        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
+    }
+
+    public static void waitForNodePortService(String serviceName) throws InterruptedException {
+        LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
+
+        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getPorts().get(0).getNodePort() != null);
+
+        Thread.sleep(10000);
     }
 
     /**
@@ -419,7 +425,27 @@ public class StUtils {
      * @return Updated docker image with a proper registry, org, tag
      */
     public static String changeOrgAndTag(String image) {
-        return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
+        String newTag = Environment.STRIMZI_TAG;
+        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
+        if (m.find()) {
+            newTag = newTag + m.group("kafka") + m.group("version");
+        }
+        m = IMAGE_PATTERN_FULL_PATH.matcher(image);
+        if (m.find()) {
+            String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT);
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
+
+            return registry + "/" + org + "/" + m.group("image") + ":" + tag;
+        }
+        m = IMAGE_PATTERN.matcher(image);
+        if (m.find()) {
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
+
+            return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":" + tag;
+        }
+        return image;
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {
@@ -430,5 +456,12 @@ public class StUtils {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
+        if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
+            return envVar;
+        }
+        return current;
     }
 }

@@ -158,8 +158,8 @@ public class MessagingBaseST extends AbstractST {
 
         received = getReceivedMessagesCount(response);
 
-        assertThat(String.format("Received (%s) and expected (%s) message count is not equal", sent, messageCount),
-                sent == messageCount);
+        assertThat(String.format("Received (%s) and expected (%s) message count is not equal", received, messageCount),
+                received == messageCount);
 
         LOGGER.info("Received {} messages", received);
         return received;

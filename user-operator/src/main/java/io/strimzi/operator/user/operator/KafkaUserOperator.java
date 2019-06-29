@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.KafkaUserList;
+import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Reconciliation;
@@ -20,7 +20,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -32,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -48,7 +46,7 @@ public class KafkaUserOperator {
     private static final int LOCK_TIMEOUT_MS = 10;
     private static final String RESOURCE_KIND = "KafkaUser";
     private final Vertx vertx;
-    private final CrdOperator crdOperator;
+    private final CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator;
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
@@ -244,7 +242,7 @@ public class KafkaUserOperator {
 
         CountDownLatch outerLatch = new CountDownLatch(1);
 
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<Set<String>>executeBlocking(
             future -> {
                 try {
                     Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
@@ -255,7 +253,7 @@ public class KafkaUserOperator {
             }, res -> {
                 if (res.succeeded()) {
                     log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, res.result());
-                    desiredNames.addAll((Collection<? extends String>) res.result());
+                    desiredNames.addAll(res.result());
                     desiredNames.addAll(scramShaCredentialOperator.list());
 
                     // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
@@ -323,7 +321,7 @@ public class KafkaUserOperator {
                     }
                 });
                 future.complete(watch);
-            }, result.completer()
+            }, result
         );
         return result;
     }

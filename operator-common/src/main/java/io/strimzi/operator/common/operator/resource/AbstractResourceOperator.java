@@ -111,7 +111,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
             },
             false,
-            fut.completer()
+            fut
         );
         return fut;
     }
@@ -184,6 +184,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * Creates a resource with the given namespace and name with the given desired state
      * and completes the given future accordingly.
      */
+    @SuppressWarnings("unchecked")
     protected Future<ReconcileResult<T>> internalCreate(String namespace, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).withName(name).create(desired));
@@ -217,7 +218,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             future -> {
                 T resource = get(namespace, name);
                 future.complete(resource);
-            }, true, result.completer()
+            }, true, result
         );
         return result;
     }
@@ -237,6 +238,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
         }
     }
 
+    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
         FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
 
@@ -252,6 +254,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
         }
     }
 
+    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInNamespace(String namespace, Labels selector) {
         NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
 
@@ -287,7 +290,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 }
 
                 future.complete(resources);
-            }, true, result.completer()
+            }, true, result
         );
         return result;
     }

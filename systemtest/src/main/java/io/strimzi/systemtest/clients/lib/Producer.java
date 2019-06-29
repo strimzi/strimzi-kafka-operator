@@ -51,7 +51,7 @@ public class Producer extends ClientHandlerBase<Integer> {
         if (msgCntPredicate.negate().test(numSent.get())) {
 
             KafkaProducerRecord<String, String> record =
-                    KafkaProducerRecord.create(topic, "message_" + numSent.get());
+                    KafkaProducerRecord.create(topic, String.valueOf(numSent.get()));
 
             producer.send(record, done -> {
                 if (done.succeeded()) {

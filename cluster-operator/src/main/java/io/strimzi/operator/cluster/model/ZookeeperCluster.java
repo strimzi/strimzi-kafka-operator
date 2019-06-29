@@ -271,6 +271,7 @@ public class ZookeeperCluster extends AbstractModel {
         return zk;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
         if (zookeeperClusterSpec.getTemplate() != null
                 && zookeeperClusterSpec.getTemplate().getPod() != null
@@ -284,6 +285,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(ZookeeperClusterSpec zookeeperClusterSpec) {
         if (zookeeperClusterSpec.getTemplate() != null
                 && zookeeperClusterSpec.getTemplate().getPod() != null

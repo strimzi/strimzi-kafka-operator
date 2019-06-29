@@ -104,7 +104,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                 fut.fail(e);
             }
         },
-            generateFuture.completer());
+            generateFuture);
 
         Future<File> executeFuture = Future.future();
 
@@ -120,7 +120,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     fut.fail(e);
                 }
             },
-                executeFuture.completer());
+                executeFuture);
         }, executeFuture);
 
         Future<Void> periodicFuture = Future.future();

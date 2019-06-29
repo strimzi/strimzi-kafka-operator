@@ -54,7 +54,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy Topic
         testMethodResources().topic(kafkaSourceName, topicSourceName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
@@ -153,7 +153,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
@@ -247,7 +247,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
 
         // Deploy client
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
@@ -292,8 +292,8 @@ public class MirrorMakerST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach

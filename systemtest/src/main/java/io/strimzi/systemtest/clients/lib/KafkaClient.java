@@ -55,13 +55,13 @@ public class KafkaClient implements AutoCloseable {
      * @param messageCount message count
      * @return future with sent message count
      */
-    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
+    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount, String securityProtocol) {
         String clientName = "sender-ssl" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -80,12 +80,12 @@ public class KafkaClient implements AutoCloseable {
      * @param clientName client name
      * @return future
      */
-    public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
+    public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }
@@ -123,13 +123,13 @@ public class KafkaClient implements AutoCloseable {
      * @param messageCount message count
      * @return future with received message count
      */
-    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount, String securityProtocol) {
         String clientName = "receiver-ssl-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -148,12 +148,12 @@ public class KafkaClient implements AutoCloseable {
      * @param clientName client name
      * @return future
      */
-    public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
+    public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }

@@ -80,7 +80,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 configMapOperations.get(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
                 null);
 
-        Map<String, String> annotations = new HashMap();
+        Map<String, String> annotations = new HashMap<>();
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);

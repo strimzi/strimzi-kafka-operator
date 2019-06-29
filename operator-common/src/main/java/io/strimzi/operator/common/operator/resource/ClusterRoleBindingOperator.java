@@ -4,32 +4,33 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
-        KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-        Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
+        ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+        Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
 
     /**
-     * Constructor
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
+     * Constructor.
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout in milliseconds.
      */
 
-    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ClusterRoleBinding");
+    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "ClusterRoleBinding", operationTimeoutMs);
     }
 
     @Override
-    protected MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList,
-            DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding,
-            DoneableKubernetesClusterRoleBinding>> operation() {
-        return client.rbac().kubernetesClusterRoleBindings();
+    protected MixedOperation<ClusterRoleBinding, ClusterRoleBindingList,
+            DoneableClusterRoleBinding, Resource<ClusterRoleBinding,
+            DoneableClusterRoleBinding>> operation() {
+        return client.rbac().clusterRoleBindings();
     }
 }

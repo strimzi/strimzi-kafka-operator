@@ -32,6 +32,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -500,7 +501,7 @@ class KafkaST extends MessagingBaseST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
@@ -533,7 +534,7 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -575,7 +576,7 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
@@ -604,7 +605,7 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -1159,8 +1160,14 @@ class KafkaST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+    }
+
+    @AfterEach
+    void deleteTestResources() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @BeforeAll

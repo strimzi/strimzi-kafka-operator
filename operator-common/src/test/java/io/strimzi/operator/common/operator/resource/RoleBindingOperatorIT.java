@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.ext.unit.TestContext;
@@ -21,30 +21,30 @@ import org.junit.runner.RunWith;
 import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
-public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList,
-        DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> {
+public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList,
+        DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> {
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList,
-            DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> operator() {
+    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
+            DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> operator() {
         return new RoleBindingOperator(vertx, client);
     }
 
     @Override
-    protected KubernetesRoleBinding getOriginal()  {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    protected RoleBinding getOriginal()  {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account")
                 .withNamespace("my-namespace")
                 .build();
 
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName("my-cluster-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesRoleBindingBuilder()
+        return new RoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)
@@ -56,21 +56,21 @@ public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<Kubernetes
     }
 
     @Override
-    protected KubernetesRoleBinding getModified()  {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    protected RoleBinding getModified()  {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account2")
                 .withNamespace("my-namespace2")
                 .build();
 
         // RoleRef cannot be changed
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName("my-cluster-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesRoleBindingBuilder()
+        return new RoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withNamespace(namespace)
@@ -82,7 +82,7 @@ public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<Kubernetes
     }
 
     @Override
-    protected void assertResources(TestContext context, KubernetesRoleBinding expected, KubernetesRoleBinding actual)   {
+    protected void assertResources(TestContext context, RoleBinding expected, RoleBinding actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
         context.assertEquals(expected.getMetadata().getNamespace(), actual.getMetadata().getNamespace());
         context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());

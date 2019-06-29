@@ -409,7 +409,7 @@ public abstract class AbstractModel {
         Map<String, String> data = new HashMap<>();
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            HashMap m = new HashMap();
+            HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
             }
@@ -607,7 +607,7 @@ public abstract class AbstractModel {
             .withPort(port)
             .withNewTargetPort(targetPort);
         if (nodePort != null) {
-            builder.withNewNodePort(nodePort);
+            builder.withNodePort(nodePort);
         }
         ServicePort servicePort = builder.build();
         log.trace("Created service port {}", servicePort);
@@ -1131,6 +1131,7 @@ public abstract class AbstractModel {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
+    @SafeVarargs
     protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String>... templates) {
         Map<String, String> merged = new HashMap<>();
 

@@ -44,6 +44,18 @@ public interface Constants {
     String IMAGE_PULL_POLICY = "Always";
 
     /**
+     * Kafka Bridge JSON encoding with JSON embedded format
+     */
+    String KAFKA_BRIDGE_JSON_JSON = "application/vnd.kafka.json.v2+json";
+
+    /**
+     * Kafka Bridge JSON encoding
+     */
+    String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
+
+    int HTTP_BRIDGE_DEFAULT_PORT = 8080;
+
+    /**
      * Default value which allows execution of tests with any tags
      */
     String DEFAULT_TAG = "all";
@@ -64,4 +76,8 @@ public interface Constants {
      * Tag for tests, which are failing only on CCI VMs
      */
     String CCI_FLAKY = "cci_flaky";
+    /**
+     * Tag for strimzi bridge tests.
+     */
+    String BRIDGE = "bridge";
 }

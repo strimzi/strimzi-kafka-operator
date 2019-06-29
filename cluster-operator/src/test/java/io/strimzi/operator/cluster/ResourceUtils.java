@@ -154,6 +154,7 @@ public class ResourceUtils {
                     .endKafka()
                     .editZookeeper()
                         .withConfig(zooConfigurationJson)
+                        .withMetrics(metricsCm)
                     .endZookeeper()
                 .endSpec().build();
     }

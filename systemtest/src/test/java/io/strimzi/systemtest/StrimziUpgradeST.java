@@ -169,13 +169,15 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void deleteInstalledYamls(File root) {
-        Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
-            if (f.getName().matches(".*RoleBinding.*")) {
-                cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else {
-                cmdKubeClient().delete(f);
-            }
-        });
+        if (root != null) {
+            Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
+                if (f.getName().matches(".*RoleBinding.*")) {
+                    cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+                } else {
+                    cmdKubeClient().delete(f);
+                }
+            });
+        }
     }
 
     private void waitForClusterReadiness() {

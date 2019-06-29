@@ -133,6 +133,13 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
             <scope>compile</scope>
@@ -179,6 +186,13 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>flaky | cci_flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>bridge</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>bridge</groups>
             </properties>
         </profile>
     </profiles>

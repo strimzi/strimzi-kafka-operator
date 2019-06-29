@@ -344,7 +344,7 @@ public class EntityOperatorTest {
                         .withUserOperator(entityUserOperatorSpec)
                         .withNewTemplate()
                             .withNewPod()
-                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                             .endPod()
                         .endTemplate()
                     .endEntityOperator()
