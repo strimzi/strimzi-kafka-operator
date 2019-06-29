@@ -182,6 +182,7 @@ public class EntityOperatorTest {
                                             .withLabels(podLabels)
                                             .withAnnotations(podAnots)
                                         .endMetadata()
+                                        .withNewPriorityClassName("top-priority")
                                     .endPod()
                                 .endTemplate()
                             .endEntityOperator()
@@ -193,6 +194,7 @@ public class EntityOperatorTest {
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
         assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
         assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));

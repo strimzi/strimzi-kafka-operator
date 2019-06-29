@@ -170,6 +170,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templatePodDisruptionBudgetLabels;
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
+    protected String templatePodPriorityClassName;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -836,6 +837,7 @@ public abstract class AbstractModel {
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(securityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -882,6 +884,7 @@ public abstract class AbstractModel {
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

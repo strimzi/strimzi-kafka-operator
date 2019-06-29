@@ -291,6 +291,7 @@ public class ModelUtils {
             model.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
             model.templateImagePullSecrets = pod.getImagePullSecrets();
             model.templateSecurityContext = pod.getSecurityContext();
+            model.templatePodPriorityClassName = pod.getPriorityClassName();
         }
     }
 

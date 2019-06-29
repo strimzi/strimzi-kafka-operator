@@ -29,6 +29,10 @@ NOTE: When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Oper
 |Configures pod-level security attributes for containers running as part of a given Pod.
 For more information about configuring SecurityContext, see {K8sConfigureSecurityContext}.
 
+|`priorityClassName`
+|Configures the name of the Priority Class which will be used for given a Pod.
+For more information about Priority Classes, see {K8sPriorityClass}.
+
 |===
 
 These fields are effective on each type of cluster (Kafka and Zookeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka Mirror Maker).

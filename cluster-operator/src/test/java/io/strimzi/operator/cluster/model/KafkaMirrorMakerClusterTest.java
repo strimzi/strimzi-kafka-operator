@@ -490,6 +490,7 @@ public class KafkaMirrorMakerClusterTest {
                                 .withLabels(podLabels)
                                 .withAnnotations(podAnots)
                             .endMetadata()
+                            .withNewPriorityClassName("top-priority")
                         .endPod()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -506,6 +507,7 @@ public class KafkaMirrorMakerClusterTest {
         Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
         assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
         assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
