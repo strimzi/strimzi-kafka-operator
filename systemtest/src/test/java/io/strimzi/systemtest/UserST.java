@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -26,6 +28,61 @@ class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
+
+    @Test
+    void testUserWithNameMoreThan64Chars() {
+        LOGGER.info("Running testUserWithNameMoreThan64Chars in namespace {}", NAMESPACE);
+        String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
+        String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
+        String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
+
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                    .editTls()
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                    .endTls()
+                .endListeners()
+                    .withNewKafkaAuthorizationSimple()
+                    .endKafkaAuthorizationSimple()
+                .endKafka()
+            .endSpec().build()).done();
+
+        // Create user with correct name
+        testMethodResources().tlsUser(CLUSTER_NAME, userWithCorrectName).done();
+        StUtils.waitForSecretReady(userWithCorrectName);
+
+        String messageUserWasAdded = "KafkaUser " + userWithCorrectName + " in namespace " + NAMESPACE + " was ADDED";
+        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
+
+        // Checking UO logs
+        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
+        assertThat(uOlogs, containsString(messageUserWasAdded));
+        assertThat(uOlogs, not(containsString(errorMessage)));
+
+        // Create sasl user with long name
+        testMethodResources().scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
+        StUtils.waitForSecretReady(saslUserWithLongName);
+
+        // Checking UO logs
+        uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
+        messageUserWasAdded = "KafkaUser " + saslUserWithLongName + " in namespace " + NAMESPACE + " was ADDED";
+        assertThat(uOlogs, containsString(messageUserWasAdded));
+        assertThat(uOlogs, not(containsString(errorMessage)));
+
+        // Create user with long name
+        testMethodResources().tlsUser(CLUSTER_NAME, userWithLongName).done();
+        // Checking UO logs
+        final String messageUserWasNotAdded = "KafkaUser(" + NAMESPACE + "/" + userWithLongName + "): createOrUpdate failed";
+        TestUtils.waitFor("User operator has expected error", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                String logs = kubeClient().logs(entityOperatorPodName, "user-operator");
+                return logs.contains(errorMessage) && logs.contains(messageUserWasNotAdded);
+            });
+    }
 
     @Test
     void testUpdateUser() {
