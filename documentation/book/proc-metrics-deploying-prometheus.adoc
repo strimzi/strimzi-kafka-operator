@@ -9,6 +9,8 @@ To deploy Prometheus to your Kafka cluster, apply the link:https://raw.githubuse
 
 The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace defined in the YAML.
 
+NOTE: Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. Targets are discovered and scraped for each endpoint port address. For endpoint discovery, the port address may be derived from service (`role: service`) or pod (`role: pod`) discovery.
+
 .Prerequisites
 
 * Check the xref:ref-metrics-alertmanager-examples-{context}[example alerting rules provided]
@@ -32,7 +34,7 @@ curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 [source,shell,subs="+quotes,attributes"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
 
-. Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. To use another role:
+. To use another role:
 +
 .. Create a `Secret` resource:
 +

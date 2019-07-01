@@ -5,6 +5,10 @@
 
 = Deploying Alertmanager
 
+The Alermanager is a Prometheius plugin for handling alerts and routing them to a notification service.
+
+The sample configuration provided with {ProductName} configures the Alertmanager to send notifications to a Slack channel.
+
 Deploy Alertmanager using:
 
 * https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml[`alert-manager.yaml`] to define the resources required for deploying and configuring the Alertmanager.
@@ -15,14 +19,6 @@ The following resources are defined on deployment:
 * An `Alertmanager` to manage the Alertmanager pod.
 * A `Secret` to manage the configuration of the Alertmanager.
 * A `Service` to provide an easy to reference hostname for other services to connect to Alertmanager (such as Prometheus).
-
-.Prerequisites
-
-The sample configuration provided with {ProductName} configures the Alertmanager to send notifications to a Slack channel.
-Before deploying Alertmanager, update the https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml[`alertmanager.yaml`] YAML file:
-
-* Replace the `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace.
-* Replace the `channel` property with the actual Slack channel on which to send notifications.
 
 .Procedure
 
@@ -38,6 +34,11 @@ Now configure the Alertmanager hook for sending alerts by creating a `Secret` re
 [source,shell,subs="+quotes,attributes"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 {cmdcli} create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
+
+. Update the `alertmanager.yaml` file to replace the:
++
+* `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace
+* `channel` property with the actual Slack channel on which to send notifications
 
 . Deploy Alertmanager:
 +

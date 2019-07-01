@@ -5,7 +5,7 @@
 
 = Deploying Grafana
 
-Deploy Grafana to provide visualizations of Prometheus metrics using the source for the Grafana docker image in the `./metrics/examples/grafana-openshift/` directory.
+Deploy Grafana to provide visualizations of Prometheus metrics using the source for the Grafana docker image in the `./metrics/examples/grafana/grafana-openshift/` directory.
 
 .Prerequisites
 * xref:assembly-metrics-kafka-{context}[Metrics are configured for the Kafka cluster resource]

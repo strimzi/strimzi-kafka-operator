@@ -43,7 +43,7 @@ NOTE: If it is not required, you can manually remove the `spec.template.spec.sec
 
 . Deploy the Prometheus Operator:
 +
-[source,shell,subs="+quotes,attributes"]
+[source,shell,subs="+attributes"]
 {cmdcli} apply -f prometheus-operator-deployment.yaml
 {cmdcli} apply -f prometheus-operator-cluster-role.yaml
 {cmdcli} apply -f prometheus-operator-cluster-role-binding.yaml
