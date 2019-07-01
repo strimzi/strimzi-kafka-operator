@@ -24,6 +24,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -150,15 +151,14 @@ public class KafkaUserOperator {
             scramAcls = user.getSimpleAclRules();
         }
 
+        KafkaUserStatus userStatus = new KafkaUserStatus();
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                secretOperations.reconcile(namespace, user.getSecretName(), desired),
+                setSecretStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .compose(reconciliationResult -> {
                     Condition readyCondition;
-                    KafkaUserStatus userStatus = new KafkaUserStatus();
-
                     if (kafkaUser.getMetadata().getGeneration() != null)    {
                         userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
                     }
@@ -179,17 +179,7 @@ public class KafkaUserOperator {
                                 .build();
                     }
 
-                    Credential credential = null;
-                    if (desired != null) {
-                        credential = new CredentialBuilder()
-                                .withCredentials("todo")
-                                .withPassword("todo")
-                                .withCredentialsSecret(desired.getMetadata().getName())
-                                .build();
-                    }
-
                     userStatus.setUsername(user.getName());
-                    userStatus.setCredentials(credential);
                     userStatus.setConditions(Collections.singletonList(readyCondition));
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
@@ -211,6 +201,21 @@ public class KafkaUserOperator {
                     });
                     return createOrUpdateFuture;
                 }).map((Void) null).setHandler(handler);
+    }
+
+    private Future<ReconcileResult<Secret>> setSecretStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
+        return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
+            Credential credential = null;
+            if (desired != null) {
+                credential = new CredentialBuilder()
+                        .withCredentials("todo")
+                        .withPassword("todo")
+                        .withCredentialsSecret(desired.getMetadata().getName())
+                        .build();
+            }
+            userStatus.setCredentials(credential);
+            return Future.succeededFuture(ar);
+        });
     }
 
     /**
