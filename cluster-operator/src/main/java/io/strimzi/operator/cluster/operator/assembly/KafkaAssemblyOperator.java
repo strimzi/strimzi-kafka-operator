@@ -297,7 +297,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
                 .compose(state -> state.entityOperatorSecret())
                 .compose(state -> state.entityOperatorDeployment())
-                .compose(state -> state.entityOperatorReady())
 
                 .compose(state -> chainFuture.complete(), chainFuture);
 
@@ -2386,14 +2385,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
                     return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
+                })
+                .compose(dep -> {
+                    // Completes successfully when the deployment is ready
+                    return withVoid(deploymentOperations.readiness(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
                 }).map(i -> this);
             } else  {
                 return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
             }
-        }
-
-        Future<ReconciliationState> entityOperatorReady() {
-            return withVoid(deploymentOperations.readiness(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> entityOperatorSecret() {
