@@ -1,16 +1,25 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-bridge-configuration.adoc
+// assembly-deployment-configuration.adoc
 
-[id='ref-kafka-bridge-producer-configuration-{context}']
+[id='ref-sample-kafka-resource-config-{context}']
 = Sample Kafka YAML configuration
 
 For help in understanding the configuration options available for your Kafka deployment, refer to sample YAML file provided here.
 
-[source,shell,subs="+attributes"]
+The sample shows only some of the possible configuration options, but those that are particularly important include:
 
+* Resource requests (CPU / Memory)
+* JVM options for maximum and minimum memory allocation
+* Listeners (and authentication)
+* Authentication
+* Storage
+* Rack awareness
+* Metrics
+
+[source,shell,subs="+attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
@@ -46,11 +55,11 @@ spec:
     storage: <11>
       type: persistent-claim <12>
       size: 10000Gi <13>
-    rack:
+    rack: <14>
       topologyKey: failure-domain.beta.kubernetes.io/zone
-    metrics: <14>
+    metrics: <15>
       lowercaseOutputName: true
-      rules: <15>
+      rules: <16>
       # Special cases and very specific rules
       - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
         name: kafka_server_$1_$2
@@ -60,7 +69,7 @@ spec:
           topic: "$4"
           partition: "$5"
         # ...
-  zookeeper: <16>
+  zookeeper: <17>
     replicas: 3
     resources:
       requests:
@@ -77,7 +86,7 @@ spec:
       size: 1000Gi
     metrics:
       # ...
-  entityOperator: <17>
+  entityOperator: <18>
     topicOperator:
       resources:
         requests:
@@ -109,7 +118,8 @@ spec:
 <11> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
 <12> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <13> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
-<14> Kafka metrics configuration for use with Prometheus.
-<15> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with {productName} may be copied to your Kafka resource configuration.
-<16> xref:assembly-zookeeper-node-configuration-{context}[Zookeeper-specific configuration], which contains properties similar to the Kafka configuration.
-<17> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
+<14> Rack awareness is configured to xref:assembly-kafka-rack-{context}[to spread replicas across different racks]. A `topology` key must match the label of a cluster node.
+<15> Kafka metrics configuration for use with Prometheus.
+<16> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with {productName} may be copied to your Kafka resource configuration.
+<17> xref:assembly-zookeeper-node-configuration-{context}[Zookeeper-specific configuration], which contains properties similar to the Kafka configuration.
+<18> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
