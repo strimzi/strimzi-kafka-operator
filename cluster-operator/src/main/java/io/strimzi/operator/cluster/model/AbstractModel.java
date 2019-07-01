@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -291,7 +290,6 @@ public abstract class AbstractModel {
      * @param configFileName The filename
      * @return The OrderedProperties
      */
-    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION") // InputStream is closed by properties.addStringPairs
     public static OrderedProperties getOrderedProperties(String configFileName) {
         OrderedProperties properties = new OrderedProperties();
         if (configFileName != null && !configFileName.isEmpty()) {
@@ -303,6 +301,12 @@ public abstract class AbstractModel {
                     properties.addStringPairs(is);
                 } catch (IOException e) {
                     log.warn("Unable to read default log config from '{}'", configFileName);
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

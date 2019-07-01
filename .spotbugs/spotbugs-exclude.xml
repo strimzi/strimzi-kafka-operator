@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
   <Match>
+    <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_EXIT"/>
+    <Package name="io.strimzi.operator.cluster"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_EXIT"/>
+    <Package name="io.strimzi.operator.user"/>
+  </Match>
+  <Match>
+    <Bug pattern="BX_UNBOXING_IMMEDIATELY_REBOXED"/>
+    <Package name="io.strimzi.operator.cluster.operator.assembly"/>
+  </Match>
+  <Match>
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     <Package name="io.strimzi.certs"/>
   </Match>
@@ -16,5 +31,10 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\.(Doneable).+(\$.*)?" />
   </Match>
+  <Match>
+    <Class name="~io\.strimzi\.systemtest\..+(\$.*)?" />
+  </Match>
+
+  io.strimzi.systemtest
 
 </FindBugsFilter>

@@ -45,6 +45,9 @@ public class HttpClientsListener extends AbstractVerticle {
                 case DELETE:
                     deleteHandler(request);
                     break;
+                default:
+                    LOGGER.warn("Unexpected HTTP method.");
+                    break;
             }
         });
         int port = 4242;

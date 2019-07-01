@@ -21,7 +21,7 @@ export DOCKER_TAG=$COMMIT
 
 make docu_check
 if [ "${MAIN_BUILD}" = "TRUE" ] ; then
-  make findbugs
+  make spotbugs
 fi
 
 make crd_install

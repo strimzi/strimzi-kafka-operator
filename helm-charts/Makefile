@@ -62,4 +62,4 @@ docker_push:
 all: docker_build
 clean: helm_clean
 
-.PHONY: build clean release findbugs
+.PHONY: build clean release spotbugs

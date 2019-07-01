@@ -114,7 +114,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 docu_check:
 	./.travis/check_docs.sh
 
-findbugs: $(SUBDIRS)
+spotbugs: $(SUBDIRS)
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
@@ -145,4 +145,4 @@ crd_install: install
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions findbugs docu_check
+.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check

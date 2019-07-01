@@ -100,7 +100,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     w.write(reassignment);
                 }
                 fut.complete(reassignmentJsonFile);
-            } catch (Exception e) {
+            } catch (IOException | InterruptedException | ExecutionException e) {
                 fut.fail(e);
             }
         },
@@ -116,7 +116,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     LOGGER.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
                     executeReassignment(reassignmentJsonFile, zookeeper, throttle);
                     fut.complete(reassignmentJsonFile);
-                } catch (Exception e) {
+                } catch (IOException | InterruptedException e) {
                     fut.fail(e);
                 }
             },
@@ -262,11 +262,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
                 throw new TransientOperatorException("Reassigment failed: " + line);
-            } else if (line.contains("Successfully started reassignment of partitions.")) {
-                return true;
-            } else {
-                return null;
-            }
+            } else return line.contains("Successfully started reassignment of partitions.");
         })) {
             throw new TransientOperatorException("Reassignment execution neither failed nor finished");
         }

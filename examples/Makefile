@@ -15,4 +15,4 @@ release:
 	$(CP) -r ./user $(RELEASE_PATH)/
 	$(CP) -r ./topic $(RELEASE_PATH)/
 
-.PHONY: all build clean docker_build docker_push docker_tag findbugs
+.PHONY: all build clean docker_build docker_push docker_tag spotbugs

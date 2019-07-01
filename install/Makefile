@@ -43,4 +43,4 @@ release:
 	$(CP) -r ./topic-operator $(RELEASE_PATH)/
 	$(CP) -r ./strimzi-admin $(RELEASE_PATH)/
 
-.PHONY: all build clean docker_build docker_push docker_tag findbugs
+.PHONY: all build clean docker_build docker_push docker_tag spotbugs
