@@ -174,7 +174,7 @@ spec:
 <4> Resources can include `CPU` and `memory`. If there are not enough free resources, the pod is not scheduled.
 <5> Resources limits specify the maximum resources that can be consumed by a container.
 <6> JVM options can xref:ref-jvm-options-{context}[specify the minimum (`-Xms`) and maximum (`-Xmx`) memory allocation for JVM].
-<7> Listeners specify the current Kafka bootstrap addresses by type.
+<7> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses.
 <8> Listeners are xref:assembly-configuring-kafka-broker-listeners-{context}[configured as `plain` (without encryption), `tls` or `external`].
 <9> Listener authentication mechanisms may be configured for each listener, and xref:assembly-kafka-broker-listener-authentication-{context}[specified as mutual TLS or SCRAM-SHA].
 <10> External listener configuration specifies xref:assembly-kafka-broker-external-listeners-{context}[how the Kafka cluster is exposed outside the environment, such as through a `route`, `loadbalancer` or `nodeport`].
