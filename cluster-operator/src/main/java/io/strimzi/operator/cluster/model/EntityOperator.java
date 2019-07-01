@@ -160,6 +160,7 @@ public class EntityOperator extends AbstractModel {
                     result.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
                     result.templateImagePullSecrets = pod.getImagePullSecrets();
                     result.templateSecurityContext = pod.getSecurityContext();
+                    result.templatePodPriorityClassName = pod.getPriorityClassName();
                 }
             }
 

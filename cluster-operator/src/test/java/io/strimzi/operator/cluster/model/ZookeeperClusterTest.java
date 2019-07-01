@@ -330,6 +330,7 @@ public class ZookeeperClusterTest {
                                     .withLabels(podLabels)
                                     .withAnnotations(podAnots)
                                 .endMetadata()
+                                .withNewPriorityClassName("top-priority")
                             .endPod()
                             .withNewClientService()
                                 .withNewMetadata()
@@ -359,6 +360,7 @@ public class ZookeeperClusterTest {
         StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+        assertEquals("top-priority", ss.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));

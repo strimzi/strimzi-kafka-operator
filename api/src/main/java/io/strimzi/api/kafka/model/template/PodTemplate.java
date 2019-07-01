@@ -44,9 +44,10 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private int terminationGracePeriodSeconds = 30;
     private Affinity affinity;
     private List<Toleration> tolerations;
+    private String priorityClassName;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
@@ -114,6 +115,16 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
+    }
+
+    @Description("The name of the Priority Class to which these pods will be assigned.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getPriorityClassName() {
+        return priorityClassName;
+    }
+
+    public void setPriorityClassName(String priorityClassName) {
+        this.priorityClassName = priorityClassName;
     }
 
     @Override
