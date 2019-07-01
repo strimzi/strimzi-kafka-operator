@@ -755,7 +755,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [options="header"]
 |====
 |Property                              |Description
-|metadata                       1.2+<.<|Metadata which should be applied to the resource.
+|metadata                       1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[core/v1 localobjectreference].
 
@@ -771,7 +771,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|priorityClassName              1.2+<.<|The name of the Priority Class to which this pods should be assigned.
+|priorityClassName              1.2+<.<|The name of the Priority Class to which these pods will be assigned.
 |string
 |tolerations                    1.2+<.<|The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
