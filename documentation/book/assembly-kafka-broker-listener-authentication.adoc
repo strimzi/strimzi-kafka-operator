@@ -10,7 +10,7 @@ The listener `authentication` property is used to specify an authentication mech
 * Mutual TLS authentication (only on the listeners with TLS encryption)
 * SCRAM-SHA authentication
 
-If no `authentication` property is specified then the listener does not authenticate clients which connect though that listener.
+If no `authentication` property is specified then the listener does not authenticate clients which connect through that listener.
 
 Authentication must be configured when using the User Operator to manage `KafkaUsers`.
 
