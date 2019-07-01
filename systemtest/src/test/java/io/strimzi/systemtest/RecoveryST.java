@@ -15,13 +15,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.PR;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.CM;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.SERVICE;
 
 @Tag(REGRESSION)
-@Tag(PR)
 class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
@@ -48,6 +47,7 @@ class RecoveryST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testRecoveryFromKafkaStatefulSetDeletion() {
         operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
@@ -66,6 +66,7 @@ class RecoveryST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed

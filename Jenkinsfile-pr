@@ -10,7 +10,7 @@ pipeline {
     }
     parameters {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
-        string(name: 'TEST_PROFILE', defaultValue: 'pr', description: 'maven parameter for executing specific test profile')
+        string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
     }
     options {
         timeout(time: 7, unit: 'HOURS')

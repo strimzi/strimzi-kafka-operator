@@ -16,14 +16,13 @@ import org.junit.jupiter.api.TestInfo;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.PR;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-@Tag(PR)
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
@@ -49,6 +48,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
+    @Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO();

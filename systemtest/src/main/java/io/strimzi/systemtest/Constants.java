@@ -58,7 +58,7 @@ public interface Constants {
     /**
      * Default value which allows execution of tests with any tags
      */
-    String DEFAULT_TAG = "all";
+    String DEFAULT_TAG = "systemtests";
 
     /**
      * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
@@ -68,10 +68,6 @@ public interface Constants {
      * Tag for regression tests which are stable.
      */
     String REGRESSION = "regression";
-    /**
-     * Tag for tests executed during pull request builds.
-     */
-    String PR = "pr";
     /**
      * Tag for upgrade tests.
      */
@@ -84,10 +80,6 @@ public interface Constants {
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";
-    /**
-     * Tag for tests, which are failing only on CCI VMs
-     */
-    String CCI_FLAKY = "cci_flaky";
     /**
      * Tag for strimzi bridge tests.
      */

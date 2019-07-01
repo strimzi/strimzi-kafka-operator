@@ -208,16 +208,14 @@ To execute an expected group of system tests need to add system property `junitT
 
 If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed. The following table shows currently used tags:
 
-| Name | Description |
-| :---: | :---: |
-| travis | Marks tests executed on Travis |
-| acceptance | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
-| regression | Regression tests |
-| upgrade | Execute upgrade tests |
-| pr | Execute subset of tests for pull requests |
-| flaky | Test which are flaky |
-| cci_flaky | Test which are flaky only on specific QE environment |
-| systemtests | Execute all system tests with any tag |
+| Name          | Description                                                                        |
+| :-----------: | :--------------------------------------------------------------------------------: |
+| travis        | Marks tests executed on Travis                                                     |
+| acceptance    | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
+| regression    | Regression tests, which contains all non-flaky tests.                              |
+| upgrade       | Upgrade tests for specific versions of the Strimzi.                                |
+| flaky         | Execute all flaky tests (tests, which are failing from time to time)               |
+| systemtests   | Execute all system tests with any tag                                              |
 
 ### Helper script
 
@@ -241,20 +239,21 @@ Ex)
 
 We can configure our system tests with several environment variables, which are loaded before test execution:
 
-| Name | Description | Default |
-| :---: | :---: | :---: |
-| DOCKER_ORG | Specify organization which owns image used in system tests | strimzi |
-| DOCKER_TAG | Specify image tags used in system tests | latest |
-| DOCKER_REGISTRY | Specify docker registry used in system tests | docker.io |
-| TEST_LOG_DIR | Directory for store logs collected during the tests | ../systemtest/target/logs/ |
-| ST_KAFKA_VERSION | Kafka version used in images during the system tests | 2.1.1 |
-| STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator | DEBUG |
-| KUBERNETES_DOMAIN | Cluster domain. It's used for specify URL endpoint of testing clients | .nip.io |
-| KUBERNETES_API_URL | URL of the kubernetes cluster. It's used for specify URL endpoint of testing clients | https://127.0.0.1:8443 |
+| Name                      | Description                                                                          | Default                                          |
+| :-----------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------: |
+| DOCKER_ORG                | Specify organization which owns image used in system tests                           | strimzi                                          |
+| DOCKER_TAG                | Specify image tags used in system tests                                              | latest                                           |
+| DOCKER_REGISTRY           | Specify docker registry used in system tests                                         | docker.io                                        |
+| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.2.1 |
+| BRIDGE_IMAGE              | Specify kafka bridge image used in systemtest                                        | docker.io/strimzi/kafka-bridge:latest            |
+| TEST_LOG_DIR              | Directory for store logs collected during the tests                                  | ../systemtest/target/logs/                       |
+| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.1.1                                            |
+| STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator                                                       | DEBUG                                            |
+| KUBERNETES_DOMAIN         | Cluster domain. It's used for specify URL endpoint of testing clients                | .nip.io                                          |
 
 If you want to use your own images with different tag or from different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
-`KUBERNETES_DOMAIN` and `KUBERNETES_API_URL` should be specified only in case you are using specific configuration in your kubernetes cluster.
+`KUBERNETES_DOMAIN` should be specified only in case you are using specific configuration in your kubernetes cluster.
 
 #### Specific Kafka version
 

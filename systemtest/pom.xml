@@ -164,7 +164,7 @@
             <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance</groups>
+                <groups>acceptance &amp; !flaky</groups>
             </properties>
         </profile>
         <profile>
@@ -178,28 +178,21 @@
             <id>systemtests</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance | regression | flaky | cci_flaky | upgrade | pr | travis</groups>
+                <groups>acceptance | regression | flaky | upgrade | pr | travis</groups>
             </properties>
         </profile>
         <profile>
             <id>flaky</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>flaky | cci_flaky</groups>
+                <groups>flaky</groups>
             </properties>
         </profile>
         <profile>
             <id>upgrade</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>upgrade &amp; !flaky &amp; !cci_flaky</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>pr</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>pr &amp; !flaky &amp; !cci_flaky</groups>
+                <groups>upgrade &amp; !flaky</groups>
             </properties>
         </profile>
         <profile>
