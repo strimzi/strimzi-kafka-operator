@@ -111,9 +111,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
 
-    public Resources testMethodResources;
-    public static Resources testClassResources;
-    static String operationID;
+    protected Resources testMethodResources;
+    protected static Resources testClassResources;
+    protected static String operationID;
     Random rng = new Random();
 
     protected HelmClient helmClient() {
@@ -184,7 +184,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         namedResource.replace(resource);
     }
 
-    void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
+    protected void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
         replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }
 
@@ -436,6 +436,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return testMethodResources;
     }
 
+    public Resources testClassResources() {
+        return testClassResources;
+    }
+
     String startTimeMeasuring(Operation operation) {
         TimeMeasuringSystem.setTestName(testClass, testName);
         return TimeMeasuringSystem.startOperation(operation);
@@ -495,7 +499,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -735,11 +739,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void tearDownEnvironmentAfterEach() throws Exception {
+    protected void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
     }
 
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
         testClassResources.deleteResources();
     }
 

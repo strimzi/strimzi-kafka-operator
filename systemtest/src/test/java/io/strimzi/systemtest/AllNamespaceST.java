@@ -136,14 +136,14 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Override
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
         thirdNamespaceResources.deleteResources();
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

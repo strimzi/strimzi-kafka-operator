@@ -204,7 +204,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
     }
 

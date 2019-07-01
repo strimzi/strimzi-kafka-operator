@@ -207,18 +207,18 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Override
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
         deleteCustomResources();
         deleteNamespaces();
     }
 
     @Override
-    void tearDownEnvironmentAfterEach() {
+    protected void tearDownEnvironmentAfterEach() {
 
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skip env recreation after failed tests!");
     }
 }

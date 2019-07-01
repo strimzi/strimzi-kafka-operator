@@ -63,7 +63,7 @@ abstract class AbstractResources {
         return client;
     }
 
-    MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
+    public MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
         return customResourcesWithCascading(Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 

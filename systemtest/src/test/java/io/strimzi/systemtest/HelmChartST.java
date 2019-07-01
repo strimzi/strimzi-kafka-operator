@@ -46,19 +46,19 @@ class HelmChartST extends AbstractST {
     }
 
     @Override
-    void tearDownEnvironmentAfterEach() throws Exception {
+    protected void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
         waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @Override
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
         createNamespace(NAMESPACE);

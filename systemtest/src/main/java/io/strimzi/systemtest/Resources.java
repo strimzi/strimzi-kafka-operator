@@ -244,7 +244,7 @@ public class Resources extends AbstractResources {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
-    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
+    public DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
         return kafka(defaultKafka(name, kafkaReplicas).
                 editSpec()
                     .editKafka()
@@ -257,11 +257,11 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
-    KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
+    public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
         return defaultKafka(name, kafkaReplicas, 3);
     }
 
-    KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
         String tOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
@@ -656,11 +656,11 @@ public class Resources extends AbstractResources {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
-    DoneableDeployment clusterOperator(String namespace) {
+    public DoneableDeployment clusterOperator(String namespace) {
         return clusterOperator(namespace, "300000");
     }
 
-    DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build(), namespace);
     }
 
