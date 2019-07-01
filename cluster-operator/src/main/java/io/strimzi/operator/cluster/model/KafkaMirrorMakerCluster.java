@@ -84,8 +84,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST = "KAFKA_MIRRORMAKER_WHITELIST";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS = "KAFKA_MIRRORMAKER_NUMSTREAMS";
+    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL = "KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL";
 
     protected String whitelist;
+    protected int offsetCommitInterval;
 
     protected KafkaMirrorMakerClientSpec producer;
     protected CertAndKeySecretSource producerTlsAuthCertAndKey;
@@ -189,6 +191,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             kafkaMirrorMakerCluster.setResources(spec.getResources());
 
             kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
+            kafkaMirrorMakerCluster.setOffsetCommitInterval(spec.getOffsetCommitInterval());
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
             kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
@@ -408,6 +411,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST, whitelist));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL, String.valueOf(offsetCommitInterval)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_GROUPID_CONSUMER, consumer.getGroupId()));
         if (consumer.getNumStreams() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS, Integer.toString(consumer.getNumStreams())));
@@ -496,6 +500,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     public void setWhitelist(String whitelist) {
         this.whitelist = whitelist;
+    }
+
+    public void setOffsetCommitInterval(int offsetCommitInterval) {
+        this.offsetCommitInterval = offsetCommitInterval;
     }
 
     public void setProducer(KafkaMirrorMakerClientSpec producer) {
