@@ -169,7 +169,7 @@ spec:
 ----
 
 <1> Replicas xref:assembly-kafka-broker-replicas-{context}[specifies the number of broker nodes].
-<2> Kafka version, xref:assembly-upgrade-str[which can be upgraded with no downtime].
+<2> Kafka version, xref:assembly-upgrade-str[which can be changed by following the upgrade procedure].
 <3> Resources requests xref:ref-resource-limits-and-requests-{context}[specify the resources to reserve for a given container].
 <4> Resources can include `CPU` and `memory`. If there are not enough free resources, the pod is not scheduled.
 <5> Resources limits specify the maximum resources that can be consumed by a container.
