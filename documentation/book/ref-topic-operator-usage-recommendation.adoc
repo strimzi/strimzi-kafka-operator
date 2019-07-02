@@ -29,7 +29,12 @@ For example:
 
 [source,yaml]
 ----
-KafkaTopic.metadata.name=A with KafkaTopic.spec.name=topicName-1
+kind: KafkaTopic
+metadata:
+  name: topic-name-1
+spec:
+  topicName: topicName-1 # Upper case is invalid in {KubernetesName}
+  # ...
 ----
 
 cannot be changed to
