@@ -746,8 +746,6 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
-            offsetCommitInterval:
-              type: integer
             version:
               type: string
           required:
