@@ -22,6 +22,7 @@ The `spec.topicName` property inherits Kafka naming validation rules:
 
 * The name must not be longer than 249 characters
 * Valid characters for Kafka topics are ASCII alphanumerics, ‘.’, ‘_’, and ‘-‘
+* The name cannot be `.` or `..`, though `.` can be used in a name, such as `exampleTopic.` or `.exampleTopic`
 
 `spec.topicName` must not be changed.
 
