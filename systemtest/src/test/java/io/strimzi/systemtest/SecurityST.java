@@ -488,7 +488,7 @@ class SecurityST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        getTestClassResources().clusterOperator(NAMESPACE).done();
     }
 
     @Override

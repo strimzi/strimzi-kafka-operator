@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -238,7 +239,7 @@ public class StUtils {
         return depConfigSnapshot(name);
     }
 
-
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public static File downloadAndUnzip(String url) throws IOException {
         InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
         File dir = Files.createTempDirectory(StUtils.class.getName()).toFile();

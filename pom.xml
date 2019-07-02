@@ -64,7 +64,7 @@
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
         <maven.checkstyle.version>3.0.0</maven.checkstyle.version>
-        <spotbugs.version>3.1.12</spotbugs.version>
+        <spotbugs.version>4.0.0-beta3</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
@@ -263,10 +263,6 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs-annotations</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -383,6 +379,11 @@
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>${spotbugs.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -590,7 +591,13 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.version}</version>
+                <version>3.1.12</version><dependencies>
+                <!-- overwrite dependency on spotbugs if you want to specify the version of˓→spotbugs -->
+                <dependency>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs</artifactId>
+                    <version>${spotbugs.version}</version>
+                </dependency></dependencies>
                 <configuration>
                     <effort>Max</effort>
                     <!-- Reports all bugs (other values are medium and max) -->

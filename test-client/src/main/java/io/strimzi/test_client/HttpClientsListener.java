@@ -46,7 +46,7 @@ public class HttpClientsListener extends AbstractVerticle {
                     deleteHandler(request);
                     break;
                 default:
-                    LOGGER.warn("Unexpected HTTP method.");
+                    LOGGER.warn("Unexpected HTTP method ({}).", request.method());
                     break;
             }
         });

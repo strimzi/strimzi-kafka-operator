@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 

@@ -72,6 +72,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -1123,7 +1124,7 @@ public class Resources extends AbstractResources {
     String saslConfigs(KafkaUser kafkaUser) {
         Secret secret = client().getSecret(kafkaUser.getMetadata().getName());
 
-        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
+        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")), Charset.forName("UTF-8"));
         if (password.isEmpty()) {
             LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
             throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");

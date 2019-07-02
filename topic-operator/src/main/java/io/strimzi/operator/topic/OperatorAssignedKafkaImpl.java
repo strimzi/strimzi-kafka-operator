@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.operator.common.process.ProcessHelper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -45,6 +46,7 @@ import java.util.regex.Pattern;
  * The operator is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
+@SuppressFBWarnings("REC_CATCH_EXCEPTION")
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
     private static final Pattern REASSIGN_FAILED = Pattern.compile("Reassignment of partition .* failed");
@@ -100,7 +102,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     w.write(reassignment);
                 }
                 fut.complete(reassignmentJsonFile);
-            } catch (IOException | InterruptedException | ExecutionException e) {
+            } catch (Exception e) {
                 fut.fail(e);
             }
         },
@@ -116,7 +118,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     LOGGER.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
                     executeReassignment(reassignmentJsonFile, zookeeper, throttle);
                     fut.complete(reassignmentJsonFile);
-                } catch (IOException | InterruptedException e) {
+                } catch (Exception e) {
                     fut.fail(e);
                 }
             },
@@ -257,13 +259,15 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         executeArgs.add(reassignmentJsonFile.toString());
         executeArgs.add("--execute");
 
-        if (!forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
+        if (!Boolean.TRUE.equals(forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
                 throw new TransientOperatorException("Reassigment failed: " + line);
-            } else return line.contains("Successfully started reassignment of partitions.");
-        })) {
+            } else {
+                return line.contains("Successfully started reassignment of partitions.");
+            }
+        }))) {
             throw new TransientOperatorException("Reassignment execution neither failed nor finished");
         }
     }

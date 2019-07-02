@@ -1152,7 +1152,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> zkScaleUpStep() {
             Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
+            return withVoid(futss.map(ss -> ss == null ? Integer.valueOf(0) : ss.getSpec().getReplicas())
                     .compose(currentReplicas -> {
                         if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
                             zkCluster.setReplicas(currentReplicas + 1);

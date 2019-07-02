@@ -305,7 +305,7 @@ public abstract class AbstractModel {
                     try {
                         is.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error("Failed to close stream. Reason: " + e.getMessage());
                     }
                 }
             }

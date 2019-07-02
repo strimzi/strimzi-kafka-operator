@@ -108,6 +108,7 @@ public class VerifiableClient {
                 allowedArguments.add(ClientArgument.VALUE_PREFIX);
                 allowedArguments.add(ClientArgument.REPEATING_KEYS);
                 allowedArguments.add(ClientArgument.USER);
+                break;
             case CLI_KAFKA_VERIFIABLE_CONSUMER:
                 allowedArguments.add(ClientArgument.BROKER_LIST);
                 allowedArguments.add(ClientArgument.TOPIC);

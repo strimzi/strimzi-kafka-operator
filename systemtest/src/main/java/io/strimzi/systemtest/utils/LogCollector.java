@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.test.k8s.KubeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +23,8 @@ public class LogCollector {
     private File configMapDir;
     private File eventsDir;
 
-    public LogCollector(KubeClient kubeClient, File logDir) {
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+    LogCollector(KubeClient kubeClient, File logDir) {
         this.kubeClient = kubeClient;
         this.namespace = kubeClient.getNamespace();
         this.logDir = logDir;

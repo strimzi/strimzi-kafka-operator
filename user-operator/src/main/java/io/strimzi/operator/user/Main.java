@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -26,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 

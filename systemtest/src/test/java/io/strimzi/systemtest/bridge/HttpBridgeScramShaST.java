@@ -48,7 +48,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        testClassResources.topic(CLUSTER_NAME, topicName).done();
+        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = generateHttpMessages(messageCount);
         JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
@@ -61,7 +61,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        testClassResources.topic(CLUSTER_NAME, topicName).done();
+        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
         // Send messages to Kafka
         sendMessagesExternalScramSha(NAMESPACE, topicName, messageCount, userName);
 
@@ -103,7 +103,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         listenerTls.setAuth(auth);
 
         // Deploy kafka
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                 .editKafka()
                 .withNewListeners()
@@ -117,7 +117,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = testClassResources.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser userSource = getTestClassResources().scramShaUser(CLUSTER_NAME, userName).done();
         waitTillSecretExists(userName);
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
@@ -131,7 +131,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         certSecret.setSecretName(clusterCaCertSecretName(CLUSTER_NAME));
 
         // Deploy http bridge
-        testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        getTestClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .editSpec()
             .withNewKafkaBridgeAuthenticationScramSha512()
                 .withNewUsername(userName)

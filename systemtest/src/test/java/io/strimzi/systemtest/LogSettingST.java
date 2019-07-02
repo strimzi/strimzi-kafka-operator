@@ -267,11 +267,11 @@ class LogSettingST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        getTestClassResources().clusterOperator(NAMESPACE).done();
 
         operationID = startDeploymentMeasuring();
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -310,7 +310,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
+        getTestClassResources().kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewJvmOptions()
@@ -333,7 +333,7 @@ class LogSettingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testClassResources.kafkaConnect(CLUSTER_NAME, 1)
+        getTestClassResources().kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -343,7 +343,7 @@ class LogSettingST extends AbstractST {
                 .endJvmOptions()
             .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        getTestClassResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
