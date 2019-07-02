@@ -438,7 +438,6 @@ public class StUtils {
     public static String changeOrgAndTag(String image) {
         Matcher m = IMAGE_PATTERN_FULL_PATH.matcher(image);
         if (m.find()) {
-            LOGGER.info(m.group("registry") + " - " + m.group("org") + " - " + m.group("tag"));
             String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT);
             String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
 
@@ -446,7 +445,6 @@ public class StUtils {
         }
         m = IMAGE_PATTERN.matcher(image);
         if (m.find()) {
-            LOGGER.info(m.group("org") + " - " + m.group("image") + " - " + m.group("tag"));
             String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
 
             return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":"  + buildTag(m.group("tag"));
@@ -465,21 +463,16 @@ public class StUtils {
     }
 
     private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
-        LOGGER.info("current:1 {}", current);
         if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
-            LOGGER.info("EnvVar: {}", envVar);
             return envVar;
         }
-        LOGGER.info("current: {}", current);
         return current;
     }
 
     private static String buildTag(String currentTag) {
-        LOGGER.info("Current tag before parse: {}", currentTag);
         Matcher t = KAFKA_COMPONENT_PATTERN.matcher(currentTag);
         if (t.find()) {
             currentTag = Environment.STRIMZI_TAG + t.group("kafka") + t.group("version");
-            LOGGER.info("CurrentTag: {}", currentTag);
         } else {
             currentTag = Environment.STRIMZI_TAG;
         }
