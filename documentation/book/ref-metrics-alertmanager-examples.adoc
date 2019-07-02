@@ -44,7 +44,7 @@ NOTE: A tick is a basic Zookeeper time unit, which is measured in milliseconds a
 
 * `OutstandingRequests`: indicates the number of queued requests in the server.
 This value goes up when the server receives more requests than it can process.
-An alert is raised when this value is greater than 10 (ticks), providing the actual number of outstanding requests for each server.
+An alert is raised when this value is greater than 10, providing the actual number of outstanding requests for each server.
 
 * `ZookeeperRunningOutOfSpace`: indicates the remaining amount of disk space that can be used for writing data to Zookeeper.
 An alert is raised when this value is lower than 5GiB., providing information on the disk that is running out of space for each persistent volume claim.
