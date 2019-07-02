@@ -71,7 +71,9 @@ if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
     numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS}"
 fi
 
-offset_commit_interval="--offset.commit.interval.ms $KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL"
+if [ -n "$KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL" ]; then
+    offset_commit_interval="--offset.commit.interval.ms $KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL"
+fi
 
 . ./set_kafka_gc_options.sh
 

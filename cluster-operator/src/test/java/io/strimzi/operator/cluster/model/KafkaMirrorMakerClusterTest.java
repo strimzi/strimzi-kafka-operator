@@ -80,6 +80,7 @@ public class KafkaMirrorMakerClusterTest {
             .withBootstrapServers(consumerBootstrapServers)
             .withGroupId(groupId)
             .withNumStreams(numStreams)
+            .withOffsetCommitInterval(offsetCommitInterval)
             .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
             .build();
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster))
@@ -89,7 +90,6 @@ public class KafkaMirrorMakerClusterTest {
             .withProducer(producer)
             .withConsumer(consumer)
             .withWhitelist(whitelist)
-            .withOffsetCommitInterval(offsetCommitInterval)
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .endSpec()
             .build();
@@ -135,9 +135,9 @@ public class KafkaMirrorMakerClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER).withValue(consumerBootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER).withValue(producerBootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST).withValue(whitelist).build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL).withValue(Integer.toString(offsetCommitInterval)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_GROUPID_CONSUMER).withValue(groupId).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS).withValue(Integer.toString(numStreams)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL).withValue(Integer.toString(offsetCommitInterval)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(KafkaMirrorMakerCluster.DEFAULT_KAFKA_GC_LOG_ENABLED).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         return expected;

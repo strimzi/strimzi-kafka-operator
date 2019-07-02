@@ -16,7 +16,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -44,7 +43,6 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private String version;
     private String image;
     private String whitelist;
-    private int offsetCommitInterval = 60000;
     private KafkaMirrorMakerConsumerSpec consumer;
     private KafkaMirrorMakerProducerSpec producer;
     private ResourceRequirements resources;
@@ -97,16 +95,6 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
 
     public void setWhitelist(String whitelist) {
         this.whitelist = whitelist;
-    }
-
-    @Description("Offset commit interval in ms. Default value is 60 000.")
-    @DefaultValue("60000")
-    public int getOffsetCommitInterval() {
-        return offsetCommitInterval;
-    }
-
-    public void setOffsetCommitInterval(int offsetCommitInterval) {
-        this.offsetCommitInterval = offsetCommitInterval;
     }
 
     @Description("Configuration of source cluster.")
