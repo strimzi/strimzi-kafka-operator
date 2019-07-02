@@ -154,7 +154,7 @@ public class KafkaUserOperator {
         KafkaUserStatus userStatus = new KafkaUserStatus();
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                setSecretStatus(namespace, user, desired, userStatus),
+                reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .compose(reconciliationResult -> {
@@ -203,7 +203,7 @@ public class KafkaUserOperator {
                 }).map((Void) null).setHandler(handler);
     }
 
-    private Future<ReconcileResult<Secret>> setSecretStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
+    private Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
         return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
             Credential credential = null;
             if (desired != null) {
