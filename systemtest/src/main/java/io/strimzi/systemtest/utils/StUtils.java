@@ -38,7 +38,7 @@ import static io.strimzi.test.BaseITST.kubeClient;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>.*)$");
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile("([^-|^_]*?)(?<kafka>[-|_]kafka[-|_])(?<version>.*)$");
 
     private static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile("^(?<registry>[^/]*)/(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
     private static final Pattern IMAGE_PATTERN = Pattern.compile("^(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
@@ -409,25 +409,18 @@ public class StUtils {
      * @return Updated docker image with a proper registry, org, tag
      */
     public static String changeOrgAndTag(String image) {
-        String newTag = Environment.STRIMZI_TAG;
-        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
-        if (m.find()) {
-            newTag = newTag + m.group("kafka") + m.group("version");
-        }
-        m = IMAGE_PATTERN_FULL_PATH.matcher(image);
+        Matcher m = IMAGE_PATTERN_FULL_PATH.matcher(image);
         if (m.find()) {
             String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT);
             String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
-            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
 
-            return registry + "/" + org + "/" + m.group("image") + ":" + tag;
+            return registry + "/" + org + "/" + m.group("image") + ":" + buildTag(m.group("tag"));
         }
         m = IMAGE_PATTERN.matcher(image);
         if (m.find()) {
             String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
-            String tag = setImageProperties(m.group("tag"), newTag, Environment.STRIMZI_TAG_DEFAULT);
 
-            return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":" + tag;
+            return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":"  + buildTag(m.group("tag"));
         }
         return image;
     }
@@ -447,5 +440,15 @@ public class StUtils {
             return envVar;
         }
         return current;
+    }
+
+    private static String buildTag(String currentTag) {
+        Matcher t = KAFKA_COMPONENT_PATTERN.matcher(currentTag);
+        if (t.find()) {
+            currentTag = Environment.STRIMZI_TAG + t.group("kafka") + t.group("version");
+        } else {
+            currentTag = Environment.STRIMZI_TAG;
+        }
+        return currentTag;
     }
 }
