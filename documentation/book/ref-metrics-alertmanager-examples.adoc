@@ -31,6 +31,7 @@ An alert is raised when this value is greater than zero, providing information o
 
 * `KafkaRunningOutOfSpace`: indicates the remaining amount of disk space that can be used for writing data.
 An alert is raised when this value is lower than 5GiB, providing information on the disk that is running out of space for each persistent volume claim.
+The threshold value may be changed in `prometheus-rules.yaml`.
 
 NOTE: The availability of the `KafkaRunningOutOfSpace` metric and alert is dependent on the version of {ProductPlatformName}.
 
