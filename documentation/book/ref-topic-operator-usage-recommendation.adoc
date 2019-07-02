@@ -9,7 +9,7 @@ When working with topics, be consistent and always operate on either `KafkaTopic
 
 Use topic names that reflect the nature of the topic, and remember that names cannot be changed later.
 
-If creating a name directly for a topic, use a name that is a valid {KubernetesName} resource name, otherwise the Topic Operator will need to modify the name when creating the corresponding `KafkaTopic`.
+If creating a topic in Kafka, use a name that is a valid {KubernetesName} resource name, otherwise the Topic Operator will need to create the corresponding `KafkaTopic` with a different name which obeys the {KubernetesName} rules.
 
 .Kafka topic naming conventions
 
