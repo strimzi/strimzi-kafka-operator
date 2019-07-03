@@ -19,9 +19,10 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param operationTimeoutMs Timeout
      */
-    public ServiceAccountOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ServiceAccount");
+    public ServiceAccountOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "ServiceAccount", operationTimeoutMs);
     }
 
     @Override

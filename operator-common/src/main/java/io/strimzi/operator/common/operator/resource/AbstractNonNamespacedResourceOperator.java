@@ -34,14 +34,17 @@ import java.util.Objects;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/,
+        D extends Doneable<T>,
+        R extends Resource<T, D>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
-    private final long operationTimeoutMs;
+    private final ResourceSupport resourceSupport;
 
     /**
      * Constructor.
@@ -52,9 +55,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      */
     public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, long operationTimeoutMs) {
         this.vertx = vertx;
+        this.resourceSupport = new ResourceSupport(vertx, operationTimeoutMs);
         this.client = client;
         this.resourceKind = resourceKind;
-        this.operationTimeoutMs = operationTimeoutMs;
     }
 
     protected abstract MixedOperation<T, L, D, R> operation();

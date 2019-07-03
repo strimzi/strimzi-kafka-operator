@@ -27,7 +27,7 @@ public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<Kubernet
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapOperator(vertx, mockClient);
+        return new ConfigMapOperator(vertx, mockClient, 100);
     }
 
     @Override

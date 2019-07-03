@@ -27,7 +27,7 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     protected BuildConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildConfigOperator(vertx, mockClient);
+        return new BuildConfigOperator(vertx, mockClient, 100);
     }
 
     @Override

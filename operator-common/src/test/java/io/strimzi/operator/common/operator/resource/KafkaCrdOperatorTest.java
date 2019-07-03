@@ -79,7 +79,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
     @Override
     protected CrdOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, DoneableKafka.class);
+        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, DoneableKafka.class, 100);
     }
 
     @Test

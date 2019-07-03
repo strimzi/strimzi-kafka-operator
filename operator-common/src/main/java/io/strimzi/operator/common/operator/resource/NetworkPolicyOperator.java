@@ -14,8 +14,8 @@ import io.vertx.core.Vertx;
 
 public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesClient, NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> {
 
-    public NetworkPolicyOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "NetworkPolicy");
+    public NetworkPolicyOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "NetworkPolicy", operationTimeoutMs);
 
     }
 

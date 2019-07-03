@@ -38,6 +38,6 @@ public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
 
     @Override
     protected AbstractResourceOperator<OpenShiftClient, Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new RouteOperator(vertx, mockClient);
+        return new RouteOperator(vertx, mockClient, 100);
     }
 }

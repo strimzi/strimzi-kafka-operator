@@ -45,7 +45,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
 
     @Override
     protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperator(vertx, mockClient);
+        return new ServiceOperator(vertx, mockClient, 100);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, 100);
         op.patchNodePorts(current, desired);
 
         assertEquals(current.getSpec().getPorts().get(0).getNodePort(), desired.getSpec().getPorts().get(1).getNodePort());

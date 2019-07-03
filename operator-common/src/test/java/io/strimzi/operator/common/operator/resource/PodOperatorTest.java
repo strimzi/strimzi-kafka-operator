@@ -108,6 +108,6 @@ public class PodOperatorTest extends
 
     @Override
     protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodOperator(vertx, mockClient);
+        return new PodOperator(vertx, mockClient, 1_000);
     }
 }

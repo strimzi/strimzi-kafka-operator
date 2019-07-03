@@ -48,6 +48,6 @@ public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesC
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new SecretOperator(vertx, mockClient);
+        return new SecretOperator(vertx, mockClient, 100);
     }
 }

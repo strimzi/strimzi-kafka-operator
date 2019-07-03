@@ -21,9 +21,10 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
      * Constructor
      * @param vertx The Vertx instance
      * @param client The OpenShift client
+     * @param operationTimeoutMs Timeout
      */
-    public RouteOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "Route");
+    public RouteOperator(Vertx vertx, OpenShiftClient client, long operationTimeoutMs) {
+        super(vertx, client, "Route", operationTimeoutMs);
     }
 
     @Override

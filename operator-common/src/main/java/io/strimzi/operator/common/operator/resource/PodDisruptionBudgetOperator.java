@@ -15,8 +15,8 @@ import io.vertx.core.Vertx;
 
 public class PodDisruptionBudgetOperator extends AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> {
 
-    public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "PodDisruptionBudget");
+    public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "PodDisruptionBudget", operationTimeoutMs);
 
     }
     @Override

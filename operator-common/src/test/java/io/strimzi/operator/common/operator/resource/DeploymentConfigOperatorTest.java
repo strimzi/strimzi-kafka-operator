@@ -56,6 +56,6 @@ public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<O
 
     @Override
     protected DeploymentConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new DeploymentConfigOperator(vertx, mockClient);
+        return new DeploymentConfigOperator(vertx, mockClient, 1_000);
     }
 }

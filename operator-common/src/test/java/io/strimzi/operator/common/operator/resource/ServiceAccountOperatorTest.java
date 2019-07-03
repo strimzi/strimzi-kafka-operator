@@ -57,7 +57,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceAccountOperator(vertx, mockClient);
+        return new ServiceAccountOperator(vertx, mockClient, 100);
     }
 
     @Override

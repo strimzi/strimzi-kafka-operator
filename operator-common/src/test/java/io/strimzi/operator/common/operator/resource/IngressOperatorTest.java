@@ -49,6 +49,6 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient);
+        return new IngressOperator(vertx, mockClient, 100);
     }
 }

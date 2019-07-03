@@ -39,7 +39,7 @@ public class ImageStreamOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     protected AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new ImageStreamOperator(vertx, mockClient);
+        return new ImageStreamOperator(vertx, mockClient, 100);
     }
 
 }

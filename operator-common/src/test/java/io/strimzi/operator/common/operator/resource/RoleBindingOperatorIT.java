@@ -26,8 +26,8 @@ public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<Kubernetes
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
-            DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> operator() {
-        return new RoleBindingOperator(vertx, client);
+                    DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> operator() {
+        return new RoleBindingOperator(vertx, client, 1_000);
     }
 
     @Override

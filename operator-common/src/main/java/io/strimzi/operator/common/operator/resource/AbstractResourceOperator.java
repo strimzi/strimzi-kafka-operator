@@ -57,8 +57,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @param vertx The vertx instance.
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
+     * @param operationTimeoutMs Timeout
      */
-    public AbstractResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractResourceOperator(Vertx vertx, C client, String resourceKind, long operationTimeoutMs) {
         this.vertx = vertx;
         this.resourceSupport = new ResourceSupport(vertx, operationTimeoutMs);
         this.client = client;

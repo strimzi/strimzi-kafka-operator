@@ -23,9 +23,10 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param operationTimeoutMs Timeout
      */
-    public PodOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Pods");
+    public PodOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "Pods", operationTimeoutMs);
     }
 
     @Override
