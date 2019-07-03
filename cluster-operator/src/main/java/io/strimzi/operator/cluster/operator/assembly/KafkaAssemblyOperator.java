@@ -2316,7 +2316,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorUserOpRoleBinding() {
-            if (eoDeployment != null && entityOperator.getTopicOperator() != null) {
+            if (eoDeployment != null && entityOperator.getUserOperator() != null) {
                 Future ownNamespaceFuture;
                 Future watchedNamespaceFuture;
 
