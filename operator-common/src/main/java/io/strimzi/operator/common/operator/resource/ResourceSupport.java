@@ -30,11 +30,9 @@ public class ResourceSupport {
     protected static final Logger LOGGER = LogManager.getLogger(ResourceSupport.class);
 
     private final Vertx vertx;
-    private final long operationTimeoutMs;
 
-    ResourceSupport(Vertx vertx, long operationTimeoutMs) {
+    ResourceSupport(Vertx vertx) {
         this.vertx = vertx;
-        this.operationTimeoutMs = operationTimeoutMs;
     }
 
     /**
@@ -96,6 +94,7 @@ public class ResourceSupport {
      * When the {@code watchFn} returns non-null the watch will be closed and then
      * the future returned from this method will be completed on the context thread.
      * @param watchable The watchable.
+     * @param operationTimeoutMs The timeout in ms.
      * @param watchFnDescription A description of what {@code watchFn} is watching for.
      *                           E.g. "observe ${condition} of ${kind} ${namespace}/${name}".
      * @param watchFn The function to determine
@@ -106,6 +105,7 @@ public class ResourceSupport {
      * in response to some Kubenetes even on the watched resource(s).
      */
     <T, U> Future<U> selfClosingWatch(Watchable<Watch, Watcher<T>> watchable,
+                                      long operationTimeoutMs,
                                       String watchFnDescription,
                                       BiFunction<Watcher.Action, T, U> watchFn) {
 
@@ -189,7 +189,7 @@ public class ResourceSupport {
     /**
      * Asynchronously deletes the given resource(s), returning a Future which completes on the context thread.
      * <strong>Note: The API server can return asynchronously, meaning the resource is still accessible from the API server
-     * after the returned Future completes. Use {@link #selfClosingWatch(Watchable, String, BiFunction)}
+     * after the returned Future completes. Use {@link #selfClosingWatch(Watchable, long, String, BiFunction)}
      * to provide server-synchronous semantics.</strong>
      *
      * @param resource The resource(s) to delete.

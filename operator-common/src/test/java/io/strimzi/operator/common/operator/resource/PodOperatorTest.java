@@ -32,7 +32,7 @@ public class PodOperatorTest extends
     public void testCreateReadUpdate(TestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = new MockKube().build();
-        PodOperator pr = new PodOperator(vertx, client, 1_000);
+        PodOperator pr = new PodOperator(vertx, client);
 
         context.assertEquals(emptyList(), pr.list(NAMESPACE, Labels.EMPTY));
 

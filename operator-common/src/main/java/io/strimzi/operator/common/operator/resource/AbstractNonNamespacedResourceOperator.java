@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -41,20 +40,19 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
-    private final long operationTimeoutMs;
+    protected final ResourceSupport resourceSupport;
 
     /**
      * Constructor.
      * @param vertx The vertx instance.
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
-     * @param operationTimeoutMs Timeout for operations.
      */
-    public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, long operationTimeoutMs) {
+    public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
         this.client = client;
         this.resourceKind = resourceKind;
-        this.operationTimeoutMs = operationTimeoutMs;
+        this.resourceSupport = new ResourceSupport(vertx);
     }
 
     protected abstract MixedOperation<T, L, D, R> operation();
@@ -81,7 +79,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A future which completes when the resource was reconciled.
      */
     public Future<ReconcileResult<T>> reconcile(String name, T desired) {
-
         if (desired != null && !name.equals(desired.getMetadata().getName())) {
             return Future.failedFuture("Given name " + name + " incompatible with desired name "
                     + desired.getMetadata().getName());
@@ -117,6 +114,10 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return fut;
     }
 
+    protected long deleteTimeoutMs() {
+        return 120_000;
+    }
+
     /**
      * Asynchronously deletes the resource with the given {@code name},
      * returning a Future which completes once the resource
@@ -128,6 +129,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     private Future<ReconcileResult<T>> observedDelete(String name) {
         R resourceOp = operation().withName(name);
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
+                deleteTimeoutMs(),
             "observe deletion of " + resourceKind + " " + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
