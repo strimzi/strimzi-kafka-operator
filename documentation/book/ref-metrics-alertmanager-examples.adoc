@@ -9,6 +9,8 @@ Example alerting rules for Kafka and Zookeeper metrics are provided with {Produc
 
 The rules are defined in a `PrometheusRule` resource in the link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`^] file.
 
+NOTE: The `for` property is used with the rules to define the period of time a condition persists, for example, `for: 10s`, before an alert is raised.
+
 .Kafka alerting rules
 
 * `UnderReplicatedPartitions`: gives the number of partitions for which the current broker is the lead replica but which have fewer replicas than the `min.insync.replicas` configured for their topic.
@@ -20,7 +22,7 @@ An alert is raised when this value is greater than zero, providing information o
 The metric can be 0 or 1.
 During the life of a cluster, only one broker should be the controller and the cluster always needs to have an active controller.
 Having two or more brokers saying that they are controllers indicates a problem.
-An alert is raised when the sum of all the values for this metric on all brokers is not equal to 1, meaning that there is no active controller (the sum is 0) or more than one controller (the sum is greater than 1).
+If the condition persists, an alert is raised when the sum of all the values for this metric on all brokers is not equal to 1, meaning that there is no active controller (the sum is 0) or more than one controller (the sum is greater than 1).
 
 * `UnderMinIsrPartitionCount`: indicates that the minimum number of in-sync replicas (ISRs) for a lead Kafka broker, specified using `min.insync.replicas`, that must acknowledge a write operation has not been reached.
 The metric defines the number of partitions that the broker leads for which the in-sync replicas count is less than the minimum in-sync.

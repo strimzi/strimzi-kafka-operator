@@ -12,7 +12,7 @@ The sample configuration provided with {ProductName} configures the Alertmanager
 Deploy Alertmanager using:
 
 * https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml[`alert-manager.yaml`] to define the resources required for deploying and configuring the Alertmanager.
-* https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml[`alertmanager.yaml`] to define the hook for sending notifications.
+* https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml[`alert-manager-config.yaml`] to define the hook for sending notifications.
 
 The following resources are defined on deployment:
 
@@ -29,13 +29,13 @@ curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 +
 Now configure the Alertmanager hook for sending alerts by creating a `Secret` resource.
 
-. Download the `alertmanager.yaml` file and create a `Secret` from it:
+. Download the `alert-manager-config.yaml` file and create a `Secret` from it:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
-{cmdcli} create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml
+{cmdcli} create secret generic alertmanager-alertmanager --from-file=alert-manager-config.yaml
 
-. Update the `alertmanager.yaml` file to replace the:
+. Update the `alert-manager-config.yaml` file to replace the:
 +
 * `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace
 * `channel` property with the actual Slack channel on which to send notifications
