@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-abort-on-send-failure.adoc
+
+[id='proc-configuring-kafka-mirror-maker-abort-on-send-failure-{context}']
+= Configuring the Mirror Maker to exit on a failed send
+
+Configure whether the Mirror Maker should exit on a failed send using the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  producer:
+    abortOnSendFailure: true
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
