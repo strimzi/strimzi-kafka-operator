@@ -20,7 +20,7 @@
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift Origin
 :OpenShiftVersion: 3.11 and later
-:KubernetesVersion: 1.9 and later
+:KubernetesVersion: 1.11 and later
 :KubernetesName: Kubernetes
 :KubernetesLongName: Kubernetes
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
