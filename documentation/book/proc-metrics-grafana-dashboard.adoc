@@ -18,7 +18,7 @@ You may need to modify the example dashboards or add other metrics, depending on
 
 NOTE: No alert notification rules are defined.
 
-When accessing the dashboard, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host.
+When accessing a dashboard, you can use the `port-forward` command to forward traffic from the Grafana pod to the host.
 
 For example, you can access the Grafana user interface by running `{cmdcli} port-forward grafana-1-fbl7s 3000:3000` and then pointing a browser to `http://localhost:3000`.
 
