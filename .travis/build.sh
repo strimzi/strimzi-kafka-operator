@@ -20,9 +20,7 @@ export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
 make docu_check
-if [ "${MAIN_BUILD}" = "TRUE" ] ; then
-    make spotbugs
-fi
+make spotbugs
 
 make crd_install
 make helm_install
