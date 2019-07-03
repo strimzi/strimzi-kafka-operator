@@ -44,7 +44,7 @@ image::grafana_home.png[Grafana home]
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. Click _Dashboards_, then _Import_ to open the _Import Dashboard_ window and import the example dashboards (or paste the JSON).
+. Click *Dashboards*, then *Import* to open the _Import Dashboard_ window and import the example dashboards (or paste the JSON).
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
