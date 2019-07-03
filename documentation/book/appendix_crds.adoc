@@ -1648,10 +1648,6 @@ Used in: xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 |Property                  |Description
 |credentialsSecret  1.2+<.<|The name of `Secret` where the credentials are stored.
 |string
-|credentials        1.2+<.<|The name of field in `Secret` where the credentials are stored.
-|string
-|password           1.2+<.<|The password for SCRAM-SHA authentication.
-|string
 |====
 
 [id='type-KafkaMirrorMaker-{context}']

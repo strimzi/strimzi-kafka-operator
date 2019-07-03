@@ -143,8 +143,4 @@ spec:
               properties:
                 credentialsSecret:
                   type: string
-                credentials:
-                  type: string
-                password:
-                  type: string
 {{- end -}}
