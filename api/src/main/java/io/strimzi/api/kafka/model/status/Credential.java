@@ -32,19 +32,8 @@ public class Credential implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String credentialsSecret;
-    private String credentials;
-    private String password;
 
     private Map<String, Object> additionalProperties;
-
-    @Description("The name of field in `Secret` where the credentials are stored")
-    public String getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(String credentials) {
-        this.credentials = credentials;
-    }
 
     @Description("The name of `Secret` where the credentials are stored")
     public String getCredentialsSecret() {
@@ -53,15 +42,6 @@ public class Credential implements UnknownPropertyPreserving, Serializable {
 
     public void setCredentialsSecret(String credentialsSecret) {
         this.credentialsSecret = credentialsSecret;
-    }
-
-    @Description("The password for SCRAM-SHA authentication")
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     @Override
