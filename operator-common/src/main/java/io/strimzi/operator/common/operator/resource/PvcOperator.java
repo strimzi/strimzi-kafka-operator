@@ -21,10 +21,9 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
-     * @param operationTimeoutMs Timeout
      */
-    public PvcOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        super(vertx, client, "PersistentVolumeClaim", operationTimeoutMs);
+    public PvcOperator(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "PersistentVolumeClaim");
     }
 
     @Override

@@ -39,7 +39,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodDisruptionBudgetOperator(vertx, mockClient, 100);
+        return new PodDisruptionBudgetOperator(vertx, mockClient);
     }
 
     @Override

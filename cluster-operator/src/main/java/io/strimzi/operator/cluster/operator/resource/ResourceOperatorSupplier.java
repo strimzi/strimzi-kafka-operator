@@ -72,36 +72,36 @@ public class ResourceOperatorSupplier {
     public final StorageClassOperator storageClassOperations;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
-        this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client, operationTimeoutMs),
+        this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
             () -> new BackOff(5_000, 2, 4)),
                     pfa, operationTimeoutMs);
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
-        this(new ServiceOperator(vertx, client, operationTimeoutMs),
-                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class), operationTimeoutMs) : null,
+        this(new ServiceOperator(vertx, client),
+                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
                 new KafkaSetOperator(vertx, client, operationTimeoutMs),
-                new ConfigMapOperator(vertx, client, operationTimeoutMs),
-                new SecretOperator(vertx, client, operationTimeoutMs),
-                new PvcOperator(vertx, client, operationTimeoutMs),
-                new DeploymentOperator(vertx, client, operationTimeoutMs),
-                new ServiceAccountOperator(vertx, client, operationTimeoutMs),
-                new RoleBindingOperator(vertx, client, operationTimeoutMs),
+                new ConfigMapOperator(vertx, client),
+                new SecretOperator(vertx, client),
+                new PvcOperator(vertx, client),
+                new DeploymentOperator(vertx, client),
+                new ServiceAccountOperator(vertx, client),
+                new RoleBindingOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client, operationTimeoutMs),
-                new NetworkPolicyOperator(vertx, client, operationTimeoutMs),
-                new PodDisruptionBudgetOperator(vertx, client, operationTimeoutMs),
-                new PodOperator(vertx, client, operationTimeoutMs),
-                new IngressOperator(vertx, client, operationTimeoutMs),
-                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class), operationTimeoutMs) : null,
-                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class), operationTimeoutMs) : null,
-                pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class), operationTimeoutMs) : null,
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class, operationTimeoutMs),
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, operationTimeoutMs),
-                pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, operationTimeoutMs) : null,
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, operationTimeoutMs),
-                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, operationTimeoutMs),
+                new NetworkPolicyOperator(vertx, client),
+                new PodDisruptionBudgetOperator(vertx, client),
+                new PodOperator(vertx, client),
+                new IngressOperator(vertx, client),
+                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class),
+                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class),
+                pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class) : null,
+                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class),
+                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class),
                 new StorageClassOperator(vertx, client, operationTimeoutMs));
     }
 

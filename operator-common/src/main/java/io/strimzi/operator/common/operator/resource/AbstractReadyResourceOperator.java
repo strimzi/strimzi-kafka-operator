@@ -35,10 +35,9 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
      * @param vertx        The vertx instance.
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
-     * @param operationTimeoutMs Timeout
      */
-    public AbstractReadyResourceOperator(Vertx vertx, C client, String resourceKind, long operationTimeoutMs) {
-        super(vertx, client, resourceKind, operationTimeoutMs);
+    public AbstractReadyResourceOperator(Vertx vertx, C client, String resourceKind) {
+        super(vertx, client, resourceKind);
     }
 
     public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {

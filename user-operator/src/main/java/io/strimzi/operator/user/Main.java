@@ -58,9 +58,8 @@ public class Main {
     static Future<String> run(Vertx vertx, KubernetesClient client, SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
         printEnvInfo();
         OpenSslCertManager certManager = new OpenSslCertManager();
-        long operationTimeoutMs = 10_000;
-        SecretOperator secretOperations = new SecretOperator(vertx, client, operationTimeoutMs);
-        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, operationTimeoutMs);
+        SecretOperator secretOperations = new SecretOperator(vertx, client);
+        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
         SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
         ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
         ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);

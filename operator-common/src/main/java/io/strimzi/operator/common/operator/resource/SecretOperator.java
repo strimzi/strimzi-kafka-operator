@@ -21,10 +21,9 @@ public class SecretOperator extends AbstractResourceOperator<KubernetesClient, S
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
-     * @param operationTimeoutMs Timeout
      */
-    public SecretOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        super(vertx, client, "Secret", operationTimeoutMs);
+    public SecretOperator(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "Secret");
     }
 
     @Override

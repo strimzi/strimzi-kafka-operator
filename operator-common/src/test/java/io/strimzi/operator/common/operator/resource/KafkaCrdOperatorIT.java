@@ -57,7 +57,7 @@ public class KafkaCrdOperatorIT {
         }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
-        kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class, 100);
+        kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
 
         log.info("Preparing namespace");
         namespace = client.getNamespace();

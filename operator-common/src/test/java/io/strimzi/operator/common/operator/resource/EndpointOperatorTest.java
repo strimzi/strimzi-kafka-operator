@@ -39,6 +39,6 @@ public class EndpointOperatorTest extends AbtractReadyResourceOperatorTest<Kuber
 
     @Override
     protected EndpointOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new EndpointOperator(vertx, mockClient, 1_000);
+        return new EndpointOperator(vertx, mockClient);
     }
 }

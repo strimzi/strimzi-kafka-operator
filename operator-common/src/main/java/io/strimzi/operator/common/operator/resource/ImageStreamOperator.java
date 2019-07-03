@@ -20,10 +20,9 @@ public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClien
      * Constructor
      * @param vertx The Vertx instance
      * @param client The OpenShift client
-     * @param operationTimeoutMs Timeout
      */
-    public ImageStreamOperator(Vertx vertx, OpenShiftClient client, long operationTimeoutMs) {
-        super(vertx, client, "ImageStream", operationTimeoutMs);
+    public ImageStreamOperator(Vertx vertx, OpenShiftClient client) {
+        super(vertx, client, "ImageStream");
     }
 
     @Override
