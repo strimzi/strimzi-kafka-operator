@@ -5,7 +5,7 @@
 
 = Deploying Alertmanager
 
-The Alermanager is a Prometheius plugin for handling alerts and routing them to a notification service.
+The Alertmanager is a Prometheus plugin for handling alerts and routing them to a notification service.
 
 The sample configuration provided with {ProductName} configures the Alertmanager to send notifications to a Slack channel.
 
