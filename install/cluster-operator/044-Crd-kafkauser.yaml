@@ -47,6 +47,7 @@ spec:
                   enum:
                   - tls
                   - scram-sha-512
+                  - sasl_plaintext
               required:
               - type
             authorization:

@@ -7,6 +7,8 @@ ENV JAVA_OPTS "-DLOG_LEVEL=info"
 # copy scripts for starting Kafka
 COPY scripts $KAFKA_HOME
 COPY scripts/dynamic_resources.sh /bin/dynamic_resources.sh
+COPY kafka_client_alice_jass.conf $KAFKA_HOME/config
+COPY sasl-client.properties $KAFKA_HOME/config
 
 ADD tmp/test-client-${STRIMZI_VERSION}.jar /test-client.jar
 

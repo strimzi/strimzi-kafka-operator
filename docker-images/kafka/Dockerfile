@@ -56,9 +56,7 @@ COPY ./stunnel-scripts/ $STUNNEL_HOME
 
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
-# copy jaas client sample and download kafka-vault jar
-COPY kafka_client_alice_jass.conf $KAFKA_HOME/config
-COPY sasl-client.prope $KAFKA_HOME/config
+# download kafka-vault artifact and copy to its final destination
 RUN curl -L -O https://github.com/UltimateSoftware/kafka-vault-jca/releases/download/v1.0-develop/kafka-vault-jca-1.0-SNAPSHOT.jar \
     && mv kafka-vault-jca-1.0-SNAPSHOT.jar $KAFKA_HOME/libs/
 

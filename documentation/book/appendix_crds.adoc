@@ -1501,8 +1501,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Property               |Description
-|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
+|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, sasl_plaintext].
+|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`], xref:type-KafkaUserPlainAuthentication-{context}[`KafkaUserPlainAuthentication`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |====
@@ -1513,7 +1513,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`], xref:type-KafkaUserPlainAuthentication-{context}[`KafkaUserPlainAuthentication`].
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 [options="header"]
 |====
@@ -1528,12 +1528,27 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaUserScramSha512ClientAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserScramSha512ClientAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserPlainAuthentication-{context}[`KafkaUserPlainAuthentication`].
 It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
 [options="header"]
 |====
 |Property     |Description
 |type  1.2+<.<|Must be `scram-sha-512`.
+|string
+|====
+
+[id='type-KafkaUserPlainAuthentication-{context}']
+### `KafkaUserPlainAuthentication` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserPlainAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+It must have the value `sasl_plaintext` for the type `KafkaUserPlainAuthentication`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<|Must be `sasl_plaintext`.
 |string
 |====
 
