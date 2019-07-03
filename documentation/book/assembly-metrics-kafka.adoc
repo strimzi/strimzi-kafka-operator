@@ -11,7 +11,7 @@ The example Grafana dashboards provided with {ProductName} are dependent on Prom
 
 A label is a name-value pair. Relabeling is the process of writing a label dynamically. For example, the value of a label may be derived from the name of a Kafka server and client ID.
 
-To get started using the Grafana dashboard, do one of the following:
+To get started with using the example Grafana dashboards, do one of the following:
 
 * link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[Copy the example configuration to your own `Kafka` resource definition^]
 * xref:proc-metrics-deploying-kafka-{context}[Deploy an example Kafka cluster with the metrics configuration]
