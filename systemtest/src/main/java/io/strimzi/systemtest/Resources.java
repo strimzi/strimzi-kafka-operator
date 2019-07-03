@@ -115,8 +115,11 @@ public class Resources extends AbstractResources {
                 break;
             case KafkaConnect.RESOURCE_KIND:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
                 break;

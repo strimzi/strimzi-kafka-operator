@@ -174,6 +174,23 @@ public class ZookeeperClusterTest {
         checkOwnerReference(zc.createOwnerReference(), ss);
     }
 
+    @Test(expected = InvalidResourceException.class)
+    public void testInvalidVersion() {
+        Kafka ka = new KafkaBuilder(this.ka)
+                .editSpec()
+                    .editKafka()
+                        .withImage(null)
+                        .withVersion("10000.0.0")
+                    .endKafka()
+                    .editZookeeper()
+                        .withImage(null)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster.fromCrd(ka, VERSIONS);
+    }
+
     private void checkStatefulSet(StatefulSet ss) {
         assertEquals(ZookeeperCluster.zookeeperClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
