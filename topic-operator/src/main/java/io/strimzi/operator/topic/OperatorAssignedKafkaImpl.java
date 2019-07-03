@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * The operator is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
-@SuppressFBWarnings("REC_CATCH_EXCEPTION")
+@SuppressFBWarnings({"REC_CATCH_EXCEPTION", "NP_BOOLEAN_RETURN_NULL"})
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
     private static final Pattern REASSIGN_FAILED = Pattern.compile("Reassignment of partition .* failed");
@@ -264,8 +264,10 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
                 throw new TransientOperatorException("Reassigment failed: " + line);
+            } else if (line.contains("Successfully started reassignment of partitions.")) {
+                return true;
             } else {
-                return line.contains("Successfully started reassignment of partitions.");
+                return null;
             }
         }))) {
             throw new TransientOperatorException("Reassignment execution neither failed nor finished");
