@@ -30,7 +30,7 @@ On the initial view choose to reset the password.
 +
 image::grafana_login.png[Grafana login]
 
-. Click on the _Add data source_ button from the Grafana home.
+. Click the *Add data source* button.
 +
 image::grafana_home.png[Grafana home]
 
