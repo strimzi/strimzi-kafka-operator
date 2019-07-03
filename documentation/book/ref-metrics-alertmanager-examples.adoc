@@ -9,7 +9,11 @@ Example alerting rules for Kafka and Zookeeper metrics are provided with {Produc
 
 The rules are defined in a `PrometheusRule` resource in the link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`^] file.
 
-NOTE: The `for` property is used with the rules to define the period of time a condition persists, for example, `for: 10s`, before an alert is raised.
+General points about the alerting rule definitions:
+
+* A `for` property is used with the rules to determine the period of time a condition must persist before an alert is triggered.
+* A tick is a basic Zookeeper time unit, which is measured in milliseconds and configured using the `tickTime` parameter. For example, if Zookeeper `tickTime=3000`, 3 ticks (3 x 3000) equals 9000 milliseconds.
+* The availability of the `ZookeeperRunningOutOfSpace` metric and alert is dependent on the {ProductPlatformName} configuration and storage implementation used. Storage implementations for certain platforms may not be able to supply the information on available space required for the metric to provide an alert.
 
 .Kafka alerting rules
 
@@ -35,14 +39,10 @@ An alert is raised when this value is greater than zero, providing information o
 An alert is raised when this value is lower than 5GiB, providing information on the disk that is running out of space for each persistent volume claim.
 The threshold value may be changed in `prometheus-rules.yaml`.
 
-NOTE: The availability of the `KafkaRunningOutOfSpace` metric and alert is dependent on the version of {ProductPlatformName}.
-
 .Zookeeper alerting rules
 
 * `AvgRequestLatency`: indicates the amount of time it takes for the server to respond to a client request.
 An alert is raised when this value is greater than 10 (ticks), providing the actual value of the average request latency for each server.
-
-NOTE: A tick is a basic Zookeeper time unit, which is measured in milliseconds and configured using the `tickTime` parameter. For example, if Zookeeper `tickTime=3000`, 3 ticks (3 x 3000) equals 9000 milliseconds.
 
 * `OutstandingRequests`: indicates the number of queued requests in the server.
 This value goes up when the server receives more requests than it can process.
@@ -50,5 +50,3 @@ An alert is raised when this value is greater than 10, providing the actual numb
 
 * `ZookeeperRunningOutOfSpace`: indicates the remaining amount of disk space that can be used for writing data to Zookeeper.
 An alert is raised when this value is lower than 5GiB., providing information on the disk that is running out of space for each persistent volume claim.
-
-NOTE: The availability of the `ZookeeperRunningOutOfSpace` metric and alert is dependent on the version of {ProductPlatformName}.

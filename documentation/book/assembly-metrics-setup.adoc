@@ -27,8 +27,6 @@ endif::Kubernetes[]
 ifdef::Kubernetes[]
 * https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/[Prometheus - Monitoring Docker Container Metrics using cAdvisor] describes how to use cAdvisor (short for container Advisor) metrics with Prometheus to analyze and expose resource usage (CPU, Memory, and Disk) and performance data from running containers within pods on Kubernetes.
 * https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] provides a full list of cAdvisor metrics as exposed through Prometheus.
-
-NOTE: cAdvisor is bundled along with the kubelet binary so that it is automatically available within Kubernetes clusters.
 endif::Kubernetes[]
 
 include::assembly-metrics-kafka.adoc[leveloffset=+1]
