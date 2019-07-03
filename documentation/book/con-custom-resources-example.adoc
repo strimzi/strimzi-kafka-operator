@@ -47,8 +47,8 @@ spec: <2>
       # ...
 ----
 <1> The metadata for the topic CRD, its name and a label to identify the CRD.
-<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `{cmdcli} get kafkatopic my-topic` or `{cmdcli} get kafkatopics`.
-<3> The shortname can be used in CLI commands. For example, `{cmdcli} get kt` can be used as an abbreviation instead of `{cmdcli} get kafkatopic`.
+<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `kubectl get kafkatopics`.
+<3> The shortname can be used in CLI commands. For example, `kubectl get kt` can be used as an abbreviation instead of `kubectl get kafkatopic`.
 <4> The information presented when using a `get` command on the custom resource.
 <5> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 

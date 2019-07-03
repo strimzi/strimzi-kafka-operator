@@ -9,7 +9,7 @@ This procedure describes how to find the status of a custom resource.
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
@@ -18,7 +18,7 @@ This procedure describes how to find the status of a custom resource.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} get kafka _<kafka_resource_name>_ -o jsonpath='{.status}'
+kubectl get kafka _<kafka_resource_name>_ -o jsonpath='{.status}'
 ----
 +
 This expression returns all the status information for the specified custom resource. You can use dot notation, such as `status.listeners`, to fine-tune the status information you wish to see.

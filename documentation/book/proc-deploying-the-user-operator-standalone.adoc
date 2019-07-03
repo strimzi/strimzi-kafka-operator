@@ -16,44 +16,29 @@ For instance, it can operate _with_ any Kafka cluster, not only the one deployed
 
 . Edit the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` resource. You will need to change the following
 +
-.. The `STRIMZI_CA_CERT_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to an {ProductPlatformName} `Secret` which should contain the public key of the Certificate Authority for signing new user certificates for TLS Client Authentication.
+.. The `STRIMZI_CA_CERT_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to a Kubernetes `Secret` which should contain the public key of the Certificate Authority for signing new user certificates for TLS Client Authentication.
 The `Secret` should contain the public key of the Certificate Authority under the key `ca.crt`.
-.. The `STRIMZI_CA_KEY_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to an {ProductPlatformName} `Secret` which should contain the private key of the Certificate Authority for signing new user certificates for TLS Client Authentication.
+.. The `STRIMZI_CA_KEY_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to a Kubernetes `Secret` which should contain the private key of the Certificate Authority for signing new user certificates for TLS Client Authentication.
 The `Secret` should contain the private key of the Certificate Authority under the key `ca.key`.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the Zookeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same Zookeeper cluster that your Kafka cluster is using.
-.. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the {ProductPlatformName} namespace in which you want the operator to watch for  `KafkaUser` resources.
+.. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Kubernetes namespace in which you want the operator to watch for  `KafkaUser` resources.
 
 . Deploy the User Operator.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
-[source,shell]
+[source,shell,subs=+quotes]
 kubectl apply -f install/user-operator
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell]
-oc apply -f install/user-operator
 
 . Verify that the User Operator has been deployed successfully.
-ifdef::Kubernetes[]
+This can be done using `kubectl describe`:
 +
-On {KubernetesName} this can be done using `kubectl describe`:
-+
-[source,shell]
+[source,shell,subs=+quotes]
 kubectl describe deployment strimzi-user-operator
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc describe`:
-+
-[source,shell]
-oc describe deployment strimzi-user-operator
 +
 The User Operator is deployed once the `Replicas:` entry shows `1 available`.
 +
-NOTE: This could take some time if you have a slow connection to the {ProductPlatformName} and the images have not been downloaded before.
+NOTE: This could take some time if you have a slow connection to the Kubernetes and the images have not been downloaded before.
 
 .Additional resources
 

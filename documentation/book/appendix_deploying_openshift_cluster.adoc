@@ -1,0 +1,29 @@
+[appendix]
+[[installing_openshift_cluster]]
+== Installing an OpenShift cluster
+
+The easiest way to get started with OpenShift is using `Minishift` or `oc cluster up`.
+
+This section provides basic guidance on how to use them.
+
+For more information on the tools, refer to the documentation available online.
+
+In order to interact with an OpenShift cluster, the https://github.com/openshift/origin/releases[`oc`] utility is needed.
+
+An OpenShift cluster can be started in two different ways. The `oc` utility can start a cluster locally using the
+command:
+
+[source,shell]
+oc cluster up
+
+This command requires Docker to be installed. More information about this way can be found
+https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md[here].
+
+Another option is to use `Minishift`. `Minishift` is an OpenShift installation within a VM. It can be downloaded and
+installed from the https://docs.openshift.org/latest/minishift/index.html[Minishift website]. Depending on the number of brokers
+you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minishift`
+at least with 4 GB of RAM instead of the default 2 GB.
+Once installed, `Minishift` can be started using the following command:
+
+[source,shell]
+minishift start --memory 4GB

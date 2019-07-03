@@ -5,7 +5,7 @@
 [id='creating-a-topic-{context}']
 = Creating a topic
 
-This procedure describes how to create a Kafka topic using a `KafkaTopic` {ProductPlatformName} resource.
+This procedure describes how to create a Kafka topic using a `KafkaTopic` Kubernetes resource.
 
 .Prerequisites
 
@@ -30,23 +30,16 @@ spec:
   replicas: 2
 ----
 +
-NOTE: It is recommended that the topic name given is a valid {ProductPlatformName} resource name, as it is then not necessary to set the `KafkaTopic.spec.topicName` property. The `KafkaTopic.spec.topicName` _cannot_ be changed after creation.
+NOTE: It is recommended that the topic name given is a valid Kubernetes resource name, as it is then not necessary to set the `KafkaTopic.spec.topicName` property. The `KafkaTopic.spec.topicName` _cannot_ be changed after creation.
 +
 NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 
-. Create the `KafkaTopic` resource in {ProductPlatformName}.
+. Create the `KafkaTopic` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].

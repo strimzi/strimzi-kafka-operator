@@ -16,7 +16,7 @@ Execute the following steps for each `Kafka` resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} edit kafka _my-cluster_
+kubectl edit kafka _my-cluster_
 ----
 
 . Replace:

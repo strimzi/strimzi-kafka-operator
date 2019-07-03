@@ -5,7 +5,7 @@
 [id='proc-manual-rolling-update-kafka-{context}']
 = Performing a rolling update of a Kafka cluster
 
-This procedure describes how to manually trigger a rolling update of an existing Kafka cluster by using an {ProductPlatformName} annotation.
+This procedure describes how to manually trigger a rolling update of an existing Kafka cluster by using a Kubernetes annotation.
 
 .Prerequisites
 
@@ -18,18 +18,9 @@ This procedure describes how to manually trigger a rolling update of an existing
 +
 For example, if your Kafka cluster is named _my-cluster_, the corresponding `StatefulSet` is named _my-cluster-kafka_.
 
-. Annotate a `StatefulSet` resource in {ProductPlatformName}.
-+
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl annotate`:
+. Annotate the `StatefulSet` resource in Kubernetes. For example, using `kubectl annotate`:
 [source,shell,subs=+quotes]
 kubectl annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=true
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc annotate`:
-+
-[source,shell,subs=+quotes]
-oc annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=true
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.
@@ -38,8 +29,5 @@ When the rolling update of all the pods is complete, the annotation is removed f
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Kafka cluster on {OpenShiftName}, see xref:deploying-kafka-cluster-openshift-str[].
-ifdef::Kubernetes[]
-* For more information about deploying the Kafka cluster on {KubernetesName}, see xref:deploying-kafka-cluster-kubernetes-str[].
-endif::Kubernetes[]
+* For more information about deploying the Kafka cluster, see xref:deploying-kafka-cluster-str[].
 

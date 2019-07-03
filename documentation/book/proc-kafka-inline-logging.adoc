@@ -16,15 +16,9 @@ You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 +
 For more information about the log levels, see the link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
 
-. Create or update the Kafka resource in {ProductPlatformName}.
+. Create or update the Kafka resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
+

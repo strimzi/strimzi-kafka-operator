@@ -9,7 +9,7 @@ WARNING: The resources referenced in this section serve as a good starting point
 If you require further support on configuration and running Prometheus or Grafana in production then please reach out to their respective communities.
 
 ifdef::InstallationAppendix[]
-When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following section <<installing_kubernetes_and_openshift_cluster>>.
+When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following sections <<installing_kubernetes_cluster>> and <<installing_openshift_cluster>>.
 endif::InstallationAppendix[]
 
 === Kafka Metrics Configuration
@@ -18,22 +18,12 @@ endif::InstallationAppendix[]
 The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`^].
 Copy this configuration to your own `Kafka` resource definition, or run this example, in order to use the provided Grafana dashboards.
 
-==== Deploying on {OpenShiftName}
+==== Deploying the example Kafka cluster
 
 To deploy the example Kafka cluster the following command should be executed:
 
-[source,shell,subs=+quotes]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
-
-ifdef::Kubernetes[]
-==== Deploying on {KubernetesName}
-
-To deploy the example Kafka cluster the following command should be executed:
-
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
-
-endif::Kubernetes[]
 
 === Prometheus
 
@@ -41,7 +31,7 @@ link:https://prometheus.io/[Prometheus^] is an open-source set of components for
 {ProductName} uses the link:https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator^] to run Prometheus on Kubernetes.
 This Operator enables you to run a highly available Prometheus server that is suitable for use in production environments.
 
-==== Deploying the Prometheus Operator on {KubernetesName}
+==== Deploying the Prometheus Operator on Kubernetes
 
 To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
 
@@ -68,25 +58,15 @@ You can manually remove the `spec.template.spec.securityContext` property from t
 
 Next, apply all the files using the following commands:
 
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f prometheus-operator-service-account.yaml
 kubectl apply -f prometheus-operator-cluster-role.yaml
 kubectl apply -f prometheus-operator-cluster-role-binding.yaml
 kubectl apply -f prometheus-operator-deployment.yaml
-endif::Kubernetes[]
 
-On {OpenShiftName} this can be done using `oc apply`:
-[source,shell,subs=+quotes]
-oc apply -f prometheus-operator-service-account.yaml
-oc apply -f prometheus-operator-cluster-role.yaml
-oc apply -f prometheus-operator-cluster-role-binding.yaml
-oc apply -f prometheus-operator-deployment.yaml
+The {ProductName} repository contains link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/metrics/examples/prometheus/install[configuration files^] for the Prometheus server. When you apply these configuration files, the following resources are created in your Kubernetes cluster and managed by the Prometheus Operator.
 
-The {ProductName} repository contains link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/metrics/examples/prometheus/install[configuration files^] for the Prometheus server. When you apply these configuration files, the following resources are created in your {KubernetesName} cluster and managed by the Prometheus Operator.
-
-* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the {KubernetesName} system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the {KubernetesName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
+* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the Kubernetes system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
 * A `Deployment` to manage the Prometheus Operator pod.
@@ -122,9 +102,9 @@ To use another role, edit the `additionalScrapeConfigs` property in the `prometh
 This takes the name of the `Secret` and the name of the property in a given `Secret` in which additional configuration is stored.
 To create this `Secret` resource, use the following command:
 
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
-oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
 The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows:
 
@@ -140,20 +120,13 @@ curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 
 To deploy these resources, run the following commands:
 
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f strimzi-service-monitor.yaml
 kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml
-endif::Kubernetes[]
 
-On {OpenShiftName} this can be done using `oc apply`:
-[source,shell,subs=+quotes]
-oc login -u system:admin
-oc apply -f strimzi-service-monitor.yaml
-oc apply -f prometheus-rules.yaml
-oc apply -f prometheus.yaml
+NOTE: On OpenShift you need suitable privileges to do this.
+On {Minishift}, log in with cluster administrator privileges by executing `oc login -u system:admin` before using the `kubectl apply` commands.
 
 Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
 To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`^] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
@@ -165,22 +138,12 @@ For more information about setting up alerting rules, see https://prometheus.io/
 
 A Grafana server is necessary to get a visualisation of the Prometheus metrics.  The source for the Grafana docker image used can be found in the `./metrics/examples/grafana/grafana-openshift` directory.
 
-==== Deploying on {OpenShiftName}
+==== Deploying Grafana
 
 To deploy Grafana the following commands should be executed:
 
-[source,shell,subs=+quotes]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
-
-ifdef::Kubernetes[]
-==== Deploying on {KubernetesName}
-
-To deploy Grafana the following commands should be executed:
-
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
-
-endif::Kubernetes[]
 
 === Grafana dashboard
 
@@ -191,7 +154,7 @@ No alerting rules are defined.
 
 The Grafana Prometheus data source, and the above dashboards, can be set up in Grafana by following these steps.
 
-NOTE: For accessing the dashboard, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
+NOTE: For accessing the dashboard, use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, access the Grafana UI by running `kubectl port-forward grafana-1-fbl7s 3000:3000` and then pointing a browser to `http://localhost:3000`.
 
 . Access to the Grafana UI using `admin/admin` credentials.  On the following view you can choose to skip resetting the admin password, or set it to a password you desire.
 +
@@ -275,28 +238,15 @@ curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 To configure Alert Manager hook for sending alerts we need to create a `Secret` resource with configuration.
 Download the `alertmanager.yaml` file and create a `Secret` from it.
 
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using these commands:
-[source,shell,subs=+quotes]
+This can be done using these commands:
+[source,shell,subs="+quotes,attributes+"]
 curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
-endif::Kubernetes[]
-
-On {OpenShiftName} this can be done using these commands:
-[source,shell,subs=+quotes]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
-oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 
 To deploy the Alertmanager the following commands should be executed:
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
-[source,shell,subs=+quotes]
+This can be done using `kubectl apply`:
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f alert-manager.yaml
-endif::Kubernetes[]
-
-On {OpenShiftName} this can be done using `oc apply`:
-[source,shell,subs=+quotes]
-oc apply -f alert-manager.yaml
 
 ==== Alerts examples
 
@@ -324,7 +274,7 @@ This alert is raised when this value is greater than zero, providing the informa
 
 * `KafkaRunningOutOfSpace`: the running out of space metric indicates the remaining amount of disk space that can be used for writing Kafka's data.
 This alert is raised when this value is lower than 5GiB. It provides information on the disk that is running out of space for each persistent volume claim.
-NOTE: The availability of this metric and alert is dependent on your version of {ProductPlatformName}.
+NOTE: The availability of this metric and alert is dependent on your version of Kubernetes.
 
 Zookeeper alerts are:
 
@@ -337,4 +287,4 @@ This alert is raised when this value is greater than 10 (ticks), providing the a
 
 * `ZookeeperRunningOutOfSpace`: the running out of space metric indicates the remaining amount of disk space that can be used for writing data to Zookeeper.
 This alert is raised when this value is lower than 5GiB. It provides information on the disk that is running out of space for each persistent volume claim.
-Note: The availability of this metric and alert is dependent on your version of {ProductPlatformName}.
+Note: The availability of this metric and alert is dependent on your version of Kubernetes.

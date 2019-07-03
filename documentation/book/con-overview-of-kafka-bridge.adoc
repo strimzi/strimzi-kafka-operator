@@ -6,7 +6,7 @@
 
 = Overview of the {ProductName} Kafka Bridge
 
-The {ProductName} Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster running on {ProductPlatformName}. The API enables such clients to produce and consume messages without the requirement to use the native Kafka protocol.
+The {ProductName} Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster running on Kubernetes. The API enables such clients to produce and consume messages without the requirement to use the native Kafka protocol.
 
 The API has two main resources -- `consumers` and `topics` -- that are exposed and made accessible through endpoints to interact with consumers and producers in your Kafka cluster. The resources relate only to the Kafka Bridge, not the consumers and producers connected directly to Kafka. 
 
@@ -28,6 +28,6 @@ You can:
 
 * Seek on a partition, so that a consumer starts receiving messages from the first or last offset position, or a given offset position.
 
-Similar to a Kafka Connect cluster, you can deploy the Kafka Bridge into your {ProductPlatformName} cluster using the Cluster Operator. For deployment instructions, see xref:kafka-bridge-{context}[].
+Similar to a Kafka Connect cluster, you can deploy the Kafka Bridge into your Kubernetes cluster using the Cluster Operator. For deployment instructions, see xref:kafka-bridge-{context}[].
 
-After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your {ProductPlatformName} cluster, each named `strimzi-kafka-bridge` by default.
+After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your Kubernetes cluster, each named `strimzi-kafka-bridge` by default.

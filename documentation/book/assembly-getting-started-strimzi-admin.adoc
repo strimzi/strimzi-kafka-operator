@@ -6,7 +6,7 @@
 = Strimzi Administrators
 
 {ProductName} includes several custom resources.
-By default, permission to create, edit, and delete these resources is limited to {ProductPlatformName} cluster administrators.
+By default, permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators.
 If you want to allow non-cluster administators to manage {ProductName} resources, you must assign them the Strimzi Administrator role.
 
 include::proc-designating-strimzi-administrators.adoc[leveloffset=+1]

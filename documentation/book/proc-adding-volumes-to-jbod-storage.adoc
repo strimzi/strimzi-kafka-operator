@@ -12,7 +12,7 @@ NOTE: When adding a new volume under an `id` which was already used in the past 
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 * A Kafka cluster with JBOD storage
 
@@ -53,17 +53,10 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
-+
+
 . Create new topics or reassign existing partitions to the new disks.
 
 .Additional resources

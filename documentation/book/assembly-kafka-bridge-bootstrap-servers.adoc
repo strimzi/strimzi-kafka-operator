@@ -12,7 +12,7 @@
 
 A Kafka Bridge always works in combination with a Kafka cluster.
 A Kafka cluster is specified as a list of bootstrap servers.
-On {ProductPlatformName}, the list must ideally contain the Kafka cluster bootstrap service named `_cluster-name_-kafka-bootstrap`, and a port of 9092 for plain traffic or 9093 for encrypted traffic.
+On Kubernetes, the list must ideally contain the Kafka cluster bootstrap service named `_cluster-name_-kafka-bootstrap`, and a port of 9092 for plain traffic or 9093 for encrypted traffic.
 
 The list of bootstrap servers is configured in the `bootstrapServers` property in `KafkaBridge.kafka.spec`. The servers must be defined as a comma-separated list specifying one or more Kafka brokers, or a service pointing to Kafka brokers specified as a `_hostname_:_port_` pairs.
 

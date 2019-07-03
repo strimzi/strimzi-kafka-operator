@@ -11,11 +11,7 @@ The following procedure explains how to create your custom image and add it to t
 
 .Prerequisites
 
-ifdef::Kubernetes[]
-* xref:deploying-cluster-operator-kubernetes-str[Deploying the Cluster Operator to {KubernetesName}]
-endif::Kubernetes[]
-
-* xref:deploying-cluster-operator-openshift-str[Deploying the Cluster Operator to {OpenShiftName}]
+* xref:deploying-cluster-operator-str[Deploying the Cluster Operator]
 
 .Procedure
 

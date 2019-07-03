@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator with a `tls` listener with `tls` authentication enabled
 * If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
 
@@ -20,16 +20,10 @@ The following steps describe how to configure TLS client authentication on the c
 +
 NOTE: Secrets created by the User Operator may be used.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl create`:
+This can be done using `kubectl create`:
 [source,shell,subs=+quotes]
 kubectl create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc create`:
-+
-[source,shell,subs=+quotes]
-oc create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
+
 . Edit the `KafkaMirrorMaker.spec.consumer.authentication` property.
 For example:
 +
@@ -53,16 +47,9 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _<your-file>_
 
 Repeat the above steps for configuring TLS client authentication on the target Kafka cluster.
 In this case, the secret containing the certificate has to be configured in the `KafkaMirrorMaker.spec.producer.authentication` property.

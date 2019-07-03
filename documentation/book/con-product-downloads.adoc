@@ -13,12 +13,12 @@ ifndef::Downloading[]
 To install {ProductName}, download and extract the `amq-streams-x.y.z-ocp-install-examples.zip` file from the {ZipDownload}.
 endif::Downloading[]
 
-The folder contains several YAML files to help you deploy the components of {ProductName} to {ProductPlatformName}, perform common operations, and configure your Kafka cluster. The YAML files are referenced throughout this documentation.
+The folder contains several YAML files to help you deploy the components of {ProductName} to Kubernetes, perform common operations, and configure your Kafka cluster. The YAML files are referenced throughout this documentation.
 
 ifdef::Downloading[]
 Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
 endif::Downloading[]
 
-The remainder of this chapter provides an overview of each component and instructions for deploying the components to {ProductPlatformName} using the YAML files provided.
+The remainder of this chapter provides an overview of each component and instructions for deploying the components to Kubernetes using the YAML files provided.
 
 NOTE: Although container images for {ProductName} are available in the {DockerRepository}, we recommend that you use the YAML files provided instead.

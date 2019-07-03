@@ -17,12 +17,12 @@ This procedure describes how to upgrade a Cluster Operator deployment to a later
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} get all -l app=strimzi -o yaml > strimzi-backup.yaml
+kubectl get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 
 . Update the Cluster Operator.
 +
-Modify the installation files according to the {Namespace} the Cluster Operator is running in.
+Modify the installation files according to the namespace the Cluster Operator is running in.
 +
 include::frag-cluster-operator-namespace-sed.adoc[]
 +
@@ -33,7 +33,7 @@ If you modified one or more environment variables in your existing Cluster Opera
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} apply -f install/cluster-operator
+kubectl apply -f install/cluster-operator
 ----
 +
 Wait for the rolling updates to complete.
@@ -42,7 +42,7 @@ Wait for the rolling updates to complete.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
 The image tag shows the new {ProductName} version followed by the Kafka version. For example, `_<New {ProductName} version>_-kafka-_<Current Kafka version>_`.

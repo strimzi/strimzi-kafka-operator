@@ -11,22 +11,13 @@
 :toc: left
 :linkattrs:
 :toclevels: 3
-:cmdcli: kubectl
 
 // Name and version placeholders
 :ProductLongName: Strimzi
 :ProductName: Strimzi
 :ContextProduct: strimzi
-:OpenShiftName: OpenShift
-:OpenShiftLongName: OpenShift Origin
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
-:KubernetesName: Kubernetes
-:KubernetesLongName: Kubernetes
-:ProductPlatformName: {OpenShiftName} or {KubernetesName}
-:ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
-:Namespace: {OpenShiftName} project or {KubernetesName} namespace
-:Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
 
 // Kafka upgrade attributes used in kafka upgrades section
 :KafkaVersionLower: 2.1.1
@@ -112,7 +103,6 @@
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Section enablers
-:Kubernetes:
 :Helm:
 :OperatorHubio:
 :StrimziUpgrades:

@@ -16,7 +16,7 @@ Execute the following steps for each `KafkaUser` resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} edit kafkauser _my-user_
+kubectl edit kafkauser _my-user_
 ----
 
 . Replace:

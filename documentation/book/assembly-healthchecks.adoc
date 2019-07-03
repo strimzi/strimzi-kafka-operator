@@ -13,9 +13,9 @@
 = Healthchecks
 
 Healthchecks are periodical tests which verify the health of an application.
-When a Healthcheck probe fails, {ProductPlatformName} assumes that the application is not healthy and attempts to fix it.
+When a Healthcheck probe fails, Kubernetes assumes that the application is not healthy and attempts to fix it.
 
-{ProductPlatformName} supports two types of Healthcheck probes:
+Kubernetes supports two types of Healthcheck probes:
 
 * Liveness probes
 * Readiness probes

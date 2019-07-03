@@ -13,8 +13,8 @@
 It is possible to run multiple Mirror Maker replicas.
 The number of replicas is defined in the `KafkaMirrorMaker` resource.
 You can run multiple Mirror Maker replicas to provide better availability and scalability.
-However, when running Kafka Mirror Maker on {ProductPlatformName} it is not absolutely necessary to run multiple replicas of the Kafka Mirror Maker for high availability.
-When the node where the Kafka Mirror Maker has deployed crashes, {ProductPlatformName} will automatically reschedule the Kafka Mirror Maker pod to a different node.
+However, when running Kafka Mirror Maker on Kubernetes it is not absolutely necessary to run multiple replicas of the Kafka Mirror Maker for high availability.
+When the node where the Kafka Mirror Maker has deployed crashes, Kubernetes will automatically reschedule the Kafka Mirror Maker pod to a different node.
 However, running Kafka Mirror Maker with multiple replicas can provide faster failover times as the other nodes will be up and running.
 
 include::proc-configuring-kafka-mirror-maker-replicas.adoc[leveloffset=+1]

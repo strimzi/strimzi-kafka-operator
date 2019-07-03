@@ -26,8 +26,8 @@ Like the Cluster Operator, the Topic and User Operators each use a TLS sidecar w
 
 == Kafka Client connections
 
-Encrypted communication between Kafka brokers and clients running within the same {ProductPlatformName} cluster is provided through the `CLIENTTLS` listener on port 9093.
+Encrypted communication between Kafka brokers and clients running within the same Kubernetes cluster is provided through the `CLIENTTLS` listener on port 9093.
 
-Encrypted communication between Kafka brokers and clients running outside the same {ProductPlatformName} cluster is provided through the `EXTERNAL` listener on port 9094.
+Encrypted communication between Kafka brokers and clients running outside the same Kubernetes cluster is provided through the `EXTERNAL` listener on port 9094.
 
 NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with brokers.
