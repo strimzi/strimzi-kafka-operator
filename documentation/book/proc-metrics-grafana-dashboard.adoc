@@ -13,8 +13,7 @@ Example dashboards are provided with {ProductName} as JSON files:
 * https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
 
 The example dashboards are a good starting point for monitoring key metrics for Kafka and ZooKeeper clusters, but they do not represent all available metrics.
-
-You may need to modify the example dashboards or add other metrics, depending on your infrastructure. 
+You may need to modify the example dashboards or add other metrics, depending on your infrastructure.
 
 NOTE: No alert notification rules are defined.
 

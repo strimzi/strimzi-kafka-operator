@@ -11,7 +11,7 @@ Prometheus provides an alert system through its link:https://prometheus.io/docs/
 
 You can deploy Alertmanager with example alerting rules provided with {ProductName}.
 
-include::ref-metrics-prometheus-alerts.adoc[leveloffset=+1]
+include::con-metrics-prometheus-alerts.adoc[leveloffset=+1]
 
 include::ref-metrics-alertmanager-examples.adoc[leveloffset=+1]
 
