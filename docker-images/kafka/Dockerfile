@@ -1,11 +1,3 @@
-FROM maven:3-jdk-8-slim AS THRIDPARTY_LIB_BUILD
-# set Kafka home folder
-ENV KAFKA_HOME=/opt/kafka
-
-COPY kafka-thirdparty-libs/pom.xml .
-RUN mvn dependency:copy-dependencies -DoutputDirectory=${KAFKA_HOME}/libs/
-RUN rm -f pom.xml
-
 FROM centos:7
 
 ARG JAVA_VERSION
@@ -42,7 +34,7 @@ RUN curl -O https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA
 
 COPY ./tmp/kafka-agent-${strimzi_version}.jar ${KAFKA_HOME}/libs/
 
-COPY --from=THRIDPARTY_LIB_BUILD ${KAFKA_HOME}/libs/ ${KAFKA_HOME}/libs/
+COPY kafka-thirdparty-libs/target/dependency/ ${KAFKA_HOME}/libs/
 
 RUN yum -y install stunnel net-tools && yum clean all -y
 
