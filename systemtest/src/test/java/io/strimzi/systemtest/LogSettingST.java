@@ -100,42 +100,42 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(1)
     void testLoggersKafka() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), "Kafka's log level is set properly");
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), "Zookeeper's log level is set properly");
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), "Topic operator's log level is set properly");
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), "User operator's log level is set properly");
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), "Kafka connect's log level is set properly");
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), "Mirror maker's log level is set properly");
     }
 
@@ -269,7 +269,7 @@ class LogSettingST extends AbstractST {
         // 050-Deployment
         getTestClassResources().clusterOperator(NAMESPACE).done();
 
-        operationID = startDeploymentMeasuring();
+        setOperationID(startDeploymentMeasuring());
 
         getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()

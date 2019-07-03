@@ -123,7 +123,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
-        operationID = startTimeMeasuring(Operation.SCALE_UP);
+        setOperationID(startTimeMeasuring(Operation.SCALE_UP));
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
@@ -163,14 +163,14 @@ class KafkaST extends MessagingBaseST {
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE, firstTopicName);
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         // scale down
         LOGGER.info("Scaling down");
         // Get kafka new pod uid before deletion
         uid = kubeClient().getPodUid(newPodName);
-        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
+        setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
         StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
 
@@ -183,8 +183,8 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getStatefulSetUid(kafkaClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         String secondTopicName = "test-topic-2";
         testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
@@ -215,7 +215,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring(Operation.SCALE_UP);
+        setOperationID(startTimeMeasuring(Operation.SCALE_UP));
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -238,14 +238,14 @@ class KafkaST extends MessagingBaseST {
         checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         // scale down
         LOGGER.info("Scaling down");
         // Get zk-3 uid before deletion
         String uid = kubeClient().getPodUid(newZkPodNames.get(3));
-        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
+        setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         for (String name : newZkPodNames) {
@@ -261,9 +261,9 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getStatefulSetUid(zookeeperClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -674,7 +674,7 @@ class KafkaST extends MessagingBaseST {
                 .endEntityOperator()
             .endSpec().done();
 
-        operationID = startTimeMeasuring(Operation.NEXT_RECONCILIATION);
+        setOperationID(startTimeMeasuring(Operation.NEXT_RECONCILIATION));
 
         // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
         String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
@@ -705,14 +705,14 @@ class KafkaST extends MessagingBaseST {
                 "512M", "300m", "256M", "300m");
 
         TestUtils.waitFor("Wait till reconciliation timeout", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "\"Assembly reconciled\"").isEmpty());
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, getOperationID()), "\"Assembly reconciled\"").isEmpty());
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
         assertFalse(StUtils.ssHasRolled(zkSsName, zkPods));
         assertFalse(StUtils.ssHasRolled(kafkaSsName, kafkaPods));
         assertFalse(StUtils.depHasRolled(eoDepName, eoPods));
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
     }
 
     @Test
@@ -1073,7 +1073,7 @@ class KafkaST extends MessagingBaseST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
         // rolling update for kafka
-        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        setOperationID(startTimeMeasuring(Operation.ROLLING_UPDATE));
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
                 .editMetadata()
@@ -1094,7 +1094,7 @@ class KafkaST extends MessagingBaseST {
         assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
 
         // rolling update for zookeeper
-        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        setOperationID(startTimeMeasuring(Operation.ROLLING_UPDATE));
         // set annotation to trigger Zookeeper rolling update
         kubeClient().statefulSet(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
                 .editMetadata()
