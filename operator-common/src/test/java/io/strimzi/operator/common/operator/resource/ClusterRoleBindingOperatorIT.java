@@ -32,7 +32,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
             ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
             Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> operator() {
-        return new ClusterRoleBindingOperator(vertx, client, 10_000);
+        return new ClusterRoleBindingOperator(vertx, client);
     }
 
     @Override

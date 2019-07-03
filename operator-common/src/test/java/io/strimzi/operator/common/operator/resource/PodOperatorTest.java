@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.strimzi.operator.common.model.Labels;
-
 import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -14,12 +12,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.client.server.mock.OpenShiftServer;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
@@ -32,23 +29,10 @@ import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
         AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
-
-    public OpenShiftServer server = new OpenShiftServer(false, true);
-
-    @BeforeEach
-    public void initServer() {
-        server.before();
-    }
-
-    @AfterEach
-    public void cleanUpServer() {
-        server.after();
-    }
-
     @Test
     public void testCreateReadUpdate(VertxTestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
-        KubernetesClient client = server.getKubernetesClient();
+        KubernetesClient client = new MockKube().build();
         PodOperator pr = new PodOperator(vertx, client);
 
         pr.list(NAMESPACE, Labels.EMPTY);
@@ -60,35 +44,7 @@ public class PodOperatorTest extends
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))));
-            //Pod got = pr.get(NAMESPACE, RESOURCE_NAME);
-            //context.assertNotNull(got);
-            //context.assertNotNull(got.getMetadata());
-            //context.assertEquals(RESOURCE_NAME, got.getMetadata().getName());
-            context.verify(() -> assertThat(pr.isReady(NAMESPACE, RESOURCE_NAME), is(false)));
-            /*pr.watch(NAMESPACE, RESOURCE_NAME, new Watcher<Pod>() {
-                @Override
-                public void eventReceived(Action action, Pod resource) {
-                    if (action == Action.DELETED) {
-                        context.assertEquals(RESOURCE_NAME, resource.getMetadata().getName());
-                    } else {
-                        context.fail();
-                    }
-                    async.countDown();
-                }
 
-                @Override
-                public void onClose(KubernetesClientException cause) {
-
-                }
-            });*/
-            /*Pod modified = resource();
-            modified.getSpec().setHostname("bar");
-            Async patchAsync = context.async();
-            pr.patch(NAMESPACE, RESOURCE_NAME, modified, patchResult -> {
-                context.assertTrue(patchResult.succeeded());
-                patchAsync.complete();
-            });
-            patchAsync.await();*/
             pr.reconcile(NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
                 context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
                 async.flag();

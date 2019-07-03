@@ -65,7 +65,7 @@ public class MainIT {
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
-        ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
+        ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
         Checkpoint a = context.checkpoint();
         Main.maybeCreateClusterRoles(vertx, config, client)

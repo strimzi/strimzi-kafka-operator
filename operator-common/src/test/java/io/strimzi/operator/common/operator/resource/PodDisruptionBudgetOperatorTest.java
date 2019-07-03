@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
@@ -76,6 +78,13 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
         when(mockResource.get()).thenReturn(existingResource);
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(existingResource);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, existingResource);
+            return (Watch) () -> {
+
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(existingResource.getMetadata().getName()))).thenReturn(mockResource);

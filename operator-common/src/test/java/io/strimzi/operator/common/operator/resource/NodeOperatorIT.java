@@ -27,7 +27,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
             Node, NodeList, DoneableNode,
             Resource<Node, DoneableNode>> operator() {
-        return new NodeOperator(vertx, client, 10_000);
+        return new NodeOperator(vertx, client);
     }
 
     @Override

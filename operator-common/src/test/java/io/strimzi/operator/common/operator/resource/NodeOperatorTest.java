@@ -29,7 +29,7 @@ public class NodeOperatorTest extends AbstractNonNamespacedResourceOperatorTest<
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, Node, NodeList,
             DoneableNode, Resource<Node, DoneableNode>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
-        return new NodeOperator(vertx, mockClient, 100);
+        return new NodeOperator(vertx, mockClient);
     }
 
     @Override

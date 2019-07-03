@@ -4,23 +4,30 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.Deletable;
+import io.fabric8.kubernetes.client.dsl.Gettable;
+import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class ResourceSupport {
-
+    public static final long DEFAULT_TIMEOUT_MS = 300_000;
     protected static final Logger LOGGER = LogManager.getLogger(ResourceSupport.class);
 
     private final Vertx vertx;
@@ -36,8 +43,7 @@ public class ResourceSupport {
      * @return The Future
      */
     public Future<Void> closeOnWorkerThread(Closeable closeable) {
-        Promise<Void> result = Promise.promise();
-        vertx.executeBlocking(
+        return executeBlocking(
             blockingFuture -> {
                 try {
                     LOGGER.debug("Closing {}", closeable);
@@ -46,9 +52,13 @@ public class ResourceSupport {
                 } catch (Throwable t) {
                     blockingFuture.fail(t);
                 }
-            },
-            true,
-            result);
+            });
+    }
+
+    private <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+        Promise<T> result = Promise.promise();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool")
+                .executeBlocking(blockingCodeHandler, true, result);
         return result.future();
     }
 
@@ -61,8 +71,8 @@ public class ResourceSupport {
      * @param secondary The secondary failure.
      * @return The cause.
      */
-    Throwable collectCauses(AsyncResult<? extends Object> primary,
-                            AsyncResult<? extends Object> secondary) {
+    private Throwable collectCauses(AsyncResult<?> primary,
+                            AsyncResult<?> secondary) {
         Throwable cause = primary.cause();
         if (cause == null) {
             cause = secondary.cause();
@@ -85,17 +95,20 @@ public class ResourceSupport {
      * When the {@code watchFn} returns non-null the watch will be closed and then
      * the future returned from this method will be completed on the context thread.
      * @param watchable The watchable.
+     * @param operationTimeoutMs The timeout in ms.
+     * @param watchFnDescription A description of what {@code watchFn} is watching for.
+     *                           E.g. "observe ${condition} of ${kind} ${namespace}/${name}".
      * @param watchFn The function to determine
-     * @param timeoutMs The timeout in milliseconds.
      * @param <T> The type of watched resource.
      * @param <U> The result type of the {@code watchFn}.
      *
      * @return A Futures which completes when the {@code watchFn} returns non-null
      * in response to some Kubenetes even on the watched resource(s).
      */
-    public <T, U> Future<U> selfClosingWatch(Watchable<Watch, Watcher<T>> watchable,
-                                             BiFunction<Watcher.Action, T, U> watchFn,
-                                             long timeoutMs) {
+    <T, U> Future<U> selfClosingWatch(Watchable<Watch, Watcher<T>> watchable,
+                                      long operationTimeoutMs,
+                                      String watchFnDescription,
+                                      BiFunction<Watcher.Action, T, U> watchFn) {
 
         return new Watcher<T>() {
             private final Promise<Watch> watchPromise;
@@ -108,9 +121,8 @@ public class ResourceSupport {
                 this.watchPromise = Promise.promise();
                 this.donePromise = Promise.promise();
                 this.resultPromise = Promise.promise();
-                this.timerId = vertx.setTimer(timeoutMs, ignored -> {
-                    donePromise.tryFail(new TimeoutException());
-                });
+                this.timerId = vertx.setTimer(operationTimeoutMs,
+                    ignored -> donePromise.tryFail(new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms")));
                 CompositeFuture.join(watchPromise.future(), donePromise.future()).onComplete(joinResult -> {
                     Future<Void> closeFuture;
                     if (watchPromise.future().succeeded()) {
@@ -118,25 +130,31 @@ public class ResourceSupport {
                     } else {
                         closeFuture = Future.succeededFuture();
                     }
-                    closeFuture.onComplete(closeResult -> {
+
+                    closeFuture.onComplete(closeResult ->
                         vertx.runOnContext(ignored2 -> {
-                            LOGGER.warn("Completing watch future");
+                            LOGGER.debug("Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {
                                 resultPromise.complete(joinResult.result().resultAt(1));
                             } else {
                                 resultPromise.fail(collectCauses(joinResult, closeResult));
                             }
-                        });
-                    });
+                        }
+                    ));
                 });
-                Watch watch = watchable.watch(this);
-                LOGGER.debug("Opened watch {}", watch);
-                watchPromise.complete(watch);
+
+                try {
+                    Watch watch = watchable.watch(this);
+                    LOGGER.debug("Opened watch {} for evaluation of {}", watch, watchFnDescription);
+                    watchPromise.complete(watch);
+                } catch (Throwable t) {
+                    watchPromise.fail(t);
+                }
             }
 
             @Override
             public void eventReceived(Action action, T resource) {
-                vertx.<U>executeBlocking(
+                vertx.executeBlocking(
                     f -> {
                         try {
                             U apply = watchFn.apply(action, resource);
@@ -144,19 +162,17 @@ public class ResourceSupport {
                                 f.tryComplete(apply);
                                 vertx.cancelTimer(timerId);
                             } else {
-                                LOGGER.debug("Not yet complete");
+                                LOGGER.debug("Not yet satisfied: {}", watchFnDescription);
                             }
                         } catch (Throwable t) {
                             if (!f.tryFail(t)) {
                                 LOGGER.debug("Ignoring exception thrown while " +
-                                        "evaluating watch because the future was already completed", t);
+                                        "evaluating watch {} because the future was already completed", watchFnDescription, t);
                             }
                         }
                     },
                     true,
-                    ar -> {
-                        donePromise.handle(ar);
-                    });
+                        donePromise);
             }
 
             @Override
@@ -165,5 +181,64 @@ public class ResourceSupport {
             }
 
         }.resultPromise.future();
+    }
+
+    /**
+     * Asynchronously deletes the given resource(s), returning a Future which completes on the context thread.
+     * <strong>Note: The API server can return asynchronously, meaning the resource is still accessible from the API server
+     * after the returned Future completes. Use {@link #selfClosingWatch(Watchable, long, String, BiFunction)}
+     * to provide server-synchronous semantics.</strong>
+     *
+     * @param resource The resource(s) to delete.
+     * @return A Future which completes on the context thread.
+     */
+    Future<Void> deleteAsync(Deletable<Boolean> resource) {
+        return executeBlocking(
+            blockingFuture -> {
+                try {
+                    Boolean delete = resource.delete();
+                    if (!Boolean.TRUE.equals(delete)) {
+                        blockingFuture.fail(new RuntimeException(resource + " could not be deleted (returned " + delete + ")"));
+                    } else {
+                        blockingFuture.complete();
+                    }
+                } catch (Throwable t) {
+                    blockingFuture.fail(t);
+                }
+            });
+    }
+
+    /**
+     * Asynchronously gets the given resource, returning a Future which completes on the context thread.
+     *
+     * @param resource The resource(s) to get.
+     * @return A Future which completes on the context thread.
+     */
+    <T> Future<T> getAsync(Gettable<T> resource) {
+        return executeBlocking(
+            blockingFuture -> {
+                try {
+                    blockingFuture.complete(resource.get());
+                } catch (Throwable t) {
+                    blockingFuture.fail(t);
+                }
+            });
+    }
+
+    /**
+     * Asynchronously lists the matching resources, returning a Future which completes on the context thread.
+     *
+     * @param resource The resources to list.
+     * @return A Future which completes on the context thread.
+     */
+    <T extends HasMetadata, L extends KubernetesResourceList<T>> Future<List<T>> listAsync(Listable<L> resource) {
+        return executeBlocking(
+            blockingFuture -> {
+                try {
+                    blockingFuture.complete(resource.list().getItems());
+                } catch (Throwable t) {
+                    blockingFuture.fail(t);
+                }
+            });
     }
 }

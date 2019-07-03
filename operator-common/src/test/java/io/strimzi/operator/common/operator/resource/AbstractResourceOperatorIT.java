@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -41,7 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList<T>,
+        D extends Doneable<T>,
+        R extends Resource<T, D>> {
     protected static final Logger log = LogManager.getLogger(AbstractResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
     protected String resourceName;

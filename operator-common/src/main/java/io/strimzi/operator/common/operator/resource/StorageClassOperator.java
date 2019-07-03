@@ -19,11 +19,10 @@ public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<
      * Constructor.
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
-     * @param operationTimeoutMs The timeout in milliseconds.
      */
 
-    public StorageClassOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        super(vertx, client, "StorageClass", operationTimeoutMs);
+    public StorageClassOperator(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "StorageClass");
     }
 
     @Override
