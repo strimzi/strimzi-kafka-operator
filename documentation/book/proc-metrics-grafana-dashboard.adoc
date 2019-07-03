@@ -3,7 +3,7 @@
 // assembly-metrics-grafana.adoc
 [id='proc-metrics-grafana-dashboard-{context}']
 
-= Enabling Grafana dashboard examples
+= Enabling the example Grafana dashboards
 
 Set up a Prometheus data source and example dashboards to enable Grafana for monitoring.
 
