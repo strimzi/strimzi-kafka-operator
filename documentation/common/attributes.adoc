@@ -19,8 +19,8 @@
 :ContextProduct: strimzi
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift Origin
-:OpenShiftVersion: 3.9 and later
-:KubernetesVersion: 1.9 and later
+:OpenShiftVersion: 3.11 and later
+:KubernetesVersion: 1.11 and later
 :KubernetesName: Kubernetes
 :KubernetesLongName: Kubernetes
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
@@ -131,4 +131,4 @@
 :ChartRepositoryUrl: http://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.12.0
+:ProductVersion: 0.12.x
