@@ -9,7 +9,7 @@
 
 The example Grafana dashboards provided with {ProductName} are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Kafka and ZooKeeper as a `Kafka` resource configuration in an example `kafka-metrics.yaml` file.
 
-A label is a name-value pair. Relabeling is the process of writing a label dynamically. For example, the value of a label may be derived from the name of a kafka server and client ID.
+A label is a name-value pair. Relabeling is the process of writing a label dynamically. For example, the value of a label may be derived from the name of a Kafka server and client ID.
 
 To get started using the Grafana dashboard, do one of the following:
 
