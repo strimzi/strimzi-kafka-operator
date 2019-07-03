@@ -175,7 +175,7 @@
             </properties>
         </profile>
         <profile>
-            <id>systemtests</id>
+            <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>acceptance | regression | flaky | upgrade | pr | travis</groups>

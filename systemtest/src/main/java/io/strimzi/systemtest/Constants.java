@@ -58,7 +58,7 @@ public interface Constants {
     /**
      * Default value which allows execution of tests with any tags
      */
-    String DEFAULT_TAG = "systemtests";
+    String DEFAULT_TAG = "all";
 
     /**
      * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci

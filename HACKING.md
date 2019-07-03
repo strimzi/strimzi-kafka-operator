@@ -215,7 +215,7 @@ If `junitTags` system property isn't defined, all tests without an explicitly de
 | regression    | Regression tests, which contains all non-flaky tests.                              |
 | upgrade       | Upgrade tests for specific versions of the Strimzi.                                |
 | flaky         | Execute all flaky tests (tests, which are failing from time to time)               |
-| systemtests   | Execute all system tests with any tag                                              |
+| all           | Execute all system tests with any tag                                              |
 
 ### Helper script
 
