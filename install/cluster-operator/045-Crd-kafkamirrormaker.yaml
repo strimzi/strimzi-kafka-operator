@@ -124,6 +124,8 @@ spec:
               properties:
                 bootstrapServers:
                   type: string
+                abortOnSendFailure:
+                  type: boolean
                 authentication:
                   type: object
                   properties:

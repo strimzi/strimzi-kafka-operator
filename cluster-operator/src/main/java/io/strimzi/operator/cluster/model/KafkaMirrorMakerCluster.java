@@ -85,10 +85,11 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST = "KAFKA_MIRRORMAKER_WHITELIST";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS = "KAFKA_MIRRORMAKER_NUMSTREAMS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL = "KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL";
+    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE = "KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE";
 
     protected String whitelist;
 
-    protected KafkaMirrorMakerClientSpec producer;
+    protected KafkaMirrorMakerProducerSpec producer;
     protected CertAndKeySecretSource producerTlsAuthCertAndKey;
     private String producerSaslMechanism;
     private String producerUsername;
@@ -416,6 +417,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         if (consumer.getOffsetCommitInterval() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL, Integer.toString(consumer.getOffsetCommitInterval())));
         }
+        if (producer.getAbortOnSendFailure() != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE, Boolean.toString(producer.getAbortOnSendFailure())));
+        }
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         heapOptions(varList, 1.0, 0L);
@@ -502,7 +506,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.whitelist = whitelist;
     }
 
-    public void setProducer(KafkaMirrorMakerClientSpec producer) {
+    public void setProducer(KafkaMirrorMakerProducerSpec producer) {
         this.producer = producer;
     }
 

@@ -18,12 +18,24 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "bootstrapServers", "logging"})
+@JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "logging"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 
+    private Boolean abortOnSendFailure;
+
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security.";
+
+    @Description("Configure the mirror maker to exit on a failed send. Default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getAbortOnSendFailure() {
+        return abortOnSendFailure;
+    }
+
+    public void setAbortOnSendFailure(Boolean abortOnSendFailure) {
+        this.abortOnSendFailure = abortOnSendFailure;
+    }
 
     @Override
     @Description("The mirror maker producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
