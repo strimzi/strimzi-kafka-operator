@@ -14,7 +14,7 @@ Example dashboards are provided with {ProductName} as JSON files:
 
 The example dashboards are a good starting point for monitoring key metrics for Kafka and ZooKeeper clusters, but they do not represent all available metrics.
 
-Depending on your infrastructure you may need to modify or add to them.
+You may need to modify the example dashboards or add other metrics, depending on your infrastructure. 
 
 NOTE: No alert notification rules are defined.
 
