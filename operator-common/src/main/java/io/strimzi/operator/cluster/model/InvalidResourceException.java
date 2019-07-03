@@ -12,4 +12,12 @@ public class InvalidResourceException extends RuntimeException {
     public InvalidResourceException(String s) {
         super(s);
     }
+
+    public InvalidResourceException(Throwable cause) {
+        super(cause);
+    }
+
+    public InvalidResourceException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
