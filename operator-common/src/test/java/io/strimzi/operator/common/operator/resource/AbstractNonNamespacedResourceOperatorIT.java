@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -29,7 +30,11 @@ import org.junit.runner.RunWith;
  * test them against real clusters.
  */
 @RunWith(VertxUnitRunner.class)
-public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/,
+        D extends Doneable<T>,
+        R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;

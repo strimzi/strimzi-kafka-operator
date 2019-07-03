@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
@@ -19,7 +21,6 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -65,11 +66,20 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
                 .build();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenReturn(Boolean.TRUE);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, resource);
+            return (Watch) () -> {
+
+            };
+        });
         when(mockResource.cascading(cascade)).thenReturn(mockResource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -89,7 +99,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).delete();
             verify(mockResource).create(any());

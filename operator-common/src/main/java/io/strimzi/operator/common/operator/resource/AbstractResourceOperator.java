@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -17,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -38,13 +40,17 @@ import java.util.function.BiPredicate;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractResourceOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractResourceOperator<C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/,
+        D extends Doneable<T>,
+        R extends Resource<T, D>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
+    protected final ResourceSupport resourceSupport;
 
     /**
      * Constructor.
@@ -54,6 +60,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      */
     public AbstractResourceOperator(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
+        this.resourceSupport = new ResourceSupport(vertx, operationTimeoutMs);
         this.client = client;
         this.resourceKind = resourceKind;
     }
@@ -143,14 +150,19 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      */
 
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
-        try {
-            operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
-            log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
-            return Future.succeededFuture(ReconcileResult.deleted());
-        } catch (Exception e) {
-            log.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
-        }
+        R resourceOp = operation().inNamespace(namespace).withName(name);
+        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
+            "observe deletion of " + resourceKind + " " + namespace + "/" + name,
+            (action, resource) -> {
+                if (action == Watcher.Action.DELETED) {
+                    log.debug("{} {}/{} has been deleted", resourceKind, namespace, name);
+                    return ReconcileResult.deleted();
+                } else {
+                    return null;
+                }
+            });
+        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.cascading(cascading));
+        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
     /**
@@ -216,14 +228,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * @return A Future for the result.
      */
     public Future<T> getAsync(String namespace, String name) {
-        Future<T> result = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
-            future -> {
-                T resource = get(namespace, name);
-                future.complete(resource);
-            }, true, result
-        );
-        return result;
+        return resourceSupport.getAsync(operation().inNamespace(namespace).withName(name));
     }
 
     /**
@@ -247,7 +252,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            return operation.withLabels(labels)
+            FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> tlBooleanWatchWatcherFilterWatchListDeletable = operation.withLabels(labels);
+            return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
         } else {
@@ -281,22 +287,18 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * @param selector The selector.
      * @return A Future with a list of matching resources.
      */
+    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     public Future<List<T>> listAsync(String namespace, Labels selector) {
-        Future<List<T>> result = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
-            future -> {
-                List<T> resources;
-
-                if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
-                    resources = listInAnyNamespace(selector);
-                } else {
-                    resources = listInNamespace(namespace, selector);
-                }
-
-                future.complete(resources);
-            }, true, result
-        );
-        return result;
+        FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> x;
+        if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+            x = operation().inAnyNamespace();
+        } else {
+            x = operation().inNamespace(namespace);
+        }
+        if (selector != null) {
+            x = x.withLabels(selector.toMap());
+        }
+        return (Future) resourceSupport.listAsync(x);
     }
 
     @SuppressWarnings("unchecked")
