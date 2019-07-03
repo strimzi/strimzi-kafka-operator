@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 @OpenShiftOnly
 @Tag(REGRESSION)
+@Tag(ACCEPTANCE)
 public class OpenShiftTemplatesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);

@@ -32,6 +32,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -160,7 +161,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
+    @Tag(ACCEPTANCE)
     void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
@@ -228,7 +229,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";

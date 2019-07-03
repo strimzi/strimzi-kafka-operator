@@ -27,7 +27,6 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
-    @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
 
@@ -42,7 +41,6 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
-    @Tag(REGRESSION)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
         checkKafkaInDiffNamespaceThanCO();
@@ -52,7 +50,6 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace across multiple namespaces
      */
     @Test
-    @Tag(REGRESSION)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO();

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(REGRESSION)
@@ -38,7 +39,6 @@ public class MirrorMakerST extends MessagingBaseST {
     private final int messagesCount = 200;
 
     @Test
-    @Tag(REGRESSION)
     void testMirrorMaker() throws Exception {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -96,7 +96,7 @@ public class MirrorMakerST extends MessagingBaseST {
      * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(ACCEPTANCE)
     void testMirrorMakerTlsAuthenticated() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -189,7 +189,6 @@ public class MirrorMakerST extends MessagingBaseST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    @Tag(REGRESSION)
     void testMirrorMakerTlsScramSha() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String kafkaUserSource = "my-user-source";

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TRAVIS;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
@@ -73,6 +74,7 @@ class ConnectST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(TRAVIS)
     void testKafkaConnectWithFileSinkPlugin() {
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()

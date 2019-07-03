@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Tag(REGRESSION)
+@Tag(UPGRADE)
 public class StrimziUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);

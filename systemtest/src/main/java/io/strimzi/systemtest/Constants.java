@@ -69,13 +69,17 @@ public interface Constants {
      */
     String REGRESSION = "regression";
     /**
+     * Tag for upgrade tests.
+     */
+    String UPGRADE = "upgrade";
+    /**
+     * Tag for acceptance tests executed during Travis builds.
+     */
+    String TRAVIS = "travis";
+    /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";
-    /**
-     * Tag for tests, which are failing only on CCI VMs
-     */
-    String CCI_FLAKY = "cci_flaky";
     /**
      * Tag for strimzi bridge tests.
      */

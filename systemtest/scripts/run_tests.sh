@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 TESTCASE=${1:-.*ST}
-TEST_PROFILE=${3:-acceptance}
+TEST_PROFILE=${2:-travis}
 
 function run_test() {
     TESTCASE=$1
