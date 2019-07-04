@@ -24,9 +24,8 @@ If you need an OpenShift cluster to use these and none is available `minishift` 
 More details can be found in xref:installing_openshift_cluster[Installing OpenShift clusters].
 endif::InstallationAppendix[]
 
-NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC).
+NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
 
-For more information about OpenShift and setting up OpenShift cluster, see link:https://docs.openshift.com/container-platform/3.9/welcome/index.html[OpenShift documentation].
 
 include::con-product-downloads.adoc[leveloffset=+1]
 

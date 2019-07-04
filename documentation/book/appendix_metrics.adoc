@@ -9,7 +9,7 @@ WARNING: The resources referenced in this section serve as a good starting point
 If you require further support on configuration and running Prometheus or Grafana in production then please reach out to their respective communities.
 
 ifdef::InstallationAppendix[]
-When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following sections <<installing_kubernetes_cluster>> and <<installing_openshift_cluster>>.
+When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following sections xref:installing_kubernetes_cluster[] and xref:installing_openshift_cluster[].
 endif::InstallationAppendix[]
 
 === Kafka Metrics Configuration

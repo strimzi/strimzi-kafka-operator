@@ -6,7 +6,9 @@
 [id='using-openshift-s2i-create-image-{context}']
 = Creating a container image using OpenShift builds and Source-to-Image
 
-You can use OpenShift link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[builds^] and the  link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)^] framework to create new container images. An OpenShift build takes a builder image with S2I support, together with source code and binaries provided by the user, and uses them to build a new container image. Once built, container images are stored in OpenShift's local container image repository and are available for use in deployments.
+You can use OpenShift link:https://docs.okd.io/3.11/dev_guide/builds/index.html[builds^] and the  link:https://docs.okd.io/3.11/creating_images/s2i.html[Source-to-Image (S2I)^] framework to create new container images.
+An OpenShift build takes a builder image with S2I support, together with source code and binaries provided by the user, and uses them to build a new container image.
+Once built, container images are stored in OpenShift's local container image repository and are available for use in deployments.
 
 A Kafka Connect builder image with S2I support is provided on the {DockerRepository} as part of the `{DockerKafkaConnectS2I}` image. This S2I image takes your binaries (with plug-ins and connectors) and stores them in the `/tmp/kafka-plugins/s2i` directory. It creates a new Kafka Connect image from this directory, which can then be used with the Kafka Connect deployment. When started using the enhanced image, Kafka Connect loads any third-party plug-ins from the `/tmp/kafka-plugins/s2i` directory.
 
