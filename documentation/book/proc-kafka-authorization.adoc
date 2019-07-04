@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-configuring-kafka-listeners.adoc
+// assembly-kafka-authentication-and-authorization.adoc
 
 [id='proc-kafka-authorization-{context}']
 = Configuring authorization in Kafka brokers
@@ -8,7 +8,7 @@
 .Prerequisites
 
 * An {ProductPlatformName} cluster
-* A running Cluster Operator
+* The Cluster Operator is running
 
 .Procedure
 
@@ -24,6 +24,7 @@ spec:
     # ...
     authorization:
       type: simple
+      superUsers:User:Fred;User:Sam;User:Edward
     # ...
   zookeeper:
     # ...
