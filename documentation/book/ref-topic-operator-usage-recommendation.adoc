@@ -50,4 +50,4 @@ spec:
   # ...
 ----
 
-NOTE: Some Kafka client applications, such as Kafka Streams, can create topics in Kafka programmatically. When those topics have a name that is an invalid {KubernetesName} resource name, the Topic Operator gives them a valid name based on the Kafka name. Invalid characters are replaced and a hash appended to the name.
+NOTE: Some Kafka client applications, such as Kafka Streams, can create topics in Kafka programmatically. If those topics have names that are invalid {KubernetesName} resource names, the Topic Operator gives them valid names based on the Kafka names. Invalid characters are replaced and a hash is appended to the name.
