@@ -12,7 +12,7 @@
 The {ProductName} container images for Kafka Connect include the two built-in file connectors: `FileStreamSourceConnector` and `FileStreamSinkConnector`.
 You can add your own connectors by:
 
-* Creating a Docker image from the Kafka Connect base image.
+* Creating a container image from the Kafka Connect base image (manually or using your CI (continuous integration), for example).
 * Creating a container image using OpenShift builds and Source-to-Image (S2I) - available only on OpenShift.
 
 include::proc-creating-new-image-from-base.adoc[leveloffset=+1]
