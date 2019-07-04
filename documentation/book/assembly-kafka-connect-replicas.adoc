@@ -14,8 +14,8 @@
 Kafka Connect clusters can run multiple of nodes.
 The number of nodes is defined in the `KafkaConnect` and `KafkaConnectS2I` resources.
 Running a Kafka Connect cluster with multiple nodes can provide better availability and scalability.
-However, when running Kafka Connect on {ProductPlatformName} it is not absolutely necessary to run multiple nodes of Kafka Connect for high availability.
-If a node where Kafka Connect is deployed to crashes, {ProductPlatformName} will automatically reschedule the Kafka Connect pod to a different node.
+However, when running Kafka Connect on Kubernetes it is not absolutely necessary to run multiple nodes of Kafka Connect for high availability.
+If a node where Kafka Connect is deployed to crashes, Kubernetes will automatically reschedule the Kafka Connect pod to a different node.
 However, running Kafka Connect with multiple nodes can provide faster failover times, because the other nodes will be up and running already.
 
 include::proc-configuring-kafka-connect-replicas.adoc[leveloffset=+1]

@@ -16,7 +16,7 @@
 :context: deployment-configuration-kafka-bridge
 
 The full schema of the `KafkaBridge` resource is described in the xref:type-KafkaBridge-reference[].
-All labels that are applied to the desired `KafkaBridge` resource will also be applied to the {ProductPlatformName} resources making up the Kafka Bridge cluster.
+All labels that are applied to the desired `KafkaBridge` resource will also be applied to the Kubernetes resources making up the Kafka Bridge cluster.
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::assembly-kafka-bridge-replicas.adoc[leveloffset=+1]

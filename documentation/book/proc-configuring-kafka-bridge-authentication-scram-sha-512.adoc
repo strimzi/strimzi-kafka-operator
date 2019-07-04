@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* An Kubernetes cluster
 * A running Cluster Operator
 * Username of the user which should be used for authentication
 * If they exist, the name of the `Secret` with the password used for authentication and the key under which the password is stored in the `Secret`
@@ -18,18 +18,10 @@
 +
 NOTE: Secrets created by the User Operator may be used.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 echo -n '_<password>_' > _<my-password.txt>_
 kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-echo -n '1f2d1e2e67df' > _<my-password>.txt_
-oc create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+
 . Edit the `authentication` property in the `KafkaBridge` resource.
 For example:
 +
@@ -49,16 +41,8 @@ spec:
       password: _<my-password.txt>_
   # ...
 ----
-+
+
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

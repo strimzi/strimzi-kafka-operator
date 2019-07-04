@@ -2,21 +2,21 @@
 //
 // assembly-kafka-bridge.adoc
 
-[id='deploying-kafka-bridge-kubernetes-{context}']
-= Deploying Kafka Bridge to your {KubernetesName} cluster
+[id='deploying-kafka-bridge-{context}']
+= Deploying Kafka Bridge to your Kubernetes cluster
 
-You can deploy a Kafka Bridge cluster to your {KubernetesName} cluster by using the Cluster Operator.
+You can deploy a Kafka Bridge cluster to your Kubernetes cluster by using the Cluster Operator.
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-kubernetes-str[Deploying the Cluster Operator to {KubernetesName}]
+* xref:deploying-cluster-operator-str[Deploying the Cluster Operator to Kubernetes]
 
 .Procedure
 
 * Use the `kubectl apply` command to create a `KafkaBridge` resource based on the `kafka-bridge.yaml` file:
 
 +
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
 kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
 ----

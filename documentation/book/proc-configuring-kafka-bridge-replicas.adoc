@@ -9,7 +9,7 @@ The number of Kafka Bridge nodes is configured using the `replicas` property in 
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* An Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
@@ -31,13 +31,5 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

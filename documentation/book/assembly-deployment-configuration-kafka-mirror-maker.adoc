@@ -16,7 +16,7 @@
 :context: deployment-configuration-kafka-mirror-maker
 
 The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[].
-All labels that apply to the desired `KafkaMirrorMaker` resource will also be applied to the {ProductPlatformName} resources making up Mirror Maker.
+All labels that apply to the desired `KafkaMirrorMaker` resource will also be applied to the Kubernetes resources making up Mirror Maker.
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::assembly-kafka-mirror-maker-replicas.adoc[leveloffset=+1]

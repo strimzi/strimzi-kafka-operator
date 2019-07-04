@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
@@ -35,57 +35,30 @@ spec:
 
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 . Find the hostname of the bootstrap loadbalancer.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl get`:
+This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 +
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc get`:
-+
-[source,shell,subs=+quotes]
-oc get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
-+
 If no hostname was found (nothing was returned by the command), use the loadbalancer IP address.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl get`:
+This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc get`:
-+
-[source,shell,subs=+quotes]
-oc get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
 +
 Use the hostname or IP address together with port 9094 in your Kafka client as the _bootstrap_ address.
 
 . Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl get`:
+This can be done using `kubectl get`:
++
 [source,shell,subs=+quotes]
 kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc extract`:
-+
-[source,shell,subs=+quotes]
-oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

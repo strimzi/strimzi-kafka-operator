@@ -5,9 +5,9 @@
 [id='configuring-external-clients-to-trust-cluster-ca-{context}']
 = Configuring external clients to trust the cluster CA 
 
-This procedure describes how to configure a Kafka client that resides outside the {ProductPlatformName} cluster – connecting to the `external` listener on port 9094 – to trust the cluster CA certificate.
+This procedure describes how to configure a Kafka client that resides outside the Kubernetes cluster – connecting to the `external` listener on port 9094 – to trust the cluster CA certificate.
 
-You can use the same procedure to configure clients inside {ProductPlatformName}, which connect to the `tls` listener on port 9093, but it is usually more convenient to access the `Secrets` using a volume mount in the client `Pod`.
+You can use the same procedure to configure clients inside Kubernetes, which connect to the `tls` listener on port 9093, but it is usually more convenient to access the `Secrets` using a volume mount in the client `Pod`.
 
 Follow this procedure when setting up the client and during the renewal period, when the old clients CA certificate is replaced.
 
@@ -22,18 +22,11 @@ IMPORTANT: The `_<cluster-name>_-cluster-ca-cert` `Secret` will contain more tha
 .Procedure
 
 . Extract the cluster CA certificate from the generated `_<cluster-name>_-cluster-ca-cert` `Secret`.
-ifdef::Kubernetes[]
 +
-On {KubernetesName}, run the following command to extract the certificates:
+Run the following command to extract the certificates:
 +
 [source,shell,subs="+quotes"]
 kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
-endif::Kubernetes[]
-+
-On {OpenShiftName}, run the following command to extract the certificates:
-+
-[source,shell,subs="+quotes"]
-oc extract secret/_<cluster-name>_-cluster-ca-cert --keys ca.crt
 
 . The Kafka client has to be configured to trust certificates signed by this CA.
 For the Java-based Kafka Producer, Consumer, and Streams APIs, you can do this by importing the CA certificates into the JVM's truststore using the following `keytool` command:

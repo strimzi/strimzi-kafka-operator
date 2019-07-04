@@ -37,56 +37,13 @@ listeners:
 
 == External listener
 
-The external listener is used to connect to a Kafka cluster from outside of an {ProductPlatformName} environment.
-{ProductName} supports three types of external listeners:
+The external listener is used to connect to a Kafka cluster from outside of a Kubernetes environment.
+{ProductName} supports the following types of external listener:
 
-* `route`
 * `loadbalancer`
 * `nodeport`
-ifdef::Kubernetes[]
 * `ingress`
-endif::Kubernetes[]
-
-=== Exposing Kafka using {OpenShiftName} `Routes`
-
-An external listener of type `route` exposes Kafka by using {OpenShiftName} `Routes` and the HAProxy router.
-A dedicated `Route` is created for every Kafka broker pod.
-An additional `Route` is created to serve as a Kafka bootstrap address.
-Kafka clients can use these `Routes` to connect to Kafka on port 443.
-
-ifdef::Kubernetes[]
-NOTE: `Routes` are available only on {OpenShiftName}. External listeners of type `route` cannot be used on {KubernetesName}.
-endif::Kubernetes[]
-
-When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always used.
-
-By default, the route hosts are automatically assigned by {OpenShiftName}.
-However, you can override the assigned route hosts by specifying the requested hosts in the `overrides` property.
-{ProductName} will not perform any validation that the requested hosts are available; you must ensure that they are free and can be used.
-
-.Example of an external listener of type `routes` configured with overrides for {OpenShiftName} route hosts
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  external:
-    type: route
-    authentication:
-      type: tls
-    overrides:
-      bootstrap:
-        host: bootstrap.myrouter.com
-      brokers:
-      - broker: 0
-        host: broker-0.myrouter.com
-      - broker: 1
-        host: broker-1.myrouter.com
-      - broker: 2
-        host: broker-2.myrouter.com
-# ...
-----
-
-For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
+* `route`
 
 === Exposing Kafka using loadbalancers
 
@@ -103,8 +60,8 @@ For more information on using loadbalancers to access Kafka, see xref:proc-acces
 === Exposing Kafka using node ports
 
 External listeners of type `nodeport` expose Kafka by using `NodePort` type `Services`.
-When exposing Kafka in this way, Kafka clients connect directly to the nodes of {ProductPlatformName}.
-You must enable access to the ports on the {ProductPlatformName} nodes for each client (for example, in firewalls or security groups).
+When exposing Kafka in this way, Kafka clients connect directly to the nodes of Kubernetes.
+You must enable access to the ports on the Kubernetes nodes for each client (for example, in firewalls or security groups).
 Each Kafka broker pod is then accessible on a separate port.
 Additional `NodePort` type `Service` is created to serve as a Kafka bootstrap address.
 
@@ -122,7 +79,7 @@ To disable it, set the `tls` field to `false`.
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-By default, the port numbers used for the bootstrap and broker services are automatically assigned by {ProductPlatformName}.
+By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
 However, you can override the assigned node ports by specifying the requested port numbers in the `overrides` property.
 {ProductName} does not perform any validation on the requested ports; you must ensure that they are free and available for use.
 
@@ -151,10 +108,9 @@ listeners:
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 
-ifdef::Kubernetes[]
-=== Exposing Kafka using {KubernetesName} `Ingress`
+=== Exposing Kafka using `Ingress`
 
-An external listener of type `ingress` exposes Kafka by using {KubernetesName} `Ingress` and the {NginxIngressController}.
+An external listener of type `ingress` exposes Kafka by using `Ingress` and the {NginxIngressController}.
 A dedicated `Ingress` resource is created for every Kafka broker pod.
 An additional `Ingress` resource is created to serve as a Kafka bootstrap address.
 Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
@@ -194,7 +150,43 @@ listeners:
 ----
 
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
-endif::Kubernetes[]
+
+=== Exposing Kafka using OpenShift `Routes`
+
+An external listener of type `route` exposes Kafka by using OpenShift `Routes` and the HAProxy router.
+A dedicated `Route` is created for every Kafka broker pod.
+An additional `Route` is created to serve as a Kafka bootstrap address.
+Kafka clients can use these `Routes` to connect to Kafka on port 443.
+
+When exposing Kafka using OpenShift `Routes`, TLS encryption is always used.
+
+By default, the route hosts are automatically assigned by OpenShift.
+However, you can override the assigned route hosts by specifying the requested hosts in the `overrides` property.
+{ProductName} will not perform any validation that the requested hosts are available; you must ensure that they are free and can be used.
+
+.Example of an external listener of type `routes` configured with overrides for OpenShift route hosts
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: route
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        host: bootstrap.myrouter.com
+      brokers:
+      - broker: 0
+        host: broker-0.myrouter.com
+      - broker: 1
+        host: broker-1.myrouter.com
+      - broker: 2
+        host: broker-2.myrouter.com
+# ...
+----
+
+For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
 
 === Customizing advertised addresses on external listeners
 
@@ -248,14 +240,8 @@ listeners:
 
 === Customizing DNS names of external listeners
 
-On `loadbalancer`
-ifdef::Kubernetes[and `ingress`]
-listeners, you can use the `dnsAnnotations` property to add additional annotations to the
-ifdef::Kubernetes[ingress resources or]
-load balancer services.
-You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the
-ifdef::Kubernetes[ingress resources or]
-services.
+On `loadbalancer` and `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources or load balancer services.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources or services.
 
 .Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
 [source,yaml,subs="attributes+"]
@@ -287,7 +273,6 @@ listeners:
 # ...
 ----
 
-ifdef::Kubernetes[]
 .Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
 [source,yaml,subs="attributes+"]
 ----
@@ -321,7 +306,6 @@ listeners:
         host: broker-2.myingress.com
 # ...
 ----
-endif::Kubernetes[]
 
 == Listener authentication
 
@@ -397,7 +381,7 @@ In the above example:
 The application pods must be running in the same namespace as the Kafka broker.
 * Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
 
-The syntax of the `networkPolicyPeers` field is the same as the `from` field in the `NetworkPolicy` resource in {KubernetesName}.
+The syntax of the `networkPolicyPeers` field is the same as the `from` field in the `NetworkPolicy` resource in Kubernetes.
 For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
 
-NOTE: Your configuration of {ProductPlatformName} must support Ingress NetworkPolicies in order to use network policies in {ProductName}.
+NOTE: Your configuration of Kubernetes must support Ingress NetworkPolicies in order to use network policies in {ProductName}.

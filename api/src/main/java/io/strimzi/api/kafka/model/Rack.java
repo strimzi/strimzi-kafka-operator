@@ -39,7 +39,7 @@ public class Rack implements UnknownPropertyPreserving, Serializable {
         this.topologyKey = topologyKey;
     }
 
-    @Description("A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. " +
+    @Description("A key that matches labels assigned to the Kubernetes cluster nodes. " +
             "The value of the label is used to set the broker's `broker.rack` config.")
     @Example("failure-domain.beta.kubernetes.io/zone")
     @JsonProperty(required = true)

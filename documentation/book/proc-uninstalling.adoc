@@ -24,7 +24,7 @@ These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `K
 +
 [options="nowrap",subs="+quotes,attributes"]
 ----
-{cmdcli} delete -f install/cluster-operator
+kubectl delete -f install/cluster-operator
 ----
 +
 WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaMirrorMaker`, or `KafkaBridge`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).

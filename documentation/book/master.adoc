@@ -34,7 +34,9 @@ include::ref-kafka-logging.adoc[leveloffset=+1]
 include::faq.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
-include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
+include::appendix_deploying_kubernetes_cluster.adoc[]
+
+include::appendix_deploying_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
 
 ifdef::MetricsAppendix[]

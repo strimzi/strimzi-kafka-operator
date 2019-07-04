@@ -7,23 +7,16 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
 
 . Label the nodes where {ProductName} components should be scheduled.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl label`:
-[source,shell,subs=+quotes]
+This can be done using `kubectl label`:
+[source,shell,subs="+quotes,attributes+"]
 kubectl label node _your-node_ node-type=fast-network
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc label`:
-+
-[source,shell,subs=+quotes]
-oc label node _your-node_ node-type=fast-network
 +
 Alternatively, some of the existing labels might be reused.
 . Edit the `affinity` property in the resource specifying the cluster deployment.
@@ -54,13 +47,6 @@ spec:
 
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
-[source,shell,subs=+quotes]
+This can be done using `kubectl apply`:
+[source,shell,subs="+quotes,attributes+"]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

@@ -571,7 +571,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [options="header"]
 |====
 |Property            |Description
-|topologyKey  1.2+<.<|A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+|topologyKey  1.2+<.<|A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
 |string
 |====
 

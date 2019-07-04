@@ -31,18 +31,11 @@ spec:
     userOperator: {}
 ----
 . Configure the Topic Operator using the fields described in xref:type-EntityTopicOperatorSpec-reference[].
-. Create or update the Kafka resource in {ProductPlatformName}.
+. Create or update the Kafka resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 .Additional resources
 

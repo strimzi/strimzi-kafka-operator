@@ -5,7 +5,7 @@
 [id='ref-list-of-kafka-bridge-resources-{context}']
 = List of resources created as part of Kafka Bridge cluster
 
-The following resources are created by the Cluster Operator in the {ProductPlatformName} cluster:
+The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
 _bridge-cluster-name_-bridge:: Deployment which is in charge to create the Kafka Bridge worker node pods.
 _bridge-cluster-name_-bridge-service:: Service which exposes the REST interface of the Kafka Bridge cluster.

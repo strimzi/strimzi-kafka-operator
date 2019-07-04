@@ -11,15 +11,11 @@
 
 include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
 
-ifdef::Kubernetes[]
-include::proc-deploying-cluster-operator-kubernetes.adoc[leveloffset=+1]
-endif::Kubernetes[]
+include::proc-deploying-cluster-operator.adoc[leveloffset=+1]
 
-include::proc-deploying-cluster-operator-openshift.adoc[leveloffset=+1]
+include::proc-deploying-cluster-operator-to-watch-multiple-namespaces.adoc[leveloffset=+1]
 
-include::proc-deploying-cluster-operator-kubernetes-to-watch-multiple-namespaces.adoc[leveloffset=+1]
-
-include::proc-deploying-cluster-operator-kubernetes-to-watch-whole-cluster.adoc[leveloffset=+1]
+include::proc-deploying-cluster-operator-to-watch-whole-cluster.adoc[leveloffset=+1]
 
 ifdef::Helm[]
 include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]

@@ -9,12 +9,8 @@
 = Cluster Operator
 
 {ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters.
-The Cluster Operator is deployed inside of the
-ifdef::Kubernetes[Kubernetes or]
-OpenShift cluster.
-To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the
-ifdef::Kubernetes[Kubernetes or]
-OpenShift cluster.
+The Cluster Operator is deployed inside of the Kubernetes cluster.
+To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the Kubernetes cluster.
 Based on what is declared inside of the `Kafka` resource, the Cluster Operator deploys a corresponding Kafka cluster.
 For more information about the different configuration options supported by the `Kafka` resource, see xref:assembly-deployment-configuration-kafka-str[]
 
@@ -22,15 +18,11 @@ NOTE: {ProductName} contains example YAML files, which make deploying a Cluster 
 
 include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
 
-ifdef::Kubernetes[]
-include::proc-deploying-cluster-operator-kubernetes.adoc[leveloffset=+1]
-endif::Kubernetes[]
+include::proc-deploying-cluster-operator.adoc[leveloffset=+1]
 
-include::proc-deploying-cluster-operator-openshift.adoc[leveloffset=+1]
+include::proc-deploying-cluster-operator-to-watch-multiple-namespaces.adoc[leveloffset=+1]
 
-include::proc-deploying-cluster-operator-kubernetes-to-watch-multiple-namespaces.adoc[leveloffset=+1]
-
-include::proc-deploying-cluster-operator-kubernetes-to-watch-whole-cluster.adoc[leveloffset=+1]
+include::proc-deploying-cluster-operator-to-watch-whole-cluster.adoc[leveloffset=+1]
 
 ifdef::Helm[]
 include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]

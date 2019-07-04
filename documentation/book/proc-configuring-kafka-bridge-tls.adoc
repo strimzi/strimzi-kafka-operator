@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* An Kubernetes cluster
 * A running Cluster Operator
 * If they exist, the name of the `Secret` for the certificate used for TLS Server Authentication, and the key under which the certificate is stored in the `Secret`
 
@@ -17,16 +17,9 @@
 +
 NOTE: The secrets created by the Cluster Operator for Kafka cluster may be used directly.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl create secret generic _my-secret_ --from-file=_my-file.crt_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc create secret generic _my-secret_ --from-file=_my-file.crt_
+
 . Edit the `tls` property in the `KafkaBridge` resource.
 For example:
 +
@@ -47,13 +40,5 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

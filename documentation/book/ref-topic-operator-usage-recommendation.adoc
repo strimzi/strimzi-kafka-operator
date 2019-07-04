@@ -9,7 +9,7 @@
 * When creating a `KafkaTopic` resource:
 ** Remember that the name cannot be changed later.
 ** Choose a name for the `KafkaTopic` resource that reflects the name of the topic it describes.
-** Ideally the `KafkaTopic.metadata.name` should be the same as its `spec.topicName`. To do this, the topic name will have to be a link:https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name^].
+** Ideally the `KafkaTopic.metadata.name` should be the same as its `spec.topicName`. To do this, the topic name will have to be a link:https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid Kubernetes resource name^].
 * When creating a topic:
 ** Remember that the name cannot be changed later.
-** It is best to use a name that is a link:https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name^], otherwise the operator will have to modify the name when creating the corresponding `KafkaTopic`.
+** It is best to use a name that is a link:https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid Kubernetes resource name^], otherwise the operator will have to modify the name when creating the corresponding `KafkaTopic`.

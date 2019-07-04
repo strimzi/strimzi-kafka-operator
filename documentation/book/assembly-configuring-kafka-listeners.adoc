@@ -15,7 +15,7 @@ Three types of listener are supported:
 
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)
-* External listener on port 9094 for access from outside of {ProductPlatformName}
+* External listener on port 9094 for access from outside of Kubernetes
 
 include::con-mutual-tls-authentication.adoc[leveloffset=+1]
 
@@ -25,15 +25,13 @@ include::con-kafka-listeners.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-listeners.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
-
 include::proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
 
 include::proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 
-ifdef::Kubernetes[]
 include::proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
-endif::Kubernetes[]
+
+include::proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
 
 include::proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+1]
 

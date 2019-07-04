@@ -19,14 +19,14 @@ Resource limits and requests are configured using the `resources` property in th
 * `KafkaBridge.spec`
 
 .Additional resources
-* For more information about managing computing resources on {ProductPlatformName}, see {K8sManagingComputingResources}.
+* For more information about managing computing resources on Kubernetes, see {K8sManagingComputingResources}.
 
 == Resource requests
 
 Requests specify the resources to reserve for a given container.
 Reserving the resources ensures that they are always available.
 
-IMPORTANT: If the resource request is for more than the available free resources in the {ProductPlatformName} cluster, the pod is not scheduled.
+IMPORTANT: If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
 
 Resources requests are specified in the `requests` property.
 Resources requests currently supported by {ProductName}:
@@ -92,7 +92,7 @@ resources:
 # ...
 ----
 
-NOTE: The computing power of 1 CPU core may differ depending on the platform where {ProductPlatformName} is deployed.
+NOTE: The computing power of 1 CPU core may differ depending on the platform where Kubernetes is deployed.
 
 .Additional resources
 * For more information on CPU specification, see the {K8sMeaningOfCpu}.

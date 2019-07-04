@@ -6,11 +6,11 @@
 = Kafka rack awareness
 
 Kafka rack awareness can be configured in the `rack` property of `Kafka.spec.kafka`.
-The `rack` object has one mandatory field named `topologyKey`, which needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
-The label is used by {ProductPlatformName} when scheduling the Kafka broker pods to nodes.
+The `rack` object has one mandatory field named `topologyKey`, which needs to match one of the labels assigned to the Kubernetes cluster nodes.
+The label is used by Kubernetes when scheduling the Kafka broker pods to nodes.
 
-If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
 Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
 This will have the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
 
@@ -30,11 +30,11 @@ spec:
 ----
 
 In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
-Consult your {ProductPlatformName} administrator about the label which should be used.
+Consult your Kubernetes administrator about the label which should be used.
 
 == Configuring init container image
 
-When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the {ProductPlatformName} cluster nodes.
+When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the Kubernetes cluster nodes.
 The container image which will be used for this container can be configured using the `brokerRackInitImage` property in `Kafka.spec.kafka`.
 When the `brokerRackInitImage` field is missing, the following images will be used (in the order of priority):
 

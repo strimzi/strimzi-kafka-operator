@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect.adoc
+
+[id='deploying-kafka-connect-{context}']
+= Deploying Kafka Connect to your cluster
+
+You can deploy a Kafka Connect cluster to your Kubernetes cluster by using the Cluster Operator.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[Deploying the Cluster Operator]
+
+.Procedure
+
+* Use the `kubectl apply` command to create a `KafkaConnect` resource based on the `kafka-connect.yaml` file:
+
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/kafka-connect/kafka-connect.yaml
+----
+
+.Additional resources
+* xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
+* xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support]

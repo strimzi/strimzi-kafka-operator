@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
@@ -16,29 +16,15 @@
 . Make sure there are no workloads scheduled on these nodes.
 . Set the taints on the selected nodes:
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl taint`:
+This can be done using `kubectl taint`:
 [source,shell,subs=+quotes]
 kubectl taint node _your-node_ dedicated=Kafka:NoSchedule
 +
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc adm taint`:
-+
-[source,shell,subs=+quotes]
-oc adm taint node _your-node_ dedicated=Kafka:NoSchedule
-+
 . Additionally, add a label to the selected nodes as well.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl label`:
+This can be done using `kubectl label`:
 [source,shell,subs=+quotes]
 kubectl label node _your-node_ dedicated=Kafka
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc label`:
-+
-[source,shell,subs=+quotes]
-oc label node _your-node_ dedicated=Kafka
 +
 . Edit the `affinity` and `tolerations` properties in the resource specifying the cluster deployment.
 For example:
@@ -73,13 +59,6 @@ spec:
 
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

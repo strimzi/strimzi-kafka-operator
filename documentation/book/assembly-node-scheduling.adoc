@@ -15,6 +15,6 @@ include::con-scheduling-to-specific-nodes.adoc[leveloffset=+1]
 
 include::ref-affinity.adoc[leveloffset=+1]
 
-include::proc-scheduling-deplyoment-to-node-using-node-affinity.adoc[leveloffset=+1]
+include::proc-scheduling-deployment-to-node-using-node-affinity.adoc[leveloffset=+1]
 
 :context: {parent-context-node-scheduling}
