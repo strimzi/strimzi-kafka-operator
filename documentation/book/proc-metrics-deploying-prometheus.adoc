@@ -9,7 +9,7 @@ To deploy Prometheus to your Kafka cluster, apply the link:https://raw.githubuse
 
 The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace defined in the YAML file.
 
-NOTE: Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. Targets are discovered and scraped for each endpoint port address. For endpoint discovery, the port address may be derived from service (`role: service`) or pod (`role: pod`) discovery.
+NOTE: By default, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. Targets are discovered and scraped for each endpoint port address. For endpoint discovery, the port address may be derived from service (`role: service`) or pod (`role: pod`) discovery.
 
 .Prerequisites
 
