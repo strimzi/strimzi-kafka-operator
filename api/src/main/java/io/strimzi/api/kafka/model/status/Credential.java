@@ -18,7 +18,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Represents a single listener
+ * Represents a user's credentials
  */
 @Buildable(
         editableEnabled = false,
@@ -26,22 +26,22 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "credentialsSecret", "credentials", "password" })
+@JsonPropertyOrder({"secret"})
 @EqualsAndHashCode
 public class Credential implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String credentialsSecret;
+    private String secret;
 
     private Map<String, Object> additionalProperties;
 
     @Description("The name of `Secret` where the credentials are stored")
-    public String getCredentialsSecret() {
-        return credentialsSecret;
+    public String getSecret() {
+        return secret;
     }
 
-    public void setCredentialsSecret(String credentialsSecret) {
-        this.credentialsSecret = credentialsSecret;
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
     @Override

@@ -208,7 +208,7 @@ public class KafkaUserOperator {
             Credential credential = null;
             if (desired != null) {
                 credential = new CredentialBuilder()
-                        .withCredentialsSecret(desired.getMetadata().getName())
+                        .withSecret(desired.getMetadata().getName())
                         .build();
             }
             userStatus.setCredentials(credential);

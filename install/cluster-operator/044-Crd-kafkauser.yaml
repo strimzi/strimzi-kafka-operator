@@ -136,5 +136,5 @@ spec:
             credentials:
               type: object
               properties:
-                credentialsSecret:
+                secret:
                   type: string

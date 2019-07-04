@@ -1645,8 +1645,8 @@ Used in: xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 [options="header"]
 |====
-|Property                  |Description
-|credentialsSecret  1.2+<.<|The name of `Secret` where the credentials are stored.
+|Property       |Description
+|secret  1.2+<.<|The name of `Secret` where the credentials are stored.
 |string
 |====
 

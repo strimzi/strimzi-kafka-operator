@@ -11,7 +11,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Represents a status of the Kafka resource
+ * Represents a status of the Kafka User resource
  */
 @Buildable(
         editableEnabled = false,
