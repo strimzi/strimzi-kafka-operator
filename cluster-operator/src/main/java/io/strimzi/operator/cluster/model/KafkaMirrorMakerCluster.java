@@ -192,11 +192,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
             kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
-            String image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
-            if (image == null) {
-                throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-            }
-            kafkaMirrorMakerCluster.setImage(image);
+            kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
 
             kafkaMirrorMakerCluster.setLogging(spec.getLogging());
             kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
@@ -231,6 +227,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return kafkaMirrorMakerCluster;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(KafkaMirrorMakerSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null
@@ -244,6 +241,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(KafkaMirrorMakerSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null

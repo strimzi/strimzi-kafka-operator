@@ -79,6 +79,7 @@ public final class TestUtils {
     }
 
     /** Returns a Map of the given sequence of key, value pairs. */
+    @SafeVarargs
     public static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
@@ -116,7 +117,7 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description + " to be ready");
+                throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
@@ -217,9 +218,9 @@ public final class TestUtils {
         assertEquals(r, actual);
     }
 
-
+    @SafeVarargs
     public static <T> Set<T> set(T... elements) {
-        return new HashSet(asList(elements));
+        return new HashSet<>(asList(elements));
     }
 
     public static <T> T fromYaml(String resource, Class<T> c) {
@@ -420,7 +421,7 @@ public final class TestUtils {
                     reconnect.get().run();
                 }
             }
-            if (ex.getCause() instanceof UnknownHostException && retry > 0) {
+            if ((ex.getCause() instanceof UnknownHostException || ex.getCause() instanceof IllegalStateException) && retry > 0) {
                 try {
                     LOGGER.info("{} remaining iterations", retry);
                     return doRequestTillSuccess(retry - 1, fn, reconnect);
@@ -428,6 +429,7 @@ public final class TestUtils {
                     throw ex2;
                 }
             } else {
+                LOGGER.info(ex.getClass().getName());
                 if (ex.getCause() != null) {
                     ex.getCause().printStackTrace();
                 } else {

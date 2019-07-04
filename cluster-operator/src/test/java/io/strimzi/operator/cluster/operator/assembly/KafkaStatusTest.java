@@ -319,6 +319,7 @@ public class KafkaStatusTest {
             super(vertx, pfa, certManager, supplier, config);
         }
 
+        @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
                     .withNewType("plain")
@@ -355,6 +356,7 @@ public class KafkaStatusTest {
             this.exception = exception;
         }
 
+        @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
                     .withNewType("plain")

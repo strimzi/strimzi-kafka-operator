@@ -46,19 +46,12 @@ spec:
         operation: Read
 ----
 
-. Create the `KafkaUser` resource in {ProductPlatformName}.
+. Create the `KafkaUser` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 . Use the credentials from the secret `my-user` in your application
 

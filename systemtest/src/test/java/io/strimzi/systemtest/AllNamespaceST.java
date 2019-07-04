@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +16,7 @@ import org.junit.jupiter.api.TestInfo;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -32,7 +33,6 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
-    @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespce = setNamespace(THIRD_NAMESPACE);
@@ -48,7 +48,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO();
@@ -58,14 +58,12 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
     @Test
-    @Tag(REGRESSION)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO();
     }
 
     @Test
-    @Tag(REGRESSION)
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
@@ -78,7 +76,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testUOWatchingOtherNamespace() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
@@ -120,9 +117,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         applyRoleBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<KubernetesClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
-        clusterRoleBindingList.forEach(kubernetesClusterRoleBinding ->
-                testClassResources.kubernetesClusterRoleBinding(kubernetesClusterRoleBinding, CO_NAMESPACE));
+        List<ClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        clusterRoleBindingList.forEach(clusterRoleBinding ->
+                testClassResources.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
 
         LOGGER.info("Deploying CO to watch all namespaces");
         testClassResources.clusterOperator("*").done();
@@ -136,14 +133,14 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Override
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
         thirdNamespaceResources.deleteResources();
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }

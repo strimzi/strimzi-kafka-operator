@@ -90,8 +90,8 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM = "KAFKA_CONNECT_SASL_MECHANISM";
 
     protected String bootstrapServers;
-    protected List<ExternalConfigurationEnv> externalEnvs = Collections.EMPTY_LIST;
-    protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.EMPTY_LIST;
+    protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
+    protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
 
     private KafkaConnectTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
@@ -156,11 +156,8 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
 
         String image = spec instanceof KafkaConnectS2ISpec ?
-                versions.kafkaConnectS2iVersion(spec.getImage(), spec.getVersion())
+                versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
                 : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-        if (image == null) {
-            throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-        }
         kafkaConnect.setImage(image);
 
         kafkaConnect.setResources(spec.getResources());
@@ -251,6 +248,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return kafkaConnect;
     }
 
+    @SuppressWarnings("deprecation")
     private static <C extends KafkaConnectCluster> List<Toleration> tolerations(KafkaConnectSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null
@@ -264,6 +262,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static <C extends KafkaConnectCluster> Affinity affinity(KafkaConnectSpec spec) {
         if (spec.getTemplate() != null
                 && spec.getTemplate().getPod() != null

@@ -7,6 +7,8 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -20,8 +22,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
@@ -106,7 +108,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
@@ -138,8 +140,8 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
+            context.assertTrue(ar.failed());
+            context.assertEquals(ex, ar.cause());
             async.complete();
         });
     }
@@ -165,7 +167,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.complete();
@@ -194,14 +196,14 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
+            context.assertTrue(ar.failed());
+            context.assertEquals(ex, ar.cause());
             async.complete();
         });
     }
 
     @Test
-    public void deleteWhenResourceDoesNotExistIsANop(TestContext context) {
+    public void deletionWhenResourceDoesNotExistIsANop(TestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -218,7 +220,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource, never()).delete();
             async.complete();
@@ -226,11 +228,20 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     }
 
     @Test
-    public void deleteWhenResourceExistsStillDeletes(TestContext context) {
+    @SuppressWarnings("unchecked")
+    public void deletionWhenResourceExistsStillDeletes(TestContext context) {
         T resource = resource();
-
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenReturn(true);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -245,17 +256,63 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).delete();
+            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
             async.complete();
         });
     }
 
     @Test
-    public void successfulDeletion(TestContext context) {
+    public void deletionTimesOut(TestContext context) {
         T resource = resource();
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenReturn(true);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
+            context.assertFalse(ar.succeeded());
+            context.assertTrue(ar.cause() instanceof TimeoutException, "Got " + ar.cause());
+            verify(mockResource).delete();
+            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
+            async.complete();
+        });
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void deletionSuccessful(TestContext context) {
+        T resource = resource();
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenReturn(Boolean.TRUE);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -271,20 +328,29 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         Async async = context.async();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockResource).delete();
+            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
             async.complete();
         });
     }
 
     @Test
-    public void deletionThrows(TestContext context) {
+    public void deletion_deleteMethodThrows(TestContext context) {
         T resource = resource();
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.delete()).thenThrow(ex);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -299,8 +365,75 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
+            context.assertTrue(ar.failed());
+            context.assertEquals(ex, ar.cause());
+            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
+            async.complete();
+        });
+    }
+
+    @Test
+    public void deletion_watchMethodThrows(TestContext context) {
+        T resource = resource();
+        RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenThrow(ex);
+        when(mockResource.watch(any())).thenThrow(ex);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
+            context.assertTrue(ar.failed());
+            context.assertEquals(ex, ar.cause());
+            async.complete();
+        });
+    }
+
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void deletion_deleteMethodReturnsFalse(TestContext context) {
+        T resource = resource();
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.delete()).thenReturn(Boolean.FALSE);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher<T> watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, null);
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
+            context.assertFalse(ar.succeeded());
+            verify(mockResource).delete();
+            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
             async.complete();
         });
     }

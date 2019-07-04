@@ -93,6 +93,7 @@ public class HttpClientsListener extends AbstractVerticle {
         });
     }
 
+    @SuppressWarnings("unchecked")
     private void postHandler(HttpServerRequest request) {
         request.bodyHandler(handler -> {
             JsonObject json = handler.toJsonObject();

@@ -8,11 +8,11 @@
 
 You can use the Kafka Bridge to integrate both _internal_ and _external_ HTTP client applications with your Kafka cluster.
 
-* Internal clients are container-based HTTP clients running in _the same_ {ProductPlatformName} cluster as the Kafka Bridge itself.
+* Internal clients are container-based HTTP clients running in _the same_ Kubernetes cluster as the Kafka Bridge itself.
 
-* External clients are HTTP clients running _outside_ the {ProductPlatformName} cluster in which the Kafka Bridge is deployed and running.
+* External clients are HTTP clients running _outside_ the Kubernetes cluster in which the Kafka Bridge is deployed and running.
 
-Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge through an {OpenShiftName} Route, a LoadBalancer Service, or a {KubernetesName} Ingress.
+Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can access the Kafka Bridge through an OpenShift Route, a LoadBalancer Service, or a Ingress.
 
 .Additional resources
 

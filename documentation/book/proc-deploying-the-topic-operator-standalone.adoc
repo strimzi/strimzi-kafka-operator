@@ -19,39 +19,24 @@ For instance, it can operate _with_ any Kafka cluster, not necessarily one deplo
 +
 .. The `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_hostname_:‍_port_` pairs.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the Zookeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same Zookeeper cluster that your Kafka cluster is using.
-.. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the {ProductPlatformName} namespace in which you want the operator to watch for  `KafkaTopic` resources.
+.. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the Kubernetes namespace in which you want the operator to watch for  `KafkaTopic` resources.
 
 . Deploy the Topic Operator.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
-[source,shell]
+[source,shell,subs=+quotes]
 kubectl apply -f install/topic-operator
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell]
-oc apply -f install/topic-operator
 
 . Verify that the Topic Operator has been deployed successfully.
-ifdef::Kubernetes[]
+This can be done using `kubectl describe`:
 +
-On {KubernetesName} this can be done using `kubectl describe`:
-+
-[source,shell]
+[source,shell,subs=+quotes]
 kubectl describe deployment strimzi-topic-operator
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc describe`:
-+
-[source,shell]
-oc describe deployment strimzi-topic-operator
 +
 The Topic Operator is deployed once the `Replicas:` entry shows `1 available`.
 +
-NOTE: This could take some time if you have a slow connection to the {ProductPlatformName} and the images have not been downloaded before.
+NOTE: This could take some time if you have a slow connection to the Kubernetes and the images have not been downloaded before.
 
 .Additional resources
 

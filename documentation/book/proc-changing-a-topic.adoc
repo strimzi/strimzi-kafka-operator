@@ -5,7 +5,7 @@
 [id='changing-a-topic-{context}']
 = Changing a topic
 
-This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {ProductPlatformName} resource.
+This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` Kubernetes resource.
 
 .Prerequisites
 
@@ -31,26 +31,18 @@ spec:
   replicas: 2
 ----
 +
-TIP: You can get the current version of the resource using `oc get kafkatopic orders -o yaml`.
+TIP: You can get the current version of the resource using `kubectl get kafkatopic orders -o yaml`.
 +
 NOTE: Changing topic names using the `KafkaTopic.spec.topicName` variable and decreasing partition size using the `KafkaTopic.spec.partitions` variable is not supported by Kafka.
 +
 CAUTION: Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
 
-. Update the `KafkaTopic` resource in {ProductPlatformName}.
+. Update the `KafkaTopic` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
-
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].

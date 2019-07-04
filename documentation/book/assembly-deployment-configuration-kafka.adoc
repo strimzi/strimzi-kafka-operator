@@ -16,7 +16,7 @@
 :context: deployment-configuration-kafka
 
 The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
-All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
+All labels that are applied to the desired `Kafka` resource will also be applied to the Kubernetes resources making up the Kafka cluster.
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::con-considerations-for-data-storage.adoc[leveloffset=+1]

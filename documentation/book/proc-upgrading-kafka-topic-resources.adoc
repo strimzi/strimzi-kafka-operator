@@ -16,7 +16,7 @@ Execute the following steps for each `KafkaTopic` resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} edit kafkatopic _my-topic_
+kubectl edit kafkatopic _my-topic_
 ----
 
 . Replace:

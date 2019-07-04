@@ -152,7 +152,7 @@ public class Labels {
     }
 
     private Labels(Map<String, String> labels) {
-        this.labels = unmodifiableMap(new HashMap(labels));
+        this.labels = unmodifiableMap(new HashMap<>(labels));
     }
 
     private Labels with(String label, String value) {

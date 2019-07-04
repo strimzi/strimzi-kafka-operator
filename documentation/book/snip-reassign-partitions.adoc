@@ -1,8 +1,5 @@
 . Copy the `_reassignment.json_` file to the broker pod on which you will later execute the commands:
 +
-ifdef::Kubernetes[]
-On {KubernetesName}:
-+
 [source,shell,subs=+quotes]
 ----
 cat _reassignment.json_ | \
@@ -10,29 +7,16 @@ cat _reassignment.json_ | \
   'cat > /tmp/reassignment.json'
 ----
 +
-endif::Kubernetes[]
-On {OpenShiftName}:
-+
-[source,shell,subs=+quotes]
-----
-cat _reassignment.json_ | \
-  oc rsh -c kafka _broker-pod_ /bin/bash -c \
-  'cat > /tmp/reassignment.json'
-----
-+
 For example:
 +
 [source,shell,subs=+quotes]
 ----
-cat reassignment.json | \
-  oc rsh -c kafka my-cluster-kafka-0 /bin/bash -c \
+cat _reassignment.json_ | \
+  kubectl exec my-cluster-kafka-0 -c kafka -i -- /bin/bash -c \
   'cat > /tmp/reassignment.json'
 ----
 
 . Execute the partition reassignment using the `kafka-reassign-partitions.sh` command line tool from the same broker pod.
-+
-ifdef::Kubernetes[]
-On {KubernetesName}:
 +
 [source,shell,subs=+quotes]
 ----
@@ -42,37 +26,11 @@ kubectl exec _broker-pod_ -c kafka -it -- \
   --execute
 ----
 +
-endif::Kubernetes[]
-On {OpenShiftName}:
-+
-[source,shell,subs=+quotes]
-----
-oc rsh -c kafka _broker-pod_ \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --execute
-----
-+
 If you are going to throttle replication you can also pass the `--throttle` option with an inter-broker throttled rate in bytes per second. For example:
-ifdef::Kubernetes[]
-+
-On {KubernetesName}:
 +
 [source,shell,subs=+quotes]
 ----
 kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --throttle 5000000 \
-  --execute
-----
-endif::Kubernetes[]
-+
-On {OpenShiftName}:
-+
-[source,shell,subs=+quotes]
-----
-oc rsh -c kafka my-cluster-kafka-0 \
   bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 5000000 \
@@ -85,9 +43,6 @@ You should save this to a local file (not a file in the pod) in case you need to
 The second JSON object is the target reassignment you have passed in your reassignment JSON file.
 
 . If you need to change the throttle during reassignment you can use the same command line with a different throttled rate. For example:
-ifdef::Kubernetes[]
-+
-On {KubernetesName},
 +
 [source,shell,subs=+quotes]
 ----
@@ -97,24 +52,8 @@ kubectl exec my-cluster-kafka-0 -c kafka -it -- \
   --throttle 10000000 \
   --execute
 ----
-endif::Kubernetes[]
-+
-On {OpenShiftName}:
-+
-[source,shell,subs=+quotes]
-----
-oc rsh -c kafka my-cluster-kafka-0 \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --throttle 10000000 \
-  --execute
-----
-
 
 . Periodically verify whether the reassignment has completed using the `kafka-reassign-partitions.sh` command line tool from any of the broker pods. This is the same command as the previous step but with the `--verify` option instead of the `--execute` option.
-+
-ifdef::Kubernetes[]
-On {kubernetesName}:
 +
 [source,shell,subs=+quotes]
 ----
@@ -124,34 +63,11 @@ kubectl exec _broker-pod_ -c kafka -it -- \
   --verify
 ----
 +
-endif::Kubernetes[]
-On {OpenShiftName}:
-+
-[source,shell,subs=+quotes]
-----
-oc rsh -c kafka _broker-pod_ \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --verify
-----
-ifdef::Kubernetes[]
-+
-For example, on {KubernetesName},
+For example,
 +
 [source,shell,subs=+quotes]
 ----
 kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --verify
-----
-endif::Kubernetes[]
-+
-For example, on {OpenShiftName},
-+
-[source,shell,subs=+quotes]
-----
-oc rsh -c kafka my-cluster-kafka-0 \
   bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
   --reassignment-json-file /tmp/reassignment.json \
   --verify

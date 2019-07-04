@@ -581,6 +581,8 @@ spec:
                                       type: string
                                   topologyKey:
                                     type: string
+                    priorityClassName:
+                      type: string
                     tolerations:
                       type: array
                       items:

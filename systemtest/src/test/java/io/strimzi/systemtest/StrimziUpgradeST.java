@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Tag(REGRESSION)
+@Tag(UPGRADE)
 public class StrimziUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
@@ -169,13 +169,15 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void deleteInstalledYamls(File root) {
-        Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
-            if (f.getName().matches(".*RoleBinding.*")) {
-                cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else {
-                cmdKubeClient().delete(f);
-            }
-        });
+        if (root != null) {
+            Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
+                if (f.getName().matches(".*RoleBinding.*")) {
+                    cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+                } else {
+                    cmdKubeClient().delete(f);
+                }
+            });
+        }
     }
 
     private void waitForClusterReadiness() {
@@ -265,18 +267,18 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     @Override
-    void tearDownEnvironmentAfterEach() {
+    protected void tearDownEnvironmentAfterEach() {
         deleteNamespaces();
     }
 
     // There is no value of having teardown logic for class resources due to the fact that
     // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
     @Override
-    void tearDownEnvironmentAfterAll() {
+    protected void tearDownEnvironmentAfterAll() {
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         deleteNamespaces();
         createNamespace(NAMESPACE);
     }

@@ -7,9 +7,9 @@ package io.strimzi.test.k8s;
 import java.nio.file.Path;
 import java.util.Map;
 
-public interface HelmClient<H extends HelmClient<H>> {
+public interface HelmClient {
     static HelmClient findClient(KubeCmdClient<?> kubeClient) {
-        HelmClient client = new Helm(kubeClient);
+        HelmClient client = new Helm(kubeClient.namespace());
         if (!client.clientAvailable()) {
             throw new RuntimeException("No helm client found on $PATH. $PATH=" + System.getenv("PATH"));
         }

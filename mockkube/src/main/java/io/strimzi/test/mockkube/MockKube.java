@@ -48,12 +48,12 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -62,15 +62,14 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
-import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
@@ -126,10 +125,10 @@ public class MockKube {
     private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
     private final Map<String, Route> routeDb = db(emptySet(), Route.class, DoneableRoute.class);
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
-    private final Map<String, KubernetesRoleBinding> pdbRb = db(emptySet(), KubernetesRoleBinding.class,
-            DoneableKubernetesRoleBinding.class);
-    private final Map<String, KubernetesClusterRoleBinding> pdbCrb = db(emptySet(), KubernetesClusterRoleBinding.class,
-            DoneableKubernetesClusterRoleBinding.class);
+    private final Map<String, RoleBinding> pdbRb = db(emptySet(), RoleBinding.class,
+            DoneableRoleBinding.class);
+    private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet(), ClusterRoleBinding.class,
+            DoneableClusterRoleBinding.class);
 
     private Map<String, List<String>> podsForDeployments = new HashMap<>();
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
@@ -192,11 +191,12 @@ public class MockKube {
 
     public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D>
             withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
-        MockedCrd mockedCrd = new MockedCrd(crd, instanceClass, instanceListClass, doneableInstanceClass);
+        MockedCrd<T, L, D> mockedCrd = new MockedCrd<>(crd, instanceClass, instanceListClass, doneableInstanceClass);
         this.mockedCrds.add(mockedCrd);
         return mockedCrd;
     }
 
+    @SuppressWarnings("unchecked")
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
@@ -208,7 +208,7 @@ public class MockKube {
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
                 RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods, mockPvcs);
-        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+        MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment,
                 DoneableDeployment>> mockDep = buildDeployments(mockPods);
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
         MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount,
@@ -218,20 +218,18 @@ public class MockKube {
         MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> mockRoute = buildRoute();
         MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget,
                 Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> mockPdb = buildPdb();
-        MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> mockRb = buildRb();
-        MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-                Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> mockCrb = buildCrb();
+        MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+                Resource<RoleBinding, DoneableRoleBinding>> mockRb = buildRb();
+        MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+                Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> mockCrb = buildCrb();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
         when(mockClient.services()).thenReturn(mockSvc);
         AppsAPIGroupDSL api = mock(AppsAPIGroupDSL.class);
 
         when(api.statefulSets()).thenReturn(mockSs);
+        when(api.deployments()).thenReturn(mockDep);
         when(mockClient.apps()).thenReturn(api);
-        ExtensionsAPIGroupDSL ext = mock(ExtensionsAPIGroupDSL.class);
-        when(mockClient.extensions()).thenReturn(ext);
-        when(ext.deployments()).thenReturn(mockDep);
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
@@ -266,7 +264,9 @@ public class MockKube {
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
-        when(mockClient.extensions().networkPolicies()).thenReturn(mockNetworkPolicy);
+        NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
+        when(mockClient.network()).thenReturn(network);
+        when(network.networkPolicies()).thenReturn(mockNetworkPolicy);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
@@ -274,8 +274,8 @@ public class MockKube {
         RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(rbac);
         when(mockClient.policy().podDisruptionBudget()).thenReturn(mockPdb);
-        when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(mockRb);
-        when(mockClient.rbac().kubernetesClusterRoleBindings()).thenReturn(mockCrb);
+        when(mockClient.rbac().roleBindings()).thenReturn(mockRb);
+        when(mockClient.rbac().clusterRoleBindings()).thenReturn(mockCrb);
 
         mockHttpClient(mockClient);
 
@@ -305,13 +305,13 @@ public class MockKube {
         }
     }
 
-    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>
+    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>>
             buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
-        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment,
                 DoneableDeployment>>(
-            Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(ScalableResource.class), depDb) {
+            Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(RollableScalableResource.class), depDb) {
             @Override
-            protected void nameScopedMocks(ScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
+            protected void nameScopedMocks(RollableScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockWatch(resourceName, resource);
                 //mockCreate(resourceName, resource);
@@ -384,6 +384,7 @@ public class MockKube {
                 StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
                         mockGet(resourceName, resource);
                         //mockCreate("endpoint", endpointDb, resourceName, resource);
@@ -725,13 +726,13 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> buildRb() {
-        return new AbstractMockBuilder<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>>(
-                KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class, castClass(Resource.class), pdbRb) {
+    private MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+            Resource<RoleBinding, DoneableRoleBinding>> buildRb() {
+        return new AbstractMockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding,
+                Resource<RoleBinding, DoneableRoleBinding>>(
+                RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, castClass(Resource.class), pdbRb) {
             @Override
-            protected void nameScopedMocks(Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding> resource, String resourceName) {
+            protected void nameScopedMocks(Resource<RoleBinding, DoneableRoleBinding> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);
@@ -741,14 +742,14 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> buildCrb() {
-        return new AbstractMockBuilder<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList,
-                DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>>(
-                KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class,
+    private MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+            Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> buildCrb() {
+        return new AbstractMockBuilder<ClusterRoleBinding, ClusterRoleBindingList,
+                DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>>(
+                ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class,
                 castClass(Resource.class), pdbCrb) {
             @Override
-            protected void nameScopedMocks(Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding> resource, String resourceName) {
+            protected void nameScopedMocks(Resource<ClusterRoleBinding, DoneableClusterRoleBinding> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);
@@ -782,6 +783,7 @@ public class MockKube {
             c -> copyResource(c, cls, doneableClass))));
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends HasMetadata, D extends Doneable<T>> T copyResource(T resource, Class<T> resourceClass, Class<D> doneableClass) {
         try {
             D doneableInstance = doneableClass.getDeclaredConstructor(resourceClass).newInstance(resource);
@@ -854,6 +856,7 @@ public class MockKube {
             this.listClass = listClass;
         }
 
+        @SuppressWarnings("unchecked")
         protected CM copyResource(CM resource) {
             if (resource == null) {
                 return null;
@@ -871,6 +874,7 @@ public class MockKube {
          * Generate a stateful mock for CRUD-like interactions.
          * @return The mock
          */
+        @SuppressWarnings("unchecked")
         public MixedOperation<CM, CML, DCM, R> build() {
             MixedOperation<CM, CML, DCM, R> mixed = mock(MixedOperation.class);
 
@@ -923,6 +927,7 @@ public class MockKube {
             return mixed;
         }
 
+        @SuppressWarnings("unchecked")
         public NonNamespaceOperation<CM, CML, DCM, R> buildNonNamespaced() {
             // TODO factor out common with build(), which is more-or-less identical
             NonNamespaceOperation<CM, CML, DCM, R> mixed = mock(NonNamespaceOperation.class);
@@ -943,7 +948,7 @@ public class MockKube {
 
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Map<String, String> labels) {
             return mockWithLabels(p -> {
-                Map<String, String> m = new HashMap(p.getMetadata().getLabels());
+                Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
                 m.keySet().retainAll(labels.keySet());
                 return labels.equals(m);
             });
@@ -953,6 +958,7 @@ public class MockKube {
             return mockWithLabels(p -> p.getMetadata().getLabels().containsKey(label));
         }
 
+        @SuppressWarnings("unchecked")
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Predicate<CM> predicate) {
             MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
             when(mixedWithLabels.list()).thenAnswer(i2 -> {
@@ -965,6 +971,7 @@ public class MockKube {
             return mixedWithLabels;
         }
 
+        @SuppressWarnings("unchecked")
         private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
             KubernetesResourceList<CM> l = mock(listClass);
             Collection<CM> values;
@@ -1063,7 +1070,7 @@ public class MockKube {
 
         protected void mockCreate(String resourceName, R resource) {
             when(resource.create(any())).thenAnswer(i -> {
-                CM argument = (CM) i.getArguments()[0];
+                CM argument = i.getArgument(0);
                 return mockCreate(resourceName, argument);
             });
         }

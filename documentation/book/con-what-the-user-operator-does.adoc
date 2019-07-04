@@ -5,14 +5,14 @@
 [id='con-what-the-user-operator-does-{context}']
 = Overview of the User Operator component
 
-The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` {ProductPlatformName} resources that describe Kafka users and ensuring that they are configured properly in the Kafka cluster.
+The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` Kubernetes resources that describe Kafka users and ensuring that they are configured properly in the Kafka cluster.
 For example:
 
 * if a `KafkaUser` is created, the User Operator will create the user it describes
 * if a `KafkaUser` is deleted, the User Operator will delete the user it describes
 * if a `KafkaUser` is changed, the User Operator will update the user it describes
 
-Unlike the xref:what-the-topic-operator-does-str[Topic Operator], the User Operator does not sync any changes from the Kafka cluster with the {ProductPlatformName} resources.
+Unlike the xref:what-the-topic-operator-does-str[Topic Operator], the User Operator does not sync any changes from the Kafka cluster with the Kubernetes resources.
 Unlike the Kafka topics which might be created by applications directly in Kafka, it is not expected that the users will be managed directly in the Kafka cluster in parallel with the User Operator, so this should not be needed.
 
 The User Operator allows you to declare a `KafkaUser` as part of your application's deployment.

@@ -4,18 +4,18 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 
-public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding,
-        KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding,
-        DoneableKubernetesRoleBinding>> {
+public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, RoleBinding,
+        RoleBindingList, DoneableRoleBinding, Resource<RoleBinding,
+        DoneableRoleBinding>> {
 
     /**
      * Constructor
@@ -27,8 +27,8 @@ public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClie
     }
 
     @Override
-    protected MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> operation() {
-        return client.rbac().kubernetesRoleBindings();
+    protected MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+            Resource<RoleBinding, DoneableRoleBinding>> operation() {
+        return client.rbac().roleBindings();
     }
 }

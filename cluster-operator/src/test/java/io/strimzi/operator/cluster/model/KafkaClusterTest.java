@@ -1047,6 +1047,7 @@ public class KafkaClusterTest {
                                     .withLabels(podLabels)
                                     .withAnnotations(podAnots)
                                 .endMetadata()
+                                .withNewPriorityClassName("top-priority")
                             .endPod()
                             .withNewBootstrapService()
                                 .withNewMetadata()
@@ -1100,6 +1101,7 @@ public class KafkaClusterTest {
         StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+        assertEquals("top-priority", ss.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
@@ -1417,7 +1419,7 @@ public class KafkaClusterTest {
                     .editKafka()
                         .withNewTemplate()
                             .withNewPod()
-                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                             .endPod()
                         .endTemplate()
                     .endKafka()

@@ -9,13 +9,13 @@
 [id='overview-{context}']
 = Overview of {ProductName}
 
-{ProductName} is based on Apache Kafka, a popular platform for streaming data delivery and processing. {ProductName} makes it easy to run Apache Kafka on {ProductPlatformName}.
+{ProductName} is based on Apache Kafka, a popular platform for streaming data delivery and processing. {ProductName} makes it easy to run Apache Kafka on Kubernetes.
 
 {ProductName} provides three operators:
 
-Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within an {ProductPlatformName} cluster.
-Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within an {ProductPlatformName} cluster.
-User Operator:: Responsible for managing Kafka users within a Kafka cluster running within an {ProductPlatformName} cluster.
+Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within a Kubernetes cluster.
+Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within a Kubernetes cluster.
+User Operator:: Responsible for managing Kafka users within a Kafka cluster running within a Kubernetes cluster.
 
 .Operators within the {ProductName} architecture
 

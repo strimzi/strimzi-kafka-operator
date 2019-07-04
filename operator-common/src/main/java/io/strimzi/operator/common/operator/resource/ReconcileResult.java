@@ -6,7 +6,9 @@ package io.strimzi.operator.common.operator.resource;
 
 public abstract class ReconcileResult<R> {
 
+    @SuppressWarnings("unchecked")
     private static final ReconcileResult DELETED = new ReconcileResult(null) {
+        @Override
         public String toString() {
             return "DELETED";
         }
@@ -17,6 +19,7 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "NOOP";
         }
@@ -28,6 +31,7 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "CREATED";
         }
@@ -39,6 +43,7 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "PATCH";
         }
@@ -51,7 +56,7 @@ public abstract class ReconcileResult<R> {
      * @param <D> The type of resource.
      */
     public static final <D> Patched<D> patched(D resource) {
-        return new Patched(resource);
+        return new Patched<>(resource);
     }
 
     /**
@@ -69,6 +74,7 @@ public abstract class ReconcileResult<R> {
      * @return a reconciliation result that indicates the resource was deleted.
      * @param <P> The type of resource.
      */
+    @SuppressWarnings("unchecked")
     public static final <P> ReconcileResult<P> deleted() {
         return DELETED;
     }

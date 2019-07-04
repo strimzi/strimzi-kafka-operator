@@ -5,7 +5,7 @@
 [id='proc-manual-delete-pod-pvc-kafka-{context}']
 = Deleting Kafka nodes manually
 
-This procedure describes how to delete an existing Kafka node by using an {ProductPlatformName} annotation.
+This procedure describes how to delete an existing Kafka node by using a Kubernetes annotation.
 Deleting a Kafka node consists of deleting both the `Pod` on which the Kafka broker is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
 After deletion, the `Pod` and its related `PersistentVolumeClaim` are recreated automatically.
 
@@ -22,25 +22,16 @@ WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The f
 +
 For example, if the cluster is named _cluster-name_, the pods are named _cluster-name_-kafka-_index_, where _index_ starts at zero and ends at the total number of replicas.
 
-. Annotate the `Pod` resource in {ProductPlatformName}.
+. Annotate the `Pod` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use `kubectl annotate`:
-[source,shell,subs=+quotes]
+Use `kubectl annotate`:
+[source,shell,subs="+quotes,attributes+"]
 kubectl annotate pod _cluster-name_-kafka-_index_ strimzi.io/delete-pod-and-pvc=true
-+
-endif::Kubernetes[]
-On {OpenShiftName} use `oc annotate`:
-+
-[source,shell,subs=+quotes]
-oc annotate pod _cluster-name_-kafka-_index_ strimzi.io/delete-pod-and-pvc=true
 
 . Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
 
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Kafka cluster on {OpenShiftName}, see xref:deploying-kafka-cluster-openshift-str[].
-ifdef::Kubernetes[]
-* For more information about deploying the Kafka cluster on {KubernetesName}, see xref:deploying-kafka-cluster-kubernetes-str[].
-endif::Kubernetes[]
+* For more information about deploying the Kafka cluster, see xref:deploying-kafka-cluster-str[].
+

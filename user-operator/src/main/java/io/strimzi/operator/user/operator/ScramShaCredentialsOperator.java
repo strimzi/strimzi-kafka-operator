@@ -39,7 +39,7 @@ public class ScramShaCredentialsOperator {
                 }
             },
             false,
-            fut.completer());
+            fut);
         return fut;
     }
 

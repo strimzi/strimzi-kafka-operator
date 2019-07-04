@@ -22,24 +22,27 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
 
     @Override
     public void afterTestExecution(ExtensionContext extensionContext) {
-        collectLogs(extensionContext);
-    }
-
-    @Override
-    public void handleBeforeAllMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
-        collectLogs(context);
-        throw throwable;
-    }
-
-    @Override
-    public void handleBeforeEachMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
-        collectLogs(context);
-        throw throwable;
-    }
-
-    void collectLogs(ExtensionContext extensionContext) {
-        String testMethod = extensionContext.getRequiredTestMethod().getName();
         String testClass = extensionContext.getRequiredTestClass().getName();
+        String testMethod = extensionContext.getRequiredTestMethod().getName();
+        collectLogs(testClass, testMethod);
+    }
+
+    @Override
+    public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
+        String testClass = extensionContext.getRequiredTestClass().getName();
+        collectLogs(testClass, testClass);
+        throw throwable;
+    }
+
+    @Override
+    public void handleBeforeEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
+        String testClass = extensionContext.getRequiredTestClass().getName();
+        String testMethod = extensionContext.getRequiredTestMethod().getName();
+        collectLogs(testClass, testMethod);
+        throw throwable;
+    }
+
+    void collectLogs(String testClass, String testMethod) {
         // Get current date to create a unique folder
         String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
         String logDir = !testMethod.isEmpty() ?

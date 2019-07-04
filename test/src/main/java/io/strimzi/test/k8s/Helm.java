@@ -17,22 +17,15 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 
-public class Helm<H extends Helm<H>> implements HelmClient<H> {
+public class Helm implements HelmClient {
     private static final Logger LOGGER = LogManager.getLogger(Helm.class);
 
     private static final String HELM_CMD = "helm";
     // TODO: configurable?
     private static final String INSTALL_TIMEOUT_SECONDS = "60";
 
-    private KubeCmdClient<?> kubeClient;
     private boolean initialized;
     private String namespace;
-
-    public Helm(KubeCmdClient<?> kubeClient) {
-        this.kubeClient = kubeClient;
-        this.namespace = kubeClient.namespace();
-        this.initialized = false;
-    }
 
     public Helm(String namespace) {
         this.namespace = namespace;

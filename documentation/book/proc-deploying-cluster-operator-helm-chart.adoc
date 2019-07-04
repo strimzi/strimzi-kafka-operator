@@ -8,7 +8,7 @@
 .Prerequisites
 
 * Helm client has to be installed on the local machine.
-* Helm has to be installed in the {ProductPlatformName} cluster.
+* Helm has to be installed in the Kubernetes cluster.
 
 .Procedure
 

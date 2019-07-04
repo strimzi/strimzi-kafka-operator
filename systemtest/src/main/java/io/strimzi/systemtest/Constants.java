@@ -44,6 +44,18 @@ public interface Constants {
     String IMAGE_PULL_POLICY = "Always";
 
     /**
+     * Kafka Bridge JSON encoding with JSON embedded format
+     */
+    String KAFKA_BRIDGE_JSON_JSON = "application/vnd.kafka.json.v2+json";
+
+    /**
+     * Kafka Bridge JSON encoding
+     */
+    String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
+
+    int HTTP_BRIDGE_DEFAULT_PORT = 8080;
+
+    /**
      * Default value which allows execution of tests with any tags
      */
     String DEFAULT_TAG = "all";
@@ -57,11 +69,19 @@ public interface Constants {
      */
     String REGRESSION = "regression";
     /**
+     * Tag for upgrade tests.
+     */
+    String UPGRADE = "upgrade";
+    /**
+     * Tag for acceptance tests executed during Travis builds.
+     */
+    String TRAVIS = "travis";
+    /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";
     /**
-     * Tag for tests, which are failing only on CCI VMs
+     * Tag for strimzi bridge tests.
      */
-    String CCI_FLAKY = "cci_flaky";
+    String BRIDGE = "bridge";
 }

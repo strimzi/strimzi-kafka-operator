@@ -133,6 +133,13 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
             <scope>compile</scope>
@@ -157,7 +164,7 @@
             <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance</groups>
+                <groups>acceptance &amp; !flaky</groups>
             </properties>
         </profile>
         <profile>
@@ -171,14 +178,35 @@
             <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance | regression | flaky | cci_flaky</groups>
+                <groups>acceptance | regression | flaky | upgrade | pr | travis</groups>
             </properties>
         </profile>
         <profile>
             <id>flaky</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>flaky | cci_flaky</groups>
+                <groups>flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>upgrade</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>upgrade &amp; !flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>travis</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>travis</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>bridge</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>bridge</groups>
             </properties>
         </profile>
     </profiles>
