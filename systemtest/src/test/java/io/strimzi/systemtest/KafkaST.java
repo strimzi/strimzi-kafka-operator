@@ -100,16 +100,7 @@ class KafkaST extends MessagingBaseST {
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
         //Testing labels
-        verifyLabelsOnKafkaOrZkPods(NAMESPACE, clusterName, "zookeeper", 3, appName);
-        verifyLabelsOnKafkaOrZkPods(NAMESPACE, clusterName, "kafka", 3, appName);
-        verifyLabelsOnCOPod(NAMESPACE);
-        verifyLabelsOnPods(NAMESPACE, clusterName, "entity-operator", appName, "Kafka");
-        verifyLabelsForCRDs(NAMESPACE);
-        verifyLabelsForKafkaAndZKServices(NAMESPACE, clusterName, appName);
-        verifyLabelsForSecrets(NAMESPACE, clusterName, appName);
-        verifyLabelsForConfigMaps(NAMESPACE, clusterName, appName, "");
-        verifyLabelsForRoleBindings(clusterName, appName);
-        verifyLabelsForServiceAccounts(clusterName, appName);
+        verifyLabelsForKafkaCluster(clusterName, appName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);

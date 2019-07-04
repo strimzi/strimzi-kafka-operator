@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
@@ -340,6 +341,10 @@ public class KubeClient {
         return client.services().inNamespace(getNamespace()).withName(serviceName).isReady();
     }
 
+    public List<Service> listServices() {
+        return client.services().inNamespace(getNamespace()).list().getItems();
+    }
+
     public void deleteService(String serviceName) {
         client.services().inNamespace(getNamespace()).withName(serviceName).delete();
     }
@@ -347,6 +352,11 @@ public class KubeClient {
     public void deleteService(Service service) {
         client.services().inNamespace(getNamespace()).delete(service);
     }
+
+    public List<ServiceAccount> listServiceAccounts() {
+        return client.serviceAccounts().inNamespace(getNamespace()).list().getItems();
+    }
+
 
     public String logs(String podName) {
         return client.pods().inNamespace(getNamespace()).withName(podName).getLog();
@@ -379,8 +389,16 @@ public class KubeClient {
         return client.rbac().clusterRoleBindings().inNamespace(getNamespace()).delete(clusterRoleBinding);
     }
 
+    public List<RoleBinding> listRoleBindings() {
+        return client.rbac().roleBindings().list().getItems();
+    }
+
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
+    }
+
+    public List<CustomResourceDefinition> listCustomResourceDefinition() {
+        return client.customResourceDefinitions().list().getItems();
     }
 
     private static class SimpleListener implements ExecListener {
