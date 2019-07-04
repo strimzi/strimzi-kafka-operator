@@ -45,7 +45,7 @@ spec:
           value: watched-namespace-1,watched-namespace-2,watched-namespace-3
 ----
 
-. For all namespaces (e.g. watched-namespace-1,watched-namespace-2,watched-namespace-3) which should be watched by the Cluster Operator, install the `RoleBindings`.
+. For all namespaces which should be watched by the Cluster Operator (`watched-namespace-1`, `watched-namespace-2`, `watched-namespace-3` in the above example), install the `RoleBindings`.
 Replace the `_watched-namespace_` with the namespace used in the previous step.
 +
 This can be done using `kubectl apply`:
