@@ -61,6 +61,7 @@
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka documentation^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
+:PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Configuration^]
 
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
