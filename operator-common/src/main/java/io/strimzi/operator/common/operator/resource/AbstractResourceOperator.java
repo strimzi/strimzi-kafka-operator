@@ -133,22 +133,29 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      *
-     * @return Future with result of the reconciliation
+     * @return A future which will be completed on the context thread
+     *         once the resource has been deleted.
      */
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name) {
         return internalDelete(namespace, name, true);
     }
 
     /**
-     * Deletes the resource with the given namespace and name and completes the given future accordingly
+     /**
+     * Asynchronously deletes the resource in the given {@code namespace} with the given {@code name},
+     * returning a Future which completes once the resource
+     * is observed to have been deleted.
+     * @param name The resource to be deleted.
+     * @return A future which will be completed on the context thread
+     * once the resource has been deleted.
      *
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
      *
-     * @return Future with result of the reconciliation
+     * @return A future which will be completed on the context thread
+     *         once the resource has been deleted.
      */
-
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
@@ -167,7 +174,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected long deleteTimeoutMs() {
-        return 120_000;
+        return ResourceSupport.DEFAULT_TIMEOUT_MS;
     }
 
     /**

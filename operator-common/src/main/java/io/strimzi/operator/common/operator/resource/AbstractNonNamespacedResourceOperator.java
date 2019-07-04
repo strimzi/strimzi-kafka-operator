@@ -100,7 +100,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {} exist, deleting it", resourceKind, name);
-                        observedDelete(name).setHandler(future);
+                        internalDelete(name).setHandler(future);
                     } else {
                         log.debug("{} {} does not exist, noop", resourceKind, name);
                         future.complete(ReconcileResult.noop(null));
@@ -115,7 +115,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     }
 
     protected long deleteTimeoutMs() {
-        return 120_000;
+        return ResourceSupport.DEFAULT_TIMEOUT_MS;
     }
 
     /**
@@ -126,7 +126,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A future which will be completed on the context thread
      * once the resource has been deleted.
      */
-    private Future<ReconcileResult<T>> observedDelete(String name) {
+    private Future<ReconcileResult<T>> internalDelete(String name) {
         R resourceOp = operation().withName(name);
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
                 deleteTimeoutMs(),
