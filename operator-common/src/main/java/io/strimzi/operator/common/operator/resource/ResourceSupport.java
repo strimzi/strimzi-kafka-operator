@@ -27,7 +27,7 @@ import java.util.function.BiFunction;
 
 public class ResourceSupport {
 
-    public static final long DEFAULT_TIMEOUT_MS = 120_000;
+    public static final long DEFAULT_TIMEOUT_MS = 300_000;
     protected static final Logger LOGGER = LogManager.getLogger(ResourceSupport.class);
 
     private final Vertx vertx;
