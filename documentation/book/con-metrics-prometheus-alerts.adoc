@@ -16,4 +16,4 @@ Alertmanager can be configured to use email, chat messages or other notification
 
 .Additional resources
 
-For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
+For more information about setting up alerting rules, see {PrometheusConfig} in the Prometheus documentation.
