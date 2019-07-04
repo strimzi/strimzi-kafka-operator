@@ -125,9 +125,6 @@ kubectl apply -f strimzi-service-monitor.yaml
 kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml
 
-NOTE: On OpenShift you need suitable privileges to do this.
-On {Minishift}, log in with cluster administrator privileges by executing `oc login -u system:admin` before using the `kubectl apply` commands.
-
 Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
 To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`^] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
 When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.

@@ -13,14 +13,14 @@ On Linux, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _co-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 +
 On MacOS, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
+sed -i '' 's/namespace: .\*/namespace: _co-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -42,20 +42,20 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
-          value: myproject,myproject2,myproject3
+          value: watched-namespace-1,watched-namespace-2,watched-namespace-3
 ----
 
-. For all namespaces which should be watched by the Cluster Operator, install the `RoleBindings`.
-Replace the `_my-namespace_` with the namespace used in the previous step.
+. For all namespaces (e.g. watched-namespace-1,watched-namespace-2,watched-namespace-3) which should be watched by the Cluster Operator, install the `RoleBindings`.
+Replace the `_watched-namespace_` with the namespace used in the previous step.
 +
 This can be done using `kubectl apply`:
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _my-namespace_
-kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _my-namespace_
-kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _my-namespace_
+kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _watched-namespace_
+kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _watched-namespace_
+kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _watched-namespace_
 
 . Deploy the Cluster Operator
 +
 This can be done using `kubectl apply`:
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _co-namespace_
