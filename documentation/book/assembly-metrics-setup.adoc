@@ -13,7 +13,7 @@ In order to run the example Grafana dashboards, you must:
 . xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
 . xref:assembly-configuring-grafana-{context}[Deploy Grafana]
 
-WARNING: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
+NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
 If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
 
 ifdef::Kubernetes[]
