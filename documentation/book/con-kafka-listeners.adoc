@@ -12,7 +12,7 @@ The `listeners` property contains three sub-properties:
 * `tls`
 * `external`
 
-When the property for given listener is not defined, the listener is disabled.
+Each listener will only be defined when the `listeners` object has the given property.
 
 .An example of `listeners` property with all listeners enabled
 [source,yaml,subs="attributes+"]
