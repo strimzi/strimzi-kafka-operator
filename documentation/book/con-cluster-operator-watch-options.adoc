@@ -24,10 +24,10 @@ Cluster Operator watches the following resources:
 * A `KafkaConnectS2I` resource for the Kafka Connect cluster with Source2Image support.
 * A `KafkaMirrorMaker` resource for the Kafka Mirror Maker instance.
 
-When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the Kubernetes cluster, the operator gets the cluster description from the desired resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary other Kubernetes resources, such as StatefulSets, Services, ConfigMaps, and so on.
+When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
 
-Every time the desired resource is updated by the user, the operator performs corresponding updates on the Kubernetes resources which make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
-Resources are either patched or deleted and then re-created in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the state of the desired cluster resource.
-This might cause a rolling update which might lead to service disruption.
+Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
 
-Finally, when the desired resource is deleted, the operator starts to undeploy the cluster and delete all the related Kubernetes resources.
+Resources are either patched or deleted, and then recreated in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the desired state of the cluster resource. This operation might cause a rolling update which might lead to service disruption.
+
+When a resource is deleted, the operator undeploys the cluster and deletes all related Kubernetes resources.
