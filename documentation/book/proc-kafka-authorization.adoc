@@ -5,6 +5,8 @@
 [id='proc-kafka-authorization-{context}']
 = Configuring authorization in Kafka brokers
 
+Configure authorization and designate super users for a particular Kafka broker.
+
 .Prerequisites
 
 * An {ProductPlatformName} cluster
@@ -49,3 +51,4 @@ oc apply -f _your-file_
 .Additional resources
 * For more information about the supported authorization methods, see xref:ref-kafka-authorization-{context}[authorization reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
+* For more information about configuring user authentication, see xref:ref-kafka-user-using-uo[Kafka User resource].

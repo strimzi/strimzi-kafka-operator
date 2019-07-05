@@ -8,7 +8,7 @@
 You can configure authorization for Kafka brokers using the `authorization` property in the `Kafka.spec.kafka` resource.
 If the `authorization` property is missing, no authorization is enabled.
 When enabled, authorization is applied to all enabled xref:assembly-configuring-kafka-broker-listeners-{context}[listeners].
-The authorization method is defined in the `type` field; currently, only Simple authorization is supported. 
+The authorization method is defined in the `type` field; only Simple authorization is currently supported. 
 
 You can optionally designate a list of super users in the `superUsers` field.
 
