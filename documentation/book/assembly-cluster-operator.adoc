@@ -8,15 +8,11 @@
 [id='cluster-operator-{context}']
 = Cluster Operator
 
-{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters.
-The Cluster Operator is deployed inside of the Kubernetes cluster.
-To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the Kubernetes cluster.
-Based on what is declared inside of the `Kafka` resource, the Cluster Operator deploys a corresponding Kafka cluster.
-For more information about the different configuration options supported by the `Kafka` resource, see xref:assembly-deployment-configuration-kafka-str[]
-
-NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.
+{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters in a Kubernetes cluster.
 
 include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
+
+include::con-cluster-operator-watch-options.adoc[leveloffset=+1]
 
 include::proc-deploying-cluster-operator.adoc[leveloffset=+1]
 
