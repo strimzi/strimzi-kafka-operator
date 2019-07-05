@@ -33,7 +33,6 @@ class UserST extends AbstractST {
 
     @Test
     void testUserWithNameMoreThan64Chars() {
-        LOGGER.info("Running testUserWithNameMoreThan64Chars in namespace {}", NAMESPACE);
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
@@ -88,7 +87,6 @@ class UserST extends AbstractST {
 
     @Test
     void testUpdateUser() {
-        LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";
 
         testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)

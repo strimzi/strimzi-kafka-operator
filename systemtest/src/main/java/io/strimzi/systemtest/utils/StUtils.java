@@ -404,7 +404,7 @@ public class StUtils {
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
         StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
-        LOGGER.info("Kafka cluster {} in namesapce {} is ready", name, namespace);
+        LOGGER.info("Kafka cluster {} in namespace {} is ready", name, namespace);
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {

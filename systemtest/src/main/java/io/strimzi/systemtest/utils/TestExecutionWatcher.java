@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
 import static io.strimzi.test.BaseITST.kubeClient;
@@ -44,7 +45,11 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
 
     void collectLogs(String testClass, String testMethod) {
         // Get current date to create a unique folder
-        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
+//        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+
         String logDir = !testMethod.isEmpty() ?
                 TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
