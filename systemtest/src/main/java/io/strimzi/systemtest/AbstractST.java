@@ -476,7 +476,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void verifyLabelsForKafkaOrZkPods(String clusterName, String podType, String appName) {
         LOGGER.info("Verifying labels for {}", podType);
 
-        kubeClient().listPodsByPrefixInName(kafkaClusterName(clusterName)).forEach(
+        kubeClient().listPodsByPrefixInName(clusterName + "-" +podType).forEach(
             pod -> {
                 String podName = pod.getMetadata().getName();
                 LOGGER.info("Verifying labels for pod {}", podName);
