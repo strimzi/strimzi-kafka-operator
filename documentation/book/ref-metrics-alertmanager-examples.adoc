@@ -12,7 +12,7 @@ The rules are defined in a `PrometheusRule` resource in the link:https://raw.git
 General points about the alerting rule definitions:
 
 * A `for` property is used with the rules to determine the period of time a condition must persist before an alert is triggered.
-* A tick is a basic Zookeeper time unit, which is measured in milliseconds and configured using the `tickTime` parameter. For example, if Zookeeper `tickTime=3000`, 3 ticks (3 x 3000) equals 9000 milliseconds.
+* A tick is a basic Zookeeper time unit, which is measured in milliseconds and configured using the `tickTime` parameter of `Kafka.spec.zookeeper.config`. For example, if Zookeeper `tickTime=3000`, 3 ticks (3 x 3000) equals 9000 milliseconds.
 * The availability of the `ZookeeperRunningOutOfSpace` metric and alert is dependent on the {ProductPlatformName} configuration and storage implementation used. Storage implementations for certain platforms may not be able to supply the information on available space required for the metric to provide an alert.
 
 .Kafka alerting rules
