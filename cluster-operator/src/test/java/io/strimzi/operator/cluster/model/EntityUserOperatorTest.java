@@ -29,6 +29,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class EntityUserOperatorTest {
 
@@ -104,9 +105,17 @@ public class EntityUserOperatorTest {
         return expected;
     }
 
+    void checkEnvVars(List<EnvVar> expected, List<EnvVar> actual)   {
+        assertEquals(expected.size(), actual.size());
+
+        for (EnvVar var : expected) {
+            assertTrue(actual.contains(var));
+        }
+    }
+
     @Test
     public void testEnvVars()   {
-        Assert.assertEquals(getExpectedEnvVars(), entityUserOperator.getEnvVars());
+        checkEnvVars(getExpectedEnvVars(), entityUserOperator.getEnvVars());
     }
 
     @Test
@@ -188,7 +197,7 @@ public class EntityUserOperatorTest {
         Container container = containers.get(0);
         assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, container.getName());
         assertEquals(entityUserOperator.getImage(), container.getImage());
-        assertEquals(getExpectedEnvVars(), container.getEnv());
+        checkEnvVars(getExpectedEnvVars(), container.getEnv());
         assertEquals(new Integer(livenessProbe.getInitialDelaySeconds()), container.getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(livenessProbe.getTimeoutSeconds()), container.getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(readinessProbe.getInitialDelaySeconds()), container.getReadinessProbe().getInitialDelaySeconds());
