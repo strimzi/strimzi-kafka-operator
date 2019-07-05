@@ -8,7 +8,7 @@
 An external listener allows a client outside {ProductPlatformName} to connect to a {ProductName} Kafka cluster inside {ProductPlatformName}.
 {ProductName} supports the following types of external listeners:
 
-* `route`
+* `route` (supported only on OpenShift)
 * `loadbalancer`
 * `nodeport`
 ifdef::Kubernetes[]
