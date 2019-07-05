@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -105,7 +104,7 @@ public class EntityUserOperatorTest {
         return expected;
     }
 
-    void checkEnvVars(List<EnvVar> expected, List<EnvVar> actual)   {
+    private void checkEnvVars(List<EnvVar> expected, List<EnvVar> actual)   {
         assertEquals(expected.size(), actual.size());
 
         for (EnvVar var : expected) {
