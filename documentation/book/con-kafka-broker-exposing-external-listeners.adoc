@@ -54,6 +54,18 @@ Loadbalancers listen to connections on port 9094.
 By default, TLS encryption is enabled.
 To disable it, set the `tls` field to `false`.
 
+.Example of an external listener of type `loadbalancer`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+# ...
+----
+
 For more information on using loadbalancers to access Kafka, see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
 
 = Exposing Kafka using node ports

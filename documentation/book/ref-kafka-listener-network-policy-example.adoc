@@ -11,26 +11,26 @@ The following example shows a `networkPolicyPeers` configuration for a `plain` a
 ----
 # ...
 listeners:
-      plain:
-        authentication:
-          type: scram-sha-512
-        networkPolicyPeers:
-          - podSelector:
-              matchLabels:
-                app: kafka-sasl-consumer
-          - podSelector:
-              matchLabels:
-                app: kafka-sasl-producer
-      tls:
-        authentication:
-          type: tls
-        networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                project: myproject
-          - namespaceSelector:
-              matchLabels:
-                project: myproject2
+  plain:
+    authentication:
+      type: scram-sha-512
+    networkPolicyPeers:
+      - podSelector:
+          matchLabels:
+            app: kafka-sasl-consumer
+      - podSelector:
+          matchLabels:
+            app: kafka-sasl-producer
+  tls:
+    authentication:
+      type: tls
+    networkPolicyPeers:
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - namespaceSelector:
+          matchLabels:
+            project: myproject2
 # ...
 ----
 

@@ -26,7 +26,8 @@ spec:
     listeners:
       external:
         type: loadbalancer
-        tls: true
+        authentication:
+          type: tls
         # ...
     # ...
   zookeeper:
