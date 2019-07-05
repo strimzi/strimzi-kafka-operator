@@ -9,7 +9,7 @@ Each {ProductName} component needs its own private keys and public key certifica
 All component certificates are signed by a Certification Authority (CA) called _cluster CA_, while the _clients CA_, is used to sign the certificates for the Kafka clients.
 The CAs themselves use self-signed certificates.
 
-All of the generated certificates are saved as `Secrets` in the {ProductPlatformName} cluster, named as follows:
+All of the generated certificates are saved as `Secrets` in the Kubernetes cluster, named as follows:
 
 `_cluster-name_-cluster-ca`::
 Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and {ProductName} components (Kafka brokers, Zookeeper nodes, and so on).

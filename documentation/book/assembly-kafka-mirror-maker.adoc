@@ -15,8 +15,4 @@ The Mirror Maker consumes messages from the source cluster and republishes those
 
 For information about example resources and the format for deploying Kafka Mirror Maker, see xref:assembly-deployment-configuration-kafka-mirror-maker-str[Kafka Mirror Maker configuration].
 
-ifdef::Kubernetes[]
-include::proc-deploying-kafka-mirror-maker-kubernetes.adoc[leveloffset=+1]
-endif::Kubernetes[]
-
-include::proc-deploying-kafka-mirror-maker-openshift.adoc[leveloffset=+1]
+include::proc-deploying-kafka-mirror-maker.adoc[leveloffset=+1]

@@ -2,10 +2,10 @@
 //
 // assembly-kafka-cluster.adoc
 
-[id='deploying-kafka-cluster-kubernetes-{context}']
-= Deploying the Kafka cluster to {KubernetesName}
+[id='deploying-kafka-cluster-{context}']
+= Deploying the Kafka cluster
 
-You can deploy an ephemeral or persistent Kafka cluster to {KubernetesName} on the command line.
+You can deploy an ephemeral or persistent Kafka cluster to Kubernetes on the command line.
 
 .Prerequisites
 
@@ -15,17 +15,13 @@ You can deploy an ephemeral or persistent Kafka cluster to {KubernetesName} on t
 
 . If you plan to use the cluster for development or testing purposes, you can create and deploy an ephemeral cluster using `kubectl apply`.
 +
-[source,shell]
-----
+[source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-ephemeral.yaml
-----
 
 . If you plan to use the cluster in production, create and deploy a persistent cluster using `kubectl apply`.
 +
-[source,shell]
-----
+[source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-persistent.yaml
-----
 
 .Additional resources
 * For more information on deploying the Cluster Operator, see xref:cluster-operator-str[].

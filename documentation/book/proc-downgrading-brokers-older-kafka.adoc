@@ -40,21 +40,10 @@ For the `Kafka` resource to be downgraded, check:
 
 . Update the Kafka cluster configuration in an editor, as required:
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use:
+Use `kubectl edit`:
 +
 [source,shell,subs=+quotes]
-----
 kubectl edit kafka _my-cluster_
-----
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use:
-+
-[source,shell,subs=+quotes]
-----
-oc edit kafka _my-cluster_
-----
 
 .. Change the `Kafka.spec.kafka.version` to specify the previous version.
 +
@@ -85,9 +74,6 @@ See xref:con-versions-and-images-str[]
 +
 Check the update in the logs or by watching the pod state transitions:
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
-+
 [source,shell,subs=+quotes]
 ----
 kubectl logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
@@ -96,18 +82,6 @@ kubectl logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade
 [source,shell,subs=+quotes]
 ----
 kubectl get po -w
-----
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-----
-oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
-----
-+
-[source,shell,subs=+quotes]
-----
-oc get po -w
 ----
 +
 ====

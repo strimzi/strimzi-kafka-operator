@@ -8,6 +8,7 @@ clean:
 .kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
 	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/
+	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/pom.xml
 	touch .kafka-agent.tmp
 
 docker_build: .kafka-agent.tmp

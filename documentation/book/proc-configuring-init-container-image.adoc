@@ -5,7 +5,7 @@
 [id='proc-configuring-init-container-image-{context}']
 = Configuring init container image for Kafka rack awareness
 
-When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the {ProductPlatformName} cluster nodes.
+When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the Kubernetes cluster nodes.
 The container image which will be used for this container can be configured using the `brokerRackInitImage` property in `Kafka.spec.kafka`.
 When the `brokerRackInitImage` field is missing, the following images will be used (in the order of priority):
 
@@ -18,7 +18,7 @@ In situations where the configured image is not compatible with {ProductName} im
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 .Procedure
@@ -40,13 +40,6 @@ spec:
 
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

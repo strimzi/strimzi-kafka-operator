@@ -2,8 +2,8 @@
 //
 // assembly-kafka-mirror-maker.adoc
 
-[id='deploying-kafka-mirror-maker-kubernetes-{context}']
-= Deploying Kafka Mirror Maker to {KubernetesName}
+[id='deploying-kafka-mirror-maker-{context}']
+= Deploying Kafka Mirror Maker
 
 .Prerequisites
 
@@ -11,9 +11,9 @@
 
 .Procedure
 
-* Deploy Kafka Mirror Maker on {KubernetesName} by creating the corresponding `KafkaMirrorMaker` resource.
+* Create a Kafka Mirror Maker cluster from the command-line:
 +
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
 kubectl apply -f examples/kafka-mirror-maker/kafka-mirror-maker.yaml
 ----

@@ -25,9 +25,8 @@ The chain should be in the following order:
 .Procedure
 
 . Put your CA certificate in the corresponding `Secret` (`_<cluster>_-cluster-ca-cert` for the cluster CA or `_<cluster>_-clients-ca-cert` for the clients CA):
-ifdef::Kubernetes[]
 +
-On {KubernetesName}, run the following commands:
+Run the following commands:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -36,22 +35,10 @@ kubectl delete secret _<ca-cert-secret>_
 # Create and label the new one
 kubectl create secret generic _<ca-cert-secret>_ --from-file=ca.crt=_<ca-cert-file>_
 ----
-endif::Kubernetes[]
 +
-On {OpenShiftName}, run the following commands:
-+
-[source,shell,subs="+quotes"]
-----
-# Delete any existing secret (ignore "Not Exists" errors)
-oc delete secret _<ca-cert-secret>_
-# Create the new one
-oc create secret generic _<ca-cert-secret>_ --from-file=ca.crt=_<ca-cert-file>_
-----
 
 . Put your CA key in the corresponding `Secret` (`_<cluster>_-cluster-ca` for the cluster CA or `_<cluster>_-clients-ca` for the clients CA)
-ifdef::Kubernetes[]
-+
-On {KubernetesName}, run the following commands:
+Run the following commands:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -60,36 +47,14 @@ kubectl delete secret _<ca-key-secret>_
 # Create the new one
 kubectl create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
 ----
-endif::Kubernetes[]
-+
-On {OpenShiftName}, run the following commands:
-+
-[source,shell,subs="+quotes"]
-----
-# Delete the existing secret
-oc delete secret _<ca-key-secret>_
-# Create the new one
-oc create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
-----
 
 . Label both `Secrets` with labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_<my-cluster>_`:
-ifdef::Kubernetes[]
-+
-On {KubernetesName}, run the following commands:
+Run the following commands:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl label secret _<ca-cert-secret>_ strimzi.io/kind=Kafka strimzi.io/cluster=_<my-cluster>_
 kubectl label secret _<ca-key-secret>_ strimzi.io/kind=Kafka strimzi.io/cluster=_<my-cluster>_
-----
-endif::Kubernetes[]
-+
-On {OpenShiftName}, run the following commands:
-+
-[source,shell,subs="+quotes"]
-----
-oc label secret _<ca-cert-secret>_ strimzi.io/kind=Kafka strimzi.io/cluster=_<my-cluster>_
-oc label secret _<ca-key-secret>_ strimzi.io/kind=Kafka strimzi.io/cluster=_<my-cluster>_
 ----
 
 . Create the `Kafka` resource for your cluster, configuring either the `Kafka.spec.clusterCa` or the `Kafka.spec.clientsCa` object to _not_ use generated CAs:

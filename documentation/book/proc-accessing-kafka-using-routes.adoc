@@ -3,11 +3,11 @@
 // assembly-configuring-kafka-listeners.adoc
 
 [id='proc-accessing-kafka-using-routes-{context}']
-= Accessing Kafka using {OpenShiftName} routes
+= Accessing Kafka using OpenShift routes
 
 .Prerequisites
 
-* An {OpenShiftName} cluster
+* An OpenShift cluster
 * A running Cluster Operator
 
 .Procedure
@@ -47,7 +47,7 @@ Use the address together with port 443 in your Kafka client as the _bootstrap_ a
 . Extract the public certificate of the broker certification authority
 +
 [source,shell]
-oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
+kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

@@ -14,16 +14,9 @@ You can allocate resources, such as CPU and memory, to the User Operator and set
 .Procedure
 
 . Update the Kafka cluster configuration in an editor, as required:
-+
-ifdef::Kubernetes[]
-On {KubernetesName}, use:
 [source,shell,subs=+quotes]
 kubectl edit kafka my-cluster
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use:
-[source,shell,subs=+quotes]
-oc edit kafka my-cluster
+
 
 . In the `spec.entityOperator.userOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the User Operator.
 +
@@ -43,19 +36,8 @@ spec:
           cpu: "1"
           memory: 500Mi
 ----
-
-. Apply the new configuration to create or update the resource.
-+
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl apply`:
-[source,shell,subs=+quotes]
-kubectl apply -f _kafka.yaml_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _kafka.yaml_
+Save the file and exit the editor.
+The cluster operator will apply the changes automatically.
 
 .Additional resources
 

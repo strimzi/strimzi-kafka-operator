@@ -12,7 +12,7 @@ Status information is useful for tracking progress related to a resource achievi
 
 {ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
 
-When performing an update on a custom resource using `{cmdcli} edit`, for example, its `status` is not editable. Moreover, changing the `status` would not affect the configuration of the Kafka cluster.
+When performing an update on a custom resource using `kubectl edit`, for example, its `status` is not editable. Moreover, changing the `status` would not affect the configuration of the Kafka cluster.
 
 IMPORTANT: The status property feature for {ProductName}-specific custom resources is still under development and only available for Kafka resources.
 

@@ -5,7 +5,7 @@
 [id='proc-changing-kafka-user-{context}']
 = Editing a Kafka user
 
-This procedure describes how to change the configuration of an existing Kafka user by using a `KafkaUser` {ProductPlatformName} resource.
+This procedure describes how to change the configuration of an existing Kafka user by using a `KafkaUser` Kubernetes resource.
 
 .Prerequisites
 
@@ -50,17 +50,11 @@ spec:
         operation: Read
 ----
 
-. Update the `KafkaUser` resource in {ProductPlatformName}.
+. Update the `KafkaUser` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 . Use the updated credentials from the `my-user` secret in your application.
 

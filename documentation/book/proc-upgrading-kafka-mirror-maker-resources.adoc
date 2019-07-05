@@ -16,7 +16,7 @@ Execute the following steps for each `KafkaMirrorMaker` resource in your deploym
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} edit kafkamirrormaker _my-connect_
+kubectl edit kafkamirrormaker _my-connect_
 ----
 
 . Replace:

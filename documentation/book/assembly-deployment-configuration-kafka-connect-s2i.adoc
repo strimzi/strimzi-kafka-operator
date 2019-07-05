@@ -16,7 +16,7 @@
 :context: deployment-configuration-kafka-connect-s2i
 
 The full schema of the `KafkaConnectS2I` resource is described in the xref:type-KafkaConnectS2I-reference[].
-All labels that are applied to the desired `KafkaConnectS2I` resource will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster with Source2Image support.
+All labels that are applied to the desired `KafkaConnectS2I` resource will also be applied to the Kubernetes resources making up the Kafka Connect cluster with Source2Image support.
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::assembly-kafka-connect-replicas.adoc[leveloffset=+1]

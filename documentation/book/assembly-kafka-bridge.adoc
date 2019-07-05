@@ -13,8 +13,4 @@ The Cluster Operator deploys one or more Kafka bridge replicas to send data betw
 
 For information about example resources and the format for deploying Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-str[Kafka Bridge configuration].
 
-ifdef::Kubernetes[]
-include::proc-deploying-kafka-bridge-kubernetes.adoc[leveloffset=+1]
-endif::Kubernetes[]
-
-include::proc-deploying-kafka-bridge-openshift.adoc[leveloffset=+1]
+include::proc-deploying-kafka-bridge.adoc[leveloffset=+1]

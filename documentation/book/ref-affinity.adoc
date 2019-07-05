@@ -20,5 +20,5 @@ The affinity configuration can include different types of affinity:
 * Pod affinity and anti-affinity
 * Node affinity
 
-The format of the `affinity` property follows the {ProductPlatformName} specification.
+The format of the `affinity` property follows the Kubernetes specification.
 For more details, see the {K8sAffinity}.

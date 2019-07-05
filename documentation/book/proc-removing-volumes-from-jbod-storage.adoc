@@ -13,7 +13,7 @@ IMPORTANT: To avoid data loss, you have to move all partitions before removing t
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 * A Kafka cluster with JBOD storage with two or more volumes
 
@@ -49,16 +49,9 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 .Additional resources
 

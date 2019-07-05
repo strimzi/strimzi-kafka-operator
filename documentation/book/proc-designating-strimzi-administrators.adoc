@@ -11,28 +11,14 @@
 
 .Procedure
 
-. Create the `strimzi-admin` cluster role in {ProductPlatformName}.
+. Create the `strimzi-admin` cluster role in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f install/strimzi-admin
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f install/strimzi-admin
 
-. Assign the `strimzi-admin` `ClusterRole` to one or more existing users in the {ProductPlatformName} cluster.
+. Assign the `strimzi-admin` `ClusterRole` to one or more existing users in the Kubernetes cluster.
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl create`:
+Use `kubectl create`:
 [source,shell,subs=+quotes]
 kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_user1_ --user=_user2_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc adm`:
-+
-[source,shell,subs=+quotes]
-oc adm policy add-cluster-role-to-user strimzi-admin _user1_ _user2_

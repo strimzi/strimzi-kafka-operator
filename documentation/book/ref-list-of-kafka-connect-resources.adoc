@@ -5,7 +5,7 @@
 [id='ref-list-of-kafka-connect-resources-{context}']
 = List of resources created as part of Kafka Connect cluster
 
-The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
+The following resources will created by the Cluster Operator in the Kubernetes cluster:
 
 _connect-cluster-name_-connect:: Deployment which is in charge to create the Kafka Connect worker node pods.
 _connect-cluster-name_-connect-api:: Service which exposes the REST interface for managing the Kafka Connect cluster.

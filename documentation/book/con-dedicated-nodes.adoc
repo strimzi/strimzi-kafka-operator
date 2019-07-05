@@ -5,7 +5,7 @@
 [id='con-dedicated-nodes-{context}']
 = Dedicated nodes
 
-Cluster administrators can mark selected {ProductPlatformName} nodes as tainted.
+Cluster administrators can mark selected Kubernetes nodes as tainted.
 Nodes with taints are excluded from regular scheduling and normal pods will not be scheduled to run on them.
 Only services which can tolerate the taint set on the node can be scheduled on it.
 The only other services running on such nodes will be system services such as log collectors or software defined networks.
