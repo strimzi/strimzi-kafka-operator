@@ -24,7 +24,10 @@ spec:
     # ...
     authorization:
       type: simple
-      superUsers:User:Fred;User:Sam;User:Edward
+      superUsers:
+        - CN=fred
+        - sam
+        - CN=edward
     # ...
   zookeeper:
     # ...
