@@ -760,6 +760,54 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    void testEntityOperatorWithoutTopicOperator() {
+        LOGGER.info("Deploying Kafka clsute without TO in EO");
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                    .withNewUserOperator()
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged((TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID)));
+
+        //Checking that TO was not deployed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("topic-operator")));
+            });
+        });
+    }
+
+    @Test
+    void testEntityOperatorWithoutUserOperator() {
+        LOGGER.info("Deploying Kafka clsute without UO in EO");
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged((TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID)));
+
+        //Checking that TO was not deployed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("user-operator")));
+            });
+        });
+    }
+
+    @Test
     void testTopicWithoutLabels() {
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
