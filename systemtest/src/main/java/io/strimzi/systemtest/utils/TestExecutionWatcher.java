@@ -48,8 +48,6 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
-//        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-
         String logDir = !testMethod.isEmpty() ?
                 TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
