@@ -530,6 +530,10 @@ public class Resources extends AbstractResources {
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
             waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().contains("entity-operator"))
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
