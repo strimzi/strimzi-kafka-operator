@@ -36,7 +36,11 @@ To designate super users for a Kafka cluster, enter a list of user principles, d
 ----
 # ...
 authorization:
-  superUsers:User:Fred;User:Sam;User:Edward
+  type: simple
+  superUsers:
+    - CN=fred
+    - sam
+    - CN=edward
 # ...
 ----
 
