@@ -8,10 +8,10 @@
 
 [id='assembly-kafka-mirror-maker-abort-on-send-failure-{context}']
 
-= Abort Mirror Maker on send failure
+= Abort Mirror Maker if message sending fails
 
-You can set whether should be Mirror Maker container terminated after error while sending a message.
-Such a failure at the {ProductPlatformName} causes the container is recreated.
-The sending error is ignored when this option is set to `false`.
+You can set whether the Mirror Maker container is terminated following an error while sending a message.
+The container is recreated for such a failure on {ProductPlatformName}.
+The error sent is ignored when this option is set to `false`.
 
 include::proc-configuring-kafka-mirror-maker-abort-on-send-failure.adoc[leveloffset=+1]

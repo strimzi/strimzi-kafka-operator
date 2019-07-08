@@ -8,9 +8,9 @@
 
 [id='assembly-kafka-mirror-maker-offset-commit-interval-{context}']
 
-= Auto commit interval
+= Offset auto-commit interval
 
-You can specify the time interval for committing an offset after data are consumed from the source cluster.
-This interval is in milliseconds and by default is set to 60000 ms.
+You can specify the regular time interval at which an offset is committed after Kafka Mirror Maker has consumed data from the source Kafka cluster.
+The time interval is set in milliseconds, with a default value of 60,000.
 
 include::proc-configuring-kafka-mirror-maker-offset-commit-interval.adoc[leveloffset=+1]

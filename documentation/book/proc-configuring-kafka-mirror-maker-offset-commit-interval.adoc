@@ -3,14 +3,14 @@
 // assembly-kafka-mirror-maker-numstreams.adoc
 
 [id='proc-configuring-kafka-mirror-maker-offset-commit-interval-{context}']
-= Configuring the number of consumer streams
+= Configuring the offset auto-commit interval
 
-The interval between committing an offset in milliseconds can me configured using `KafkaMirrorMaker.spec.consumer.offsetCommitInterval` property.
+Configure the offset auto-commit interval using the `KafkaMirrorMaker.spec.consumer.offsetCommitInterval` property.
 
 .Prerequisites
 
 * An {ProductPlatformName} cluster
-* A running Cluster Operator
+* The Cluster Operator is running
 
 .Procedure
 
@@ -33,12 +33,12 @@ spec:
 . Create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
