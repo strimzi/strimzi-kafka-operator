@@ -808,6 +808,24 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    void testEntityOperatorWithoutUserAndTopicOperators() {
+        LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+
+        //Checking that UO was not deployed
+        assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size(), "EO should not be deployed");
+    }
+
+    @Test
     void testTopicWithoutLabels() {
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();

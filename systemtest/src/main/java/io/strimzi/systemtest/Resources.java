@@ -481,8 +481,11 @@ public class Resources extends AbstractResources {
         LOGGER.info("Waiting for Kafka pods");
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
         LOGGER.info("Kafka pod are ready");
-        LOGGER.info("Waiting for Entity Operator pods");
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
+        // EO should not be deployed if it does not contain UP and TO
+        if (kafka.getSpec().getEntityOperator().getUserOperator() != null || kafka.getSpec().getEntityOperator().getTopicOperator() != null) {
+            LOGGER.info("Waiting for Entity Operator pods");
+            StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
+        }
         LOGGER.info("Entity Operator pods are ready");
         return kafka;
     }
