@@ -109,7 +109,7 @@
 :OperatorHubio:
 :StrimziUpgrades:
 :InstallationAppendix:
-:MetricsAppendix:
+:Metrics:
 :Downloading:
 :SecurityImg:
 
