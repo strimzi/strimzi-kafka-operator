@@ -1825,9 +1825,9 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |integer
 |image             1.2+<.<|The docker image for the pods.
 |string
-|bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+|bootstrapServers  1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |string
-|tls               1.2+<.<|TLS configuration for connecting to the cluster.
+|tls               1.2+<.<|TLS configuration for connecting Kafka Bridge to the cluster.
 |xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`]
 |authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`]

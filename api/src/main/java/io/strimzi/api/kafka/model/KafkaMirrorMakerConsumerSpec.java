@@ -35,7 +35,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private Integer offsetCommitInterval;
 
     @Override
-    @Description("The mirror maker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The Mirror Maker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -61,7 +61,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
         this.groupId = groupId;
     }
 
-    @Description("Offset commit interval in ms. Default value is 60 000.")
+    @Description("Specifies the offset auto-commit interval in ms. Default value is 60000.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Integer getOffsetCommitInterval() {
         return offsetCommitInterval;
