@@ -5,9 +5,7 @@
 [id='ref-kafka-broker-configuration-{context}']
 = Kafka broker configuration
 
-A Kafka broker can be configured using the `config` property in `Kafka.spec.kafka`.
-
-This property should contain the Kafka broker configuration options as keys with values in one of the following JSON types:
+The `config` property in `Kafka.spec.kafka` contains Kafka broker configuration options as keys with values in one of the following JSON types:
 
 * String
 * Number

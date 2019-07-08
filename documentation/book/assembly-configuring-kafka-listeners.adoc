@@ -5,7 +5,6 @@
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
-:parent-context: {context}
 
 [id='assembly-configuring-kafka-broker-listeners-{context}']
 = Kafka broker listeners
@@ -17,22 +16,12 @@ Three types of listener are supported:
 * TLS listener on port 9093 (with encryption)
 * External listener on port 9094 for access from outside of Kubernetes
 
-include::con-mutual-tls-authentication.adoc[leveloffset=+1]
-
-include::con-scram-sha-authentication.adoc[leveloffset=+1]
-
 include::con-kafka-listeners.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-listeners.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
+include::assembly-kafka-broker-listener-authentication.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
+include::assembly-kafka-broker-external-listeners.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
-
-include::proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
-
-include::proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+1]
-
-:context: {parent-context}
+include::assembly-kafka-broker-listener-network-policies.adoc[leveloffset=+1]

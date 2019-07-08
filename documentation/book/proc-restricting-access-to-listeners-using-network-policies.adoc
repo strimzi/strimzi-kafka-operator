@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-configuring-kafka-listeners.adoc
+// assembly-kafka-broker-listener-network-policies.adoc
 
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
 = Restricting access to Kafka listeners using `networkPolicyPeers`
