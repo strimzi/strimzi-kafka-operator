@@ -799,27 +799,6 @@ class KafkaST extends MessagingBaseST {
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
-        //Checking that TO was not deployed
-        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("user-operator")));
-            });
-        });
-    }
-
-    @Test
-    void testEntityOperatorWithoutUserAndTopicOperators() {
-        LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
-        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .withEntityOperator(null)
-            .endSpec()
-        .done();
-
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
-
         //Checking that UO was not deployed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
