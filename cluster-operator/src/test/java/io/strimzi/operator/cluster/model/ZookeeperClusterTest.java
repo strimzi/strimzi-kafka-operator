@@ -174,6 +174,23 @@ public class ZookeeperClusterTest {
         checkOwnerReference(zc.createOwnerReference(), ss);
     }
 
+    @Test(expected = InvalidResourceException.class)
+    public void testInvalidVersion() {
+        Kafka ka = new KafkaBuilder(this.ka)
+                .editSpec()
+                    .editKafka()
+                        .withImage(null)
+                        .withVersion("10000.0.0")
+                    .endKafka()
+                    .editZookeeper()
+                        .withImage(null)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster.fromCrd(ka, VERSIONS);
+    }
+
     private void checkStatefulSet(StatefulSet ss) {
         assertEquals(ZookeeperCluster.zookeeperClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
@@ -330,6 +347,7 @@ public class ZookeeperClusterTest {
                                     .withLabels(podLabels)
                                     .withAnnotations(podAnots)
                                 .endMetadata()
+                                .withNewPriorityClassName("top-priority")
                             .endPod()
                             .withNewClientService()
                                 .withNewMetadata()
@@ -359,6 +377,7 @@ public class ZookeeperClusterTest {
         StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+        assertEquals("top-priority", ss.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));

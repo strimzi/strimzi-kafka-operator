@@ -22,8 +22,8 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 public class Session extends AbstractVerticle {
 
@@ -77,7 +77,7 @@ public class Session extends AbstractVerticle {
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
-            Future f = Future.future();
+            Future<Void> f = Future.future();
             Handler<Long> longHandler = new Handler<Long>() {
                 @Override
                 public void handle(Long inflightTimerId) {
@@ -106,7 +106,7 @@ public class Session extends AbstractVerticle {
                     long timeoutMs = Math.max(1, deadline - System.currentTimeMillis());
                     LOGGER.debug("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
                     try {
-                        adminClient.close(timeoutMs, TimeUnit.MILLISECONDS);
+                        adminClient.close(Duration.ofMillis(timeoutMs));
                         HttpServer healthServer = this.healthServer;
                         if (healthServer != null) {
                             healthServer.close();

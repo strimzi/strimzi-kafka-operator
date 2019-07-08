@@ -37,12 +37,15 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -99,6 +102,7 @@ public class Resources extends AbstractResources {
         super(client);
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
         LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
         switch (resource.getKind()) {
@@ -111,8 +115,11 @@ public class Resources extends AbstractResources {
                 break;
             case KafkaConnect.RESOURCE_KIND:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
                 break;
@@ -128,6 +135,13 @@ public class Resources extends AbstractResources {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaMirrorMaker) resource);
+                });
+                break;
+            case KafkaBridge.RESOURCE_KIND:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    waitForDeletion((KafkaBridge) resource);
                 });
                 break;
             case DEPLOYMENT:
@@ -187,6 +201,10 @@ public class Resources extends AbstractResources {
         return deleteLater(kafkaMirrorMaker(), resource);
     }
 
+    private KafkaBridge deleteLater(KafkaBridge resource) {
+        return deleteLater(kafkaBridge(), resource);
+    }
+
     private KafkaTopic deleteLater(KafkaTopic resource) {
         return deleteLater(kafkaTopic(), resource);
     }
@@ -221,15 +239,15 @@ public class Resources extends AbstractResources {
         }
     }
 
-    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
+    public DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
         return kafkaEphemeral(name, kafkaReplicas, 3);
     }
 
-    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
-    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
+    public DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
         return kafka(defaultKafka(name, kafkaReplicas).
                 editSpec()
                     .editKafka()
@@ -490,6 +508,13 @@ public class Resources extends AbstractResources {
         return kafkaMirrorMaker;
     }
 
+    private KafkaBridge waitFor(KafkaBridge kafkaBridge) {
+        LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
+        StUtils.waitForDeploymentReady(kafkaBridge.getMetadata().getName() + "-bridge", kafkaBridge.getSpec().getReplicas());
+        LOGGER.info("Kafka Bridge {} is ready", kafkaBridge.getMetadata().getName());
+        return kafkaBridge;
+    }
+
     private Deployment waitFor(Deployment deployment) {
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
         StUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
@@ -499,7 +524,6 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(Kafka kafka) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
-        String namespace = kafka.getMetadata().getNamespace();
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
             waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
@@ -526,10 +550,17 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-        String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+    }
+
+    private void waitForDeletion(KafkaBridge kafkaBridge) {
+        LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
+        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(kafkaBridge.getMetadata().getName()).delete();
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
@@ -542,21 +573,21 @@ public class Resources extends AbstractResources {
     }
 
     private void waitForPodDeletion(String name) {
-        LOGGER.info("Waiting when Pod {} will be deleted", name);
+        LOGGER.info("Waiting when Pod {}  in namespace {} will be deleted", name, client().getNamespace());
 
-        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("pod " + name + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().getPod(name) == null);
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName) {
         return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
         return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
     }
 
-    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
+    public DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
         return topic(defaultTopic(clusterName, topicName, partitions, replicas)
             .editSpec()
             .addToConfig("min.insync.replicas", replicas)
@@ -586,7 +617,7 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaUser tlsUser(String clusterName, String name) {
+    public DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withClusterName(clusterName)
@@ -601,7 +632,7 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
-    DoneableKafkaUser scramShaUser(String clusterName, String name) {
+    public DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withClusterName(clusterName)
@@ -628,15 +659,15 @@ public class Resources extends AbstractResources {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
-    DoneableDeployment clusterOperator(String namespace) {
+    public DoneableDeployment clusterOperator(String namespace) {
         return clusterOperator(namespace, "300000");
     }
 
-    DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
-        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
+    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build(), namespace);
     }
 
-    DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -662,7 +693,9 @@ public class Resources extends AbstractResources {
                     envVar.setValue(operationTimeout);
                     break;
                 default:
-                    if (envVar.getName().contains("STRIMZI_DEFAULT")) {
+                    if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
+                        envVar.setValue(envVar.getValue());
+                    } else if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(StUtils.changeOrgAndTag(envVar.getValue()));
                     } else if (envVar.getName().contains("IMAGES")) {
                         envVar.setValue(StUtils.changeOrgAndTagInImageMap(envVar.getValue()));
@@ -688,7 +721,7 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    DoneableDeployment createNewDeployment(Deployment deployment) {
+    private DoneableDeployment createNewDeployment(Deployment deployment, String namespace) {
         return new DoneableDeployment(deployment, co -> {
             TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
@@ -823,11 +856,14 @@ public class Resources extends AbstractResources {
         return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 
-    DoneableDeployment deployKafkaClients(String clusterName) {
-        return deployKafkaClients(false, clusterName, null);
+    DoneableDeployment deployKafkaClients(String clusterName, String namespace) {
+        return deployKafkaClients(false, clusterName, namespace, null);
     }
 
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, String namespace) {
+        return deployKafkaClients(tlsListener, clusterName, namespace, null);
+    }
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, String namespace, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(clusterName + "-" + Constants.KAFKA_CLIENTS)
@@ -846,10 +882,10 @@ public class Resources extends AbstractResources {
             .endSpec()
             .build();
 
-        return createNewDeployment(kafkaClient);
+        return createNewDeployment(kafkaClient, namespace);
     }
 
-    private static Service getSystemtestsServiceResource(String appName, int port, String namespace) {
+    public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)
@@ -863,12 +899,18 @@ public class Resources extends AbstractResources {
                     .withPort(port)
                     .withProtocol("TCP")
                 .endPort()
-            .endSpec()
-            .build();
+            .endSpec();
     }
 
-    DoneableService createServiceResource(String appName, int port, String clientNamespace) {
-        Service service = getSystemtestsServiceResource(appName, port, clientNamespace);
+    public DoneableService createServiceResource(String appName, int port, String clientNamespace) {
+        Service service = getSystemtestsServiceResource(appName, port, clientNamespace).build();
+        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        client().createService(service);
+        deleteLater(service);
+        return new DoneableService(service);
+    }
+
+    public DoneableService createServiceResource(Service service, String clientNamespace) {
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         client().createService(service);
         deleteLater(service);
@@ -913,11 +955,11 @@ public class Resources extends AbstractResources {
                 .withName(Constants.KAFKA_CLIENTS)
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .addNewPort()
-                    .withContainerPort(4242)
+                    .withContainerPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
                 .endPort()
                 .withNewLivenessProbe()
                     .withNewTcpSocket()
-                    .withNewPort(4242)
+                    .withNewPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
                         .endTcpSocket()
                     .withInitialDelaySeconds(10)
                     .withPeriodSeconds(5)
@@ -926,7 +968,7 @@ public class Resources extends AbstractResources {
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
-            String consumerConfiguration = "auto.offset.reset=earliest\n";
+            String consumerConfiguration = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n";
 
             containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
             containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
@@ -958,7 +1000,7 @@ public class Resources extends AbstractResources {
                     producerConfiguration +=
                             "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                                     "ssl.truststore.type=pkcs12\n";
-                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    consumerConfiguration += ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + "=earliest\n" +
                             "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                             "ssl.truststore.type=pkcs12\n";
                 } else {
@@ -1064,5 +1106,43 @@ public class Resources extends AbstractResources {
             return envVar.get().getValue();
         }
         return "";
+    }
+
+    public DoneableKafkaBridge kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas, int port) {
+        return kafkaBridge(defaultKafkaBridge(name, bootstrap, kafkaBridgeReplicas, port).build());
+    }
+
+    private KafkaBridgeBuilder defaultKafkaBridge(String name, String bootstrap, int replicas, int port) {
+        return new KafkaBridgeBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+                .withNewSpec()
+                .withBootstrapServers(bootstrap)
+                .withReplicas(replicas)
+                .withNewHttp(port)
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
+                .withMetrics(new HashMap<>())
+                .endSpec();
+    }
+
+    private DoneableKafkaBridge kafkaBridge(KafkaBridge kafkaBridge) {
+        return new DoneableKafkaBridge(kafkaBridge, kB -> {
+            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+                () -> {
+                    try {
+                        kafkaBridge().inNamespace(client().getNamespace()).createOrReplace(kB);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    kB));
+        });
     }
 }

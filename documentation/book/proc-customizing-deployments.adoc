@@ -9,7 +9,7 @@ This procedure describes how to customize `Labels` of a Kafka cluster.
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster.
+* A Kubernetes cluster.
 * A running Cluster Operator.
 
 .Procedure
@@ -38,21 +38,10 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
 Alternatively, use `kubectl edit`:
 [source,shell,subs=+quotes]
 kubectl edit _Resource_ _ClusterName_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
-+
-Alternatively, use `oc edit`:
-[source,shell,subs=+quotes]
-oc edit _Resource_ _ClusterName_

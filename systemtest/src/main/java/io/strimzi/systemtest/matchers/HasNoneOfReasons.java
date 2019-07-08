@@ -41,6 +41,7 @@ public class HasNoneOfReasons extends BaseMatcher<List<Event>> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void describeMismatch(Object item, Description description) {
         describeTo(description);
         description.appendValueList(" but actual event reasons were {", ", ", "}.",

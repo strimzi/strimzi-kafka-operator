@@ -51,7 +51,7 @@ Topic Operator deployment can be configured using additional options inside the 
 The following options are supported:
 
 `watchedNamespace`::
-The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`.
+The Kubernetes namespace in which the topic operator watches for `KafkaTopics`.
 Default is the namespace where the Kafka cluster is deployed.
 
 `reconciliationIntervalSeconds`::
@@ -109,7 +109,7 @@ User Operator deployment can be configured using additional options inside the `
 The following options are supported:
 
 `watchedNamespace`::
-The {ProductPlatformName} namespace in which the topic operator watches for `KafkaUsers`.
+The Kubernetes namespace in which the topic operator watches for `KafkaUsers`.
 Default is the namespace where the Kafka cluster is deployed.
 
 `reconciliationIntervalSeconds`::

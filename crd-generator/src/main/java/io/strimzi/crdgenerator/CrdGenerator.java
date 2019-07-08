@@ -480,6 +480,7 @@ public class CrdGenerator {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     private ObjectNode addSimpleTypeConstraints(ObjectNode result, Property property) {
 
         Example example = property.getAnnotation(Example.class);
@@ -559,6 +560,7 @@ public class CrdGenerator {
         return arrayNode;
     }
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
         Map<String, String> labels = new LinkedHashMap<>();

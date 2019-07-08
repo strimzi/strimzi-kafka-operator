@@ -11,22 +11,13 @@
 :toc: left
 :linkattrs:
 :toclevels: 3
-:cmdcli: kubectl
 
 // Name and version placeholders
 :ProductLongName: Strimzi
 :ProductName: Strimzi
 :ContextProduct: strimzi
-:OpenShiftName: OpenShift
-:OpenShiftLongName: OpenShift Origin
-:OpenShiftVersion: 3.9 and later
-:KubernetesVersion: 1.9 and later
-:KubernetesName: Kubernetes
-:KubernetesLongName: Kubernetes
-:ProductPlatformName: {OpenShiftName} or {KubernetesName}
-:ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
-:Namespace: {OpenShiftName} project or {KubernetesName} namespace
-:Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
+:OpenShiftVersion: 3.11 and later
+:KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
 :KafkaVersionLower: 2.1.1
@@ -58,6 +49,7 @@
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
 :K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
+:K8sPriorityClass: link:https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption[Pod Priority and Preemption^]
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[NGINX Ingress Controller for Kubernetes^]
 :NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
@@ -111,7 +103,6 @@
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Section enablers
-:Kubernetes:
 :Helm:
 :OperatorHubio:
 :StrimziUpgrades:
@@ -130,4 +121,4 @@
 :ChartRepositoryUrl: http://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.12.0
+:ProductVersion: 0.12.x

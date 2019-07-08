@@ -7,9 +7,9 @@
 
 The Cluster Operator can be configured through the following supported environment variables:
 
-`STRIMZI_NAMESPACE`:: A comma-separated list of {Namespaces} that the operator should operate in.
-When not set, set to empty string, or to `*` the cluster operator will operate in all {Namespaces}.
-The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
+When not set, set to empty string, or to `*` the cluster operator will operate in all namespaces.
+The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -28,7 +28,7 @@ The level for printing logging messages. The value can be set to: `ERROR`, `WARN
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for internal operations, in milliseconds. This value should be
-increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+increased when using {ProductName} on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
@@ -84,7 +84,7 @@ no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the
 `STRIMZI_IMAGE_PULL_POLICY`:: Optional.
 The `ImagePullPolicy` which will be applied to containers in all pods managed by {ProductName} Cluster Operator.
 The valid values are `Always`, `IfNotPresent`, and `Never`.
-If not specified, the {ProductPlatformName} defaults will be used.
+If not specified, the Kubernetes defaults will be used.
 Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
 
 `STRIMZI_IMAGE_PULL_SECRETS`:: Optional.

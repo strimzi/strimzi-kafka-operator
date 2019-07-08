@@ -49,6 +49,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.BaseITST.kubeClient;
+
 
 public class KubeClient {
 
@@ -287,6 +289,10 @@ public class KubeClient {
         client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).cascading(true).delete();
     }
 
+    public String getNodeAddress() {
+        return kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
+    }
+
     /**
      * Gets deployment config status
      */
@@ -301,7 +307,6 @@ public class KubeClient {
     public Secret patchSecret(String secretName, Secret secret) {
         return client.secrets().inNamespace(getNamespace()).withName(secretName).patch(secret);
     }
-
 
     public Secret getSecret(String secretName) {
         return client.secrets().inNamespace(getNamespace()).withName(secretName).get();

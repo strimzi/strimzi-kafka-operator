@@ -9,15 +9,15 @@
 The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
 As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via `KafkaTopic` custom resources.
 The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
-On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
+On OpenShift such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
 .Example architecture for the Cluster Operator
 
 image:cluster-operator.png[Cluster Operator]
 
-When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka, Kafka Connect, or Kafka Mirror Maker cluster configuration.
-By default, it watches only in the same namespace or project where it is installed.
-The Cluster Operator can be configured to watch for more {Namespaces}.
+When the Cluster Operator is up, it starts to _watch_ for certain Kubernetes resources containing the desired Kafka, Kafka Connect, or Kafka Mirror Maker cluster configuration.
+By default, it watches only in the same namespace where it is installed.
+The Cluster Operator can be configured to watch for more namespaces.
 Cluster Operator watches the following resources:
 
 * A `Kafka` resource for the Kafka cluster.
@@ -25,10 +25,10 @@ Cluster Operator watches the following resources:
 * A `KafkaConnectS2I` resource for the Kafka Connect cluster with Source2Image support.
 * A `KafkaMirrorMaker` resource for the Kafka Mirror Maker instance.
 
-When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the {ProductPlatformName} cluster, the operator gets the cluster description from the desired resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
+When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the Kubernetes cluster, the operator gets the cluster description from the desired resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary other Kubernetes resources, such as StatefulSets, Services, ConfigMaps, and so on.
 
-Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
+Every time the desired resource is updated by the user, the operator performs corresponding updates on the Kubernetes resources which make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
 Resources are either patched or deleted and then re-created in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the state of the desired cluster resource.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, when the desired resource is deleted, the operator starts to undeploy the cluster and delete all the related {ProductPlatformName} resources.
+Finally, when the desired resource is deleted, the operator starts to undeploy the cluster and delete all the related Kubernetes resources.

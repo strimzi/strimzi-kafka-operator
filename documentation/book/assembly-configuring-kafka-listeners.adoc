@@ -14,7 +14,7 @@ Three types of listener are supported:
 
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)
-* External listener on port 9094 for access from outside of {ProductPlatformName}
+* External listener on port 9094 for access from outside of Kubernetes
 
 include::con-kafka-listeners.adoc[leveloffset=+1]
 

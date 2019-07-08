@@ -56,7 +56,7 @@ Consider the following important points to ensure that client applications conti
 * When they connect to the cluster, client applications must trust the cluster CA certificate published in _<cluster>_-cluster-ca-cert.
 
 * When using the User Operator to provision client certificates, client applications must use the current `user.crt` and `user.key` published in their `_<user>_` `Secret` when they connect to the cluster.
-For workloads running inside the same {ProductPlatformName} cluster this can be achieved by mounting the secrets as a volume and having the client Pods construct their key- and truststores from the current state of the `Secrets`. 
+For workloads running inside the same Kubernetes cluster this can be achieved by mounting the secrets as a volume and having the client Pods construct their key- and truststores from the current state of the `Secrets`. 
 For more details on this procedure, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[].
 
 * When renewing client certificates, if you are provisioning client certificates and keys manually, you must generate new client certificates and ensure the new certificates are used by clients within the renewal period. Failure to do this by the end of the renewal period could result in client applications being unable to connect. 

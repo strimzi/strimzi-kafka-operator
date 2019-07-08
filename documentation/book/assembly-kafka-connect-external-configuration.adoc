@@ -18,7 +18,7 @@ Some parts of the configuration of a Kafka Connect connector can be externalized
 You can then reference the configuration values in HTTP REST commands (this keeps the configuration separate and more secure, if needed).
 This method applies especially to confidential data, such as usernames, passwords, or certificates.
 
-ConfigMaps and Secrets are standard {ProductPlatformName} resources used for storing of configurations and confidential data.
+ConfigMaps and Secrets are standard Kubernetes resources used for storing of configurations and confidential data.
 
 include::con-kafka-connect-external-configuration.adoc[leveloffset=+1]
 

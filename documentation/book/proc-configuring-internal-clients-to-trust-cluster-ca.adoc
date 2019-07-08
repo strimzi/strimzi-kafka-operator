@@ -5,15 +5,15 @@
 [id='configuring-internal-clients-to-trust-cluster-ca-{context}']
 = Configuring internal clients to trust the cluster CA 
 
-This procedure describes how to configure a Kafka client that resides inside the {ProductPlatformName} cluster — connecting to the `tls` listener on port 9093 — to trust the cluster CA certificate.
+This procedure describes how to configure a Kafka client that resides inside the Kubernetes cluster — connecting to the `tls` listener on port 9093 — to trust the cluster CA certificate.
 
 The easiest way to achieve this for an internal client is to use a volume mount to access the `Secrets` containing the necessary certificates and keys.
 
 .Prerequisites
 
 * The Cluster Operator is running.
-* A `Kafka` resource within the {ProductPlatformName} cluster.
-* A Kafka client application inside the {ProductPlatformName} cluster which will connect using TLS and needs to trust the cluster CA certificate.
+* A `Kafka` resource within the Kubernetes cluster.
+* A Kafka client application inside the Kubernetes cluster which will connect using TLS and needs to trust the cluster CA certificate.
 
 .Procedure
 

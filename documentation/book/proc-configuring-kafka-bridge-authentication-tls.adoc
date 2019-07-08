@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* An Kubernetes cluster
 * A running Cluster Operator
 * If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
 
@@ -17,16 +17,9 @@
 +
 NOTE: Secrets created by the User Operator may be used.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
+
 . Edit the `authentication` property in the `KafkaBridge` resource.
 For example:
 +
@@ -49,13 +42,5 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

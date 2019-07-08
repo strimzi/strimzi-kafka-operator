@@ -5,11 +5,11 @@
 [id='assembly-customizing-deployments-{context}']
 = Customizing deployments
 
-{ProductName} creates several {ProductPlatformName} resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`, which are managed by {ProductPlatformName} operators.
-Only the operator that is responsible for managing a particular {ProductPlatformName} resource can change that resource.
-If you try to manually change an operator-managed {ProductPlatformName} resource, the operator will revert your changes back.
+{ProductName} creates several Kubernetes resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`, which are managed by Kubernetes operators.
+Only the operator that is responsible for managing a particular Kubernetes resource can change that resource.
+If you try to manually change an operator-managed Kubernetes resource, the operator will revert your changes back.
 
-However, changing an operator-managed {ProductPlatformName} resource can be useful if you want to perform certain tasks, such as:
+However, changing an operator-managed Kubernetes resource can be useful if you want to perform certain tasks, such as:
 
 - Adding custom labels or annotations that control how `Pods` are treated by Istio or other services;
 - Managing how `Loadbalancer`-type Services are created by the cluster.

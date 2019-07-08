@@ -20,7 +20,7 @@ Default is `0`.
 Defines the size of the persistent volume claim, for example, "1000Gi".
 
 `class` (optional)::
-The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioning.
+The Kubernetes {K8SStorageClass} to use for dynamic volume provisioning.
 
 `selector` (optional)::
 Allows selecting a specific persistent volume to use.
@@ -30,8 +30,8 @@ It contains key:value pairs representing labels for selecting such a volume.
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
-WARNING: Increasing the size of persistent volumes in an existing {ProductName} cluster is only supported in {ProductPlatformName} versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion. 
-For other versions of {ProductPlatformName} and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
+WARNING: Increasing the size of persistent volumes in an existing {ProductName} cluster is only supported in Kubernetes versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion. 
+For other versions of Kubernetes and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
 Decreasing the size of existing persistent volumes is not possible.
 
 .Example fragment of persistent storage configuration with 1000Gi `size`

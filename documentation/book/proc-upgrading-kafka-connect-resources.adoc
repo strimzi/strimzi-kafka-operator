@@ -16,7 +16,7 @@ Execute the following steps for each `KafkaConnect` resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} edit kafkaconnect _my-connect_
+kubectl edit kafkaconnect _my-connect_
 ----
 
 . Replace:

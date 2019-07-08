@@ -170,6 +170,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templatePodDisruptionBudgetLabels;
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
+    protected String templatePodPriorityClassName;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -409,7 +410,7 @@ public abstract class AbstractModel {
         Map<String, String> data = new HashMap<>();
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            HashMap m = new HashMap();
+            HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
             }
@@ -836,6 +837,7 @@ public abstract class AbstractModel {
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(securityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -882,6 +884,7 @@ public abstract class AbstractModel {
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                 .endSpec()
@@ -1131,6 +1134,7 @@ public abstract class AbstractModel {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
+    @SafeVarargs
     protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String>... templates) {
         Map<String, String> merged = new HashMap<>();
 

@@ -6,8 +6,8 @@
 === Why do I need cluster admin privileges to install {ProductName}?
 
 To install {ProductName}, you must have the ability to create Custom Resource Definitions (CRDs).
-CRDs instruct {ProductPlatformName} about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
-Because CRDs are a cluster-scoped resource rather than being scoped to a particular {ProductPlatformName} namespace, they typically require cluster admin privileges to install.
+CRDs instruct Kubernetes about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
+Because CRDs are a cluster-scoped resource rather than being scoped to a particular Kubernetes namespace, they typically require cluster admin privileges to install.
 
 In addition, you must also have the ability to create ClusterRoles and ClusterRoleBindings. Like CRDs, these are cluster-scoped resources that typically require cluster admin privileges.
 
@@ -22,7 +22,7 @@ These privileges can be granted using normal RBAC resources by the cluster admin
 
 === Why does the Cluster Operator require the ability to create `ClusterRoleBindings`? Is that not a security risk?
 
-{ProductPlatformName} has built-in link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention^].
+Kubernetes has built-in link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention^].
 That means that the Cluster Operator cannot grant privileges it does not have itself. 
 Which in turn means that the Cluster Operator needs to have the privileges necessary for _all_ the components it orchestrates.
 
@@ -40,9 +40,9 @@ Therefore the Cluster Operator needs to be able to create `ClusterRoleBindings`.
 But again, because of privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` to grant privileges that the Cluster Operator does not not already have).
 
 
-=== Why can standard {ProductPlatformName} users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
+=== Why can standard Kubernetes users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
 
-Because, when they installed {ProductName}, the {ProductPlatformName} cluster administrator did not grant the necessary privileges to standard users.
+Because, when they installed {ProductName}, the Kubernetes cluster administrator did not grant the necessary privileges to standard users.
 
 See xref:normal-user-access-custom-resources-{context}[this FAQ answer] for more details.
 

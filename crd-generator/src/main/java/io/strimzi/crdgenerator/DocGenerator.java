@@ -413,6 +413,7 @@ public class DocGenerator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Class<? extends T> classInherits(Class<?> cls, Class<T> test) {
         if (test.isAssignableFrom(cls)) {
             return (Class<? extends T>) cls;

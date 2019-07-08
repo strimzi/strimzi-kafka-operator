@@ -22,7 +22,7 @@ The following options are supported:
 
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
 Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
-This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
 The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] limit configured for the container:
 
@@ -34,8 +34,8 @@ The default values used for `-Xms` and `-Xmx` depends on whether there is a xref
 Setting `-Xmx` explicitly requires some care:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
-* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory limit, it is possible that the container will be killed should the {ProductPlatformName} node experience memory pressure (from other Pods running on it).
-* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory request, it is possible that the container will be scheduled to a node with insufficient memory.
+* If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure (from other Pods running on it).
+* If `-Xmx` is set without also setting an appropriate Kubernetes memory request, it is possible that the container will be scheduled to a node with insufficient memory.
 In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
 ====
 

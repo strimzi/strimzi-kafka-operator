@@ -17,7 +17,7 @@ The currently supported authentication types are:
 
 To use TLS client authentication, set the `type` property to the value `tls`.
 TLS client authentication uses a TLS certificate to authenticate.
-The certificate is specified in the `certificateAndKey` property and is always loaded from an {ProductPlatformName} secret.
+The certificate is specified in the `certificateAndKey` property and is always loaded from an Kubernetes secret.
 In the secret, the certificate must be stored in X509 format under two different keys: public and private.
 
 NOTE: TLS client authentication can be used only with TLS connections.

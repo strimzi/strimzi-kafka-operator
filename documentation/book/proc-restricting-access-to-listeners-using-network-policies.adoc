@@ -9,7 +9,7 @@ You can restrict access to a listener to only selected applications by using the
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster with support for Ingress NetworkPolicies.
+* A Kubernetes cluster with support for Ingress NetworkPolicies.
 * The Cluster Operator is running.
 
 .Procedure
@@ -40,16 +40,9 @@ spec:
 
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 .Additional resources
 * For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

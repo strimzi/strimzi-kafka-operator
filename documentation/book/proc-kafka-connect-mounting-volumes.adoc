@@ -6,7 +6,7 @@
 
 = Mounting Secrets as volumes
 
-You can create an {ProductPlatformName} Secret, mount it as a volume to Kafka Connect, and then use it to configure a Kafka Connect connector.
+You can create a Kubernetes Secret, mount it as a volume to Kafka Connect, and then use it to configure a Kafka Connect connector.
 
 .Prerequisites
 
@@ -55,16 +55,9 @@ spec:
 
 . Apply the changes to your Kafka Connect deployment.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 . Use the values from the mounted properties file in your JSON payload with connector configuration.
 For example:

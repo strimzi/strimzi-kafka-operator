@@ -2,7 +2,8 @@
 
 ## 0.13.0
 
-* Allow users to manually configure ACL rules (for example, using `kafka-acls.sh`) for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator.
+* Allow users to manually configure ACL rules (for example, using `kafka-acls.sh`) for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator
+* Add support for configuring a Priority Class name for Pods deployed by Strimzi
 
 ## 0.12.0
 

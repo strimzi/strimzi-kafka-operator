@@ -460,6 +460,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.getAsync(anyString(), anyString())).thenReturn(
                 Future.succeededFuture()
         );
+        when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                Future.succeededFuture()
+        );
 
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 secrets
@@ -887,6 +890,9 @@ public class KafkaAssemblyOperatorTest {
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null))
+            );
+            when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                    Future.succeededFuture()
             );
         }
 

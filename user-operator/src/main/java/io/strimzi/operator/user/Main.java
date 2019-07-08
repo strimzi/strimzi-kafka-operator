@@ -78,7 +78,7 @@ public class Main {
                     log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                     System.exit(1);
                 }
-                fut.completer().handle(res);
+                fut.handle(res);
             });
 
         return fut;
@@ -86,7 +86,7 @@ public class Main {
 
     private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
         log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
-        Map authorizerConfig = new HashMap<String, Object>();
+        Map<String, Object> authorizerConfig = new HashMap<>();
         // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
         // See the comments in the SimpleAclAuthorizer.scala class for more details
         authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());

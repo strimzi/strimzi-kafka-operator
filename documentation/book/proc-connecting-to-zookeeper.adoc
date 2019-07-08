@@ -8,19 +8,19 @@ Open a terminal inside a Kafka container to use Kafka CLI tools that require a Z
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster is available.
+* A Kubernetes cluster is available.
 * A kafka cluster is running.
 * The Cluster Operator is running.
 
 .Procedure
 
-. Open the terminal using the {ProductPlatformName} console or run the `exec` command from your CLI.
+. Open the terminal using the Kubernetes console or run the `exec` command from your CLI.
 +
 For example:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-{cmdcli} exec -ti _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
+kubectl exec -ti _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
 ----
 +
 Be sure to use `localhost:2181`.

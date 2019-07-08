@@ -237,11 +237,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         if (tlsSidecar.getImage() == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
-            if (tlsSidecarImage == null) {
-                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-            }
-            tlsSidecar.setImage(tlsSidecarImage);
+            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
         }
         zk.setTlsSidecar(tlsSidecar);
 
@@ -271,6 +267,7 @@ public class ZookeeperCluster extends AbstractModel {
         return zk;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
         if (zookeeperClusterSpec.getTemplate() != null
                 && zookeeperClusterSpec.getTemplate().getPod() != null
@@ -284,6 +281,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(ZookeeperClusterSpec zookeeperClusterSpec) {
         if (zookeeperClusterSpec.getTemplate() != null
                 && zookeeperClusterSpec.getTemplate().getPod() != null

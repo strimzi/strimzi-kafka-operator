@@ -103,7 +103,7 @@ public class Labels {
      */
     public static Labels fromString(String string) throws IllegalArgumentException {
         if (string == null || string.equals("")) {
-            return new Labels(Collections.EMPTY_MAP);
+            return new Labels(Collections.emptyMap());
         }
         Matcher m = COMMA_SPLITTER.matcher(string);
         int lastEnd = 0;

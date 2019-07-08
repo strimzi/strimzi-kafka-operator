@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster is available.
+* A Kubernetes cluster is available.
 * The Cluster Operator is running.
 
 .Procedure
@@ -34,15 +34,8 @@ spec:
 
 . Apply the new configuration to create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName}, use `kubectl apply`:
+Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _kafka.yaml_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _kafka.yaml_
 +
 where `_kafka.yaml_` is the YAML configuration file for the resource that you want to configure; for example, `kafka-persistent.yaml`.

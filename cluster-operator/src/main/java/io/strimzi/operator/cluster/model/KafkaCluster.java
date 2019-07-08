@@ -335,11 +335,7 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
-        String image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
-        if (image == null) {
-            throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-        }
-        result.setImage(image);
+        result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
             result.setReadinessProbe(kafkaClusterSpec.getReadinessProbe());
@@ -400,11 +396,7 @@ public class KafkaCluster extends AbstractModel {
             tlsSidecar = new TlsSidecar();
         }
         if (tlsSidecar.getImage() == null) {
-            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
-            if (tlsSidecarImage == null) {
-                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-            }
-            tlsSidecar.setImage(tlsSidecarImage);
+            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
         }
         result.setTlsSidecar(tlsSidecar);
 
@@ -481,6 +473,7 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(KafkaClusterSpec kafkaClusterSpec) {
         if (kafkaClusterSpec.getTemplate() != null
                 && kafkaClusterSpec.getTemplate().getPod() != null
@@ -494,6 +487,7 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static Affinity affinity(KafkaClusterSpec kafkaClusterSpec) {
         if (kafkaClusterSpec.getTemplate() != null
                 && kafkaClusterSpec.getTemplate().getPod() != null

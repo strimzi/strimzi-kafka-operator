@@ -3,13 +3,13 @@
 // assembly-configuring-kafka-listeners.adoc
 
 [id='proc-accessing-kafka-using-ingress-{context}']
-= Accessing Kafka using {KubernetesName} ingress
+= Accessing Kafka using ingress
 
-This procedure shows how to access {ProductName} Kafka clusters from outside of {KubernetesName} using Ingress.
+This procedure shows how to access {ProductName} Kafka clusters from outside of Kubernetes using Ingress.
 
 .Prerequisites
 
-* An {KubernetesName} cluster
+* An Kubernetes cluster
 * Deployed {NginxIngressController} with TLS passthrough enabled
 * A running Cluster Operator
 
@@ -51,12 +51,12 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-oc apply -f _your-file_
+kubectl apply -f _your-file_
 
 . Extract the public certificate of the broker certificate authority
 +
-[source,shell]
-oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
+[source,shell,subs=+quotes]
+kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 . Use the extracted certificate in your Kafka client to configure the TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

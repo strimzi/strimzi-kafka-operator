@@ -118,7 +118,7 @@ public class Main {
                         log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
-                    fut.completer().handle(res);
+                    fut.handle(res);
                 });
         }
         return CompositeFuture.join(futures);
@@ -156,7 +156,7 @@ public class Main {
 
             }
 
-            Future returnFuture = Future.future();
+            Future<Void> returnFuture = Future.future();
             CompositeFuture.all(futures).setHandler(res -> {
                 if (res.succeeded())    {
                     returnFuture.complete();
