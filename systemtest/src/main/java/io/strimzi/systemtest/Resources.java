@@ -104,12 +104,16 @@ public class Resources extends AbstractResources {
 
     @SuppressWarnings("unchecked")
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
-        LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
+        LOGGER.info("Scheduled deletion of {} {} in namespace {}",
+                resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((Kafka) resource);
                 });
                 break;
@@ -125,61 +129,80 @@ public class Resources extends AbstractResources {
                 break;
             case KafkaConnectS2I.RESOURCE_KIND:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
                 break;
             case KafkaMirrorMaker.RESOURCE_KIND:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
                 break;
             case KafkaBridge.RESOURCE_KIND:
                 resources.add(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
                 break;
             case DEPLOYMENT:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     client().deleteDeployment(resource.getMetadata().getName());
                     waitForDeletion((Deployment) resource);
                 });
                 break;
             case CLUSTER_ROLE_BINDING:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     client().getClient().rbac().clusterRoleBindings().withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case ROLE_BINDING:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     client().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case SERVICE:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     client().getClient().services().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case INGRESS:
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                     client().deleteIngress((Ingress) resource);
                 });
                 break;
             default :
                 resources.push(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                            resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    x.inNamespace(resource.getMetadata().getNamespace())
+                            .withName(resource.getMetadata().getName())
+                            .delete();
                 });
         }
         return resource;
@@ -530,6 +553,10 @@ public class Resources extends AbstractResources {
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
             waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().contains("entity-operator"))
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
@@ -573,7 +600,7 @@ public class Resources extends AbstractResources {
     }
 
     private void waitForPodDeletion(String name) {
-        LOGGER.info("Waiting when Pod {}  in namespace {} will be deleted", name, client().getNamespace());
+        LOGGER.info("Waiting when Pod {} in namespace {} will be deleted", name, client().getNamespace());
 
         TestUtils.waitFor("pod " + name + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().getPod(name) == null);

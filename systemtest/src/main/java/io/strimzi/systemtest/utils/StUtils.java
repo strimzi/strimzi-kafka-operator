@@ -286,10 +286,10 @@ public class StUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentReady(String name) {
-        LOGGER.info("Waiting for Deployment {}", name);
+        LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));
-        LOGGER.info("Deployment {} is ready", name);
+        LOGGER.debug("Deployment {} is ready", name);
     }
 
     /**
@@ -404,7 +404,7 @@ public class StUtils {
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
         StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
-        LOGGER.info("Kafka cluster {} in namesapce {} is ready", name, namespace);
+        LOGGER.info("Kafka cluster {} in namespace {} is ready", name, namespace);
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
