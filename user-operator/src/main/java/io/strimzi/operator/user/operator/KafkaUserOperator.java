@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Credential;
 import io.strimzi.api.kafka.model.status.CredentialBuilder;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
@@ -26,6 +25,7 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ConditionUtils;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.AsyncResult;
@@ -38,10 +38,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -157,27 +155,13 @@ public class KafkaUserOperator {
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
-                .compose(reconciliationResult -> {
-                    Condition readyCondition;
+                .setHandler(reconciliationResult -> {
+
                     if (kafkaUser.getMetadata().getGeneration() != null)    {
                         userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
                     }
 
-                    if (reconciliationResult.succeeded()) {
-                        readyCondition = new ConditionBuilder()
-                                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                                .withNewType("Ready")
-                                .withNewStatus("True")
-                                .build();
-                    } else {
-                        readyCondition = new ConditionBuilder()
-                                .withNewLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
-                                .withNewType("NotReady")
-                                .withNewStatus("True")
-                                .withNewReason(reconciliationResult.cause().getClass().getSimpleName())
-                                .withNewMessage(reconciliationResult.cause().getMessage())
-                                .build();
-                    }
+                    Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(reconciliationResult.mapEmpty());
 
                     userStatus.setUsername(user.getName());
                     userStatus.setConditions(Collections.singletonList(readyCondition));
@@ -199,11 +183,11 @@ public class KafkaUserOperator {
                             createOrUpdateFuture.fail(statusResult.cause());
                         }
                     });
-                    return createOrUpdateFuture;
-                }).map((Void) null).setHandler(handler);
+                    handler.handle(createOrUpdateFuture);
+                });
     }
 
-    private Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
+    protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
         return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
             Credential credential = null;
             if (desired != null) {
@@ -461,9 +445,5 @@ public class KafkaUserOperator {
             Throwable cause = result.cause();
             log.warn("{}: Failed to reconcile", reconciliation, cause);
         }
-    }
-
-    private Date dateSupplier() {
-        return new Date();
     }
 }

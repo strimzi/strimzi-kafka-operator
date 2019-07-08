@@ -821,4 +821,70 @@ public class KafkaUserOperatorTest {
             async.complete();
         });
     }
+
+    @Test
+    public void testUserStatusNotReady(TestContext context) {
+        String failureMsg = "failure";
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+
+        when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.failedFuture(failureMsg));
+        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
+        when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+
+        Async async = context.async();
+        op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, null, res -> {
+            context.assertFalse(res.succeeded());
+
+            List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getMessage(), failureMsg);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testUserStatusReady(TestContext context) {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+
+        when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
+        when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+
+        Async async = context.async();
+        op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, null, res -> {
+            context.assertTrue(res.succeeded());
+
+            List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "Ready");
+            async.complete();
+        });
+    }
 }
