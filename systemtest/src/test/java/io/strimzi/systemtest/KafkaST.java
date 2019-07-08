@@ -766,15 +766,6 @@ class KafkaST extends MessagingBaseST {
         assertThat(topics, not(hasItems("topic-from-cli")));
     }
 
-    /*
-
-
-    Test cases:
-    1. Remove TO and Create TO
-    2. Remove UO and Create UO
-    3. Remove TO and UO
-     */
-
     @Test
     void testRemoveTopicOperatorFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
