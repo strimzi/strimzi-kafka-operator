@@ -10,10 +10,6 @@ A dedicated `Route` is created for every Kafka broker pod.
 An additional `Route` is created to serve as a Kafka bootstrap address.
 Kafka clients can use these `Routes` to connect to Kafka on port 443.
 
-ifdef::Kubernetes[]
-NOTE: `Routes` are available only on {OpenShiftName}. External listeners of type `route` cannot be used on {KubernetesName}.
-endif::Kubernetes[]
-
 When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always used.
 
 By default, the route hosts are automatically assigned by {OpenShiftName}.
@@ -71,8 +67,8 @@ For more information on using loadbalancers to access Kafka, see xref:proc-acces
 = Exposing Kafka using node ports
 
 External listeners of type `nodeport` expose Kafka by using `NodePort` type `Services`.
-When exposing Kafka in this way, Kafka clients connect directly to the nodes of {ProductPlatformName}.
-You must enable access to the ports on the {ProductPlatformName} nodes for each client (for example, in firewalls or security groups).
+When exposing Kafka in this way, Kafka clients connect directly to the nodes of Kubernetes.
+You must enable access to the ports on the Kubernetes nodes for each client (for example, in firewalls or security groups).
 Each Kafka broker pod is then accessible on a separate port.
 Additional `NodePort` type `Service` is created to serve as a Kafka bootstrap address.
 
@@ -90,7 +86,7 @@ To disable it, set the `tls` field to `false`.
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-By default, the port numbers used for the bootstrap and broker services are automatically assigned by {ProductPlatformName}.
+By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
 However, you can override the assigned node ports by specifying the requested port numbers in the `overrides` property.
 {ProductName} does not perform any validation on the requested ports; you must ensure that they are free and available for use.
 
@@ -119,7 +115,6 @@ listeners:
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 
-ifdef::Kubernetes[]
 = Exposing Kafka using {KubernetesName} `Ingress`
 
 An external listener of type `ingress` exposes Kafka by using {KubernetesName} `Ingress` and the {NginxIngressController}.
@@ -162,7 +157,6 @@ listeners:
 ----
 
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
-endif::Kubernetes[]
 
 = Customizing advertised addresses on external listeners
 
@@ -216,14 +210,8 @@ listeners:
 
 = Customizing DNS names of external listeners
 
-On `loadbalancer`
-ifdef::Kubernetes[and `ingress`]
-listeners, you can use the `dnsAnnotations` property to add additional annotations to the
-ifdef::Kubernetes[ingress resources or]
-load balancer services.
-You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the
-ifdef::Kubernetes[ingress resources or]
-services.
+On `loadbalancer` and `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources or load balancer services.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources or services.
 
 .Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
 [source,yaml,subs="attributes+"]
@@ -255,7 +243,6 @@ listeners:
 # ...
 ----
 
-ifdef::Kubernetes[]
 .Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
 [source,yaml,subs="attributes+"]
 ----
@@ -289,4 +276,3 @@ listeners:
         host: broker-2.myingress.com
 # ...
 ----
-endif::Kubernetes[]
