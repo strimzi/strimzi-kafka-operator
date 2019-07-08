@@ -28,6 +28,6 @@ When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` r
 
 Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
 
-Resources are either patched or deleted, and then recreated in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the desired state of the cluster resource. This operation might cause a rolling update which might lead to service disruption.
+Resources are either patched or deleted, and then recreated in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the desired state of the cluster resource. This operation might cause a rolling update that might lead to service disruption.
 
 When a resource is deleted, the operator undeploys the cluster and deletes all related Kubernetes resources.
