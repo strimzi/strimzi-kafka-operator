@@ -17,7 +17,7 @@ Depending on the deployment, the Cluster Operator can watch Kafka resources from
 
 NOTE: {ProductName} provides example YAML files to make the deployment process easier.
 
-Cluster Operator watches the following resources:
+The Cluster Operator watches the following resources:
 
 * A `Kafka` resource for the Kafka cluster.
 * A `KafkaConnect` resource for the Kafka Connect cluster.
