@@ -9,7 +9,7 @@
 
 When the Cluster Operator is running, it starts to _watch_ Kafka resources for updates.
 
-Depending on the deployment, the Cluster Operator can _watch_ Kafka resources from:
+Depending on the deployment, the Cluster Operator can watch Kafka resources from:
 
 * xref:deploying-cluster-operator-{context}[A single namespace (the namespace it is installed)]
 * xref:deploying-cluster-operator-to-watch-multiple-namespaces{context}[Multiple namespaces]
