@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker-abort-on-send-failure.adoc
 
 [id='proc-configuring-kafka-mirror-maker-abort-on-send-failure-{context}']
-= Configuring the Mirror Maker to exit on a failed send
+= Enabling Mirror Maker to continue on message failure
 
 By default, if an error occurs when sending a message from Kafka Mirror Maker to a Kafka cluster:
 
