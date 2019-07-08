@@ -6,19 +6,23 @@
 [id='con-what-the-cluster-operator-does-{context}']
 = Overview of the Cluster Operator component
 
-The Cluster Operator is responsible for deploying a Kafka cluster alongside a Zookeeper ensemble.
+The Cluster Operator can deploy clusters for:
 
-To deploy a Kafka cluster:
+* Kafka (including Zookeeper)
+* Kafka Connect
+* Kafka Mirror Maker
+* Kafka Bridge
+
+The Cluster Operator can also deploy (through Entity Operator configuration)
+* A Topic Operator to provide operator-style topic management through `KafkaTopic` custom resources
+* A User Operator to provide operator-style topic management through `KafkaUser` custom resources
+
+For example, to deploy a Kafka cluster:
 
 * A `Kafka` resource with the cluster configuration is created within the Kubernetes cluster.
 * The Cluster Operator deploys a corresponding Kafka cluster, based on what is declared in the `Kafka` resource.
 
 For more information on the configuration options supported by the `Kafka` resource, see xref:assembly-deployment-configuration-kafka-str[].
-
-The Cluster Operator can also deploy:
-
-* A Topic Operator to provide operator-style topic management via `KafkaTopic` custom resources.
-* A Kafka Connect cluster to connect to an existing Kafka cluster.
 
 NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provides a convenient way to include connectors.
 

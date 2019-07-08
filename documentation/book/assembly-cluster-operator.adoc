@@ -8,7 +8,12 @@
 [id='cluster-operator-{context}']
 = Cluster Operator
 
-{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters in a Kubernetes cluster.
+{ProductName} uses the Cluster Operator to deploy to a Kubernetes cluster and manage the following:
+
+* Kafka (including Zookeeper)
+* Kafka Connect
+* Kafka Mirror Maker
+* Kafka Bridge
 
 include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
 

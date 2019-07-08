@@ -19,15 +19,16 @@ NOTE: {ProductName} provides example YAML files to make the deployment process e
 
 The Cluster Operator watches the following resources:
 
-* A `Kafka` resource for the Kafka cluster.
-* A `KafkaConnect` resource for the Kafka Connect cluster.
-* A `KafkaConnectS2I` resource for the Kafka Connect cluster with Source2Image support.
-* A `KafkaMirrorMaker` resource for the Kafka Mirror Maker instance.
+* `Kafka` for the Kafka cluster.
+* `KafkaConnect` for the Kafka Connect cluster.
+* `KafkaConnectS2I` for the Kafka Connect cluster with Source2Image support.
+* `KafkaMirrorMaker` for the Kafka Mirror Maker instance.
+* `KafkaBridge` for the Kafka Bridge instance
 
-When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
+When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
 
-Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
+Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the cluster for the resource.
 
-Resources are either patched or deleted, and then recreated in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the desired state of the cluster resource. This operation might cause a rolling update that might lead to service disruption.
+Resources are either patched or deleted, and then recreated in order to make the cluster for the resource reflect the desired state of the cluster. This operation might cause a rolling update that might lead to service disruption.
 
 When a resource is deleted, the operator undeploys the cluster and deletes all related Kubernetes resources.
