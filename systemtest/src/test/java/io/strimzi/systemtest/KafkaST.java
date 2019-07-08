@@ -761,7 +761,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testEntityOperatorWithoutTopicOperator() {
-        LOGGER.info("Deploying Kafka clsute without TO in EO");
+        LOGGER.info("Deploying Kafka cluster without TO in EO");
         operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -773,7 +773,7 @@ class KafkaST extends MessagingBaseST {
         .done();
 
         TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged((TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID)));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         //Checking that TO was not deployed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -785,7 +785,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testEntityOperatorWithoutUserOperator() {
-        LOGGER.info("Deploying Kafka clsute without UO in EO");
+        LOGGER.info("Deploying Kafka cluster without UO in EO");
         operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -797,9 +797,30 @@ class KafkaST extends MessagingBaseST {
         .done();
 
         TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged((TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID)));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         //Checking that TO was not deployed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("user-operator")));
+            });
+        });
+    }
+
+    @Test
+    void testEntityOperatorWithoutUserAndTopicOperators() {
+        LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withEntityOperator(null)
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+
+        //Checking that UO was not deployed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
                 assertThat(container.getName(), not(containsString("user-operator")));
