@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
@@ -428,15 +429,14 @@ class SecurityST extends AbstractST {
     @Test
     void testCertRenewalInMaintenanceWindow() throws Exception {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
+        LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
         long maintenanceWindowDuration = 4;
-        long currentMinute = LocalDateTime.now().getMinute();
-        long maintenanceStart = currentMinute + maintenanceWindowDuration;
-        if (maintenanceStart > 59) {
-            maintenanceStart = maintenanceStart - 60;
-        }
-        long maintenanceStop = maintenanceStart + maintenanceWindowDuration;
+        maintenanceWindowStart = maintenanceWindowStart.plusMinutes(maintenanceWindowDuration);
+        long windowStartMin = maintenanceWindowStart.getMinute();
+        long windowStopMin = windowStartMin + maintenanceWindowDuration > 59
+                ? windowStartMin + maintenanceWindowDuration - 60 : windowStartMin + maintenanceWindowDuration;
 
-        String maintenanceWindowCron = "* " + maintenanceStart + "-" + maintenanceStop + " * * * ? *";
+        String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
         testMethodResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
@@ -460,29 +460,20 @@ class SecurityST extends AbstractST {
         kubeClient().patchSecret(secretName, secret);
 
         LOGGER.info("Wait until maintenance windows starts");
-        long finalMaintenanceStart = maintenanceStart;
+        LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
         TestUtils.waitFor("Wait until maintenance window start",
             Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis(),
-            () -> LocalDateTime.now().getMinute() >= finalMaintenanceStart);
+            () -> LocalDateTime.now().isAfter(finalMaintenanceWindowStart));
 
-        // Get current hour before rolling update for assert
-        long maintenanceStopHour = LocalDateTime.now().getHour();
+        LOGGER.info("Maintenance window starts");
+
         assertThat("Rolling update was performed out of maintenance window!", kafkaPods, is(StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME))));
 
         LOGGER.info("Wait until rolling update is triggered during maintenance window");
         StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        assertThat("Rolling update wasn't performed in correct time", compareMaintenanceTime(maintenanceStart, maintenanceStopHour));
+        assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
         waitForClusterAvailability(NAMESPACE);
-    }
-
-    private boolean compareMaintenanceTime(long minute, long hour) {
-        int currentMinute = LocalDateTime.now().getMinute();
-        int currentHour = LocalDateTime.now().getHour();
-
-        if (currentHour > hour) {
-            return true;
-        } else return currentMinute > minute;
     }
 
     @BeforeEach
