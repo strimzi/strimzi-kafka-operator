@@ -821,7 +821,7 @@ class KafkaST extends MessagingBaseST {
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
-        //Checking that UO was not deployed
+        //Checking that EO was not deployed
         assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size(), "EO should not be deployed");
     }
 
