@@ -1,21 +1,17 @@
-# Building Strimzi
+# Developing Strimzi
 
-Strimzi is using `make` as its main build system. Our make build supports 
-several different targets mainly for building and pushing Docker images.
-
-The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) doesn't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as the maven build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor itself.
+This document gives a detailed breakdown of the various build processes and options for
+building Strimzi from source. For a quick start guide see the [Getting
+Started](https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md)
+document.
 
 <!-- TOC depthFrom:2 -->
 
 - [Build Pre-requisites](#build-pre-requisites)
-- [Docker images](#docker-images)
-    - [Building Docker images](#building-docker-images)
-    - [Alternate Docker image JRE](#alternate-docker-image-jre)
-    - [Tagging and pushing Docker images](#tagging-and-pushing-docker-images)
-- [Building everything](#building-everything)
-- [Pushing images to the cluster's Docker repo](#pushing-images-to-the-clusters-docker-repo)
+- [Make targets](#make-targets)
+- [Docker options](#docker-options)
+- [Building Strimzi](#building-strimzi)
 - [Helm Chart](#helm-chart)
-- [Release](#release)
 - [Running system tests](#running-system-tests)
 
 <!-- /TOC -->
@@ -25,113 +21,224 @@ The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) d
 To build this project you must first install several command line utilities.
 
 - [`make`](https://www.gnu.org/software/make/) - Make build system
-- [`mvn`](https://maven.apache.org/index.html) - Maven CLI
+- [`mvn`](https://maven.apache.org/index.html) (version 3.5 and above) - Maven CLI
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
     - After installing Helm be sure to run `helm init`.
-- [`asciidoctor`](https://asciidoctor.org/) - Documentation generation (use `gem` to install latest version for your platform)
-- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool.  **Warning: There are several different `yq` yaml projects in the wild.  [Use this one.](https://github.com/mikefarah/yq)** 
+- [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
+    - Use `gem` to install latest version for your platform.
+- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool. 
+    - **Warning:** There are several different `yq` YAML projects in the wild. Use
+      [this one](https://github.com/mikefarah/yq).
+- [`docker`](https://docs.docker.com/install/) - Docker command line client
 
 In order to use `make` these all need to be available in your `$PATH`.
 
 ### Mac OS
 
-The `make` build is using GNU versions of `find` and `sed` utilities and is not compatible with the BSD versions available on Mac OS. 
-When using Mac OS, you have to install the GNU versions of `find` and `sed`.
-When using `brew`, you can do `brew install gnu-sed findutils grep coreutils`.
-This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
+The `make` build is using GNU versions of `find` and `sed` utilities and is not compatible
+with the BSD versions available on Mac OS. When using Mac OS, you have to install the GNU
+versions of `find` and `sed`. When using `brew`, you can do `brew install gnu-sed
+findutils grep coreutils`. This command will install the GNU versions as `gcp`, `ggrep`,
+`gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
-The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. 
-You can run `brew install bash` to install a compatible version of `bash`.
-If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`  
+The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via
+homebrew. You can run `brew install bash` to install a compatible version of `bash`. If
+you wish to change the default shell to the updated bash run `sudo bash -c 'echo
+/usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`  
+
+### IDE
+
+The build also uses a Java annotation processor. Some IDEs (such as IntelliJ) don't, by
+default, run the annotation processor in their build process. You can run `mvn clean
+install -DskipTests -DskipITs` to run the annotation processor as part of the `maven`
+build and the IDE should then be able to use the generated classes. It is also possible to
+configure the IDE to run the annotation processor directly.
+
+### Cluster
+
+In order to run the integration tests and test any changes made to the operators you will
+need a functioning Kubernetes or OpenShift cluster. This can be a remote cluster or a
+local development cluster.
+
+#### Minishift 
+
+In order to perform the operations necessary for the integration tests, your user must
+have the cluster administrator role assigned. For example, if your username is
+`developer`, you can add the `cluster-admin` role using the commands below:
+
+    oc login -u system:admin
+
+    oc adm policy add-cluster-role-to-user cluster-admin developer
+    
+    oc login -u developer -p <password>
+
+#### Minikube
+
+The default minishift setup should allow the integration tests to be run without
+additional configuration changes. 
+
+Sometimes however, updates to minikube may prevent the test cluster context being
+correctly set. If you have errors due to `oc` commands being called on your minikube
+cluster then explicitly set the `TEST_CLUSTER` environment variable before running the
+`make` commands.
+
+    export TEST_CLUSTER=minikube
                                                                                             
-
-## Docker images
+## Make targets
 
 ### Building Docker images
 
-The `docker_build` target will build the Docker images provided by the 
-Strimzi project. You can build all Strimzi Docker images by calling 
-`make docker_build` from the root of the Strimzi repository. Or you can build 
-an individual Docker image by running `make docker_build` from the 
-subdirectories with their respective Dockerfiles - e.g. `kafka_base`, 
-`kafka` etc.
+The `docker_build` target will build the Docker images provided by the Strimzi project.
+You can build all Strimzi Docker images by calling `make docker_build` from the root of
+the Strimzi repository. Or you can build an individual Docker image by running `make
+docker_build` from the subdirectories with their respective Dockerfiles - e.g.
+`kafka_base`, `kafka` etc.
 
-The `docker_build` target will always build the images under the 
-`strimzi` organization. This is necessary in order to be able to reuse 
-the base image you might have just built without modifying all Dockerfiles. 
-The `DOCKER_TAG` environment variable configures the Docker tag 
-to use (default is `latest`).
+The `docker_build` target will **always** build the images under the `strimzi`
+organization. This is necessary in order to be able to reuse the base image you might have
+just built without modifying all Dockerfiles. The `DOCKER_TAG` environment variable
+configures the Docker tag to use (default is `latest`).
+
+#### Kafka versions
+
+As part of the Docker image build several different versions of Kafka will be built, which
+can increase build times. Which Kafka versions are to be built are defined in the
+[kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions)
+file. Unwanted versions can be commented out to speed up the build process.
+
+### Tagging and pushing Docker images
+
+Target `docker_tag` can be used to tag the Docker images built by the `docker_build`
+target. This target is automatically called by the `docker_push` target and doesn't have
+to be called separately. 
+
+To configure the `docker_tag` and `docker_push` targets you can set following environment
+variables:
+* `DOCKER_ORG` configures the Docker organization for tagging/pushing the images (defaults
+  to the value of the `$USER` environment variable)
+* `DOCKER_TAG` configured Docker tag (default is `latest`)
+* `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default
+  is `docker.io`)
+
+## Docker options
 
 ### Alternate Docker image JRE
 
-The docker images can be built with an alternate java version by setting the environment variable
-`JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use
-`JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
+The docker images can be built with an alternate java version by setting the environment
+variable `JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE
+installed use `JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is
+defaulted to **1.8.0**.
 
 If `JAVA_VERSION` environment variable is set, a profile in the parent pom.xml will set the
 `maven.compiler.source` and `maven.compiler.target` properties.
 
 ### Alternate Docker base image
 
-The docker images can be built with an alternate container OS version by adding the environment
-variable ```ALTERNATE_BASE```.  When this environment variable is set, for each component the build
-will look for a Dockerfile in the subdirectory named by ```ALTERNATE_BASE```.  For example, to build
-docker images based on alpine, use `ALTERNATE_BASE=alpine make docker_build`.  Alternate docker
-images are an experimental feature not supported by the core Strimzi team.
+The docker images can be built with an alternate container OS version by adding the
+environment variable `ALTERNATE_BASE`.  When this environment variable is set, for each
+component the build will look for a Dockerfile in the subdirectory named by
+`ALTERNATE_BASE`.  For example, to build docker images based on alpine, use
+`ALTERNATE_BASE=alpine make docker_build`.  Alternate docker images are an experimental
+feature not supported by the core Strimzi team.
 
-### Tagging and pushing Docker images
+## Building Strimzi
 
-Target `docker_tag` can be used to tag the Docker images built by the 
-`docker_build` target. This target is automatically called by the `docker_push` 
-target and doesn't have to be called separately. 
+The `make all` target can be used to trigger both the `docker_build` and the `docker_push`
+targets described above. This will build the Docker images, tag them and push them to the
+configured repository. 
 
-To configure the `docker_tag` and `docker_push` targets you can set following 
-environment variables:
-* `DOCKER_ORG` configures the Docker organization for tagging/pushing the 
-  images (defaults to the value of the `$USER` environment variable)
-* `DOCKER_TAG` configured Docker tag (default is `latest`)
-* `DOCKER_REGISTRY` configures the Docker registry where the image will 
-  be pushed (default is `docker.io`)
+### Maven 
 
-## Building everything
+Running `make` invokes Maven for packaging Java based applications (that is, Cluster
+Operator, Topic Operator, etc). The `mvn` command can be customized by setting the
+`MVN_ARGS` environment variable when launching `make all`. For example,
+`MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests and adding
+`-DskipIT` will skip the integration tests.
 
-`make all` command can be used to trigger all the tasks above - build the 
-Docker images, tag them and push them to the configured repository.
+### Local build with push to Docker Hub
 
-`make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, ...). 
-The `mvn` command can be customized by setting the `MVN_ARGS` environment variable when launching `make all`. 
-For example, `MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests.
+To build the images on your local machine and push them to the Docker Hub, log into Docker
+Hub with your account details. This sets the Hub as the `docker push` registry target.
 
-## Pushing images to the cluster's Docker repo
+    docker login
 
-When developing locally you might want to push the docker images to the docker
-repository running in your local OpenShift cluster. This can be quicker than
-pushing to dockerhub and works even without a network connection.
+By default the `docker_push` target will build the images under the strimzi organisation
+(e.g. `strimzi/operator:latest`) and attempt to push them to the strimzi repositories on
+the Docker Hub. Only certain users are approved to do this so you should push to your own
+Docker Hub organisation (account) instead. To do this, make sure that the `DOCKER_ORG`
+environment variable is set to the same value as your username on Docker Hub before
+running the `make` commands.
 
-Assuming your OpenShift login is `developer` and project is `myproject` 
-you can push the images to OpenShift's Docker repo like this:
+    export DOCKER_ORG=docker_hub_username
+
+When the Docker images are build then will now be labeled in the form:
+`docker_hub_username/operator:latest` in your local repository and pushed to your Docker
+Hub account under the same label.
+
+In order to use these newly built images, you need to update the
+`install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the
+images from your repositories on Docker Hub rather than the official Strimzi images. That
+can be done using the following command and replacing `docker_hub_username` with the
+relevant value:
+
+```
+sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: docker_hub_username/\2:latest#' \
+        -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=docker_hub_username/\2#' \
+        install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+```
+
+This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image
+references (in `image` and `value` properties) with ones with the same name but with the
+repository changed.
+
+Then you can deploy the Cluster Operator by running (for an OpenShift cluster):
+
+    oc create -f install/cluster-operator
+
+Finally, you can deploy the cluster custom resource running:
+
+    oc create -f examples/kafka/kafka-ephemeral.yaml
+
+### Local build with push to Minishift Docker registry
+
+When developing locally you might want to push the docker images to the docker repository
+running in your local OpenShift (minishift) cluster. This can be quicker than pushing to
+Docker Hub and works even without a network connection.
+
+Assuming your OpenShift login is `developer` (a user with the `cluster-admin` role) and
+the project is `myproject`, you can push the images to OpenShift's Docker repo using the
+steps below:
 
 1. Make sure your cluster is running,
 
         oc cluster up
 
-   By default, you should be logged in as `developer` (you can check this 
-   with `oc whoami`)
-        
-2. Log in to the Docker repo running in the local cluster:
+   By default, you should be logged in as `developer` (you can check this with `oc
+   whoami`)
 
-        docker login -u developer -p `oc whoami -t` 172.30.1.1:5000
-        
-   `172.30.1.1:5000` happens to be the IP and port of the Docker registry
-   running in the cluster (see `oc get svc -n default`). Note that we are using the `developer` OpenShift user and the 
-   token for the current (`developer`) login as the password. 
-        
-3. Now run `make` to push the development images to that Docker repo:
+2. Get the *internal* OpenShift docker registry address by running the command below:
 
-        DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=`oc project -q` make all
+        oc get services -n default 
         
-4. In order to use the built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from DockerHub.
-  That can be done using the following command:
+   `172.30.1.1:5000` is the typical default IP and port of the Docker registry running in
+   the cluster, however the command may above may return a different value.
+
+3. Log in to the Docker repo running in the local cluster:
+
+        docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
+        
+   Note that we are using the `developer` OpenShift user and the token for the current 
+   (`developer`) login as the password. 
+        
+4. Now run the `docker_push` target to push the development images to that Docker repo. If
+   you need to build/rebuild the Docker images as well, then run the `all` target instead:
+
+        DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=$(oc project -q) make docker_push
+        
+5. In order to use the built images in a deployment, you need to update the
+   `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the
+   images from the registry at `172.30.1.1:5000`, rather than from DockerHub. That can be
+   done using the following command:
 
     ```
     sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
@@ -139,15 +246,47 @@ you can push the images to OpenShift's Docker repo like this:
             install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
     ```
 
-    This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name from `172.30.1.1:5000/myproject`.
+    This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the
+    image references (in `image` and `value` properties) with ones with the same name from
+    `172.30.1.1:5000/myproject`.
 
-5. Then you can deploy the Cluster Operator running:
+6. Then you can deploy the Cluster Operator by running:
 
     oc create -f install/cluster-operator
 
-6. Finally, you can deploy the cluster custom resource running:
+7. Finally, you can deploy the cluster custom resource by running:
 
     oc create -f examples/kafka/kafka-ephemeral.yaml
+
+### Cluster build
+
+If you do not want to have the docker daemon running on your local development machine,
+you can build the container images in your minishift or minikube VM by setting your docker
+host to the address of the VM's daemon:
+
+    eval $(minishift docker-env)
+
+or
+    
+    eval $(minikube docker-env)
+
+The images will then be built and stored in the cluster VM's local image store and then
+pushed to your configured Docker registry. 
+
+#### Skipping the registry push
+
+You can avoid the `docker_push` step and `sed` commands above by configuring the Docker
+Host as above and then running:
+
+    make docker_build
+
+    make DOCKER_ORG=strimzi docker_tag
+
+This labels your latest container build as `strimzi/operator:latest` and you can then
+deploy the standard CRDs without changing the image targets. However, this will only work
+if all instances of the `imagePullPolicy:` setting are set to `IfNotPresent` or `Never`.
+If not, then the cluster nodes will go to the upstream registry (Docker Hub by default)
+and pull the official images instead of using your freshly built image. 
 
 ## Helm Chart
 
@@ -157,56 +296,19 @@ The `strimzi-kafka-operator` Helm Chart can be installed directly from its sourc
     
 The chart is also available in the release artifact as a tarball.
 
-## Release
-
-`make release` target can be used to create a release. Environment variable 
-`RELEASE_VERSION` (default value `latest`) can be used to define the release 
-version. The `release` target will:
-* Update all tags of Docker images to `RELEASE_VERSION`
-* Update documentation version to `RELEASE_VERSION`
-* Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` 
-* Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment
-and documentation in HTML format.
- 
-The `release` target will not build the Docker images - they should be built and pushed automatically by Travis CI 
-when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only 
-used to create the Docker images.
-
-The release process should normally look like this:
-1. Create a release branch
-2. Export the desired version into the environment variable `RELEASE_VERSION`
-3. Run `make clean release`
-4. Commit the changes to the existing files (do not add the newly created top level TAR.GZ, ZIP archives or .yaml files into Git)
-5. Push the changes to the release branch on GitHub
-6. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git 
-tag name has to be the same as the `RELEASE_VERSION`, i.e. `git tag ${RELEASE_VERSION}`,
-7. Once the CI build for the tag is finished and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. 
-Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) from step 4 and the Helm Chart to the release
-8. On the `master` git branch
-  * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
-  For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
-  * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
-9. Update the website
-  * Add release documentation to `strimzi.github.io/docs/`.
-  Update references to docs in `strimzi.github.io/documentation/index.md` and `strimzi.github.io/documentation/archive/index.md`.
-  Update also the link from the start page: `strimzi.github.io/index.md`.
-  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to
-  `strimzi.github.io/charts/index.yaml`.
-  * Update the Quickstarts for OKD and Minikube to use the latest stuff.
-10. The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. 
-It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-
 ## Running system tests
 
 ### Test groups
 
-To execute an expected group of system tests need to add system property `junitTags` with following value:
+To execute an expected group of system tests need to add system property `junitTags` with
+following value:
 
 `-DjunitTags=integration` - to execute one test group
 `-DjunitTags=acceptance,regression` - to execute many test groups
 `-DjunitTags=all` - to execute all test groups
 
-If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed. The following table shows currently used tags:
+If `junitTags` system property isn't defined, all tests without an explicitly declared
+test group will be executed. The following table shows currently used tags:
 
 | Name          | Description                                                                        |
 | :-----------: | :--------------------------------------------------------------------------------: |
@@ -219,8 +321,9 @@ If `junitTags` system property isn't defined, all tests without an explicitly de
 
 ### Helper script
 
-The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used 
-in the travis build.  You can use this script to easily run the `systemtests` project.
+The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using
+the same configuration as used in the travis build.  You can use this script to easily run
+the `systemtests` project.
 
 Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
@@ -228,16 +331,16 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
     
 ### Running single test class
 
-Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system property. 
-
-Ex)
+Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system
+property. 
 
     mvn verify -pl systemtest -P systemtests -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
 ### Environment variables
 
-We can configure our system tests with several environment variables, which are loaded before test execution:
+We can configure our system tests with several environment variables, which are loaded
+before test execution:
 
 | Name                      | Description                                                                          | Default                                          |
 | :-----------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------: |
@@ -251,24 +354,37 @@ We can configure our system tests with several environment variables, which are 
 | STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator                                                       | DEBUG                                            |
 | KUBERNETES_DOMAIN         | Cluster domain. It's used for specify URL endpoint of testing clients                | .nip.io                                          |
 
-If you want to use your own images with different tag or from different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
+If you want to use your own images with different tag or from different repository, you
+can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
-`KUBERNETES_DOMAIN` should be specified only in case you are using specific configuration in your kubernetes cluster.
+`KUBERNETES_DOMAIN` should be specified only in case you are using specific configuration
+in your kubernetes cluster.
 
 #### Specific Kafka version
 
-To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.1.0`, `2.1.1`, `2.2.0`, `2.2.1`, `2.3.0`. For more info about allowed versions see [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
+To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION`
+with one of the following values: `2.1.0`, `2.1.1`, `2.2.0`, `2.2.1`, `2.3.0`. For more
+info about allowed versions see
+[kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
 
 #### Cluster Operator Log level
 
-To set the log level of Strimzi for system tests need to add system property `STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
+To set the log level of Strimzi for system tests need to add system property
+`STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`,
+`DEBUG`, `TRACE`.
 
 ### Test Cluster
 
-The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`. 
-If this variable is not set, kubernetes client will use currently active context. Otherwise will use context from kubeconfig with name specified by `TEST_CLUSTER_CONTEXT` variable.
+The integration and system tests are run against a cluster specified in the environment
+variable `TEST_CLUSTER_CONTEXT`. If this variable is not set, kubernetes client will use
+currently active context. Otherwise will use context from kubeconfig with name specified
+by `TEST_CLUSTER_CONTEXT` variable.
 
-For example command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`.
-However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
+For example command `TEST_CLUSTER_CONTEXT=remote-cluster
+./systemtest/scripts/run_tests.sh` will execute tests with cluster context
+`remote-cluster`. However, since system tests use command line `Executor` for some
+actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
 
-System tests uses admin user for some actions. You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
+System tests uses admin user for some actions. You can specify admin user via variable
+`TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used
+over remote connections).
