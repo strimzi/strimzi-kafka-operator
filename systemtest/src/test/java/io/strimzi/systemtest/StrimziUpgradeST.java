@@ -118,6 +118,12 @@ public class StrimziUpgradeST extends AbstractST {
                             makeSnapshots();
                             break;
                         }
+                        case "set Kafka version to 2.2.1": {
+                            replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.2.1"));
+                            StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                            makeSnapshots();
+                            break;
+                        }
                     }
                 }
             }
@@ -252,7 +258,7 @@ public class StrimziUpgradeST extends AbstractST {
             List<Pod> pods1 = kubeClient().listPods(matchLabels);
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
-                    LOGGER.info("Expected image: {} \nCurrent image: {}", image, pod.getSpec().getContainers().get(container).getImage());
+                    LOGGER.debug("Expected image: {} \nCurrent image: {}", image, pod.getSpec().getContainers().get(container).getImage());
                     return false;
                 }
             }
@@ -262,7 +268,6 @@ public class StrimziUpgradeST extends AbstractST {
 
     @BeforeEach
     void setupEnvironment() {
-        LOGGER.info("Creating namespace: {}", NAMESPACE);
         createNamespace(NAMESPACE);
     }
 
