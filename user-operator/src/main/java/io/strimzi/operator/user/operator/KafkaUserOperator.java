@@ -125,9 +125,17 @@ public class KafkaUserOperator {
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
+        KafkaUserStatus userStatus = new KafkaUserStatus();
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
+            if (kafkaUser.getMetadata().getGeneration() != null)    {
+                userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
+            }
+            userStatus.setUsername(userName);
+            Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(Future.failedFuture(e));
+            userStatus.setConditions(Collections.singletonList(readyCondition));
+            updateStatus(kafkaUser, reconciliation, userStatus);
             handler.handle(Future.failedFuture(e));
             return;
         }
@@ -149,30 +157,21 @@ public class KafkaUserOperator {
             scramAcls = user.getSimpleAclRules();
         }
 
-        KafkaUserStatus userStatus = new KafkaUserStatus();
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .setHandler(reconciliationResult -> {
-
                     if (kafkaUser.getMetadata().getGeneration() != null)    {
                         userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
                     }
-
-                    Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(reconciliationResult.mapEmpty());
-
+                    
                     userStatus.setUsername(user.getName());
+                    Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(reconciliationResult.mapEmpty());
                     userStatus.setConditions(Collections.singletonList(readyCondition));
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
-                        if (statusResult.succeeded())    {
-                            log.debug("Status for {} is up to date", kafkaUser.getMetadata().getName());
-                        } else {
-                            log.error("Failed to set status for {}. {}", kafkaUser.getMetadata().getName(), statusResult.cause().getMessage());
-                        }
-
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded())    {
@@ -183,8 +182,8 @@ public class KafkaUserOperator {
                             createOrUpdateFuture.fail(statusResult.cause());
                         }
                     });
-                    handler.handle(createOrUpdateFuture);
                 });
+        handler.handle(createOrUpdateFuture);
     }
 
     protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
