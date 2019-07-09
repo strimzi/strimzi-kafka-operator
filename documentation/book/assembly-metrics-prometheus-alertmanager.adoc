@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-metrics-prometheus.adoc
+[id='assembly-metrics-prometheus-alertmanager-{context}']
+
+= Prometheus Alertmanager
+
+An essential aspect of monitoring is to be notified of conditions that indicate a potential problem.
+
+Prometheus provides an alert system through its link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
+
+You can deploy Alertmanager with example alerting rules provided with {ProductName}.
+
+include::con-metrics-prometheus-alerts.adoc[leveloffset=+1]
+
+include::ref-metrics-alertmanager-examples.adoc[leveloffset=+1]
+
+include::proc-metrics-deploying-prometheus-alertmanager.adoc[leveloffset=+1]

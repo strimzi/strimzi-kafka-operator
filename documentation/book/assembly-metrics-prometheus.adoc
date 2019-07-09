@@ -1,0 +1,34 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-metrics-setup.adoc
+[id='assembly-metrics-prometheus-{context}']
+
+= Prometheus
+
+link:https://prometheus.io/[Prometheus^] provides an open source set of components for systems monitoring and alert notification.
+
+We describe how you can use the link:https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator^] to run a Prometheus server that is suitable for use in production environments, but with the correct configuration you can run any Prometheus server.
+
+The {ProductName} repository contains link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/metrics/examples/prometheus/install[configuration files^] for the Prometheus server. When you apply these configuration files, the following resources are created in your {KubernetesName} cluster and managed by the Prometheus Operator:
+
+* A `ClusterRole` that grants permissions to Prometheus to read the health endpoints exposed by the Kafka and Zookeeper pods, cAdvisor and the kubelet for container metrics.
+* A `ServiceAccount` for the Prometheus pods to run under.
+* A `ClusterRoleBinding` which binds the `ClusterRole` to the `ServiceAccount`.
+* A `Deployment` to manage the Prometheus Operator pod.
+* A `ServiceMonitor` to manage the configuration of the Prometheus pod.
+* A `Prometheus` to manage the configuration of the Prometheus pod.
+* A `PrometheusRule` to manage alerting rules for the Prometheus pod.
+* A `Secret` to manage additional Prometheus settings.
+
+[NOTE]
+====
+The Prometheus server configuration uses the {KubernetesName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
+
+For more information, see {K8sServiceDiscovery}.
+====
+
+include::proc-metrics-deploying-prometheus-operator.adoc[leveloffset=+1]
+
+include::proc-metrics-deploying-prometheus.adoc[leveloffset=+1]
+
+include::assembly-metrics-prometheus-alertmanager.adoc[leveloffset=+1]
