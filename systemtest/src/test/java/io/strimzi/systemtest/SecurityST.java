@@ -461,7 +461,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Wait until maintenance windows starts");
         LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
         TestUtils.waitFor("Wait until maintenance window start",
-            Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis(),
+            Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis() - 10000,
             () -> LocalDateTime.now().isAfter(finalMaintenanceWindowStart));
 
         LOGGER.info("Maintenance window starts");
