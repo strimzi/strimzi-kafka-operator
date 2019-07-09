@@ -7,7 +7,7 @@
 
 = Watch options for a Cluster Operator deployment
 
-When the Cluster Operator is running, it starts to _watch_ Kafka resources for updates.
+When the Cluster Operator is running, it starts to _watch_ for updates of Kafka resources.
 
 Depending on the deployment, the Cluster Operator can watch Kafka resources from:
 

@@ -29,7 +29,7 @@ All other options are passed to Zookeeper.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.
-In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
+In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the Cluster Operator will roll out the new configuration to all Zookeeper nodes.
 
 Selected options have default values:
 

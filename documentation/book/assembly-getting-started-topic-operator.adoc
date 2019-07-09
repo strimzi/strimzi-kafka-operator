@@ -6,6 +6,8 @@
 
 = Topic Operator
 
+The Topic Operator is responsible for managing Kafka topics within a Kafka cluster running within a Kubernetes cluster.
+
 include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
 
 include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+1]
