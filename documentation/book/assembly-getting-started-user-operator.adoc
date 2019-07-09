@@ -5,9 +5,8 @@
 [id='assembly-getting-started-user-operator-{context}']
 = User Operator
 
-The User Operator provides a way of managing Kafka users via Kubernetes resources.
+The User Operator is responsible for managing Kafka users within a Kafka cluster running within a Kubernetes cluster.
 
 include::con-what-the-user-operator-does.adoc[leveloffset=+1]
 
 include::proc-deploying-the-user-operator-using-the-cluster-operator.adoc[leveloffset=+1]
-

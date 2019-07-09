@@ -20,7 +20,7 @@ These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `K
 
 .Procedure
 
-. Delete the cluster operator `Deployment`, related `CustomResourceDefinitions`, and `RBAC` resources:
+. Delete the Cluster Operator `Deployment`, related `CustomResourceDefinitions`, and `RBAC` resources:
 +
 [options="nowrap",subs="+quotes,attributes"]
 ----
