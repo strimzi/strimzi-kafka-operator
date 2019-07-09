@@ -770,11 +770,13 @@ class KafkaST extends MessagingBaseST {
     void testRemoveTopicOperatorFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+            .get(0).getMetadata().getName();
 
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
-
-        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+        //Waiting when EO pod will be recreated without TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that TO was removed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -783,9 +785,13 @@ class KafkaST extends MessagingBaseST {
             });
         });
 
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
-        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+        //Waiting when EO pod will be recreated with TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that TO was created
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -804,11 +810,14 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
         operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
 
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(null));
 
-        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+        //Waiting when EO pod will be recreated without UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that UO was removed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -817,9 +826,13 @@ class KafkaST extends MessagingBaseST {
             });
         });
 
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
-        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+        //Waiting when EO pod will be recreated with UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that UO was created
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
