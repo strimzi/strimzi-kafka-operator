@@ -855,6 +855,9 @@ class KafkaST extends MessagingBaseST {
         operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
         replaceKafkaResource(CLUSTER_NAME, k -> {
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
             entityOperatorSpec.setTopicOperator(null);
@@ -862,7 +865,8 @@ class KafkaST extends MessagingBaseST {
             k.getSpec().setEntityOperator(entityOperatorSpec);
         });
 
-        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
+        //Waiting when EO pod will be deleted
+        StUtils.waitForPodDeletion(eoPodName);
 
         //Checking that EO was removed
         assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size());
