@@ -10,7 +10,7 @@ This procedure describes how to delete a Kafka topic using a `KafkaTopic` Kubern
 .Prerequisites
 
 * A running Kafka cluster.
-* A running Topic Operator.
+* A running Topic Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 * An existing `KafkaTopic` to be deleted.
 * `delete.topic.enable=true` (default)
 
