@@ -1004,9 +1004,14 @@ public abstract class AbstractModel {
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
         Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
+        int juteMaxbuffer = jvmOptions != null ? jvmOptions.getJuteMaxbuffer() : null;
 
         if (server != null && server) {
             jvmPerformanceOpts.append("-server");
+        }
+
+        if (jvmOptions != null && jvmOptions.getJuteMaxbuffer() > 0) {
+            jvmPerformanceOpts.append(" ").append("-Djute.maxbuffer=").append(jvmOptions.getJuteMaxbuffer());
         }
 
         Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;

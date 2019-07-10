@@ -665,6 +665,8 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
+                    juteMaxbuffer:
+                      type: integer
                 resources:
                   type: object
                   properties:
@@ -1439,6 +1441,8 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
+                    juteMaxbuffer:
+                      type: integer
                 resources:
                   type: object
                   properties:

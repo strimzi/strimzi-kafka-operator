@@ -613,6 +613,8 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |string
 |gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
 |boolean
+|juteMaxbuffer     1.2+<.<|Configures the `jute.maxbuffer` option for Zookeeper clients and servers.
+|integer
 |====
 
 [id='type-ResourceRequirements-{context}']

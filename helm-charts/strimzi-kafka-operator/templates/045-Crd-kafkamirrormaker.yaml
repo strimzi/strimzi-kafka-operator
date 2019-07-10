@@ -429,6 +429,8 @@ spec:
                   pattern: '[0-9]+[mMgG]?'
                 gcLoggingEnabled:
                   type: boolean
+                juteMaxbuffer:
+                  type: integer
             logging:
               type: object
               properties:

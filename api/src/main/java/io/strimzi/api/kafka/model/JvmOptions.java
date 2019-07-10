@@ -33,6 +33,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xms;
     private Boolean server;
     private boolean gcLoggingEnabled = true;
+    private int juteMaxbuffer;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -85,6 +86,16 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     public void setXx(Map<String, String> xx) {
         this.xx = xx;
+    }
+
+    @Description("Configures the `jute.maxbuffer` option for Zookeeper clients and servers")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public int getJuteMaxbuffer() {
+        return juteMaxbuffer;
+    }
+
+    public void setJuteMaxbuffer(int juteMaxbuffer) {
+        this.juteMaxbuffer = juteMaxbuffer;
     }
 
     @Override
