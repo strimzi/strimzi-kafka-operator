@@ -128,8 +128,8 @@ public class KafkaUserOperator {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, Future.failedFuture(e));
-            updateStatus(kafkaUser, reconciliation, userStatus);
-            handler.handle(Future.failedFuture(e));
+            updateStatus(kafkaUser, reconciliation, userStatus)
+                    .setHandler(result -> handler.handle(Future.failedFuture(e)));
             return;
         }
 
