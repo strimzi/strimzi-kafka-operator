@@ -88,7 +88,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE = "KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE";
 
     protected String whitelist;
-    protected int offsetCommitInterval;
 
     protected KafkaMirrorMakerProducerSpec producer;
     protected CertAndKeySecretSource producerTlsAuthCertAndKey;
