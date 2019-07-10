@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.test.k8s.KubeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +13,8 @@ import java.io.File;
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.TestUtils.writeFile;
 
-class LogCollector {
-    private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
+public class LogCollector {
+    private static final Logger LOGGER = LogManager.getLogger(LogCollector.class);
 
     private KubeClient kubeClient;
     private String namespace;
@@ -23,7 +22,7 @@ class LogCollector {
     private File configMapDir;
     private File eventsDir;
 
-    LogCollector(KubeClient kubeClient, File logDir) {
+    public LogCollector(KubeClient kubeClient, File logDir) {
         this.kubeClient = kubeClient;
         this.namespace = kubeClient.getNamespace();
         this.logDir = logDir;
@@ -39,7 +38,7 @@ class LogCollector {
         }
     }
 
-    void collectLogsFromPods() {
+    public void collectLogsFromPods() {
         LOGGER.info("Collecting logs for pods in namespace {}", namespace);
 
         try {
@@ -59,14 +58,14 @@ class LogCollector {
         }
     }
 
-    void collectEvents() {
+    public void collectEvents() {
         LOGGER.info("Collecting events in namespace {}", namespace);
         String events = cmdKubeClient().getEvents();
         // Write events to file
         writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.getNamespace() + ".log", events);
     }
 
-    void collectConfigMaps() {
+    public void collectConfigMaps() {
         LOGGER.info("Collecting configmaps in namespace {}", namespace);
         kubeClient.listConfigMaps().forEach(configMap -> {
             writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
