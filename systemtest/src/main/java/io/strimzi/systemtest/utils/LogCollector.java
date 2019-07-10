@@ -24,7 +24,7 @@ public class LogCollector {
     private File eventsDir;
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    LogCollector(KubeClient kubeClient, File logDir) {
+    public LogCollector(KubeClient kubeClient, File logDir) {
         this.kubeClient = kubeClient;
         this.namespace = kubeClient.getNamespace();
         this.logDir = logDir;
