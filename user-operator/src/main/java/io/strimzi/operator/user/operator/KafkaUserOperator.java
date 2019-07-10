@@ -162,16 +162,16 @@ public class KafkaUserOperator {
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
-                        if (reconciliationResult.succeeded() && statusResult.succeeded())    {
+                        if (reconciliationResult.succeeded() && statusResult.succeeded()) {
                             createOrUpdateFuture.complete();
-                        } else if (reconciliationResult.failed())    {
+                        } else if (reconciliationResult.failed()) {
                             createOrUpdateFuture.fail(reconciliationResult.cause());
                         } else {
                             createOrUpdateFuture.fail(statusResult.cause());
                         }
+                        handler.handle(createOrUpdateFuture);
                     });
                 });
-        handler.handle(createOrUpdateFuture);
     }
 
     protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
@@ -430,7 +430,7 @@ public class KafkaUserOperator {
             log.info("{}: User reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
-            log.warn("{}: Failed to reconcile", reconciliation, cause);
+            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
         }
     }
 }
