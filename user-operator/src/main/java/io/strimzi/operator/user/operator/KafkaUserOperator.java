@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Credential;
 import io.strimzi.api.kafka.model.status.CredentialBuilder;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
@@ -25,7 +24,7 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ConditionUtils;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.AsyncResult;
@@ -39,7 +38,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -129,7 +127,7 @@ public class KafkaUserOperator {
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            ConditionUtils.setStatusConditionFromReconciliationResult(kafkaUser, userStatus, Future.failedFuture(e));
+            StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, Future.failedFuture(e));
             updateStatus(kafkaUser, reconciliation, userStatus);
             handler.handle(Future.failedFuture(e));
             return;
@@ -158,7 +156,7 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .setHandler(reconciliationResult -> {
-                    ConditionUtils.setStatusConditionFromReconciliationResult(kafkaUser, userStatus, reconciliationResult.mapEmpty());
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getName());
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {

@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 
-public class ConditionUtils {
+public class StatusUtils {
 
     public static Condition buildConditionFromReconciliationResult(AsyncResult<Void> reconciliationResult) {
         Condition readyCondition;
@@ -41,11 +41,11 @@ public class ConditionUtils {
         return new Date();
     }
 
-    public static <R extends CustomResource, S extends Status> void setStatusConditionFromReconciliationResult(R resource, S status, AsyncResult<Void> result) {
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(result);
+        Condition readyCondition = StatusUtils.buildConditionFromReconciliationResult(result);
         status.setConditions(Collections.singletonList(readyCondition));
     }
 }
