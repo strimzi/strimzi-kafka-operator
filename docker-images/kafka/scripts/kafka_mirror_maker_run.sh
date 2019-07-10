@@ -71,6 +71,14 @@ if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
     numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS}"
 fi
 
+if [ -n "$KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL" ]; then
+    offset_commit_interval="--offset.commit.interval.ms $KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL"
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE" ]; then
+    abort_on_send_failure="--abort.on.send.failure $KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE"
+fi
+
 . ./set_kafka_gc_options.sh
 
 # starting Kafka Mirror Maker with final configuration
@@ -78,4 +86,6 @@ exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
 $whitelist \
-$numstreams
+$numstreams \
+$offset_commit_interval \
+$abort_on_send_failure

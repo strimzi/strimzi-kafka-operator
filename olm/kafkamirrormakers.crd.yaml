@@ -57,6 +57,8 @@ spec:
                 numStreams:
                   type: integer
                   minimum: 1
+                offsetCommitInterval:
+                  type: integer
                 groupId:
                   type: string
                 bootstrapServers:
@@ -122,6 +124,8 @@ spec:
               properties:
                 bootstrapServers:
                   type: string
+                abortOnSendFailure:
+                  type: boolean
                 authentication:
                   type: object
                   properties:

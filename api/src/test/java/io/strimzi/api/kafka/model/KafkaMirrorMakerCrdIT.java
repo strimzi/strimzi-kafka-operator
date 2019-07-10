@@ -84,6 +84,11 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-template.yaml");
     }
 
+    @Test
+    void testKafkaMirrorMakerWithCommitAndAbort() {
+        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-commit-and-abort.yaml");
+    }
+
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);

@@ -1678,18 +1678,20 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Property                 |Description
-|numStreams        1.2+<.<|Specifies the number of consumer stream threads to create.
+|Property                     |Description
+|numStreams            1.2+<.<|Specifies the number of consumer stream threads to create.
 |integer
-|groupId           1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
+|offsetCommitInterval  1.2+<.<|Offset commit interval in ms. Default value is 60 000.
+|integer
+|groupId               1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
 |string
-|bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+|bootstrapServers      1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config            1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
+|config                1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
 |map
-|tls               1.2+<.<|TLS configuration for connecting to the cluster.
+|tls                   1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 
@@ -1769,14 +1771,16 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Property                 |Description
-|bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+|Property                   |Description
+|bootstrapServers    1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|abortOnSendFailure  1.2+<.<|Configure the mirror maker to exit on a failed send. Default value is `true`.
+|boolean
+|authentication      1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config            1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+|config              1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
 |map
-|tls               1.2+<.<|TLS configuration for connecting to the cluster.
+|tls                 1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 

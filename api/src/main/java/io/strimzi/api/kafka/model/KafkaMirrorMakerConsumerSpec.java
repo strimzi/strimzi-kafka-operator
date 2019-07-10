@@ -21,7 +21,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"numStreams", "groupId", "bootstrapServers", "logging"})
+@JsonPropertyOrder({"numStreams", "offsetCommitInterval", "groupId", "bootstrapServers", "logging"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
@@ -31,6 +31,8 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private Integer numStreams;
 
     private String groupId;
+
+    private Integer offsetCommitInterval;
 
     @Override
     @Description("The mirror maker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
@@ -57,5 +59,15 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    @Description("Offset commit interval in ms. Default value is 60 000.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public Integer getOffsetCommitInterval() {
+        return offsetCommitInterval;
+    }
+
+    public void setOffsetCommitInterval(Integer offsetCommitInterval) {
+        this.offsetCommitInterval = offsetCommitInterval;
     }
 }
