@@ -92,6 +92,7 @@ public abstract class AbstractModel {
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
     public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    public static final String ENV_VAR_KAFKA_OPTS = "KAFKA_OPTS";
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
@@ -1004,14 +1005,9 @@ public abstract class AbstractModel {
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
         Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
-        int juteMaxbuffer = jvmOptions != null ? jvmOptions.getJuteMaxbuffer() : null;
 
         if (server != null && server) {
             jvmPerformanceOpts.append("-server");
-        }
-
-        if (jvmOptions != null && jvmOptions.getJuteMaxbuffer() > 0) {
-            jvmPerformanceOpts.append(" ").append("-Djute.maxbuffer=").append(jvmOptions.getJuteMaxbuffer());
         }
 
         Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
@@ -1032,6 +1028,24 @@ public abstract class AbstractModel {
         String trim = jvmPerformanceOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
+        }
+    }
+
+    /**
+     * Adds KAFKA_OPTS variable to the EnvVar list if any relevant jvmOptions are specified.
+     *
+     * @param envVars List of Environment Variables
+     */
+    protected void jvmKafkaOptions(List<EnvVar> envVars) {
+        StringBuilder kafkaOpts = new StringBuilder();
+
+        if (jvmOptions != null && jvmOptions.getJuteMaxbuffer() > 0) {
+            kafkaOpts.append("-Djute.maxbuffer=").append(jvmOptions.getJuteMaxbuffer());
+        }
+
+        String trim = kafkaOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_OPTS, trim));
         }
     }
 

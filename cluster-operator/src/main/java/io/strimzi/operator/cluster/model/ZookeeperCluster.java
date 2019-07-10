@@ -514,6 +514,8 @@ public class ZookeeperCluster extends AbstractModel {
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
+        jvmKafkaOptions(varList);
+        
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
         return varList;
     }

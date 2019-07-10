@@ -420,6 +420,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
+        jvmKafkaOptions(varList);
 
         /** consumer */
         if (consumer.getTls() != null) {

@@ -480,6 +480,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
+        jvmKafkaOptions(varList);
 
         if (tls != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));

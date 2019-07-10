@@ -106,6 +106,21 @@ The example configuration above will result in the following JVM options:
 
 NOTE: When neither of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.
 
+.juteMaxbuffer
+
+`juteMaxbuffer` specifies the maximum size of the data that can be stored in a znode.
+The default is 1048575 bytes.
+If this option is changed, it must be set in both Zookeeper and Kafka `jvmOptions`.
+
+.Example fragment configuring `-server`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  juteMaxbuffer: 5000000
+# ...
+----
+
 == Garbage collector logging
 
 The `jvmOptions` section also allows you to enable and disable garbage collector (GC) logging.

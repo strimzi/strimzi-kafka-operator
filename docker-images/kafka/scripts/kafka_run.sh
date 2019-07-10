@@ -23,7 +23,7 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
 fi
 
 rm /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
-export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/kafka-agent-${STRIMZI_VERSION}.jar=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
+export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:${KAFKA_HOME}/libs/kafka-agent-${STRIMZI_VERSION}.jar=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then

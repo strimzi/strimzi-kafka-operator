@@ -1248,6 +1248,7 @@ public class KafkaCluster extends AbstractModel {
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
+        jvmKafkaOptions(varList);
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));

@@ -49,7 +49,7 @@ export LOG_DIR="$KAFKA_HOME"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
