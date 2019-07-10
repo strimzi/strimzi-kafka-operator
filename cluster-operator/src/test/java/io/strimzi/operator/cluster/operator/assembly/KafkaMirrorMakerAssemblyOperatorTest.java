@@ -56,6 +56,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -124,6 +125,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -180,7 +182,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             KafkaMirrorMaker mm = capturedMM.get(0);
             context.assertEquals(mm.getStatus().getConditions().get(0).getType(), "Ready");
             context.assertEquals(mm.getStatus().getConditions().get(0).getStatus(), "True");
-            context.assertEquals(mm.getStatus().getName(), clusterCmName);
 
             async.complete();
         });
@@ -233,6 +234,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -303,6 +305,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.updateStatusAsync(any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
         when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -427,6 +430,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
         when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -501,6 +505,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
         when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -569,6 +574,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.updateStatusAsync(any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
         when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -701,6 +707,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockDcOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.failedFuture(failureMsg));
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.readiness(eq(clusterCmNamespace), eq(clusterCmName), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaMirrorMaker> statusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
@@ -724,7 +731,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             context.assertEquals(mm.getStatus().getConditions().get(0).getType(), "NotReady");
             context.assertEquals(mm.getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(mm.getStatus().getConditions().get(0).getMessage(), failureMsg);
-            context.assertEquals(mm.getStatus().getName(), clusterCmName);
 
             async.complete();
         });
