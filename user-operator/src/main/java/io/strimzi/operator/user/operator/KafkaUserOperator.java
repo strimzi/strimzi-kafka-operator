@@ -129,7 +129,7 @@ public class KafkaUserOperator {
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            buildStatus(kafkaUser, userStatus, Future.failedFuture(e));
+            buildStatus(kafkaUser, userName, userStatus, Future.failedFuture(e));
             updateStatus(kafkaUser, reconciliation, userStatus);
             handler.handle(Future.failedFuture(e));
             return;
@@ -158,7 +158,7 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .setHandler(reconciliationResult -> {
-                    buildStatus(kafkaUser, userStatus, reconciliationResult.mapEmpty());
+                    buildStatus(kafkaUser, userName, userStatus, reconciliationResult.mapEmpty());
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
@@ -435,11 +435,11 @@ public class KafkaUserOperator {
         }
     }
 
-    private void buildStatus(KafkaUser kafkaUser, KafkaUserStatus userStatus, AsyncResult<java.lang.Void> result) {
+    private void buildStatus(KafkaUser kafkaUser, String userName, KafkaUserStatus userStatus, AsyncResult<java.lang.Void> result) {
         if (kafkaUser.getMetadata().getGeneration() != null)    {
             userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
         }
-        userStatus.setUsername(kafkaUser.getMetadata().getName());
+        userStatus.setUsername(userName);
         Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(result);
         userStatus.setConditions(Collections.singletonList(readyCondition));
     }
