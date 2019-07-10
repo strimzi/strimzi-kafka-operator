@@ -974,7 +974,7 @@ class KafkaST extends MessagingBaseST {
 
         // Checking that resource was created
         assertThat(cmdKubeClient().list("kafkatopic"), hasItems("topic-without-labels"));
-        // Checking that TO didn't handl new topic and zk pods don't contain new topic
+        // Checking that TO didn't handle new topic and zk pods don't contain new topic
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
