@@ -10,7 +10,7 @@ This procedure describes how to delete a Kafka user created with `KafkaUser` Kub
 .Prerequisites
 
 * A running Kafka cluster.
-* A running User Operator.
+* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 * An existing `KafkaUser` to be deleted.
 
 .Procedure

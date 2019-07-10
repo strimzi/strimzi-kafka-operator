@@ -8,7 +8,7 @@
 .Prerequisites
 
 * A running Kafka cluster configured with a listener using SCRAM SHA authentication.
-* A running User Operator.
+* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 
 .Procedure
 

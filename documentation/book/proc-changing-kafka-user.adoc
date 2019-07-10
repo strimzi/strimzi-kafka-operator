@@ -10,8 +10,8 @@ This procedure describes how to change the configuration of an existing Kafka us
 .Prerequisites
 
 * A running Kafka cluster.
-* A running User Operator.
-* An existing `KafkaUser` to be changed
+* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
+* An existing `KafkaUser` to be changed.
 
 .Procedure
 
