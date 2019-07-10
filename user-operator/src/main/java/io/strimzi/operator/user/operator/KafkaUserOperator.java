@@ -129,12 +129,7 @@ public class KafkaUserOperator {
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            if (kafkaUser.getMetadata().getGeneration() != null)    {
-                userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
-            }
-            userStatus.setUsername(userName);
-            Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(Future.failedFuture(e));
-            userStatus.setConditions(Collections.singletonList(readyCondition));
+            buildStatus(kafkaUser, userStatus, Future.failedFuture(e));
             updateStatus(kafkaUser, reconciliation, userStatus);
             handler.handle(Future.failedFuture(e));
             return;
@@ -163,13 +158,7 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .setHandler(reconciliationResult -> {
-                    if (kafkaUser.getMetadata().getGeneration() != null)    {
-                        userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
-                    }
-                    
-                    userStatus.setUsername(user.getName());
-                    Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(reconciliationResult.mapEmpty());
-                    userStatus.setConditions(Collections.singletonList(readyCondition));
+                    buildStatus(kafkaUser, userStatus, reconciliationResult.mapEmpty());
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
@@ -444,5 +433,14 @@ public class KafkaUserOperator {
             Throwable cause = result.cause();
             log.warn("{}: Failed to reconcile", reconciliation, cause);
         }
+    }
+
+    private void buildStatus(KafkaUser kafkaUser, KafkaUserStatus userStatus, AsyncResult<java.lang.Void> result) {
+        if (kafkaUser.getMetadata().getGeneration() != null)    {
+            userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
+        }
+        userStatus.setUsername(kafkaUser.getMetadata().getName());
+        Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(result);
+        userStatus.setConditions(Collections.singletonList(readyCondition));
     }
 }
