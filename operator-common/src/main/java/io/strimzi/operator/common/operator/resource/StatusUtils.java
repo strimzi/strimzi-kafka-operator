@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.Date;
 
 public class StatusUtils {
-
     public static Condition buildConditionFromReconciliationResult(AsyncResult<Void> reconciliationResult) {
         Condition readyCondition;
         if (reconciliationResult.succeeded()) {
