@@ -5,11 +5,14 @@
 
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.Status;
 import io.vertx.core.AsyncResult;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 
 public class ConditionUtils {
@@ -36,5 +39,13 @@ public class ConditionUtils {
 
     private static Date dateSupplier() {
         return new Date();
+    }
+
+    public static <R extends CustomResource, S extends Status> void setStatusConditionFromReconciliationResult(R resource, S status, AsyncResult<Void> result) {
+        if (resource.getMetadata().getGeneration() != null)    {
+            status.setObservedGeneration(resource.getMetadata().getGeneration());
+        }
+        Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(result);
+        status.setConditions(Collections.singletonList(readyCondition));
     }
 }

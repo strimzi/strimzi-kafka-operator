@@ -129,7 +129,7 @@ public class KafkaUserOperator {
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            buildStatus(kafkaUser, userName, userStatus, Future.failedFuture(e));
+            ConditionUtils.setStatusConditionFromReconciliationResult(kafkaUser, userStatus, Future.failedFuture(e));
             updateStatus(kafkaUser, reconciliation, userStatus);
             handler.handle(Future.failedFuture(e));
             return;
@@ -158,7 +158,8 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .setHandler(reconciliationResult -> {
-                    buildStatus(kafkaUser, userName, userStatus, reconciliationResult.mapEmpty());
+                    ConditionUtils.setStatusConditionFromReconciliationResult(kafkaUser, userStatus, reconciliationResult.mapEmpty());
+                    userStatus.setUsername(user.getName());
 
                     updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
@@ -433,14 +434,5 @@ public class KafkaUserOperator {
             Throwable cause = result.cause();
             log.warn("{}: Failed to reconcile", reconciliation, cause);
         }
-    }
-
-    private void buildStatus(KafkaUser kafkaUser, String userName, KafkaUserStatus userStatus, AsyncResult<java.lang.Void> result) {
-        if (kafkaUser.getMetadata().getGeneration() != null)    {
-            userStatus.setObservedGeneration(kafkaUser.getMetadata().getGeneration());
-        }
-        userStatus.setUsername(userName);
-        Condition readyCondition = ConditionUtils.buildConditionFromReconciliationResult(result);
-        userStatus.setConditions(Collections.singletonList(readyCondition));
     }
 }
