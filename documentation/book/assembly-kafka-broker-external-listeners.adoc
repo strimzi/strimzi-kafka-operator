@@ -5,20 +5,12 @@
 [id='assembly-kafka-broker-external-listeners-{context}']
 = External listeners
 
-An external listener allows a client outside a Kubernetes environment to connect to a {ProductName} Kafka cluster.
-{ProductName} supports the following types of external listeners:
+Use an external listener to expose your {ProductName} Kafka cluster to a client outside a Kubernetes environment.
 
-* `route` (supported only on OpenShift)
-* `loadbalancer`
-* `nodeport`
-* `ingress`
+include::assembly-kafka-broker-external-listeners-routes.adoc[leveloffset=+1]
 
-include::con-kafka-broker-exposing-external-listeners.adoc[leveloffset=+1]
+include::assembly-kafka-broker-external-listeners-loadbalancers.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
+include::assembly-kafka-broker-external-listeners-nodeports.adoc[leveloffset=+1]
 
-include::proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
-
-include::proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
-
-include::proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
+include::assembly-kafka-broker-external-listeners-ingress.adoc[leveloffset=+1]
