@@ -451,7 +451,7 @@ class SecurityST extends AbstractST {
 
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
-        LOGGER.info("Annotate secret {} with secret force renew annotation", secretName);
+        LOGGER.info("Annotate secret {} with secret force-renew annotation", secretName);
         Secret secret = new SecretBuilder(kubeClient().getSecret(secretName))
                 .editMetadata()
                 .addToAnnotations("strimzi.io/force-renew", "true")
