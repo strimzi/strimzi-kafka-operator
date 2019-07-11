@@ -7,6 +7,8 @@
 
 Use an external listener to expose your {ProductName} Kafka cluster to a client outside a Kubernetes environment.
 
+include::con-kafka-broker-external-listeners-addresses.adoc[leveloffset=+1]
+
 include::assembly-kafka-broker-external-listeners-routes.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-external-listeners-loadbalancers.adoc[leveloffset=+1]

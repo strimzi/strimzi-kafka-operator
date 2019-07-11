@@ -26,3 +26,38 @@ listeners:
 ----
 
 For more information on using loadbalancers to access Kafka, see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
+
+= Customizing the DNS names of external loadbalancer listeners
+
+On `loadbalancer` listeners, you can use the `dnsAnnotations` property to add additional annotations to the loadbalancer services.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
+
+.Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+# ...
+----

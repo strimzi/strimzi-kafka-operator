@@ -46,90 +46,10 @@ listeners:
 
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
 
-= Customizing advertised addresses on external listeners
+= Customizing the DNS names of external ingress listeners
 
-By default, {ProductName} tries to automatically determine the hostnames and ports that your Kafka cluster advertises to its clients.
-This is not sufficient in all situations, because the infrastructure on which {ProductName} is running might not provide the right hostname or port through which Kafka can be accessed.
-You can customize the advertised hostname and port in the `overrides` property of the external listener.
-{ProductName} will then automatically configure the advertised address in the Kafka brokers and add it to the broker certificates so it can be used for TLS hostname verification.
-Overriding the advertised host and ports is available for all types of external listeners.
-
-.Example of an external listener configured with overrides for advertised addresses
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  external:
-    type: route
-    authentication:
-      type: tls
-    overrides:
-      brokers:
-      - broker: 0
-        advertisedHost: example.hostname.0
-        advertisedPort: 12340
-      - broker: 1
-        advertisedHost: example.hostname.1
-        advertisedPort: 12341
-      - broker: 2
-        advertisedHost: example.hostname.2
-        advertisedPort: 12342
-# ...
-----
-
-Additionally, you can specify the name of the bootstrap service.
-This name will be added to the broker certificates and can be used for TLS hostname verification.
-Adding the additional bootstrap address is available for all types of external listeners.
-
-.Example of an external listener configured with an additional bootstrap address
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  external:
-    type: route
-    authentication:
-      type: tls
-    overrides:
-      bootstrap:
-        address: example.hostname
-# ...
-----
-
-= Customizing DNS names of external listeners
-
-On `loadbalancer` and `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources or load balancer services.
-You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources or services.
-
-.Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  external:
-    type: loadbalancer
-    authentication:
-      type: tls
-    overrides:
-      bootstrap:
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-      brokers:
-      - broker: 0
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-      - broker: 1
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-      - broker: 2
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-# ...
-----
+On `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources.
 
 .Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
 [source,yaml,subs="attributes+"]
