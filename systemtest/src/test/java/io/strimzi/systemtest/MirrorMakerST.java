@@ -81,7 +81,7 @@ public class MirrorMakerST extends MessagingBaseST {
         verifyLabelsForService(CLUSTER_NAME, "mirror-maker", "KafkaMirrorMaker");
 
         verifyLabelsForConfigMaps(kafkaSourceName, null, kafkaTargetName);
-        verifyLabelsForServiceAccounts(CLUSTER_NAME, null);
+        verifyLabelsForServiceAccounts(kafkaSourceName, null);
 
         String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
