@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,7 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -420,6 +423,56 @@ class SecurityST extends AbstractST {
             .build();
         kubeClient().createSecret(secret);
         return certAsString;
+    }
+
+    @Test
+    void testCertRenewalInMaintenanceWindow() throws Exception {
+        String secretName = CLUSTER_NAME + "-cluster-ca-cert";
+        LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
+        long maintenanceWindowDuration = 4;
+        maintenanceWindowStart = maintenanceWindowStart.plusMinutes(maintenanceWindowDuration);
+        long windowStartMin = maintenanceWindowStart.getMinute();
+        long windowStopMin = windowStartMin + maintenanceWindowDuration > 59
+                ? windowStartMin + maintenanceWindowDuration - 60 : windowStartMin + maintenanceWindowDuration;
+
+        String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
+        LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
+        testMethodResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                .editKafka()
+                .editListeners()
+                .withNewKafkaListenerExternalNodePort()
+                .withTls(false)
+                .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+                .addNewMaintenanceTimeWindow(maintenanceWindowCron)
+                .endSpec().done();
+
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Annotate secret {} with secret force-renew annotation", secretName);
+        Secret secret = new SecretBuilder(kubeClient().getSecret(secretName))
+                .editMetadata()
+                .addToAnnotations("strimzi.io/force-renew", "true")
+                .endMetadata().build();
+        kubeClient().patchSecret(secretName, secret);
+
+        LOGGER.info("Wait until maintenance windows starts");
+        LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
+        TestUtils.waitFor("Wait until maintenance window start",
+            Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis() - 10000,
+            () -> LocalDateTime.now().isAfter(finalMaintenanceWindowStart));
+
+        LOGGER.info("Maintenance window starts");
+
+        assertThat("Rolling update was performed out of maintenance window!", kafkaPods, is(StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME))));
+
+        LOGGER.info("Wait until rolling update is triggered during maintenance window");
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
+        waitForClusterAvailability(NAMESPACE);
     }
 
     @BeforeEach
