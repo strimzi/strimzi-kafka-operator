@@ -12,6 +12,6 @@
 
 You can control whether the Mirror Maker container is terminated if an error occurs when sending a message.
 After the Mirror Maker container has been terminated, it is recreated on {ProductPlatformName}.
-The error sent is ignored when this option is set to `false`.
+If the `abortOnSendFailure` option is set to `false`, message sending errors are ignored.
 
 include::proc-configuring-kafka-mirror-maker-abort-on-send-failure.adoc[leveloffset=+1]

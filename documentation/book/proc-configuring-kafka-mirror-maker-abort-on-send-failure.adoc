@@ -10,7 +10,7 @@ By default, if an error occurs when sending a message from Kafka Mirror Maker to
 * The Kafka Mirror Maker container is terminated in {ProductPlatformName}.
 * The container is then recreated.
 
-To ignore the sending error and attempt to send the next message in the queue, you can set the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property to `false`.
+To ignore the sending error and attempt to send the next message in the topic, you can set the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property to `false`.
 
 .Prerequisites
 
