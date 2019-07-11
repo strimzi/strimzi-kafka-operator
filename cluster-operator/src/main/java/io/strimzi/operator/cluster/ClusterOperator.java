@@ -162,6 +162,7 @@ public class ClusterOperator extends AbstractVerticle {
         kafkaAssemblyOperator.reconcileAll(trigger, namespace);
         kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace);
         kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace);
+        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace);
 
         if (kafkaConnectS2IAssemblyOperator != null) {
             kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace);
