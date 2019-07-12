@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -124,7 +125,7 @@ public class KafkaConnectAssemblyOperatorTest {
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
             if (connect.isMetricsEnabled()) {
-                metricsNames.add(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName));
+                metricsNames.add(KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName));
             }
 
             // Verify service
@@ -267,21 +268,21 @@ public class KafkaConnectAssemblyOperatorTest {
         // Mock CM get
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                     .endMetadata()
                     .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
                     .build();
 
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = TestUtils.set();

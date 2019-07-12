@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -124,7 +125,7 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(mm.kafkaMirrorMakerClusterName(cluster));
+        return expectedLabels(KafkaMirrorMakerResources.deploymentName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -191,7 +192,7 @@ public class KafkaMirrorMakerClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = mm.generateDeployment(new HashMap<String, String>(), true, null, null);
 
-        assertEquals(mm.kafkaMirrorMakerClusterName(cluster), dep.getMetadata().getName());
+        assertEquals(KafkaMirrorMakerResources.deploymentName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
         Map<String, String> expectedLabels = expectedLabels();
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
@@ -199,7 +200,7 @@ public class KafkaMirrorMakerClusterTest {
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(mm.kafkaMirrorMakerClusterName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(KafkaMirrorMakerResources.deploymentName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(mm.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());

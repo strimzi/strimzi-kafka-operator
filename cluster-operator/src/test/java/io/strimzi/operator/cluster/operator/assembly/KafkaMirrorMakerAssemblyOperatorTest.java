@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -150,7 +151,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
             if (mirror.isMetricsEnabled()) {
-                metricsNames.add(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName));
+                metricsNames.add(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName));
             }
 
             // Verify Deployment
@@ -311,21 +312,21 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         // Mock CM get
         when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                     .endMetadata()
                     .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
                     .build();
 
-        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = TestUtils.set();

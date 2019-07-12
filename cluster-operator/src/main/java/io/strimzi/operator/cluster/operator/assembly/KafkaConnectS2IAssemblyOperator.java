@@ -11,7 +11,9 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -96,10 +98,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                    .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
-                    .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
+                    .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
+                    .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                    .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
+                    .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null));
         } else {
             return Future.failedFuture("The OpenShift build, image or apps APIs are not available in this Kubernetes cluster. Kafka Connect S2I deployment cannot be enabled.");
@@ -108,7 +110,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
 
     Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
+                KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
     }
 }
