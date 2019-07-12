@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -142,7 +143,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
             if (bridge.isMetricsEnabled()) {
-                metricsNames.add(KafkaBridgeCluster.logAndMetricsConfigName(clusterCmName));
+                metricsNames.add(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName));
             }
 
             // Verify Deployment
@@ -289,21 +290,21 @@ public class KafkaBridgeAssemblyOperatorTest {
         // Mock CM get
         when(mockBridgeOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaBridgeCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaBridgeCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaBridgeCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                     .endMetadata()
                     .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
                     .build();
 
-        when(mockCmOps.get(clusterCmNamespace, KafkaBridgeCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = TestUtils.set();

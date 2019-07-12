@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeTls;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -114,9 +115,9 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     protected KafkaBridgeCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        this.name = kafkaBridgeClusterName(cluster);
-        this.serviceName = name + "-service";
-        this.ancillaryConfigName = logAndMetricsConfigName(cluster);
+        this.name = KafkaBridgeResources.deploymentName(cluster);
+        this.serviceName = name + KafkaBridgeResources.serviceName(cluster);
+        this.ancillaryConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/ready";
         this.livenessPath = "/healthy";
@@ -127,18 +128,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
-    }
-
-    public static String kafkaBridgeClusterName(String cluster) {
-        return cluster + KafkaBridgeCluster.NAME_SUFFIX;
-    }
-
-    public static String serviceName(String cluster) {
-        return cluster + KafkaBridgeCluster.SERVICE_NAME_SUFFIX;
-    }
-
-    public static String logAndMetricsConfigName(String cluster) {
-        return cluster + KafkaBridgeCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
     public static KafkaBridgeCluster fromCrd(KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
@@ -482,16 +471,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return containerServiceAccountName(cluster);
-    }
-
-    /**
-     * Get the name of the bridge service account given the name of the {@code bridgeResourceName}.
-     * @param bridgeResourceName  The name of the bridge resource
-     * @return The name of the service account.
-     */
-    public static String containerServiceAccountName(String bridgeResourceName) {
-        return kafkaBridgeClusterName(bridgeResourceName);
+        return KafkaBridgeResources.serviceAccountName(cluster);
     }
 
     /**

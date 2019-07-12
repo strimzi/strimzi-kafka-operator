@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -16,8 +18,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.CM;
+import static io.strimzi.test.k8s.BaseCmdKubeClient.DEPLOYMENT;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.SERVICE;
 
 @Tag(REGRESSION)
@@ -189,6 +193,59 @@ class RecoveryST extends AbstractST {
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
+    @Test
+    @Tag(BRIDGE)
+    void testRecoveryFromKafkaBridgeDeploymentDeletion() {
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
+        // kafka cluster already deployed
+        String kafkaBridgeDeploymentName = KafkaBridgeResources.deploymentName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeDeployment with cluster {}", CLUSTER_NAME);
+
+        kubeClient().deleteDeployment(kafkaBridgeDeploymentName);
+
+        LOGGER.info("Waiting for deployment {} re-creation", kafkaBridgeDeploymentName);
+        cmdKubeClient().waitForResourceCreation(DEPLOYMENT, kafkaBridgeDeploymentName);
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
+    @Test
+    @Tag(BRIDGE)
+    void testRecoveryFromKafkaBridgeServiceDeletion() {
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
+        String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeService with cluster {}", CLUSTER_NAME);
+
+        kubeClient().deleteService(kafkaBridgeServiceName);
+
+        LOGGER.info("Waiting for service {} re-creation", kafkaBridgeServiceName);
+        cmdKubeClient().waitForResourceCreation(SERVICE, kafkaBridgeServiceName);
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
+    @Test
+    @Tag(BRIDGE)
+    void testRecoveryFromKafkaBridgeMetricsConfigDeletion() {
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
+        String kafkaBridgeMetricsConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeMetricsConfig with cluster {}", CLUSTER_NAME);
+
+        kubeClient().deleteConfigMap(kafkaBridgeMetricsConfigName);
+        StUtils.waitForConfigMapDeletion(kafkaBridgeMetricsConfigName);
+
+        LOGGER.info("Waiting for metric config {} re-creation", kafkaBridgeMetricsConfigName);
+        cmdKubeClient().waitForResourceCreation(CM, kafkaBridgeMetricsConfigName);
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
@@ -203,7 +260,8 @@ class RecoveryST extends AbstractST {
     }
 
     void deployTestSpecificResources() {
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 1).done();
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
     }
 
     @Override
