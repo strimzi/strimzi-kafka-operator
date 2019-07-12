@@ -64,8 +64,8 @@ kind: KafkaTopic <1>
 metadata:
   name: my-topic
   labels:
-    strimzi.io/cluster: my-cluster
-spec: <2>
+    strimzi.io/cluster: my-cluster <2>
+spec: <3>
   partitions: 1
   replicas: 1
   config:
@@ -73,7 +73,8 @@ spec: <2>
     segment.bytes: 1073741824
 ----
 <1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
-<2> The spec shows the number of partitions and replicas for the topic as well as configuration for the retention period for a message to remain in the topic and the segment file size for the log.
+<2> A `kafkaTopic` resource includes a label that defines the name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs. xref:con-topic-operator-cluster-label-deploying[The name is used by the Topic Operator to identify the Kafka cluster when creating the topic].
+<3> The spec shows the number of partitions and replicas for the topic as well as configuration for the retention period for a message to remain in the topic and the segment file size for the log.
 
 Custom resources can be applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 

@@ -9,9 +9,11 @@
 
 :context: deploying-uo
 
-The User Operator provides a way of managing Kafka users via Kubernetes resources.
+The User Operator provides a way of managing Kafka users through custom resources.
 
 include::con-what-the-user-operator-does.adoc[leveloffset=+1]
+
+include::con-user-operator-cluster-label.adoc[leveloffset=+1]
 
 include::proc-deploying-the-user-operator-using-the-cluster-operator.adoc[leveloffset=+1]
 
