@@ -1,5 +1,7 @@
 # Default values for strimzi-kafka-operator.
 
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`), 
+# the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
 watchNamespaces: []
 
 image:
