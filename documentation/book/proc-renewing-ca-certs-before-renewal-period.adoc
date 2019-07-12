@@ -1,0 +1,43 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='proc-renewing-ca-certs-manually-{context}']
+
+= Renewing CA certificates manually
+
+Depending on your Kafka cluster configuration, the cluster CA and clients CA certificates will auto-renew at the start of their defined renewal periods (30 days before the end of the validity period, by default). You can manually renew one or both of these certificates before the renewal period, if required for security reasons.  
+
+.Prerequisites
+
+* One
+* Two
+* Three
+
+.Procedure
+
+. View a description of the `Secret` that contains the CA certificate that you want to renew.
+
+.. To view the `Secret` for the cluster CA certificate: 
++ 
+[source,shell,subs="+quotes"]
+kubectl describe secret _<cluster-name>_-cluster-ca-cert
+
+.. To view the `Secret` for the clients CA certificate
++ 
+[source,shell,subs="+quotes"]
+kubectl describe secret _<cluster-name>_-clients-ca-cert
+
+. Annotate the `Secret` by applying the `strimzi.io/force-renew` annotation.
+
+.. To annotate the `Secret` for the cluster CA certificate:
++
+[source,shell,subs="+quotes"]
+kubectl annotate secret _<cluster-name>_-cluster-ca-cert strimzi.io/force-renew=true
+
+.. To annotate the `Secret` for the clients CA certificate:
++
+[source,shell,subs="+quotes"]
+kubectl annotate secret _<cluster-name>_-clients-ca-cert strimzi.io/force-renew=true
+
+The Cluster Operator generates a new CA certificate for the `Secret` that you annotated.
