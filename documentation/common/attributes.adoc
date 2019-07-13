@@ -20,11 +20,11 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:KafkaVersionLower: 2.1.1
-:KafkaVersionHigher: 2.2.1
+:KafkaVersionLower: 2.2.1
+:KafkaVersionHigher: 2.3.0
 //log message format version
-:LogMsgVersLower: 2.1
-:LogMsgVersHigher: 2.2
+:LogMsgVersLower: 2.2
+:LogMsgVersHigher: 2.3
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]

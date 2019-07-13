@@ -85,7 +85,7 @@
         <fasterxml.jackson-databind.version>2.9.9</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.9.9</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.9.8</fasterxml.jackson-annotations.version>
-        <kafka.version>2.2.1</kafka.version>
+        <kafka.version>2.3.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.8</scala-library.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -93,7 +93,7 @@
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.2.1</quartz.version>
-        <debezium.version>0.9.0.Final</debezium.version>
+        <debezium.version>0.9.5.Final</debezium.version>
 
         <jupiter.version>5.5.0-RC1</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>

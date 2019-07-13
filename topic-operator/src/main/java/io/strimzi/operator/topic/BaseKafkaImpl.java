@@ -9,6 +9,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicDescription;
@@ -18,6 +19,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -222,8 +224,8 @@ public abstract class BaseKafkaImpl implements Kafka {
 
     @Override
     public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
-        Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
-        KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
+        Map<ConfigResource, Collection<AlterConfigOp>> configs = TopicSerialization.toTopicConfig(topic);
+        KafkaFuture<Void> future = adminClient.incrementalAlterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>("updateTopicConfig", future, handler));
     }
 
