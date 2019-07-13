@@ -32,6 +32,7 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
@@ -121,7 +122,7 @@ public class KafkaConnectS2IClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(kc.kafkaConnectClusterName(cluster));
+        return expectedLabels(KafkaConnectS2IResources.deploymentName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -138,7 +139,7 @@ public class KafkaConnectS2IClusterTest {
     public void testDefaultValues() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster), VERSIONS);
 
-        assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals("strimzi/kafka-connect-s2i:latest-kafka-2.0.0", kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
@@ -151,7 +152,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testFromCrd() {
-        assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster) + ":latest", kc.image);
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(healthDelay, kc.readinessProbeOptions.getInitialDelaySeconds());
@@ -173,7 +174,7 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(expectedLabels(kc.serviceName(cluster)), svc.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.serviceName(cluster)), svc.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
@@ -187,16 +188,16 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateDeploymentConfig()   {
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = expectedLabels(KafkaConnectS2IResources.deploymentName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), dep.getSpec().getSelector());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
@@ -211,8 +212,8 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("ImageChange", dep.getSpec().getTriggers().get(1).getType());
         assertEquals(true, dep.getSpec().getTriggers().get(1).getImageChangeParams().getAutomatic());
         assertEquals(1, dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().size());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster), dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().get(0));
-        assertEquals(kc.kafkaConnectClusterName(this.cluster) + ":latest", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster), dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().get(0));
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
         assertEquals("ImageStreamTag", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getKind());
         assertEquals("Rolling", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal());
@@ -225,9 +226,9 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateBuildConfig() {
         BuildConfig bc = kc.generateBuildConfig();
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), bc.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.buildConfigName(cluster), bc.getMetadata().getName());
         assertEquals(namespace, bc.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.buildConfigName(cluster)), bc.getMetadata().getLabels());
         assertEquals("ImageStreamTag", bc.getSpec().getOutput().getTo().getKind());
         assertEquals(kc.image, bc.getSpec().getOutput().getTo().getName());
         assertEquals("Serial", bc.getSpec().getRunPolicy());
@@ -235,7 +236,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(new BinaryBuildSource(), bc.getSpec().getSource().getBinary());
         assertEquals("Source", bc.getSpec().getStrategy().getType());
         assertEquals("ImageStreamTag", bc.getSpec().getStrategy().getSourceStrategy().getFrom().getKind());
-        assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster) + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
         assertEquals(2, bc.getSpec().getTriggers().size());
         assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
         assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
@@ -247,9 +248,9 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateSourceImageStream() {
         ImageStream is = kc.generateSourceImageStream();
 
-        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.sourceImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -269,9 +270,9 @@ public class KafkaConnectS2IClusterTest {
 
         ImageStream is = kc.generateSourceImageStream();
 
-        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.sourceImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -285,9 +286,9 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateTargetImageStream() {
         ImageStream is = kc.generateTargetImageStream();
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.targetImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.targetImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
         checkOwnerReference(kc.createOwnerReference(), is);
     }

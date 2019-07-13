@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectTls;
@@ -60,10 +61,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";
 
-    private static final String NAME_SUFFIX = "-connect";
-    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
-
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
@@ -108,9 +105,9 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     protected KafkaConnectCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        this.name = kafkaConnectClusterName(cluster);
-        this.serviceName = serviceName(cluster);
-        this.ancillaryConfigName = logAndMetricsConfigName(cluster);
+        this.name = KafkaConnectResources.deploymentName(cluster);
+        this.serviceName = KafkaConnectResources.serviceName(cluster);
+        this.ancillaryConfigName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -121,18 +118,6 @@ public class KafkaConnectCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
-    }
-
-    public static String kafkaConnectClusterName(String cluster) {
-        return cluster + KafkaConnectCluster.NAME_SUFFIX;
-    }
-
-    public static String serviceName(String cluster) {
-        return cluster + KafkaConnectCluster.SERVICE_NAME_SUFFIX;
-    }
-
-    public static String logAndMetricsConfigName(String cluster) {
-        return cluster + KafkaConnectCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
     public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
@@ -613,15 +598,6 @@ public class KafkaConnectCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return containerServiceAccountName(cluster);
-    }
-
-    /**
-     * Get the name of the connect service account given the name of the {@code connectResourceName}.
-     * @param connectResourceName  The resource name.
-     * @return The service account name.
-     */
-    public static String containerServiceAccountName(String connectResourceName) {
-        return kafkaConnectClusterName(connectResourceName);
+        return KafkaConnectResources.serviceAccountName(cluster);
     }
 }

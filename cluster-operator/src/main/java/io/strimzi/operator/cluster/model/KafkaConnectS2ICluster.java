@@ -27,6 +27,7 @@ import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.common.model.Labels;
 
@@ -168,9 +169,9 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                    .withName(getSourceImageStreamName())
+                    .withName(KafkaConnectS2IResources.sourceImageStreamName(cluster))
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName(getSourceImageStreamName()))
+                    .withLabels(getLabelsWithName(KafkaConnectS2IResources.sourceImageStreamName(cluster)))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -190,7 +191,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     public ImageStream generateTargetImageStream() {
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(KafkaConnectS2IResources.targetImageStreamName(cluster))
                     .withNamespace(namespace)
                     .withLabels(getLabelsWithName())
                     .withOwnerReferences(createOwnerReference())
@@ -218,7 +219,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         BuildConfig build = new BuildConfigBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(KafkaConnectS2IResources.buildConfigName(cluster))
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
@@ -242,7 +243,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withScripts("image:///opt/kafka/s2i")
                             .withNewFrom()
                                 .withKind("ImageStreamTag")
-                                .withName(getSourceImageStreamName() + ":" + sourceImageTag)
+                                .withName(KafkaConnectS2IResources.sourceImageStreamName(cluster) + ":" + sourceImageTag)
                             .endFrom()
                         .endSourceStrategy()
                     .endStrategy()
@@ -251,25 +252,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .build();
 
         return build;
-    }
-
-    /**
-     * Generates the name of the source ImageStream
-     *
-     * @return               Name of the source ImageStream instance
-     */
-    public String getSourceImageStreamName() {
-        return getSourceImageStreamName(name);
-    }
-
-    /**
-     * Generates the name of the source ImageStream
-     *
-     * @param baseName       Name of the Kafka Connect cluster
-     * @return               Name of the source ImageStream instance
-     */
-    public static String getSourceImageStreamName(String baseName) {
-        return baseName + "-source";
     }
 
     @Override

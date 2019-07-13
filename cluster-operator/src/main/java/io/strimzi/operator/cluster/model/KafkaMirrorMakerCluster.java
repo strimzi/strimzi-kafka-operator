@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerClientSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.Probe;
@@ -43,10 +44,6 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaMirrorMakerCluster extends AbstractModel {
-
-    private static final String NAME_SUFFIX = "-mirror-maker";
-
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
     protected static final String TLS_CERTS_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-certs/";
@@ -109,9 +106,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      */
     protected KafkaMirrorMakerCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        this.name = kafkaMirrorMakerClusterName(cluster);
-        this.serviceName = serviceName(cluster);
-        this.ancillaryConfigName = logAndMetricsConfigName(cluster);
+        this.name = KafkaMirrorMakerResources.deploymentName(cluster);
+        this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
+        this.ancillaryConfigName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -123,19 +120,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
-
-    public static String kafkaMirrorMakerClusterName(String cluster) {
-        return cluster + KafkaMirrorMakerCluster.NAME_SUFFIX;
-    }
-
-    public static String serviceName(String cluster) {
-        return kafkaMirrorMakerClusterName(cluster);
-    }
-
-    public static String logAndMetricsConfigName(String cluster) {
-        return cluster + KafkaMirrorMakerCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
-    }
-
 
     private static void setClientAuth(KafkaMirrorMakerCluster kafkaMirrorMakerCluster, KafkaMirrorMakerClientSpec client) {
         if (client != null && client.getAuthentication() != null) {
@@ -536,15 +520,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return containerServiceAccountName(cluster);
-    }
-
-    /**
-     * Get the name of the mirror maker service account given the name of the {@code mirrorMakerResourceName}.
-     * @param mirrorMakerResourceName The resource name
-     * @return The service account name.
-     */
-    public static String containerServiceAccountName(String mirrorMakerResourceName) {
-        return kafkaMirrorMakerClusterName(mirrorMakerResourceName);
+        return KafkaMirrorMakerResources.serviceAccountName(cluster);
     }
 }

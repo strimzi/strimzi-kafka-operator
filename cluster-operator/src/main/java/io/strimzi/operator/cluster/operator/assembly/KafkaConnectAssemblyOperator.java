@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -94,7 +95,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
 
     Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
+                KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
     }
 }
