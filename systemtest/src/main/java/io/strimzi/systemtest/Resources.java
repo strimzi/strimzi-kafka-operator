@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -410,17 +411,20 @@ public class Resources extends AbstractResources {
      * @param kafkaConnectS2IReplicas the number of replicas
      * @return Kafka Connect S2I
      */
-    DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
-        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaConnectS2IReplicas).build());
+    DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
+        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaConnectS2IReplicas, kafkaClusterName).build());
     }
 
-    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
+    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
                 .withVersion(KAFKA_VERSION)
-                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
                 .withReplicas(kafkaConnectS2IReplicas)
+                .withNewTls()
+                .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                .endTls()
             .endSpec();
     }
 
@@ -522,7 +526,7 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaConnectS2I.getMetadata().getName() + "-connect", kafkaConnectS2I.getSpec().getReplicas());
+        StUtils.waitForDeploymentConfigReady(kafkaConnectS2I.getMetadata().getName() + "-connect", kafkaConnectS2I.getSpec().getReplicas());
         LOGGER.info("Kafka Connect S2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }
@@ -558,7 +562,7 @@ public class Resources extends AbstractResources {
             waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
 
         client().listPods().stream()
-                .filter(p -> p.getMetadata().getName().contains("entity-operator"))
+                .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
@@ -572,6 +576,10 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
+
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().contains("build"))
+                .forEach(p -> client().deletePod(p));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
