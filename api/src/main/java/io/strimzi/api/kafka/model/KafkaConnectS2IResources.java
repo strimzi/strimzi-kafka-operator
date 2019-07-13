@@ -14,18 +14,18 @@ public class KafkaConnectS2IResources extends KafkaConnectResources {
     }
 
     /**
-     * Returns the name of the Kafka Connect S2I {@code BuildConfig} for a {@code KafkaConnectS2I} cluster of the given name.
+     * Returns the name of the Kafka Connect S2I source {@code BuildConfig} for a {@code KafkaConnectS2I} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnectS2I} resource.
-     * @return The name of the corresponding Kafka Connect S2I {@code BuildConfig}.
+     * @return The name of the corresponding Kafka Connect S2I source {@code BuildConfig}.
      */
     public static String buildConfigName(String clusterName) {
         return deploymentName(clusterName);
     }
 
     /**
-     * Returns the name of the Kafka Connect S2I {@code ImageStream} for a {@code KafkaConnectS2I} cluster of the given name.
+     * Returns the name of the Kafka Connect S2I target {@code ImageStream} for a {@code KafkaConnectS2I} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnectS2I} resource.
-     * @return The name of the corresponding Kafka Connect S2I {@code ImageStream}.
+     * @return The name of the corresponding Kafka Connect S2I target {@code ImageStream}.
      */
     public static String targetImageStreamName(String clusterName) {
         return deploymentName(clusterName);
