@@ -246,6 +246,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkScaleUp())
                 .compose(state -> state.zkRollingUpdate())
+                .compose(state -> state.zkPodsReady())
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.zkPersistentClaimDeletion())
@@ -278,6 +279,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaStatefulSet())
                 .compose(state -> state.kafkaRollingUpdate())
                 .compose(state -> state.kafkaScaleUp())
+                .compose(state -> state.kafkaPodsReady())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
@@ -1843,6 +1845,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaScaleUp() {
             return withVoid(kafkaSetOperations.scaleUp(namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
+        }
+
+        Future<ReconciliationState> zkPodsReady() {
+            return podsReady(zkCluster);
+        }
+
+        Future<ReconciliationState> kafkaPodsReady() {
+            return podsReady(kafkaCluster);
+        }
+
+        Future<ReconciliationState> podsReady(AbstractModel model) {
+            int replicas = model.getReplicas();
+            List<Future> podFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                log.debug("{}: Checking readiness of pod {}.", reconciliation, model.getPodName(i));
+                podFutures.add(podOperations.readiness(namespace, model.getPodName(i), 1_000, operationTimeoutMs));
+            }
+
+            return withVoid(CompositeFuture.join(podFutures));
         }
 
         Future<ReconciliationState> kafkaServiceEndpointReady() {
