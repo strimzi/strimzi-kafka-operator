@@ -60,6 +60,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -356,6 +357,7 @@ public class KafkaAssemblyOperatorTest {
         ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
+        PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
@@ -386,6 +388,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
+        // Mock pod readiness
+        when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(clusterCmNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
             (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperPodName(clusterCmName, replica));
@@ -733,6 +738,7 @@ public class KafkaAssemblyOperatorTest {
         ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
+        PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
@@ -836,6 +842,8 @@ public class KafkaAssemblyOperatorTest {
                 .build();
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
 
+        // Mock pod readiness
+        when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock Service gets
         when(mockServiceOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
