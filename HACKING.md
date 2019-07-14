@@ -244,10 +244,10 @@ We can configure our system tests with several environment variables, which are 
 | DOCKER_ORG                | Specify organization which owns image used in system tests                           | strimzi                                          |
 | DOCKER_TAG                | Specify image tags used in system tests                                              | latest                                           |
 | DOCKER_REGISTRY           | Specify docker registry used in system tests                                         | docker.io                                        |
-| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.2.1 |
+| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.3.0 |
 | BRIDGE_IMAGE              | Specify kafka bridge image used in systemtest                                        | docker.io/strimzi/kafka-bridge:latest            |
 | TEST_LOG_DIR              | Directory for store logs collected during the tests                                  | ../systemtest/target/logs/                       |
-| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.1.1                                            |
+| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.3.0                                            |
 | STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator                                                       | DEBUG                                            |
 | KUBERNETES_DOMAIN         | Cluster domain. It's used for specify URL endpoint of testing clients                | .nip.io                                          |
 
@@ -257,7 +257,7 @@ If you want to use your own images with different tag or from different reposito
 
 #### Specific Kafka version
 
-To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.1.0`, `2.1.1`, `2.2.0`, `2.2.1`. For more info about allowed versions see [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
+To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.1.0`, `2.1.1`, `2.2.0`, `2.2.1`, `2.3.0`. For more info about allowed versions see [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
 
 #### Cluster Operator Log level
 

@@ -98,7 +98,7 @@ public class HttpClientsListener extends AbstractVerticle {
         request.bodyHandler(handler -> {
             JsonObject json = handler.toJsonObject();
             LOGGER.info("Incoming POST request: {}", json);
-            Exec executor = new Exec(Paths.get("/opt/logs/"));
+            Exec executor = new Exec(Paths.get("/tmp/"));
             UUID uuid = UUID.randomUUID();
 
             JsonArray command = json.getJsonArray("command");

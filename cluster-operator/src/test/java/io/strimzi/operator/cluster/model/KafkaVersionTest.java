@@ -24,6 +24,7 @@ public class KafkaVersionTest {
         assertTrue(loaded.supportedVersions().contains("2.1.1"));
         assertTrue(loaded.supportedVersions().contains("2.2.0"));
         assertTrue(loaded.supportedVersions().contains("2.2.1"));
+        assertTrue(loaded.supportedVersions().contains("2.3.0"));
         assertEquals("2.1.1", loaded.version("2.1.1").version());
         assertEquals("2.1", loaded.version("2.1.1").protocolVersion());
         assertEquals("2.1", loaded.version("2.1.1").messageVersion());

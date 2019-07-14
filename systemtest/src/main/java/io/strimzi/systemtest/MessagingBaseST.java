@@ -136,6 +136,7 @@ public class MessagingBaseST extends AbstractST {
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         consumerArguments.put(ClientArgument.GROUP_ID, "my-group" + rng.nextInt(Integer.MAX_VALUE));
+        consumerArguments.put(ClientArgument.GROUP_INSTANCE_ID, "instance" + rng.nextInt(Integer.MAX_VALUE));
         consumerArguments.put(ClientArgument.VERBOSE, "");
         consumerArguments.put(ClientArgument.TOPIC, topicName);
         consumerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));

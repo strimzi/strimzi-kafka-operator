@@ -16,6 +16,7 @@ public enum ClientArgument {
     CONSUMER_CONFIG("--consumer.config"),
     MAX_MESSAGES("--max-messages"),
     GROUP_ID("--group-id"),
+    GROUP_INSTANCE_ID("--group-instance-id"),
     SESSION_TIMEOUT("--session-timeout"),
     ENABLE_AUTOCOMMIT("--enable-autocommit"),
     RESET_POLICY("--reset-policy"),
