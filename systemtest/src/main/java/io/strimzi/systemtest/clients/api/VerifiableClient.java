@@ -120,6 +120,7 @@ public class VerifiableClient {
                 allowedArguments.add(ClientArgument.ASSIGMENT_STRATEGY);
                 allowedArguments.add(ClientArgument.CONSUMER_CONFIG);
                 allowedArguments.add(ClientArgument.USER);
+                allowedArguments.add(ClientArgument.GROUP_INSTANCE_ID);
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected client type!");
