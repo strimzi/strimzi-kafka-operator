@@ -111,7 +111,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, 30_000))
+                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, 420_000))
                     .compose(i -> chainFuture.complete(), chainFuture)
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
