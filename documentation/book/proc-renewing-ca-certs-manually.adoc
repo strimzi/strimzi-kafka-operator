@@ -6,17 +6,16 @@
 
 = Renewing CA certificates manually
 
-Depending on your Kafka cluster configuration, the cluster CA and clients CA certificates will auto-renew at the start of their defined renewal periods (30 days before the end of the validity period, by default). You can manually renew one or both of these certificates before the renewal period, if required for security reasons.  
+If automatic CA certificate generation is enabled (`generateCertificateAuthority=true`), the cluster CA and clients CA certificates will auto-renew at the start of their respective certificate renewal periods. You can manually renew one or both of these certificates before the certificate renewal period begins, if required for security reasons. A renewed certificate uses the same private key as the old certificate.
 
 .Prerequisites
 
-* One
-* Two
-* Three
+* The Cluster Operator is running.
+* A Kafka cluster in which CA certificates and private keys are installed.
 
 .Procedure
 
-. View a description of the `Secret` that contains the CA certificate that you want to renew.
+. View a description of the certificate authority `Secret` that contains the CA certificate that you want to renew.
 
 .. To view the `Secret` for the cluster CA certificate: 
 + 
@@ -41,3 +40,7 @@ kubectl annotate secret _<cluster-name>_-cluster-ca-cert strimzi.io/force-renew=
 kubectl annotate secret _<cluster-name>_-clients-ca-cert strimzi.io/force-renew=true
 
 The Cluster Operator generates a new CA certificate for the `Secret` that you annotated.
+
+.Additional resources
+
+* xref:certificates-and-secrets-str[Certificates and Secrets].

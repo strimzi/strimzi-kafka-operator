@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='proc-replacing-private-keys-{context}']
+
+= Replacing private keys
+
+You can replace the private keys used by the cluster CA and clients CA certificates. When a private key is replaced, the Cluster Operator generates a new CA certificate for the private key.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+* A Kafka cluster in which CA certificates and private keys are installed.
+
+.Procedure
+
+. View a description of the private key `Secret` that contains the private key that you want to renew.
+
+.. To view the `Secret` for the cluster CA certificate's private key: 
++ 
+[source,shell,subs="+quotes"]
+kubectl describe secret _<cluster-name>_-cluster-ca
+
+.. To view the `Secret` for the clients CA certificate's private key:
++ 
+[source,shell,subs="+quotes"]
+kubectl describe secret _<cluster-name>_-clients-ca
+
+. Annotate the `Secret` by applying the `strimzi.io/force-replace` annotation.
+
+.. To annotate the `Secret` for the cluster CA certificate's private key:
++
+[source,shell,subs="+quotes"]
+kubectl annotate secret _<cluster-name>_-cluster-ca strimzi.io/force-replace=true
+
+.. To annotate the `Secret` for the clients CA certificate's private key:
++
+[source,shell,subs="+quotes"]
+kubectl annotate secret _<cluster-name>_-clients-ca strimzi.io/force-replace=true
+
+The Cluster Operator generates a new private key for the `Secret` that you annotated.
+
+.Additional resources
+
+* xref:certificates-and-secrets-str[Certificates and Secrets]

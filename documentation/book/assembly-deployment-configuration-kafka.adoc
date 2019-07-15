@@ -69,6 +69,10 @@ include::proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 
 include::proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
 
+include::proc-renewing-ca-certs-manually.adoc[leveloffset=+1]
+
+include::proc-replacing-private-keys.adoc[leveloffset=+1]
+
 include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
 
 include::ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]
