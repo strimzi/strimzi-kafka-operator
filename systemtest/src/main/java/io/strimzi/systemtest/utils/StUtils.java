@@ -175,17 +175,17 @@ public class StUtils {
      * @return true when the pods for DeploymentConfig are recreated
      */
     public static boolean depConfigHasRolled(String name, Map<String, String> snapshot) {
-        LOGGER.info("Existing snapshot: {}", new TreeMap<>(snapshot));
+        LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
         LabelSelector selector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         Map<String, String> map = podSnapshot(selector);
         LOGGER.info("Current  snapshot: {}", new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
         if (current == snapshot.size() && map.isEmpty()) {
-            LOGGER.info("All pods seem to have rolled");
+            LOGGER.debug("All pods seem to have rolled");
             return true;
         } else {
-            LOGGER.info("Some pods still to roll: {}", map);
+            LOGGER.debug("Some pods still to roll: {}", map);
             return false;
         }
     }
@@ -365,6 +365,12 @@ public class StUtils {
         LOGGER.debug("Deployment Config {} is ready", name);
         LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         waitForPodsReady(deploymentConfigSelector, expectedPods, true);
+        String clusterOperatorPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
+        String log = "BuildConfigOperator:191 - BuildConfig " + name + " in namespace connect-s2i-cluster-test has been created";
+
+        TestUtils.waitFor("build config creation " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().logs(clusterOperatorPodName).contains(log));
+
     }
 
     /**
