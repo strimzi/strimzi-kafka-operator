@@ -88,15 +88,19 @@ class KafkaST extends MessagingBaseST {
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
         createCustomResources("../examples/templates/cluster-operator");
+        String appName = "strimzi-ephemeral";
         Oc oc = (Oc) cmdKubeClient();
         String clusterName = "openshift-my-cluster";
-        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
+        oc.newApp(appName, map("CLUSTER_NAME", clusterName));
         StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(clusterName), 3);
         StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(clusterName), 3);
         StUtils.waitForDeploymentReady(entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
+
+        //Testing labels
+        verifyLabelsForKafkaCluster(clusterName, appName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);

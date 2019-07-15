@@ -60,6 +60,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testDeployUndeploy() {
+        String appName = "strimzi-ephemeral";
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -70,6 +71,11 @@ class ConnectST extends AbstractST {
                 hasItem(KAFKA_CONNECT_BOOTSTRAP_SERVERS)));
         assertEquals(EXPECTED_CONFIG, getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"));
         testDockerImagesForKafkaConnect();
+
+        verifyLabelsOnPods(KAFKA_CLUSTER_NAME, "connect", null, "KafkaConnect");
+        verifyLabelsForService(KAFKA_CLUSTER_NAME, "connect-api", "KafkaConnect");
+        verifyLabelsForConfigMaps(KAFKA_CLUSTER_NAME, null, "");
+        verifyLabelsForServiceAccounts(KAFKA_CLUSTER_NAME, null);
     }
 
     @Test

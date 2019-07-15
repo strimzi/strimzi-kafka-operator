@@ -76,6 +76,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -425,7 +426,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         testClassResources = new Resources(kubeClient());
     }
 
-    public  void deleteTestMethodResources() throws Exception {
+    public  void deleteTestMethodResources() {
         if (testMethodResources != null) {
             testMethodResources.deleteResources();
             testMethodResources = null;
@@ -459,11 +460,190 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    public void waitForPodDeletion(String namespace, String podName) {
-        LOGGER.info("Waiting when Pod {} will be deleted", podName);
+    void verifyLabelsForKafkaCluster(String clusterName, String appName) {
+        verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
+        verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);
+        verifyLabelsOnCOPod();
+        verifyLabelsOnPods(clusterName, "entity-operator", appName, "Kafka");
+        verifyLabelsForCRDs();
+        verifyLabelsForKafkaAndZKServices(clusterName, appName);
+        verifyLabelsForSecrets(clusterName, appName);
+        verifyLabelsForConfigMaps(clusterName, appName, "");
+        verifyLabelsForRoleBindings(clusterName, appName);
+        verifyLabelsForServiceAccounts(clusterName, appName);
+    }
 
-        TestUtils.waitFor("statefulset " + podName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient().getPod(podName) == null);
+    void verifyLabelsForKafkaOrZkPods(String clusterName, String podType, String appName) {
+        LOGGER.info("Verifying labels for {}", podType);
+
+        kubeClient().listPodsByPrefixInName(clusterName + "-" + podType).forEach(
+            pod -> {
+                String podName = pod.getMetadata().getName();
+                LOGGER.info("Verifying labels for pod {}", podName);
+                Map<String, String> labels = pod.getMetadata().getLabels();
+                assertEquals(appName, labels.get("app"));
+                assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"));
+                assertEquals(podName, labels.get("statefulset.kubernetes.io/pod-name"));
+                assertEquals(clusterName, labels.get("strimzi.io/cluster"));
+                assertEquals("Kafka", labels.get("strimzi.io/kind"));
+                assertEquals(clusterName.concat("-").concat(podType), labels.get("strimzi.io/name"));
+            }
+        );
+    }
+
+
+    void verifyLabelsOnCOPod() {
+        LOGGER.info("Verifying labels for cluster-operator pod");
+
+        Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
+        assertEquals("strimzi-cluster-operator", coLabels.get("name"));
+        assertTrue(coLabels.get("pod-template-hash").matches("\\d+"));
+        assertEquals("cluster-operator", coLabels.get("strimzi.io/kind"));
+    }
+
+    void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
+        LOGGER.info("Verifying labels on pod type {}", podType);
+        kubeClient().listPods().stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
+            .forEach(pod -> {
+                LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
+                assertEquals(appName, pod.getMetadata().getLabels().get("app"));
+                assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
+                assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals(kind, pod.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(clusterName.concat("-" + podType), pod.getMetadata().getLabels().get("strimzi.io/name"));
+            });
+    }
+
+    void verifyLabelsForCRDs() {
+        LOGGER.info("Verifying labels for CRDs");
+        kubeClient().listCustomResourceDefinition().stream()
+            .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
+            .forEach(crd -> {
+                LOGGER.info("Verifying labels for custom resource {]", crd.getMetadata().getName());
+                assertEquals("strimzi", crd.getMetadata().getLabels().get("app"));
+            });
+    }
+
+    void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Services");
+        List<String> servicesList = new ArrayList<>();
+        servicesList.add(clusterName + "-kafka-bootstrap");
+        servicesList.add(clusterName + "-kafka-brokers");
+        servicesList.add(clusterName + "-zookeeper-nodes");
+        servicesList.add(clusterName + "-zookeeper-client");
+
+        for (String serviceName : servicesList) {
+            kubeClient().listServices().stream()
+                .filter(service -> service.getMetadata().getName().equals(serviceName))
+                .forEach(service -> {
+                    LOGGER.info("Verifying labels for service {}", serviceName);
+                    assertEquals(appName, service.getMetadata().getLabels().get("app"));
+                    assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", service.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                });
+        }
+    }
+
+    void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
+        LOGGER.info("Verifying labels for Kafka Connect Services");
+
+        String serviceName = clusterName.concat("-").concat(serviceToTest);
+        kubeClient().listServices().stream()
+            .filter(service -> service.getMetadata().getName().equals(serviceName))
+            .forEach(service -> {
+                LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
+                assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals(kind, service.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+            }
+        );
+    }
+
+    void verifyLabelsForSecrets(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for secrets");
+        kubeClient().listSecrets().stream()
+            .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
+            .forEach(p -> {
+                LOGGER.info("Verifying secret {}", p.getMetadata().getName());
+                assertEquals(appName, p.getMetadata().getLabels().get("app"));
+                assertEquals("Kafka", p.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(clusterName, p.getMetadata().getLabels().get("strimzi.io/cluster"));
+            }
+        );
+    }
+
+    void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
+        LOGGER.info("Verifying labels for Config maps");
+
+        kubeClient().listConfigMaps()
+            .forEach(cm -> {
+                LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
+                if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
+                    assertNull(cm.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
+                    assertNull(cm.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaMirrorMaker", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else {
+                    assertEquals(appName, cm.getMetadata().getLabels().get("app"));
+                    assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertTrue(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
+                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName));
+                }
+            }
+        );
+    }
+
+    void verifyLabelsForServiceAccounts(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Service Accounts");
+
+        kubeClient().listServiceAccounts().stream()
+            .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
+            .forEach(sa -> {
+                LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
+                assertEquals("strimzi", sa.getMetadata().getLabels().get("app"));
+            }
+        );
+
+        kubeClient().listServiceAccounts().stream()
+            .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
+            .forEach(sa -> {
+                LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
+                if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
+                    assertNull(sa.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
+                    assertNull(sa.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else {
+                    assertEquals(appName, sa.getMetadata().getLabels().get("app"));
+                    assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                }
+                assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+            }
+        );
+    }
+
+    void verifyLabelsForRoleBindings(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Cluster Role bindings");
+        kubeClient().listRoleBindings().stream()
+            .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
+            .forEach(rb -> {
+                LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
+                assertEquals("strimzi", rb.getMetadata().getLabels().get("app"));
+            });
+
+        kubeClient().listRoleBindings().stream()
+            .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
+            .forEach(rb -> {
+                LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
+                assertEquals(appName, rb.getMetadata().getLabels().get("app"));
+                assertEquals(clusterName, rb.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
+            }
+        );
     }
 
     /**

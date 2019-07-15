@@ -76,6 +76,13 @@ public class MirrorMakerST extends MessagingBaseST {
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
                 .endSpec().done();
+
+        verifyLabelsOnPods(CLUSTER_NAME, "mirror-maker", null, "KafkaMirrorMaker");
+        verifyLabelsForService(CLUSTER_NAME, "mirror-maker", "KafkaMirrorMaker");
+
+        verifyLabelsForConfigMaps(kafkaSourceName, null, kafkaTargetName);
+        verifyLabelsForServiceAccounts(kafkaSourceName, null);
+
         String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
                 "400M", "2", "300M", "1");
