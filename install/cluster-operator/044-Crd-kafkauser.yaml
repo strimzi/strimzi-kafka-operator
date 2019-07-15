@@ -133,8 +133,5 @@ spec:
               type: integer
             username:
               type: string
-            credentials:
-              type: object
-              properties:
-                secret:
-                  type: string
+            secret:
+              type: string

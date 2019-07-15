@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.Date;
 
 public class StatusUtils {
+    private static final String V1ALPHA1 = "kafka.strimzi.io/v1alpha1";
+
     public static Condition buildConditionFromReconciliationResult(AsyncResult<Void> reconciliationResult) {
         Condition readyCondition;
         if (reconciliationResult.succeeded()) {
@@ -46,5 +48,9 @@ public class StatusUtils {
         }
         Condition readyCondition = StatusUtils.buildConditionFromReconciliationResult(result);
         status.setConditions(Collections.singletonList(readyCondition));
+    }
+
+    public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
+        return resource.getApiVersion() != null && resource.getApiVersion().equals(V1ALPHA1);
     }
 }

@@ -19,15 +19,15 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "username", "credentials" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "username", "secret" })
 @EqualsAndHashCode
 public class KafkaUserStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private String username;
-    private Credential credentials;
+    private String secret;
 
-    @Description("User name")
+    @Description("Username")
     public String getUsername() {
         return username;
     }
@@ -36,12 +36,12 @@ public class KafkaUserStatus extends Status {
         this.username = username;
     }
 
-    @Description("User credentials")
-    public Credential getCredentials() {
-        return credentials;
+    @Description("The name of `Secret` where the credentials are stored")
+    public String getSecret() {
+        return secret;
     }
 
-    public void setCredentials(Credential credentials) {
-        this.credentials = credentials;
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 }

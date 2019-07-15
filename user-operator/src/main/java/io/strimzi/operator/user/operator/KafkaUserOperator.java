@@ -13,8 +13,6 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.status.Credential;
-import io.strimzi.api.kafka.model.status.CredentialBuilder;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -176,13 +174,9 @@ public class KafkaUserOperator {
 
     protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
         return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
-            Credential credential = null;
             if (desired != null) {
-                credential = new CredentialBuilder()
-                        .withSecret(desired.getMetadata().getName())
-                        .build();
+                userStatus.setSecret(desired.getMetadata().getName());
             }
-            userStatus.setCredentials(credential);
             return Future.succeededFuture(ar);
         });
     }
@@ -205,7 +199,7 @@ public class KafkaUserOperator {
                 KafkaUser user = getRes.result();
 
                 if (user != null) {
-                    if ("kafka.strimzi.io/v1alpha1".equals(user.getApiVersion())) {
+                    if (StatusUtils.isResourceV1alpha1(user)) {
                         log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, user.getApiVersion());
                         updateStatusFuture.complete();
                     } else {

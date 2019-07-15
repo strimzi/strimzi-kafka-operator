@@ -1631,22 +1631,9 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
 |integer
-|username            1.2+<.<|User name.
+|username            1.2+<.<|Username.
 |string
-|credentials         1.2+<.<|User credentials.
-|xref:type-Credential-{context}[`Credential`]
-|====
-
-[id='type-Credential-{context}']
-### `Credential` schema reference
-
-Used in: xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
-
-
-[options="header"]
-|====
-|Property       |Description
-|secret  1.2+<.<|The name of `Secret` where the credentials are stored.
+|secret              1.2+<.<|The name of `Secret` where the credentials are stored.
 |string
 |====
 
