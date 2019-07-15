@@ -42,7 +42,8 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         // This is necessary for OCP 3.10 or less because of having exception handling during the patching of NetworkPolicy
         CAUGHT_EXCEPTION_FOR_NETWORK_POLICY("Caught exception while patching NetworkPolicy"
                 + "(?s)(.*?)"
-                + "io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: PATCH");
+                + "io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: PATCH"),
+        EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError");
 
         final String name;
 

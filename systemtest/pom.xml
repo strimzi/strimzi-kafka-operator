@@ -178,7 +178,7 @@
             <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance | regression | flaky | upgrade | pr | travis</groups>
+                <groups>acceptance | regression | flaky | travis</groups>
             </properties>
         </profile>
         <profile>
