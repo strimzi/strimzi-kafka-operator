@@ -2,10 +2,7 @@
 
 ## Pre-requisites 
 
-To build Strimzi from source you need an OpenShift or Kubernetes cluster available. You
-can install either [minishift](https://www.okd.io/minishift/) or
-[minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access to a
-cluster on your local machine.
+To build Strimzi from source you need an OpenShift or Kubernetes cluster available. You can install either [minishift](https://www.okd.io/minishift/) or [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access to a cluster on your local machine.
 
 You will also need access to several command line utilities:
 
@@ -18,14 +15,11 @@ You will also need access to several command line utilities:
       [this one](https://github.com/mikefarah/yq).
 - [`docker`](https://docs.docker.com/install/) - Docker command line client and daemon
 - OpenShift (`oc`) or Kubernetes (`kubectl`) command line clients
-    - These are provided by both minishift (with some additional setup) and minikube (via
-      `minikube kubectl`) or can be installed separately. 
+    - These are provided by both minishift (with some additional setup) and minikube (via `minikube kubectl`) or can be installed separately. 
 
 ### Minishift Setup
 
-In order to perform the operations necessary for the integration tests, your user must
-have the cluster administrator role assigned. For example, if your username is
-`developer`, you can add the `cluster-admin` role using the commands below:
+In order to perform the operations necessary for the integration tests, your user must have the cluster administrator role assigned. For example, if your username is `developer`, you can add the `cluster-admin` role using the commands below:
 
     oc login -u system:admin
 
@@ -35,21 +29,13 @@ have the cluster administrator role assigned. For example, if your username is
 
 ## Build from source
 
-To build strimzi from source the operator and Kafka code needs to be complied into Docker
-container images and placed in a location accessible to the Kubernetes/OpenShift nodes.
-The easiest way to make your personal Strimzi builds accessible, is to place them on the
-[Docker Hub](https://hub.docker.com/). The instructions below use this method, however
-other build options (including options for limited or no network access) are available in
-the [HACKING](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md)
-document. The commands below should work for both minishift and minikube clusters:
+To build strimzi from source the operator and Kafka code needs to be complied into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the [HACKING](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) document. The commands below should work for both minishift and minikube clusters:
 
-1. If you don't have one already, create an account on the [Docker
-   Hub](https://hub.docker.com/). Then log your local Docker client into the Hub using:
+1. If you don't have one already, create an account on the [Docker Hub](https://hub.docker.com/). Then log your local Docker client into the Hub using:
 
         docker login
 
-2. Make sure that the `DOCKER_ORG` environment variable is set to the same value as your
-   username on Docker Hub.
+2. Make sure that the `DOCKER_ORG` environment variable is set to the same value as your username on Docker Hub.
 
         export DOCKER_ORG=docker_hub_username
 
@@ -57,18 +43,13 @@ document. The commands below should work for both minishift and minikube cluster
     
         make all
 
-   Once this completes you should have several new repositories under your Docker Hub
-   account (`user_name/operator`, `user_name/kafka` and `user_name/test-client`).
+   Once this completes you should have several new repositories under your Docker Hub account (`user_name/operator`, `user_name/kafka` and `user_name/test-client`).
 
-   The tests run during the build can be skipped by setting the `MVN_ARGS` environment
-   variable and passing that to the make command:
+   The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
 
         make MVN_ARGS='-DskipTests -DskipIT' all
 
-4. In order to use the newly built images, you need to update the
-   `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the
-   images from your repositories on Docker Hub rather than the official Strimzi images.
-   That can be done using the following command:
+4. In order to use the newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command:
 
     ```
     sed -Ei -e "s#(image|value): strimzi/([a-z0-9-]+):latest#\1: $DOCKER_ORG/\2:latest#" \
@@ -76,9 +57,7 @@ document. The commands below should work for both minishift and minikube cluster
             install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
     ```
 
-   This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image
-   references (in `image` and `value` properties) with ones with the same name but with
-   the repository changed.
+   This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
 
 5. Then you can deploy the Cluster Operator by running: 
 

@@ -7,21 +7,15 @@ You can contribute by:
 * Improving documentation
 * Talking about Strimzi
 
-All bugs, tasks or enhancements are tracked as [GitHub issues][issues]. Issues which might
-be a good start for new contributors are marked with the [“good-start”][newbie-issues]
-label.
+All bugs, tasks or enhancements are tracked as [GitHub issues][issues]. Issues which might be a good start for new contributors are marked with the [“good-start”][newbie-issues] label.
 
-The [developer quick start guide][dev-quick-start] describes how to quickly get setup to
-build Strimzi from source.
+The [developer quick start guide][dev-quick-start] describes how to quickly get setup to build Strimzi from source.
 
-The [hacking guide][hacking-guide] describes in more detail the various ways you can build
-Strimzi and how to test your changes before submitting a patch or opening a pull request.
+The [hacking guide][hacking-guide] describes in more detail the various ways you can build Strimzi and how to test your changes before submitting a patch or opening a pull request.
 
-The [release checklist][release-list] describes the steps that need to be completed for a
-new version release.
+The [release checklist][release-list] describes the steps that need to be completed for a new version release.
 
-The [documentation contributor guide][doc-contrib-guide] describes how to contribute to
-Strimzi documentation.
+The [documentation contributor guide][doc-contrib-guide] describes how to contribute to Strimzi documentation.
 
 If you want to get in touch with us first before contributing, you can use:
 
