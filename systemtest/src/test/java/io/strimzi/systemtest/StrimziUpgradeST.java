@@ -244,9 +244,9 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    private void changeKafkaAndLogFormatVersion(String versions) {
-        if (!versions.isEmpty()) {
-            String[] proceduresArray = versions.split("\\s*,\\s*");
+    private void changeKafkaAndLogFormatVersion(String procedures) {
+        if (!procedures.isEmpty()) {
+            String[] proceduresArray = procedures.split("\\s*,\\s*");
             for (String procedure : proceduresArray) {
                 switch (procedure) {
                     case "set log message format version to 2.0": {
