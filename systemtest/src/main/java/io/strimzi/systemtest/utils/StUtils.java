@@ -11,8 +11,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
@@ -165,7 +163,7 @@ public class StUtils {
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        TestUtils.waitFor("SS roll of " + name,
+        TestUtils.waitFor("StatefulSet " + name + " rolling update",
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> {
                 try {
                     return ssHasRolled(name, snapshot);
@@ -186,7 +184,7 @@ public class StUtils {
      * @return The snapshot of the Deployment after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        TestUtils.waitFor("Deployment roll of " + name,
+        TestUtils.waitFor("Deployment " + name + " rolling update",
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(name, snapshot));
         StUtils.waitForDeploymentReady(name);
         StUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
@@ -225,7 +223,7 @@ public class StUtils {
      */
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
         LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
-        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("statefulset " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSetStatus(name));
         LOGGER.debug("StatefulSet {} is ready", name);
         LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", name);
@@ -276,9 +274,20 @@ public class StUtils {
      */
     public static void waitForDeploymentDeletion(String name) {
         LOGGER.info("Waiting for Deployment deletion {}", name);
-        TestUtils.waitFor("deployment is deleted" + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} was deleted", name);
+    }
+
+    /**
+     * Wait until the given Deployment has been recovered.
+     * @param name The name of the Deployment.
+     */
+    public static void waitForDeploymentRecovery(String name, String deploymentUid) {
+        LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, kubeClient().getNamespace());
+        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> !kubeClient().getDeploymentUid(name).equals(deploymentUid));
+        LOGGER.info("Deployment {} was recovered", name);
     }
 
     /**
@@ -299,7 +308,7 @@ public class StUtils {
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
         LOGGER.debug("Waiting for Deployment {}", name);
-        TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));
         LOGGER.debug("Deployment {} is ready", name);
         LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
@@ -312,7 +321,7 @@ public class StUtils {
      */
     public static void waitForDeploymentConfigReady(String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment config "  + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
         LOGGER.info("Deployment Config {} is ready", name);
     }
@@ -323,9 +332,20 @@ public class StUtils {
      */
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.info("Waiting for StatefulSet deletion {}", name);
-        TestUtils.waitFor("StatefulSet is deleted" + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} was deleted", name);
+    }
+
+    /**
+     * Wait until the given StatefulSet has been recovered.
+     * @param name The name of the StatefulSet.
+     */
+    public static void waitForStatefulSetRecovery(String name, String statefulSetUid) {
+        LOGGER.info("Waiting for StatefulSet {}-{} recovery in namespace {}", name, statefulSetUid, kubeClient().getNamespace());
+        TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
+        LOGGER.info("StatefulSet {} was recovered", name);
     }
 
     /**
@@ -334,21 +354,31 @@ public class StUtils {
      */
     public static void waitForConfigMapDeletion(String name) {
         LOGGER.info("Waiting for config map deletion {}", name);
-        TestUtils.waitFor("Config map " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Config map " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getConfigMapStatus(name));
         LOGGER.info("Config map {} was deleted", name);
     }
 
+    /**
+     * Wait until the config map has been recovered.
+     * @param name The name of the ConfigMap.
+     */
+    public static void waitForConfigMapRecovery(String name, String configMapUid) {
+        LOGGER.info("Waiting for config map {}-{} recovery in namespace {}", name, configMapUid, kubeClient().getNamespace());
+        TestUtils.waitFor("Config map " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> !kubeClient().getConfigMapUid(name).equals(configMapUid));
+        LOGGER.info("Config map {} was deleted", name);
+    }
+
     public static void waitForSecretReady(String secretName) {
-        TestUtils.waitFor("Expected secret exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            return kubeClient().getSecret(secretName) != null;
-        });
+        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getSecret(secretName) != null);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-                Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
     }
 
@@ -372,7 +402,7 @@ public class StUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " will be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
@@ -392,19 +422,10 @@ public class StUtils {
     }
 
     public static void waitForNamespaceDeletion(String name) {
-        LOGGER.info("Waiting when Namespace {} will be deleted", name);
+        LOGGER.info("Waiting when Namespace {} to be deleted", name);
 
         TestUtils.waitFor("namespace " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getNamespaceStatus(name));
-    }
-
-    public static void waitForKafkaCluster(Kafka kafka) {
-        String name = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
-        LOGGER.info("Kafka cluster {} in namespace {} is ready", name, namespace);
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
@@ -417,17 +438,40 @@ public class StUtils {
     public static void waitForLoadBalancerService(String serviceName) {
         LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("LoadBalancer service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
     }
 
     public static void waitForNodePortService(String serviceName) throws InterruptedException {
         LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("NodePort service " + serviceName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getPorts().get(0).getNodePort() != null);
 
         Thread.sleep(10000);
+    }
+
+    /**
+     * Wait until Service of the given name will be deleted.
+     * @param serviceName service name
+     */
+    public static void waitForServiceDeletion(String serviceName) {
+        LOGGER.info("Waiting when Service {} in namespace {} has been deleted", serviceName, kubeClient().getNamespace());
+
+        TestUtils.waitFor("Service " + serviceName + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getService(serviceName) == null);
+    }
+
+    /**
+     * Wait until Service of the given name will be recovered.
+     * @param serviceName service name
+     * @param serviceUid service original uid
+     */
+    public static void waitForServiceRecovery(String serviceName, String serviceUid) {
+        LOGGER.info("Waiting when Service {}-{} in namespace {} is recovered", serviceName, serviceUid, kubeClient().getNamespace());
+
+        TestUtils.waitFor("Service " + serviceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
     }
 
     /**
