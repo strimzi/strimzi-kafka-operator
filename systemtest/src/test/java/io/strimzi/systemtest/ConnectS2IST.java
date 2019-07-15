@@ -34,7 +34,7 @@ class ConnectS2IST extends AbstractST {
     @Test
     @OpenShiftOnly
     @Tag(ACCEPTANCE)
-    void testDeployS2IWithMongoDBPlugin() throws IOException {
+    void testDeployS2IWithMongoDBPlugin() throws IOException, InterruptedException {
         testClassResources.kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1, CLUSTER_NAME)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
@@ -43,7 +43,9 @@ class ConnectS2IST extends AbstractST {
 
         Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(CONNECT_DEPLOYMENT_NAME);
 
-        File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.zip");
+        File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
+
+        Thread.sleep(10000);
 
         // Start a new image build using the plugins directory
         cmdKubeClient().exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
