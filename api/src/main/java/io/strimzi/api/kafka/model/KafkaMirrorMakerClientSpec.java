@@ -51,7 +51,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
         this.config = config;
     }
 
-    @Description("TLS configuration for connecting to the cluster.")
+    @Description("TLS configuration for connecting Mirror Maker to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaMirrorMakerTls getTls() {
         return tls;
@@ -61,7 +61,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
         this.tls = tls;
     }
 
-    @Description("A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.")
+    @Description("A list of host:port pairs for establishing the initial connection to the Kafka cluster.")
     @JsonProperty(required = true)
     public String getBootstrapServers() {
         return bootstrapServers;

@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-numstreams.adoc
+
+[id='proc-configuring-kafka-mirror-maker-offset-commit-interval-{context}']
+= Configuring the offset auto-commit interval
+
+Configure the offset auto-commit interval using the `KafkaMirrorMaker.spec.consumer.offsetCommitInterval` property.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* The Cluster Operator is running
+
+.Procedure
+
+. Edit the `KafkaMirrorMaker.spec.consumer.offsetCommitInterval` property.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  consumer:
+    offsetCommitInterval: 120000
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} use `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} use `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

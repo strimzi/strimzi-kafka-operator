@@ -1,0 +1,50 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-abort-on-send-failure.adoc
+
+[id='proc-configuring-kafka-mirror-maker-abort-on-send-failure-{context}']
+= Enabling Mirror Maker to continue on message failure
+
+By default, if an error occurs when sending a message from Kafka Mirror Maker to a Kafka cluster:
+
+* The Kafka Mirror Maker container is terminated in {ProductPlatformName}.
+* The container is then recreated.
+
+To ignore the sending error and attempt to send the next message in the topic, you can set the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property to `false`.
+WARNING: Message might be lost when setting this value to `false`, as there is no attempt to resend a failed message.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* The Cluster Operator is running
+
+.Procedure
+
+. Edit the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  producer:
+    abortOnSendFailure: false
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} use `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} use `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

@@ -29,6 +29,10 @@ include::assembly-kafka-mirror-maker-groupid.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-numstreams.adoc[leveloffset=+1]
 
+include::assembly-kafka-mirror-maker-offset-commit-interval.adoc[leveloffset=+1]
+
+include::assembly-kafka-mirror-maker-abort-on-send-failure.adoc[leveloffset=+1]
+
 include::assembly-kafka-mirror-maker-tls.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-authentication.adoc[leveloffset=+1]

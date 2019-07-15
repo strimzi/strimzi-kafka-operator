@@ -115,7 +115,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.authentication = authentication;
     }
 
-    @Description("TLS configuration for connecting to the cluster.")
+    @Description("TLS configuration for connecting Kafka Bridge to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaBridgeTls getTls() {
         return tls;
@@ -125,7 +125,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.tls = tls;
     }
 
-    @Description("A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.")
+    @Description("A list of host:port pairs for establishing the initial connection to the Kafka cluster.")
     @JsonProperty(required = true)
     public String getBootstrapServers() {
         return bootstrapServers;
