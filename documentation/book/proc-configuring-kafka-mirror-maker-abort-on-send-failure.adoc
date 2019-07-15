@@ -11,6 +11,7 @@ By default, if an error occurs when sending a message from Kafka Mirror Maker to
 * The container is then recreated.
 
 To ignore the sending error and attempt to send the next message in the topic, you can set the `KafkaMirrorMaker.spec.producer.abortOnSendFailure` property to `false`.
+WARNING: Message might be lost when setting this value to `false`, as there is no attempt to resend a failed message.
 
 .Prerequisites
 
