@@ -12,12 +12,17 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.AsyncResult;
@@ -112,13 +117,17 @@ public class KafkaUserOperator {
      * @param handler Completion handler
      */
     protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCaCert, Secret clientsCaKey, Secret userSecret, Handler<AsyncResult<Void>> handler) {
+        Future<Void> createOrUpdateFuture = Future.future();
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
+        KafkaUserStatus userStatus = new KafkaUserStatus();
         try {
             user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            handler.handle(Future.failedFuture(e));
+            StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, Future.failedFuture(e));
+            updateStatus(kafkaUser, reconciliation, userStatus)
+                    .setHandler(result -> handler.handle(Future.failedFuture(e)));
             return;
         }
 
@@ -141,10 +150,91 @@ public class KafkaUserOperator {
 
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                secretOperations.reconcile(namespace, user.getSecretName(), desired),
+                reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
-                .map((Void) null).setHandler(handler);
+                .setHandler(reconciliationResult -> {
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, reconciliationResult.mapEmpty());
+                    userStatus.setUsername(user.getName());
+
+                    updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
+                        // If both features succeeded, createOrUpdate succeeded as well
+                        // If one or both of them failed, we prefer the reconciliation failure as the main error
+                        if (reconciliationResult.succeeded() && statusResult.succeeded()) {
+                            createOrUpdateFuture.complete();
+                        } else if (reconciliationResult.failed()) {
+                            createOrUpdateFuture.fail(reconciliationResult.cause());
+                        } else {
+                            createOrUpdateFuture.fail(statusResult.cause());
+                        }
+                        handler.handle(createOrUpdateFuture);
+                    });
+                });
+    }
+
+    protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
+        return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
+            if (desired != null) {
+                userStatus.setSecret(desired.getMetadata().getName());
+            }
+            return Future.succeededFuture(ar);
+        });
+    }
+
+    /**
+     * Updates the Status field of the Kafka User CR. It diffs the desired status against the current status and calls
+     * the update only when there is any difference in non-timestamp fields.
+     *
+     * @param kafkaUserAssembly The CR of Kafka user
+     * @param reconciliation Reconciliation information
+     * @param desiredStatus The KafkaUserStatus which should be set
+     *
+     * @return
+     */
+    Future<Void> updateStatus(KafkaUser kafkaUserAssembly, Reconciliation reconciliation, KafkaUserStatus desiredStatus) {
+        Future<Void> updateStatusFuture = Future.future();
+
+        crdOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
+            if (getRes.succeeded()) {
+                KafkaUser user = getRes.result();
+
+                if (user != null) {
+                    if (StatusUtils.isResourceV1alpha1(user)) {
+                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, user.getApiVersion());
+                        updateStatusFuture.complete();
+                    } else {
+                        KafkaUserStatus currentStatus = user.getStatus();
+
+                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                        if (!ksDiff.isEmpty()) {
+                            KafkaUser resourceWithNewStatus = new KafkaUserBuilder(user).withStatus(desiredStatus).build();
+
+                            crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                                if (updateRes.succeeded()) {
+                                    log.debug("{}: Completed status update", reconciliation);
+                                    updateStatusFuture.complete();
+                                } else {
+                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                    updateStatusFuture.fail(updateRes.cause());
+                                }
+                            });
+                        } else {
+                            log.debug("{}: Status did not change", reconciliation);
+                            updateStatusFuture.complete();
+                        }
+                    }
+                } else {
+                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    updateStatusFuture.fail("Current Kafka User resource not found");
+                }
+            } else {
+                log.error("{}: Failed to get the current Kafka User resource and its status", reconciliation, getRes.cause());
+                updateStatusFuture.fail(getRes.cause());
+            }
+        });
+
+        return updateStatusFuture;
     }
 
     /**
@@ -334,7 +424,7 @@ public class KafkaUserOperator {
             log.info("{}: User reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
-            log.warn("{}: Failed to reconcile", reconciliation, cause);
+            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
         }
     }
 }

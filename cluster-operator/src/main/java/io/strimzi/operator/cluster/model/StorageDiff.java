@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

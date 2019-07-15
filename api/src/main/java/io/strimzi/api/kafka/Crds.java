@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceSubresourceStatus;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceSubresourceStatusBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -109,7 +108,7 @@ public class Crds {
             group = Kafka.RESOURCE_GROUP;
             kind = Kafka.RESOURCE_KIND;
             listKind = Kafka.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatusBuilder().build();
+            status = new CustomResourceSubresourceStatus();
             if (!Kafka.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -154,6 +153,7 @@ public class Crds {
             group = KafkaUser.RESOURCE_GROUP;
             kind = KafkaUser.RESOURCE_KIND;
             listKind = KafkaUser.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
             if (!KafkaUser.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }

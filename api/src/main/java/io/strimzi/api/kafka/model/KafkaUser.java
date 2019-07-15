@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -51,6 +52,9 @@ import static java.util.Collections.unmodifiableList;
                                 storage = false
                         )
                 },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Authentication",
@@ -75,7 +79,7 @@ import static java.util.Collections.unmodifiableList;
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class KafkaUser extends CustomResource implements UnknownPropertyPreserving {
 
@@ -99,6 +103,7 @@ public class KafkaUser extends CustomResource implements UnknownPropertyPreservi
     private ObjectMeta metadata;
     private KafkaUserSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private KafkaUserStatus status;
 
     @Override
     public String getApiVersion() {
@@ -127,6 +132,15 @@ public class KafkaUser extends CustomResource implements UnknownPropertyPreservi
 
     public void setSpec(KafkaUserSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka User.")
+    public KafkaUserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaUserStatus status) {
+        this.status = status;
     }
 
     @Override
