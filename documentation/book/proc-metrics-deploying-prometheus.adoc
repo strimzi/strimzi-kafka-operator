@@ -22,12 +22,12 @@ NOTE: By default, the Prometheus Operator only supports jobs that include an `en
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes"]
-sed -i 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
+sed -i 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes"]
-sed -i '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
+sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 
 . Edit the `ServiceMonitor` resource in `strimzi-service-monitor.yaml` to define Prometheus jobs that will scrape the metrics data.
 
