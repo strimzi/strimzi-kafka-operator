@@ -116,7 +116,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected KafkaBridgeCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = KafkaBridgeResources.deploymentName(cluster);
-        this.serviceName = name + KafkaBridgeResources.serviceName(cluster);
+        this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/ready";

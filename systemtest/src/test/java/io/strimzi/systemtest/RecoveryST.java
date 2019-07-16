@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.executor.Exec;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -211,7 +212,6 @@ class RecoveryST extends AbstractST {
         operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         LOGGER.info("Running deleteKafkaBridgeService with cluster {}", CLUSTER_NAME);
         String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(CLUSTER_NAME);
-        LOGGER.info("Namespace: {}", kubeClient().getNamespace());
         String kafkaBridgeServiceUid = kubeClient().namespace(NAMESPACE).getServiceUid(kafkaBridgeServiceName);
         kubeClient().deleteService(kafkaBridgeServiceName);
 

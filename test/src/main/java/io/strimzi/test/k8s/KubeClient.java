@@ -344,7 +344,6 @@ public class KubeClient {
     }
 
     public Service getService(String serviceName) {
-        LOGGER.info("Service {} in namespace {}", serviceName, getNamespace());
         return client.services().inNamespace(getNamespace()).withName(serviceName).get();
     }
 
