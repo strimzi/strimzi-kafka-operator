@@ -807,5 +807,5 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-            httpRestApiAddress:
+            restApiAddress:
               type: string

@@ -19,19 +19,19 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "httpRestApiAddress" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "httpRestApiAddress", "buildName" })
 @EqualsAndHashCode
-public class KafkaConnectS2Istatus extends Status {
+public class KafkaConnectS2Istatus extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
 
-    private String httpRestApiAddress;
+    private String buildName;
 
-    @Description("HTTP REST API address")
-    public String getHttpRestApiAddress() {
-        return httpRestApiAddress;
+    @Description("Name of the build")
+    public String getBuildName() {
+        return buildName;
     }
 
-    public void setHttpRestApiAddress(String httpRestApiAddress) {
-        this.httpRestApiAddress = httpRestApiAddress;
+    public void setBuildName(String buildName) {
+        this.buildName = buildName;
     }
 }

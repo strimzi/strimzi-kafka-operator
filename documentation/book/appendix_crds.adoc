@@ -1377,7 +1377,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
 |integer
-|httpRestApiAddress  1.2+<.<|HTTP REST API address.
+|restApiAddress      1.2+<.<|REST API address for managing and monitoring connectors.
 |string
 |====
 
@@ -1458,7 +1458,9 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
 |integer
-|httpRestApiAddress  1.2+<.<|HTTP REST API address.
+|buildName           1.2+<.<|Name of the build.
+|string
+|restApiAddress      1.2+<.<|REST API address for managing and monitoring connectors.
 |string
 |====
 

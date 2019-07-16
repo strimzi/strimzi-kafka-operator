@@ -87,6 +87,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final KafkaVersion.Lookup versions;
     private final String kind;
+    protected long operationTimeoutMs = 30_000;
 
     /**
      * @param vertx The Vertx instance

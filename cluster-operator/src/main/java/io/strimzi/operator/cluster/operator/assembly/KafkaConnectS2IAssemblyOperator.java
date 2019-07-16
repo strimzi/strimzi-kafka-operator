@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
@@ -93,7 +94,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
                 return updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus);
             }
-            connect.generateBuildConfig();
+            BuildConfig bc = connect.generateBuildConfig();
             ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
                     configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                     null);
@@ -111,11 +112,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, 420_000))
+                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> chainFuture.complete(), chainFuture)
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
-                        kafkaConnectS2Istatus.setHttpRestApiAddress(connect.getServiceName() + "." + namespace + ".svc:" + KafkaConnectS2ICluster.REST_API_PORT);
+                        kafkaConnectS2Istatus.setRestApiAddress(connect.getServiceName() + "." + namespace + ".svc:" + KafkaConnectS2ICluster.REST_API_PORT);
+                        kafkaConnectS2Istatus.setBuildName(bc.getMetadata().getName());
 
                         updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well
