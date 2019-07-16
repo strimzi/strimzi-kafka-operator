@@ -27,7 +27,7 @@ kubectl describe secret _<cluster-name>_-cluster-ca
 [source,shell,subs="+quotes"]
 kubectl describe secret _<cluster-name>_-clients-ca
 
-. Annotate the `Secret` by applying the `strimzi.io/force-replace` annotation.
+. Apply the `strimzi.io/force-replace` annotation to the `Secret`.
 
 .. To annotate the `Secret` for the cluster CA certificate's private key:
 +
