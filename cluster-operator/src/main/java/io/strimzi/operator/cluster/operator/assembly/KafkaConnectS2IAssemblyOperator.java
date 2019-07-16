@@ -74,6 +74,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.versions = config.versions();
     }
 
@@ -112,12 +113,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, this.operationTimeoutMs))
                     .compose(i -> chainFuture.complete(), chainFuture)
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
                         kafkaConnectS2Istatus.setRestApiAddress(connect.getServiceName() + "." + namespace + ".svc:" + KafkaConnectS2ICluster.REST_API_PORT);
-                        kafkaConnectS2Istatus.setBuildName(bc.getMetadata().getName());
+                        kafkaConnectS2Istatus.setBuildConfigName(bc.getMetadata().getName());
 
                         updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well

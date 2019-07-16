@@ -814,8 +814,8 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-            buildName:
-              type: string
             restApiAddress:
+              type: string
+            buildConfigName:
               type: string
 {{- end -}}
