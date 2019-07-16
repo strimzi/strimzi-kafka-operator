@@ -19,6 +19,8 @@ include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-kafka-bridge.adoc[leveloffset=+1]
 
+include::assembly-metrics-setup.adoc[leveloffset=+1]
+
 include::assembly-security.adoc[leveloffset=+1]
 
 include::assembly-upgrade.adoc[leveloffset=+1]
@@ -38,9 +40,6 @@ include::appendix_deploying_kubernetes_cluster.adoc[]
 
 include::appendix_deploying_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
-
-[appendix]
-include::assembly-metrics-setup.adoc[leveloffset=+1]
 
 [appendix]
 [id='api_reference-{context}']

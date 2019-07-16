@@ -7,19 +7,14 @@
 
 Set up a Prometheus data source and example dashboards to enable Grafana for monitoring.
 
-Example dashboards are provided with {ProductName} as JSON files:
-
-* https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`]
-* https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
-
-The example dashboards are a good starting point for monitoring key metrics for Kafka and ZooKeeper clusters, but they do not represent all available metrics.
-You may need to modify the example dashboards or add other metrics, depending on your infrastructure.
-
 NOTE: No alert notification rules are defined.
 
 When accessing a dashboard, you can use the `port-forward` command to forward traffic from the Grafana pod to the host.
 
-For example, you can access the Grafana user interface by running `{cmdcli} port-forward grafana-1-fbl7s 3000:3000` and then pointing a browser to `http://localhost:3000`.
+For example, you can access the Grafana user interface by:
+
+. Running `kubectl port-forward grafana-1-fbl7s 3000:3000`
+. Pointing a browser to `http://localhost:3000`
 
 .Procedure
 
@@ -35,9 +30,9 @@ image::grafana_home.png[Grafana home]
 
 . Add Prometheus as a data source.
 +
-* Specifying a name
+* Specify a name
 * Add _Prometheus_ as the type
-* Specify the connection string to the Prometheus server (`http://prometheus-operated:9090`) in the URL field
+* Specify the connection string to the Prometheus server (http://prometheus-operated:9090) in the URL field
 
 . Click *Add* to test the connection to the data source.
 +

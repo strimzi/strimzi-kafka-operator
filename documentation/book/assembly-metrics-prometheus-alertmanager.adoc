@@ -5,11 +5,10 @@
 
 = Prometheus Alertmanager
 
-An essential aspect of monitoring is to be notified of conditions that indicate a potential problem.
+link:https://prometheus.io/docs/alerting/alertmanager/[Prometheus Alertmanager^] is a plugin for handling alerts and routing them to a notification service.
+Alertmanager supports an essential aspect of monitoring, which is to be notified of conditions that indicate potential issues based on alerting rules.
 
-Prometheus provides an alert system through its link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
-
-You can deploy Alertmanager with example alerting rules provided with {ProductName}.
+include::con-metrics-alertmanager-options.adoc[leveloffset=+1]
 
 include::con-metrics-prometheus-alerts.adoc[leveloffset=+1]
 

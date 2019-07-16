@@ -5,9 +5,9 @@
 
 = Deploying Prometheus
 
-To deploy Prometheus to your Kafka cluster, apply the link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml[Prometheus YAML^] resource file and the YAML files for Prometheus-related resources using the source for the Prometheus docker image in the `./metrics/examples/prometheus/install` directory of the repository.
+To deploy Prometheus to your Kafka cluster to obtain monitoring data, apply the xref:ref-metrics-config-files-{context}[example resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
 
-The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace defined in the YAML file.
+The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace specified for the deployment.
 
 NOTE: By default, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. Targets are discovered and scraped for each endpoint port address. For endpoint discovery, the port address may be derived from service (`role: service`) or pod (`role: pod`) discovery.
 
@@ -17,31 +17,27 @@ NOTE: By default, the Prometheus Operator only supports jobs that include an `en
 
 .Procedure
 
-. Download the Prometheus resource file from the repository and replace the example namespace with your own:
+. Modify the Prometheus installation file (`prometheus.yaml`) according to the namespace Prometheus is going to be installed in:
 +
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
+sed -i 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
+sed -i '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 
-. Download and edit the `ServiceMonitor` resource in `strimzi-service-monitor.yaml` to define Prometheus jobs that will scrape the metrics data:
-+
-[source,shell,subs="+quotes,attributes"]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
+. Edit the `ServiceMonitor` resource in `strimzi-service-monitor.yaml` to define Prometheus jobs that will scrape the metrics data.
 
 . To use another role:
-+
+
 .. Create a `Secret` resource:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
 oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
-+
+
 .. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the YAML file (`prometheus-additional.yaml`) that contains the additional configuration.
 
 . Download and edit the `prometheus-rules.yaml` file that creates sample alert notification rules:
@@ -49,16 +45,16 @@ oc create secret generic additional-scrape-configs --from-file=prometheus-additi
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
+sed -i 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
+sed -i '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 
 . Deploy the Prometheus resources:
 +
 [source,shell,subs="+quotes,attributes"]
-{cmdcli} apply -f strimzi-service-monitor.yaml
-{cmdcli} apply -f prometheus-rules.yaml
-{cmdcli} apply -f prometheus.yaml
+kubectl apply -f strimzi-service-monitor.yaml
+kubectl apply -f prometheus-rules.yaml
+kubectl apply -f prometheus.yaml
