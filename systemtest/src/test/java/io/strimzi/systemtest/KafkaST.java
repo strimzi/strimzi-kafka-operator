@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -65,6 +67,7 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -761,6 +764,134 @@ class KafkaST extends MessagingBaseST {
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
+    }
+
+    @Test
+    void testRemoveTopicOperatorFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+            .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
+        //Waiting when EO pod will be recreated without TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that TO was removed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("topic-operator")));
+            });
+        });
+
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
+        //Waiting when EO pod will be recreated with TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that TO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                    containsString("topic-operator"),
+                    containsString("user-operator"),
+                    containsString("tls-sidecar"))
+                );
+            });
+        });
+    }
+
+    @Test
+    void testRemoveUserOperatorFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(null));
+
+        //Waiting when EO pod will be recreated without UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that UO was removed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("user-operator")));
+            });
+        });
+
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
+        //Waiting when EO pod will be recreated with UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that UO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                        containsString("topic-operator"),
+                        containsString("user-operator"),
+                        containsString("tls-sidecar"))
+                );
+            });
+        });
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
+    @Test
+    void testRemoveUserAndTopicOperatorsFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.setTopicOperator(null);
+            entityOperatorSpec.setUserOperator(null);
+            k.getSpec().setEntityOperator(entityOperatorSpec);
+        });
+
+        //Waiting when EO pod will be deleted
+        StUtils.waitForPodDeletion(eoPodName);
+
+        //Checking that EO was removed
+        assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size());
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.setTopicOperator(new EntityTopicOperatorSpec());
+            entityOperatorSpec.setUserOperator(new EntityUserOperatorSpec());
+            k.getSpec().setEntityOperator(entityOperatorSpec);
+        });
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+
+        //Checking that EO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                    containsString("topic-operator"),
+                    containsString("user-operator"),
+                    containsString("tls-sidecar"))
+                );
+            });
+        });
+
+        TimeMeasuringSystem.stopOperation(operationID);
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
