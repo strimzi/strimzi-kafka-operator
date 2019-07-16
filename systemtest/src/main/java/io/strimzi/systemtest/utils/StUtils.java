@@ -367,7 +367,7 @@ public class StUtils {
      * Wait until the given DeploymentConfig is ready.
      * @param name The name of the DeploymentConfig.
      */
-    public static void waitForDeploymentConfigReady(String name) {
+    public static void waitForDeploymentConfigReady(String name, int expectedPods) {
         LOGGER.info("Waiting for Deployment Config {}", name);
         TestUtils.waitFor("deployment config "  + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
