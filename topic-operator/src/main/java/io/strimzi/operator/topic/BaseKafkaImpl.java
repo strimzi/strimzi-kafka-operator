@@ -11,6 +11,7 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
@@ -249,7 +250,11 @@ public abstract class BaseKafkaImpl implements Kafka {
     @Override
     public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
         LOGGER.debug("Listing topics");
-        ListTopicsResult future = adminClient.listTopics();
+
+        ListTopicsOptions listOptions = new ListTopicsOptions();
+        listOptions.listInternal(true);
+
+        ListTopicsResult future = adminClient.listTopics(listOptions);
         queueWork(new UniWork<>("listTopics", future.names(), handler));
     }
 
