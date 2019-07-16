@@ -4,9 +4,9 @@
 
 [id='con-user-operator-cluster-label-{context}']
 
-= Identifying a Kafka cluster for user creation
+= Identifying a Kafka cluster for user handling
 
-A `kafkaUser` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
+A `KafkaUser` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 
 [source,yaml,subs="attributes+"]
 ----

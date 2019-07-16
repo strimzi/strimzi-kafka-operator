@@ -4,9 +4,9 @@
 
 [id='con-topic-operator-cluster-label-{context}']
 
-= Identifying a Kafka cluster for topic creation
+= Identifying a Kafka cluster for topic handling
 
-A `kafkaTopic` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
+A `KafkaTopic` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 
 [source,yaml,subs="attributes+"]
 ----
@@ -16,4 +16,4 @@ A `kafkaTopic` resource includes a label that defines the appropriate name of th
 
 The label is used by the Topic Operator to identify the `KafkaTopic` resource and create a new topic.
 
-If the label does not match the Kafka cluster, The Topic Operator cannot identify the `kafkaTopic` and the topic is not created.
+If the label does not match the Kafka cluster, The Topic Operator cannot identify the `KafkaTopic` and the topic is not created.

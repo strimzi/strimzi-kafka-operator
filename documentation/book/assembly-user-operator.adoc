@@ -9,7 +9,7 @@
 
 :context: deploying-uo
 
-The User Operator provides a way of managing Kafka users through custom resources.
+The User Operator manages Kafka users through custom resources.
 
 include::con-what-the-user-operator-does.adoc[leveloffset=+1]
 
