@@ -27,4 +27,4 @@ Then use the configuration files to:
 
 .Alerting rules
 
-The `prometheus-rules.yaml` file, provides xref:ref-metrics-alertmanager-examples-{context}[example alerting rule examples for use with Alertmanager].
+The `prometheus-rules.yaml` file provides xref:ref-metrics-alertmanager-examples-{context}[example alerting rule examples for use with Alertmanager].

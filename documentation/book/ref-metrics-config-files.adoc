@@ -27,7 +27,7 @@ metrics
     ├── prometheus.yaml <9>
     └── strimzi-service-monitor.yaml <10>
 --
-<1> Grafana docker image
+<1> Installation file for the Grafana image
 <2> Grafana dashboard configuration
 <3> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
 <4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
@@ -35,5 +35,5 @@ metrics
 <6> Hook definitions for sending notifications through Alertmanager
 <7> Resources for deploying and configuring Alertmanager
 <8> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
-<9> Prometheus docker image
+<9> Installation file for the Prometheus image
 <10> Prometheus job definitions to scrape metrics data

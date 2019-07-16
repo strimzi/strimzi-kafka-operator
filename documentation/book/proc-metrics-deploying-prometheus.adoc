@@ -40,17 +40,17 @@ oc create secret generic additional-scrape-configs --from-file=prometheus-additi
 
 .. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the YAML file (`prometheus-additional.yaml`) that contains the additional configuration.
 
-. Download and edit the `prometheus-rules.yaml` file that creates sample alert notification rules:
+. Edit the `prometheus-rules.yaml` file that creates sample alert notification rules:
 +
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes"]
-sed -i 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
+sed -i 's/namespace: .*/namespace: _my-namespace_/' prometheus-rules.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes"]
-sed -i '' 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
+sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus-rules.yaml
 
 . Deploy the Prometheus resources:
 +
