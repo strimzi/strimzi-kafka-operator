@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.executor.Exec;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
