@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -94,7 +95,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaBridgeCluster.containerServiceAccountName(bridge.getCluster()),
+                KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
                 bridge.generateServiceAccount());
     }
 }

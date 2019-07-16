@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -96,7 +97,7 @@ public class KafkaBridgeClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(kbc.kafkaBridgeClusterName(cluster));
+        return expectedLabels(KafkaBridgeResources.deploymentName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -160,7 +161,7 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = kbc.generateDeployment(new HashMap<String, String>(), true, null, null);
 
-        assertEquals(kbc.kafkaBridgeClusterName(cluster), dep.getMetadata().getName());
+        assertEquals(KafkaBridgeResources.deploymentName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
         Map<String, String> expectedLabels = expectedLabels();
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
@@ -168,7 +169,7 @@ public class KafkaBridgeClusterTest {
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(kbc.kafkaBridgeClusterName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(KafkaBridgeResources.deploymentName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(kbc.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());

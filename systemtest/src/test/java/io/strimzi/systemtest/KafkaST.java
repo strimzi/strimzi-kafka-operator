@@ -177,7 +177,7 @@ class KafkaST extends MessagingBaseST {
         //Test that the new broker has event 'Killing'
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getSsUid(kafkaClusterName(CLUSTER_NAME));
+        uid = kubeClient().getStatefulSetUid(kafkaClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -255,7 +255,7 @@ class KafkaST extends MessagingBaseST {
         //Test that the second pod has event 'Killing'
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getStatefulUid(zookeeperClusterName(CLUSTER_NAME));
+        uid = kubeClient().getStatefulSetUid(zookeeperClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
