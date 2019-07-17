@@ -10,6 +10,10 @@ A `KafkaTopic` resource includes a label that defines the appropriate name of th
 
 [source,yaml,subs="attributes+"]
 ----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
   labels:
     strimzi.io/cluster: my-cluster
 ----
