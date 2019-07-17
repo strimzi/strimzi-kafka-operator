@@ -22,4 +22,4 @@ kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
 ----
 
 .Additional resources
-* xref:assembly-deployment-configuration-kafka-bridge-str[Kafka Bridge cluster configuration]
+* xref:assembly-deployment-configuration-kafka-bridge-str[Kafka Bridge configuration]
