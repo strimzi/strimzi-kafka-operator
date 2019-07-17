@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +52,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.BaseITST.kubeClient;
-
 
 public class KubeClient {
 
@@ -287,6 +287,21 @@ public class KubeClient {
      */
     public LabelSelector getDeploymentSelectors(String deploymentName) {
         return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get().getSpec().getSelector();
+    }
+
+    /**
+     * Gets deployment config
+     */
+    public DeploymentConfig getDeploymentConfig(String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get();
+    }
+
+
+    /**
+     * Gets deployment config selector
+     */
+    public Map<String, String> getDeploymentConfigSelectors(String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get().getSpec().getSelector();
     }
 
     /**

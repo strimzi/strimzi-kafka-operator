@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -78,6 +79,16 @@ public class StUtils {
     public static Map<String, String> depSnapshot(String name) {
         Deployment deployment = kubeClient().getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
+        return podSnapshot(selector);
+    }
+
+    /**
+     * Returns a map of pod name to resource version for the pods currently in the given DeploymentConfig.
+     * @param name The DeploymentConfig name.
+     * @return A map of pod name to resource version for pods in the given DeploymentConfig.
+     */
+    public static Map<String, String> depConfigSnapshot(String name) {
+        LabelSelector selector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         return podSnapshot(selector);
     }
 
@@ -156,6 +167,28 @@ public class StUtils {
     }
 
     /**
+     * Method to check that all pods for expected DeploymentConfig were rolled
+     * @param name DeploymentConfig name
+     * @param snapshot Snapshot of pods for DeploymentConfig before the rolling update
+     * @return true when the pods for DeploymentConfig are recreated
+     */
+    public static boolean depConfigHasRolled(String name, Map<String, String> snapshot) {
+        LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
+        LabelSelector selector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
+        Map<String, String> map = podSnapshot(selector);
+        LOGGER.info("Current  snapshot: {}", new TreeMap<>(map));
+        int current = map.size();
+        map.keySet().retainAll(snapshot.keySet());
+        if (current == snapshot.size() && map.isEmpty()) {
+            LOGGER.debug("All pods seem to have rolled");
+            return true;
+        } else {
+            LOGGER.debug("Some pods still to roll: {}", map);
+            return false;
+        }
+    }
+
+    /**
      *  Method to wait when StatefulSet will be recreated after rolling update
      * @param name StatefulSet name
      * @param expectedPods Expected number of pods
@@ -190,6 +223,21 @@ public class StUtils {
         StUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
         return depSnapshot(name);
     }
+
+    /**
+     * Method to wait when DeploymentConfig will be recreated after rolling update
+     * @param name DeploymentConfig name
+     * @param expectedPods Expected number of pods
+     * @param snapshot Snapshot of pods for DeploymentConfig before the rolling update
+     * @return The snapshot of the DeploymentConfig after rolling update with Uid for every pod
+     */
+    public static Map<String, String> waitTillDepConfigHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        TestUtils.waitFor("Deployment roll of " + name,
+                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depConfigHasRolled(name, snapshot));
+        StUtils.waitForDeploymentConfigReady(name, expectedPods);
+        return depConfigSnapshot(name);
+    }
+
 
     public static File downloadAndUnzip(String url) throws IOException {
         InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
@@ -319,11 +367,19 @@ public class StUtils {
      * Wait until the given DeploymentConfig is ready.
      * @param name The name of the DeploymentConfig.
      */
-    public static void waitForDeploymentConfigReady(String name) {
+    public static void waitForDeploymentConfigReady(String name, int expectedPods) {
         LOGGER.info("Waiting for Deployment Config {}", name);
         TestUtils.waitFor("deployment config "  + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
-        LOGGER.info("Deployment Config {} is ready", name);
+        LOGGER.debug("Deployment Config {} is ready", name);
+        LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
+        waitForPodsReady(deploymentConfigSelector, expectedPods, true);
+        String clusterOperatorPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
+        String log = "BuildConfigOperator:191 - BuildConfig " + name + " in namespace connect-s2i-cluster-test has been created";
+
+        TestUtils.waitFor("build config creation " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().logs(clusterOperatorPodName).contains(log));
+
     }
 
     /**
