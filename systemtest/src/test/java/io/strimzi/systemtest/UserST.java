@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -37,20 +38,6 @@ class UserST extends AbstractST {
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
-        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                    .editTls()
-                        .withNewKafkaListenerAuthenticationTlsAuth()
-                        .endKafkaListenerAuthenticationTlsAuth()
-                    .endTls()
-                .endListeners()
-                    .withNewKafkaAuthorizationSimple()
-                    .endKafkaAuthorizationSimple()
-                .endKafka()
-            .endSpec().build()).done();
-
         // Create user with correct name
         testMethodResources().tlsUser(CLUSTER_NAME, userWithCorrectName).done();
         StUtils.waitForSecretReady(userWithCorrectName);
@@ -59,7 +46,7 @@ class UserST extends AbstractST {
         String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
 
         // Checking UO logs
-        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOlogs, containsString(messageUserWasAdded));
         assertThat(uOlogs, not(containsString(errorMessage)));
@@ -77,31 +64,12 @@ class UserST extends AbstractST {
         // Create user with long name
         testMethodResources().tlsUser(CLUSTER_NAME, userWithLongName).done();
         // Checking UO logs
-        final String messageUserWasNotAdded = "KafkaUser(" + NAMESPACE + "/" + userWithLongName + "): createOrUpdate failed";
-        TestUtils.waitFor("User operator has expected error", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                String logs = kubeClient().logs(entityOperatorPodName, "user-operator");
-                return logs.contains(errorMessage) && logs.contains(messageUserWasNotAdded);
-            });
+        StUtils.waitForKafkaUserCreationError(userWithLongName, entityOperatorPodName);
     }
 
     @Test
     void testUpdateUser() {
         String kafkaUser = "test-user";
-
-        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .editTls()
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                        .endTls()
-                        .endListeners()
-                    .withNewKafkaAuthorizationSimple()
-                    .endKafkaAuthorizationSimple()
-                .endKafka()
-            .endSpec().build()).done();
 
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         StUtils.waitForSecretReady(kafkaUser);
@@ -159,12 +127,26 @@ class UserST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        getTestClassResources().clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE).done();
+
+        testClassResources().kafka(testClassResources().defaultKafka(CLUSTER_NAME, 3)
+                .editSpec()
+                .editKafka()
+                .editListeners()
+                .editTls()
+                .withNewKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerAuthenticationTlsAuth()
+                .endTls()
+                .endListeners()
+                .withNewKafkaAuthorizationSimple()
+                .endKafkaAuthorizationSimple()
+                .endKafka()
+                .endSpec().build()).done();
+
     }
 
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 }

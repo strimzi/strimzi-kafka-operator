@@ -6,7 +6,10 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -32,8 +35,8 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
-        Condition kafkaCondition = getTestClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
-        logCurrentStatus(kafkaCondition);
+        Condition kafkaCondition = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+        logCurrentStatus(kafkaCondition, Kafka.RESOURCE_KIND);
         assertThat("Kafka cluster is in wrong state!", kafkaCondition.getType(), is("Ready"));
         LOGGER.info("Kafka cluster is in desired state: Ready");
 
@@ -54,6 +57,40 @@ class CustomResourceStatusST extends AbstractST {
                     .addToRequests("cpu", new Quantity("10m"))
                     .build());
         });
+    }
+
+    @Test
+    void testKafkaUserStatus() {
+        String userName = "status-user-test";
+        testClassResources().tlsUser(CLUSTER_NAME, userName).done();
+        StUtils.waitForSecretReady(userName);
+        LOGGER.info("Checking status of deployed kafka user");
+        Condition kafkaCondition = testClassResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
+        LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
+        LOGGER.info("Kafka User Message: {}", kafkaCondition.getMessage());
+        assertThat("Kafka user is in wrong state!", kafkaCondition.getType(), is("Ready"));
+        LOGGER.info("Kafka user is in desired state: Ready");
+    }
+
+    @Test
+    void testKafkaUserStatusNotReady() {
+        createTestMethodResources();
+        // Simulate NotReady state with userName longer than 64 characters
+        String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+
+        String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        StUtils.waitForKafkaUserCreationError(userName, eoPodName);
+
+        LOGGER.info("Checking status of deployed Kafka User {}", userName);
+        Condition kafkaCondition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
+        LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
+        LOGGER.info("Kafka User Message: {}", kafkaCondition.getMessage());
+        assertThat("Kafka User is in wrong state!", kafkaCondition.getType(), is("NotReady"));
+        LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
+        testMethodResources().deleteResources();
     }
 
     @AfterEach
@@ -89,11 +126,11 @@ class CustomResourceStatusST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        getTestClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
+        testClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
 
         setOperationID(startDeploymentMeasuring());
 
-        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testClassResources().kafka(testClassResources().defaultKafka(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -102,22 +139,22 @@ class CustomResourceStatusST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .endListeners()
                 .endKafka()
-                .endSpec()
+                .endSpec().build())
                 .done();
 
-        getTestClassResources().topic(CLUSTER_NAME, TOPIC_NAME);
+        testClassResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
     }
 
-    void logCurrentStatus(Condition kafkaCondition) {
-        LOGGER.debug("Kafka Status: {}", kafkaCondition.getStatus());
-        LOGGER.debug("Kafka Type: {}", kafkaCondition.getType());
-        LOGGER.debug("Kafka Message: {}", kafkaCondition.getMessage());
+    void logCurrentStatus(Condition kafkaCondition, String resource) {
+        LOGGER.debug("Kafka {} Status: {}", resource, kafkaCondition.getStatus());
+        LOGGER.debug("Kafka {} Type: {}", resource, kafkaCondition.getType());
+        LOGGER.debug("Kafka {} Message: {}", resource, kafkaCondition.getMessage());
     }
 
     void waitForKafkaStatus(String status) {
         TestUtils.waitFor("Wait until status is false", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            Condition kafkaCondition = getTestClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
-            logCurrentStatus(kafkaCondition);
+            Condition kafkaCondition = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+            logCurrentStatus(kafkaCondition, Kafka.RESOURCE_KIND);
             return kafkaCondition.getType().equals(status);
         });
         LOGGER.info("Kafka cluster is in desired state: {}", status);

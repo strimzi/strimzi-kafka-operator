@@ -461,6 +461,16 @@ public class StUtils {
         );
     }
 
+    public static void waitForKafkaUserCreationError(String userName, String eoPodName) {
+        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
+        final String messageUserWasNotAdded = "KafkaUser(" + kubeClient().getNamespace() + "/" + userName + "): createOrUpdate failed";
+        TestUtils.waitFor("User operator has expected error", Constants.GLOBAL_POLL_INTERVAL, 60000,
+            () -> {
+                String logs = kubeClient().logs(eoPodName, "user-operator");
+                return logs.contains(errorMessage) && logs.contains(messageUserWasNotAdded);
+            });
+    }
+
     /**
      * The method to wait when all pods for Kafka cluster will be deleted.
      * To wait for the cluster to be updated, the following methods must be used: {@link #ssHasRolled(String, Map)}, {@link #waitTillSsHasRolled(String, int, Map)} )}
