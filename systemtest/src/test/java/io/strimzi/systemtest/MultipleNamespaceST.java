@@ -65,13 +65,13 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
 
         LOGGER.info("Deploying CO to watch multiple namespaces");
-        getTestClassResources().clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
+        testClassResources().clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
         deployTestSpecificResources();
     }
 
     private void deployTestSpecificResources() {
-        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()

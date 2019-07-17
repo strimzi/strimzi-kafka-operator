@@ -41,7 +41,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
-        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
+        testClassResources().topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = generateHttpMessages(messageCount);
         JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
@@ -54,7 +54,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
-        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
+        testClassResources().topic(CLUSTER_NAME, topicName).done();
 
         String name = "my-kafka-consumer";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -90,7 +90,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
     void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         // Deploy kafka
-        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -102,7 +102,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 .endSpec().done();
 
         // Deploy http bridge
-        getTestClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
+        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
 
         deployBridgeNodePortService();
         bridgePort = getBridgeNodePort();

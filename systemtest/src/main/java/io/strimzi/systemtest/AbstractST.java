@@ -444,16 +444,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return testMethodResources;
     }
 
+    public static Resources testClassResources() {
+        return testClassResources;
+    }
+
     public static String getOperationID() {
         return operationID;
     }
 
     public static void setOperationID(String operationID) {
         AbstractST.operationID = operationID;
-    }
-
-    public static Resources getTestClassResources() {
-        return testClassResources;
     }
 
     public static void setTestClassResources(Resources testClassResources) {
