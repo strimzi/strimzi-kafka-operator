@@ -2,7 +2,7 @@
 
 ## Pre-requisites 
 
-To build Strimzi from source you need an OpenShift or Kubernetes cluster available. You can install either [minishift](https://www.okd.io/minishift/) or [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access to a cluster on your local machine.
+To build Strimzi from source you need an Kubernetes or OpenShift cluster available. You can install either [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [minishift](https://www.okd.io/minishift/) to have access to a cluster on your local machine.
 
 You will also need access to several command line utilities:
 
@@ -14,8 +14,8 @@ You will also need access to several command line utilities:
     - **Warning:** There are several different `yq` YAML projects in the wild. Use
       [this one](https://github.com/mikefarah/yq).
 - [`docker`](https://docs.docker.com/install/) - Docker command line client and daemon
-- OpenShift (`oc`) or Kubernetes (`kubectl`) command line clients
-    - These are provided by both minishift (with some additional setup) and minikube (via `minikube kubectl`) or can be installed separately. 
+- Kubernetes (`kubectl`) or OpenShift (`oc`) command line clients
+    - These are provided by both minikube (via `minikube kubectl`) and minishift (with some additional setup) or can be installed separately. 
 
 ### Minishift Setup
 
@@ -29,7 +29,7 @@ In order to perform the operations necessary for the integration tests, your use
 
 ## Build from source
 
-To build strimzi from source the operator and Kafka code needs to be complied into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the [HACKING](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) document. The commands below should work for both minishift and minikube clusters:
+To build Strimzi from source the operator and Kafka code needs to be compiled into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the [HACKING](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) document. The commands below should work for both minishift and minikube clusters:
 
 1. If you don't have one already, create an account on the [Docker Hub](https://hub.docker.com/). Then log your local Docker client into the Hub using:
 
@@ -43,7 +43,7 @@ To build strimzi from source the operator and Kafka code needs to be complied in
     
         make all
 
-   Once this completes you should have several new repositories under your Docker Hub account (`user_name/operator`, `user_name/kafka` and `user_name/test-client`).
+   Once this completes you should have several new repositories under your Docker Hub account (`docker_hub_username/operator`, `docker_hub_username/kafka` and `docker_hub_username/test-client`).
 
    The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
 
@@ -61,21 +61,23 @@ To build strimzi from source the operator and Kafka code needs to be complied in
 
 5. Then you can deploy the Cluster Operator by running: 
 
-   For a minishift cluster:
+   For a minikube cluster:
+
+        kubectl create -f install/cluster-operator
+   
+   Or for a minishift cluster:
         
         oc create -f install/cluster-operator
 
-   Or for minikube:
-
-        kubectl create -f install/cluster-operator
 
 6. Finally, you can deploy the cluster custom resource running:
    
-   For a minishift cluster:
+   For minikube cluster:
+
+        kubectl create -f examples/kafka/kafka-ephemeral.yaml 
+   
+   Or for a minishift cluster:
 
         oc create -f examples/kafka/kafka-ephemeral.yaml
 
-   Or for minikube:
-
-        kubectl create -f examples/kafka/kafka-ephemeral.yaml
 
