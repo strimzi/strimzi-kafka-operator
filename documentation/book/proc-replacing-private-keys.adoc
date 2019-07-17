@@ -6,41 +6,49 @@
 
 = Replacing private keys
 
-You can replace the private keys used by the cluster CA and clients CA certificates. When a private key is replaced, the Cluster Operator generates a new CA certificate for the private key.
+You can replace the private keys used by the cluster CA and clients CA certificates. 
+When a private key is replaced, the Cluster Operator generates a new CA certificate for the new private key.
 
 .Prerequisites
 
 * The Cluster Operator is running.
 * A Kafka cluster in which CA certificates and private keys are installed.
+* One or more maintenance time windows are configured for the Kafka cluster.
 
 .Procedure
 
-. View a description of the private key `Secret` that contains the private key that you want to renew.
+* Apply the `strimzi.io/force-replace` annotation to the `Secret` that contains the private key that you want to renew.
 
-.. To view the `Secret` for the cluster CA certificate's private key: 
-+ 
-[source,shell,subs="+quotes"]
-kubectl describe secret _<cluster-name>_-cluster-ca
-
-.. To view the `Secret` for the clients CA certificate's private key:
-+ 
-[source,shell,subs="+quotes"]
-kubectl describe secret _<cluster-name>_-clients-ca
-
-. Apply the `strimzi.io/force-replace` annotation to the `Secret`.
-
-.. To annotate the `Secret` for the cluster CA certificate's private key:
 +
-[source,shell,subs="+quotes"]
-kubectl annotate secret _<cluster-name>_-cluster-ca strimzi.io/force-replace=true
+[cols="3*",options="header",stripes="none",separator=¦]
+|===
 
-.. To annotate the `Secret` for the clients CA certificate's private key:
-+
-[source,shell,subs="+quotes"]
-kubectl annotate secret _<cluster-name>_-clients-ca strimzi.io/force-replace=true
+¦Private key for
+¦Secret
+¦Annotate command
 
-The Cluster Operator generates a new private key for the `Secret` that you annotated.
+¦Cluster CA
+¦_<cluster-name>_-cluster-ca
+m¦kubectl annotate secret _<cluster-name>_-cluster-ca strimzi.io/force-replace=true
+
+¦Clients CA
+¦_<cluster-name>_-clients-ca
+m¦kubectl annotate secret _<cluster-name>_-clients-ca strimzi.io/force-replace=true
+
+|===
+
+If a maintenance time window is active, at the next reconciliation the Cluster Operator:
+
+* Generates a new private key for the `Secret` that you annotated
+
+* Generates a new CA certificate
+
+Otherwise, the Cluster Operator will generate a new private key within the next maintenance time window, at the first reconciliation. 
+
+Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 
 .Additional resources
 
-* xref:certificates-and-secrets-str[Certificates and Secrets]
+* xref:certificates-and-secrets-str[]
+
+* xref:assembly-maintenance-time-windows-{context}[]
