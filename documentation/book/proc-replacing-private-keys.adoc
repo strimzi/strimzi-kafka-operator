@@ -4,7 +4,7 @@
 
 [id='proc-replacing-private-keys-{context}']
 
-= Replacing private keys
+= Replacing private keys TEST
 
 You can replace the private keys used by the cluster CA and clients CA certificates. 
 When a private key is replaced, the Cluster Operator generates a new CA certificate for the new private key.
