@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -1129,6 +1130,48 @@ class KafkaST extends MessagingBaseST {
                 .endKafka()
             .endSpec()
             .done();
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    @Test
+    void testOverrideNodePortConfiguration() throws Exception {
+        int brokerNodePort = 32000;
+        int brokerId = 0;
+
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(brokerId);
+        nodePortListenerBrokerOverride.setNodePort(brokerNodePort);
+        LOGGER.info("Setting nodePort to {} for broker {}", nodePortListenerBrokerOverride.getNodePort(),
+                nodePortListenerBrokerOverride.getBroker());
+
+        int clusterBootstrapNodePort = 32100;
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                                .withNewOverrides()
+                                    .withNewBootstrap()
+                                        .withNodePort(clusterBootstrapNodePort)
+                                    .endBootstrap()
+                                    .withBrokers(nodePortListenerBrokerOverride)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        assertEquals(clusterBootstrapNodePort, kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort());
+        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
+                KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
+        assertEquals(brokerNodePort, kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+                .getSpec().getPorts().get(0).getNodePort());
+        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
+                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
         waitForClusterAvailability(NAMESPACE);
     }
