@@ -16,6 +16,8 @@ For example, you can access the Grafana user interface by:
 . Running `kubectl port-forward grafana-1-fbl7s 3000:3000`
 . Pointing a browser to `http://localhost:3000`
 
+NOTE: The name of the Grafana pod is different for each user.
+
 .Procedure
 
 . Access the Grafana user interface using `admin/admin` credentials.

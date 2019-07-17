@@ -3,7 +3,7 @@
 // assembly-metrics-kafka.adoc
 [id='proc-metrics-deploying-kafka-{context}']
 
-= Deploying a Kafka cluster with JMX metrics configuration
+= Deploying a Kafka cluster with Prometheus metrics configuration
 
 To use Grafana dashboards for monitoring, you can deploy xref:ref-metrics-config-files-{context}[an example Kafka cluster with metrics configuration].
 

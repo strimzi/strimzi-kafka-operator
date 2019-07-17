@@ -3,7 +3,7 @@
 // assembly-metrics-kafka.adoc
 [id='con-metrics-kafka-options-{context}']
 
-= JMX metrics configuration
+= Prometheus metrics configuration
 
 {ProductName} provides xref:ref-metrics-config-files-{context}[example configuration files for Grafana].
 

@@ -3,7 +3,7 @@
 // assembly-metrics-kafka.adoc
 [id='con-metrics-kafka-deploy-options-{context}']
 
-= JMX metrics deployment options
+= Prometheus metrics deployment options
 
 To apply the example metrics configuration of relabeling rules to your Kafka cluster, do one of the following:
 
