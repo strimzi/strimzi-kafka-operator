@@ -20,4 +20,4 @@ metadata:
 
 The label is used by the Topic Operator to identify the `KafkaTopic` resource and create a new topic.
 
-If the label does not match the Kafka cluster, The Topic Operator cannot identify the `KafkaTopic` and the topic is not created.
+If the label does not match the Kafka cluster, the Topic Operator cannot identify the `KafkaTopic` and the topic is not created.
