@@ -79,6 +79,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.operator.common.operator.resource.StrimziResource;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -2416,7 +2417,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> entityOperatorReady() {
             if (this.entityOperator != null && eoDeployment != null) {
-                return withVoid(deploymentOperations.readiness(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
+                return future.compose(dep -> {
+                    StrimziResource strimziResource = new StrimziResource(namespace, this.entityOperator.getName(), deploymentOperations);
+                    return withVoid(deploymentOperations.generation(strimziResource, 1_000, 3_000));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.entityOperator.getName(), 1_000, 3_000));
+                });
             }
             return withVoid(Future.succeededFuture());
         }

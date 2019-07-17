@@ -17,6 +17,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -313,5 +314,13 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             pollIntervalMs,
             timeoutMs,
             () -> predicate.test(namespace, name));
+    }
+
+    public Future<Void> waitFor2(StrimziResource resource, long pollIntervalMs, final long timeoutMs, Predicate<StrimziResource> predicate) {
+        return Util.waitFor(vertx,
+            String.format("%s resource %s in namespace %s", resourceKind, resource.getName(), resource.getNamespace()),
+            pollIntervalMs,
+            timeoutMs,
+            () -> predicate.test(resource));
     }
 }
