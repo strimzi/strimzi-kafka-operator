@@ -17,8 +17,10 @@ NOTE: The resources referenced in this section are intended as a starting point 
 If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
 
 .Additional resources
-* http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka.
-* https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache Zookeeper.
+* For more information about Prometheus, see the link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation].
+* For more information about Grafana, see the link:https://grafana.com/docs/guides/getting_started/[Grafana documentation].
+* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka.
+* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache Zookeeper.
 
 include::ref-metrics-config-files.adoc[leveloffset=+1]
 
