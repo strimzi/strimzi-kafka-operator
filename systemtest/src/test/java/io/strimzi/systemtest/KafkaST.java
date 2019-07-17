@@ -808,7 +808,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     void testRemoveUserOperatorFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
-        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
                 .get(0).getMetadata().getName();
@@ -845,14 +845,14 @@ class KafkaST extends MessagingBaseST {
             });
         });
 
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
     void testRemoveUserAndTopicOperatorsFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
-        operationID = startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT);
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
@@ -890,8 +890,8 @@ class KafkaST extends MessagingBaseST {
             });
         });
 
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test

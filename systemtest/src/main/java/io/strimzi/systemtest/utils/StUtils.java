@@ -240,26 +240,48 @@ public class StUtils {
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public static File downloadAndUnzip(String url) throws IOException {
-        InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
-        File dir = Files.createTempDirectory(StUtils.class.getName()).toFile();
-        dir.deleteOnExit();
-        ZipInputStream zin = new ZipInputStream(bais);
-        ZipEntry entry = zin.getNextEntry();
-        byte[] buffer = new byte[8 * 1024];
-        int len;
-        while (entry != null) {
-            File file = new File(dir, entry.getName());
-            if (entry.isDirectory()) {
-                file.mkdirs();
-            } else {
-                FileOutputStream fout = new FileOutputStream(file);
-                while ((len = zin.read(buffer)) != -1) {
-                    fout.write(buffer, 0, len);
+    public static File downloadAndUnzip(String url) {
+        File dir = null;
+        FileOutputStream fout = null;
+        ZipInputStream zin = null;
+        try {
+            InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+            dir = Files.createTempDirectory(StUtils.class.getName()).toFile();
+            dir.deleteOnExit();
+            zin = new ZipInputStream(bais);
+            ZipEntry entry = zin.getNextEntry();
+            byte[] buffer = new byte[8 * 1024];
+            int len;
+            while (entry != null) {
+                File file = new File(dir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    fout = new FileOutputStream(file);
+                    while ((len = zin.read(buffer)) != -1) {
+                        fout.write(buffer, 0, len);
+                    }
+                    fout.close();
                 }
-                fout.close();
+                entry = zin.getNextEntry();
             }
-            entry = zin.getNextEntry();
+        } catch (IOException e) {
+            LOGGER.error("IOException {}", e.getMessage());
+        } finally {
+            if (fout != null) {
+                try {
+                    fout.close();
+                } catch (IOException e) {
+                    LOGGER.error("IOException {}", e.getMessage());
+                }
+            }
+            if (zin != null) {
+                try {
+                    zin.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return dir;
     }
