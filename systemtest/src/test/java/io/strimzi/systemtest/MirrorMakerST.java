@@ -42,7 +42,7 @@ public class MirrorMakerST extends MessagingBaseST {
     void testMirrorMaker() throws Exception {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
+        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceName = CLUSTER_NAME + "-source";
         String kafkaTargetName = CLUSTER_NAME + "-target";
@@ -89,7 +89,7 @@ public class MirrorMakerST extends MessagingBaseST {
         assertExpectedJavaOpts(podName, kafkaMirrorMakerName(CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
 
         int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
         int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
@@ -105,7 +105,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @Test
     @Tag(ACCEPTANCE)
     void testMirrorMakerTlsAuthenticated() throws Exception {
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
+        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
         String kafkaUserTargetName = "my-user-target";
@@ -182,7 +182,7 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
 
         int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
         int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
@@ -197,7 +197,7 @@ public class MirrorMakerST extends MessagingBaseST {
      */
     @Test
     void testMirrorMakerTlsScramSha() throws Exception {
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
+        setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
         String kafkaSourceName = CLUSTER_NAME + "-source";
@@ -285,7 +285,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy topic
         testMethodResources().topic(kafkaSourceName, topicName).done();
 
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
 
         int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
         int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
@@ -316,12 +316,12 @@ public class MirrorMakerST extends MessagingBaseST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        getTestClassResources().clusterOperator(NAMESPACE).done();
     }
 
     @AfterAll
     void teardownEnvironment() {
-        testClassResources.deleteResources();
+        getTestClassResources().deleteResources();
         teardownEnvForOperator();
     }
 

@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.BaseClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationContext;
@@ -50,6 +51,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.test.k8s.KubeClient;
+import okhttp3.OkHttpClient;
 
 abstract class AbstractResources {
 
@@ -71,7 +73,12 @@ abstract class AbstractResources {
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
 
-        CustomResourceOperationContext croc = new CustomResourceOperationContext().withOkhttpClient(((BaseClient) client().getClient()).getHttpClient()).withConfig(client().getClient().getConfiguration())
+        OkHttpClient httpClient = null;
+        KubernetesClient kubernetesClient = client().getClient();
+        if (kubernetesClient instanceof BaseClient) {
+            httpClient = ((BaseClient) kubernetesClient).getHttpClient();
+        }
+        CustomResourceOperationContext croc = new CustomResourceOperationContext().withOkhttpClient(httpClient).withConfig(client().getClient().getConfiguration())
             .withApiGroupName(Crds.kafka().getSpec().getGroup())
             .withApiGroupVersion(Crds.kafka().getSpec().getVersion())
             .withNamespace(client().getNamespace())

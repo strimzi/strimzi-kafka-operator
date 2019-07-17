@@ -100,42 +100,42 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(1)
     void testLoggersKafka() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), "Kafka's log level is set properly");
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), "Zookeeper's log level is set properly");
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), "Topic operator's log level is set properly");
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), "User operator's log level is set properly");
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), "Kafka connect's log level is set properly");
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), "Mirror maker's log level is set properly");
     }
 
@@ -267,11 +267,11 @@ class LogSettingST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        getTestClassResources().clusterOperator(NAMESPACE).done();
 
-        operationID = startDeploymentMeasuring();
+        setOperationID(startDeploymentMeasuring());
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -310,7 +310,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
+        getTestClassResources().kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewJvmOptions()
@@ -333,7 +333,7 @@ class LogSettingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testClassResources.kafkaConnect(CLUSTER_NAME, 1)
+        getTestClassResources().kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -343,7 +343,7 @@ class LogSettingST extends AbstractST {
                 .endJvmOptions()
             .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        getTestClassResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)

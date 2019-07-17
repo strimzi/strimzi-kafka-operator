@@ -18,5 +18,5 @@ java_clean:
 	echo "Cleaning Maven build ..."
 	mvn clean
 
-findbugs:
-	mvn $(MVN_ARGS) org.codehaus.mojo:findbugs-maven-plugin:check
+spotbugs:
+	mvn $(MVN_ARGS) spotbugs:check

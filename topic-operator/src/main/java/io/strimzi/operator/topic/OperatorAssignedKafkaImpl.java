@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.operator.common.process.ProcessHelper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -45,6 +46,7 @@ import java.util.regex.Pattern;
  * The operator is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
+@SuppressFBWarnings({"REC_CATCH_EXCEPTION", "NP_BOOLEAN_RETURN_NULL"})
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
     private static final Pattern REASSIGN_FAILED = Pattern.compile("Reassignment of partition .* failed");
@@ -257,7 +259,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         executeArgs.add(reassignmentJsonFile.toString());
         executeArgs.add("--execute");
 
-        if (!forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
+        if (!Boolean.TRUE.equals(forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
@@ -267,11 +269,13 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
             } else {
                 return null;
             }
-        })) {
+        }))) {
             throw new TransientOperatorException("Reassignment execution neither failed nor finished");
         }
     }
 
+    // spotbugs bug
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
         JsonFactory factory = new JsonFactory();
 

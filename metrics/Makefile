@@ -17,4 +17,4 @@ release:
 	$(CP) -r ./examples/prometheus/additional-properties/*.yaml $(RELEASE_PATH)/prometheus-additional-properties/
 	$(CP) -r ./examples/prometheus/alertmanager-config/*.yaml $(RELEASE_PATH)/prometheus-alertmanager-config/
 
-.PHONY: all build clean docker_build docker_push docker_tag findbugs
+.PHONY: all build clean docker_build docker_push docker_tag spotbugs

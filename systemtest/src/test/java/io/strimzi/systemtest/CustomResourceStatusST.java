@@ -32,7 +32,7 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
-        Condition kafkaCondition = testClassResources.kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+        Condition kafkaCondition = getTestClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
         logCurrentStatus(kafkaCondition);
         assertThat("Kafka cluster is in wrong state!", kafkaCondition.getType(), is("Ready"));
         LOGGER.info("Kafka cluster is in desired state: Ready");
@@ -89,11 +89,11 @@ class CustomResourceStatusST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
+        getTestClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
 
-        operationID = startDeploymentMeasuring();
+        setOperationID(startDeploymentMeasuring());
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -105,7 +105,7 @@ class CustomResourceStatusST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testClassResources.topic(CLUSTER_NAME, TOPIC_NAME);
+        getTestClassResources().topic(CLUSTER_NAME, TOPIC_NAME);
     }
 
     void logCurrentStatus(Condition kafkaCondition) {
@@ -116,7 +116,7 @@ class CustomResourceStatusST extends AbstractST {
 
     void waitForKafkaStatus(String status) {
         TestUtils.waitFor("Wait until status is false", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            Condition kafkaCondition = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+            Condition kafkaCondition = getTestClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
             logCurrentStatus(kafkaCondition);
             return kafkaCondition.getType().equals(status);
         });

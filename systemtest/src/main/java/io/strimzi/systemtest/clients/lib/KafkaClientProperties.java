@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.clients.lib;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -25,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -38,6 +40,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapService
 import static io.strimzi.test.BaseITST.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressFBWarnings("REC_CATCH_EXCEPTION")
 class KafkaClientProperties {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
@@ -151,7 +154,7 @@ class KafkaClientProperties {
         if (!userName.isEmpty() && securityProtocol.equals(SecurityProtocol.SASL_SSL.name)) {
             properties.setProperty(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
             Secret userSecret = kubeClient(namespace).getSecret(userName);
-            String password = new String(Base64.getDecoder().decode(userSecret.getData().get("password")));
+            String password = new String(Base64.getDecoder().decode(userSecret.getData().get("password")), Charset.forName("UTF-8"));
 
             String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
             String jaasCfg = String.format(jaasTemplate, userName, password);
@@ -239,6 +242,7 @@ class KafkaClientProperties {
      * @throws IOException
      * @throws InterruptedException
      */
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
         File caFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
         caFile.deleteOnExit();
