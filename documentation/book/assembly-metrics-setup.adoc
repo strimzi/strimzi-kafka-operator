@@ -5,7 +5,7 @@
 [id='assembly-metrics-setup-{context}']
 = Introducing Metrics
 
-This section describes how to monitor {ProductName} Kafka, ZooKeeper, and Kafka Connect clusters using Prometheus to provide monitoring data for example Grafana dashboards.
+This section describes how to monitor {ProductName} Kafka, Zookeeper and Kafka Connect clusters using Prometheus to provide monitoring data for example Grafana dashboards.
 
 In order to run the example Grafana dashboards, you must:
 
@@ -20,7 +20,7 @@ If you require further support on configuring and running Prometheus or Grafana 
 * For more information about Prometheus, see the link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation].
 * For more information about Grafana, see the link:https://grafana.com/docs/guides/getting_started/[Grafana documentation].
 * link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka.
-* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache Zookeeper.
+* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[Zookeeper JMX] describes JMX metrics exposed by Apache Zookeeper.
 
 include::ref-metrics-config-files.adoc[leveloffset=+1]
 

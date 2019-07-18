@@ -53,5 +53,5 @@ When the Prometheus server has been collecting metrics for a {ProductName} clust
 image::grafana_kafka_dashboard.png[Kafka dashboard]
 
 .Zookeeper dashboard
-[caption="ZooKeeper dashboard"]
-image::grafana_zookeeper_dashboard.png[ZooKeeper dashboard]
+[caption="Zookeeper dashboard"]
+image::grafana_zookeeper_dashboard.png[Zookeeper dashboard]

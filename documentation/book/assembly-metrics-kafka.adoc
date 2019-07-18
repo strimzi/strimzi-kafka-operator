@@ -5,7 +5,7 @@
 
 = Prometheus metrics
 
-{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics from Kafka and ZooKeeper using an HTTP endpoint, which is then scraped by the Prometheus server.
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics from Kafka and Zookeeper using an HTTP endpoint, which is then scraped by the Prometheus server.
 
 include::con-metrics-kafka-options.adoc[leveloffset=+1]
 
