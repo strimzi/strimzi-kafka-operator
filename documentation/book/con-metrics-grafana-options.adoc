@@ -13,8 +13,8 @@ A Grafana docker image is provided for deployment:
 
 Example dashboards are also provided as JSON files:
 
+* `strimzi-kafka.json`
 * `strimzi-kafka-connect.json`
-* `strimzi-zookeeper.json`
 * `strimzi-zookeeper.json`
 
 The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.

@@ -6,6 +6,8 @@
 
 = Example Metrics files
 
+You can find the example metrics configuration files in the `examples/metrics` directory.
+
 [source]
 --
 metrics

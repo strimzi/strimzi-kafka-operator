@@ -5,7 +5,7 @@
 
 = Deploying Grafana
 
-To deploy Grafana to to provide visualizations of Prometheus metrics, apply the xref:ref-metrics-config-files-{context}[example configuration file].
+To deploy Grafana to provide visualizations of Prometheus metrics, apply the xref:ref-metrics-config-files-{context}[example configuration file].
 
 .Prerequisites
 * xref:assembly-metrics-kafka-{context}[Metrics are configured for the Kafka cluster resource]
