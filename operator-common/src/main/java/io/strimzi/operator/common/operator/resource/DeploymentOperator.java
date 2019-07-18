@@ -85,18 +85,27 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
 
-    public Future<Void> generation(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isGenerated);
-    }
-
     /**
-     * Check if a deployment has been generated.
+     * Asynchronously polls the deployment until either the observed generation matches the desired
+     * generation sequence number or timeout.
      *
      * @param namespace The namespace.
      * @param name The resource name.
-     * @return Whether the deployment has been generated.
+     * @return  A future which completes when the observed generation of the deployment matches the
+     * generation sequence number of the desired state.
      */
-    public boolean isGenerated(String namespace, String name) {
+    public Future<Void> observing(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isObserved);
+    }
+
+    /**
+     * Check if a deployment has been observed.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @return Whether the deployment has been observed.
+     */
+    private boolean isObserved(String namespace, String name) {
         Deployment dep = get(namespace, name);
         if (dep != null)   {
             return dep.getMetadata().getGeneration().equals(dep.getStatus().getObservedGeneration());

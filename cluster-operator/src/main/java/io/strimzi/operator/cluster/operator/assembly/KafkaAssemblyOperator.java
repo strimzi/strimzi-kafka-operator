@@ -2418,7 +2418,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (this.entityOperator != null && eoDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
                 return future.compose(dep -> {
-                    return withVoid(deploymentOperations.generation(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
+                    return withVoid(deploymentOperations.observing(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
                 }).compose(dep -> {
                     return withVoid(deploymentOperations.readiness(namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
                 }).map(i -> this);
