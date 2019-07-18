@@ -10,6 +10,7 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+  version: v1alpha1
   scope: Namespaced
   names:
     kind: KafkaBridge

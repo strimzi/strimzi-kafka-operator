@@ -26,7 +26,7 @@ public class KafkaBridgeStatus extends Status {
 
     private String httpAddress;
 
-    @Description("HTTP address where the bridge is available.")
+    @Description("The HTTP address at which external client applications can access the Kafka Bridge.")
     public String getHttpAddress() {
         return httpAddress;
     }
