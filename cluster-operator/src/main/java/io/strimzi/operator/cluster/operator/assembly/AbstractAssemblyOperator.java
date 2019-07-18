@@ -119,6 +119,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.versions = config.versions();
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
     /**

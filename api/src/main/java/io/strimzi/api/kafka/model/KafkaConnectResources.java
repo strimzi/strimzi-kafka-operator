@@ -46,4 +46,15 @@ public class KafkaConnectResources {
     public static String metricsAndLogConfigMapName(String clusterName) {
         return clusterName + "-connect-config";
     }
+
+    /**
+     * Returns the address the Kafka Connect REST API for a {@code KafkaConnect} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @param namespace The namespace where {@code KafkaConnect} cluster is running.
+     * @param port The port on which the {@code KafkaConnect} API is available.
+     * @return The REST address of {@code KafkaConnect} API.
+     */
+    public static String restApiAddress(String clusterName, String namespace, int port) {
+        return serviceName(clusterName) + "." + namespace + ".svc:" + port;
+    }
 }

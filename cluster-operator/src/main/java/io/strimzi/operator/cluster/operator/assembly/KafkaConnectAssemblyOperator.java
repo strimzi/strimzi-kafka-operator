@@ -63,7 +63,6 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         ClusterOperatorConfig config) {
         super(vertx, pfa, ResourceType.CONNECT, certManager, supplier.connectOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
-        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.versions = config.versions();
     }
 
@@ -101,11 +100,11 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, this.operationTimeoutMs))
+                .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> chainFuture.complete(), chainFuture)
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
-                    kafkaConnectStatus.setRestApiAddress(connect.getServiceName() + "." + namespace + ".svc:" + KafkaConnectCluster.REST_API_PORT);
+                    kafkaConnectStatus.setRestApiAddress(KafkaConnectResources.restApiAddress(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
 
                     updateStatus(kafkaConnect, reconciliation, kafkaConnectStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well

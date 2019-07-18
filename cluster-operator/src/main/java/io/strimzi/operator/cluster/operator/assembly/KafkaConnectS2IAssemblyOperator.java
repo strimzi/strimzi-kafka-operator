@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
@@ -74,7 +73,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;
-        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.versions = config.versions();
     }
 
@@ -95,7 +93,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
                 return updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus);
             }
-            BuildConfig bc = connect.generateBuildConfig();
+            connect.generateBuildConfig();
             ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
                     configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                     null);
@@ -113,12 +111,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
-                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, this.operationTimeoutMs))
+                    .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> chainFuture.complete(), chainFuture)
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
-                        kafkaConnectS2Istatus.setRestApiAddress(connect.getServiceName() + "." + namespace + ".svc:" + KafkaConnectS2ICluster.REST_API_PORT);
-                        kafkaConnectS2Istatus.setBuildConfigName(bc.getMetadata().getName());
+                        kafkaConnectS2Istatus.setRestApiAddress(KafkaConnectS2IResources.restApiAddress(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
+                        kafkaConnectS2Istatus.setBuildConfigName(KafkaConnectS2IResources.buildConfigName(connect.getCluster()));
 
                         updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).setHandler(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well
