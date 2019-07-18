@@ -1,6 +1,10 @@
 # Release
 
-`make release` target can be used to create a release. Environment variable `RELEASE_VERSION` (default value `latest`) can be used to define the release version. The `release` target will: * Update all tags of Docker images to `RELEASE_VERSION` * Update documentation version to `RELEASE_VERSION` * Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` * Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment and documentation in HTML format.
+`make release` target can be used to create a release. Environment variable `RELEASE_VERSION` (default value `latest`) can be used to define the release version. The `release` target will: 
+* Update all tags of Docker images to `RELEASE_VERSION` 
+* Update documentation version to `RELEASE_VERSION` 
+* Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` 
+* Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment and documentation in HTML format.
  
 The `release` target will not build the Docker images - they should be built and pushed automatically by Travis CI when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only used to create the Docker images.
 
