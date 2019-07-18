@@ -29,11 +29,6 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaBridgeV1beta1() {
-        createDelete(KafkaBridge.class, "KafkaBridgeV1beta1.yaml");
-    }
-
-    @Test
     void testKafkaBridgeMinimal() {
         createDelete(KafkaBridge.class, "KafkaBridge-minimal.yaml");
     }

@@ -143,30 +143,24 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 KafkaBridge kafkaBridge = getRes.result();
 
                 if (kafkaBridge != null) {
-                    if (StatusUtils.isResourceV1alpha1(kafkaBridge)) {
-                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafkaBridge.getApiVersion());
-                        updateStatusFuture.complete();
+                    KafkaBridgeStatus currentStatus = kafkaBridge.getStatus();
+
+                    StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                    if (!ksDiff.isEmpty()) {
+                        KafkaBridge resourceWithNewStatus = new KafkaBridgeBuilder(kafkaBridge).withStatus(desiredStatus).build();
+                        ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            if (updateRes.succeeded()) {
+                                log.debug("{}: Completed status update", reconciliation);
+                                updateStatusFuture.complete();
+                            } else {
+                                log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                updateStatusFuture.fail(updateRes.cause());
+                            }
+                        });
                     } else {
-                        KafkaBridgeStatus currentStatus = kafkaBridge.getStatus();
-
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                        if (!ksDiff.isEmpty()) {
-                            KafkaBridge resourceWithNewStatus = new KafkaBridgeBuilder(kafkaBridge).withStatus(desiredStatus).build();
-
-                            ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
-                                if (updateRes.succeeded()) {
-                                    log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusFuture.complete();
-                                } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusFuture.fail(updateRes.cause());
-                                }
-                            });
-                        } else {
-                            log.debug("{}: Status did not change", reconciliation);
-                            updateStatusFuture.complete();
-                        }
+                        log.debug("{}: Status did not change", reconciliation);
+                        updateStatusFuture.complete();
                     }
                 } else {
                     log.error("{}: Current Kafka Bridge resource not found", reconciliation);

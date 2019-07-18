@@ -77,7 +77,7 @@ public class KafkaBridgeCrdOperatorIT {
         }
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().create(Crds.kafkaUser());
+        client.customResourceDefinitions().create(Crds.kafkaBridge());
         log.info("Created CRD");
     }
 
@@ -85,7 +85,7 @@ public class KafkaBridgeCrdOperatorIT {
     public static void after() {
         if (client != null) {
             log.info("Deleting CRD");
-            client.customResourceDefinitions().delete(Crds.kafkaUser());
+            client.customResourceDefinitions().delete(Crds.kafkaBridge());
         }
 
         if (vertx != null) {
@@ -95,7 +95,7 @@ public class KafkaBridgeCrdOperatorIT {
 
     protected KafkaBridge getResource() {
         return new KafkaBridgeBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withApiVersion("kafka.strimzi.io/v1alpha1")
                 .withNewMetadata()
                 .withName(RESOURCE_NAME)
                 .withNamespace(namespace)
