@@ -48,13 +48,18 @@ while getopts "$optspec" optchar; do
 done
 shift $((OPTIND-1))
 
+if [ -z $cluster ] && [ -z $namespace ]; then
+   echo "Cluster and namespace was not specified. Use --cluster and --namespace options to specify it."
+   usage
+fi
+
 if [ -z $cluster ]; then
-   echo "Cluster was not specified"
+   echo "Cluster was not specified. Use --cluster option to specify it."
    usage
 fi
 
 if [ -z $namespace ]; then
-   echo "Namespace was not specified"
+   echo "Namespace was not specified. Use --namespace option to specify it."
    usage
 fi
 
