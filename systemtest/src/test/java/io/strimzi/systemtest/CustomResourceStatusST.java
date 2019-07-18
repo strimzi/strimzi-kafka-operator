@@ -68,7 +68,6 @@ class CustomResourceStatusST extends AbstractST {
         Condition kafkaCondition = testClassResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
-        LOGGER.info("Kafka User Message: {}", kafkaCondition.getMessage());
         assertThat("Kafka user is in wrong state!", kafkaCondition.getType(), is("Ready"));
         LOGGER.info("Kafka user is in desired state: Ready");
     }
@@ -88,6 +87,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
         LOGGER.info("Kafka User Message: {}", kafkaCondition.getMessage());
+        LOGGER.info("Kafka User Reason: {}", kafkaCondition.getReason());
         assertThat("Kafka User is in wrong state!", kafkaCondition.getType(), is("NotReady"));
         LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
         testMethodResources().deleteResources();
@@ -132,13 +132,13 @@ class CustomResourceStatusST extends AbstractST {
 
         testClassResources().kafka(testClassResources().defaultKafka(CLUSTER_NAME, 3, 1)
                 .editSpec()
-                .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .withTls(false)
-                .endKafkaListenerExternalNodePort()
-                .endListeners()
-                .endKafka()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
                 .endSpec().build())
                 .done();
 
