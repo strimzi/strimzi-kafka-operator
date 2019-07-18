@@ -1041,7 +1041,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |listeners           1.2+<.<|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
@@ -1050,7 +1050,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1104,9 +1104,11 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 
 [options="header"]
 |====
-|Property     |Description
-|spec  1.2+<.<|The specification of the Kafka Connect deployment.
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Connect cluster.
 |xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+|status  1.2+<.<|The status of the Kafka Connect cluster.
+|xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
 |====
 
 [id='type-KafkaConnectSpec-{context}']
@@ -1362,15 +1364,34 @@ Used in: xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`], xref:type-KafkaCo
 |string
 |====
 
+[id='type-KafkaConnectStatus-{context}']
+### `KafkaConnectStatus` schema reference
+
+Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
+|string
+|====
+
 [id='type-KafkaConnectS2I-{context}']
 ### `KafkaConnectS2I` schema reference
 
 
 [options="header"]
 |====
-|Property     |Description
-|spec  1.2+<.<|The specification of the Kafka Connect deployment.
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Connect Source-to-Image (S2I) cluster.
 |xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`]
+|status  1.2+<.<|The status of the Kafka Connect Source-to-Image (S2I) cluster.
+|xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`]
 |====
 
 [id='type-KafkaConnectS2ISpec-{context}']
@@ -1421,6 +1442,25 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|====
+
+[id='type-KafkaConnectS2Istatus-{context}']
+### `KafkaConnectS2Istatus` schema reference
+
+Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
+|string
+|buildConfigName     1.2+<.<|The name of the build configuration.
 |string
 |====
 
@@ -1631,7 +1671,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |username            1.2+<.<|Username.
 |string

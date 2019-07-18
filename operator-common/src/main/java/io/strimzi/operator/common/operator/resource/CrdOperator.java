@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -52,6 +54,10 @@ public class CrdOperator<C extends KubernetesClient,
             this.plural = Kafka.RESOURCE_PLURAL;
         } else if (cls.equals(KafkaUser.class)) {
             this.plural = KafkaUser.RESOURCE_PLURAL;
+        } else if (cls.equals(KafkaConnect.class)) {
+            this.plural = KafkaConnect.RESOURCE_PLURAL;
+        } else if (cls.equals(KafkaConnectS2I.class)) {
+            this.plural = KafkaConnectS2I.RESOURCE_PLURAL;
         } else {
             this.plural = null;
         }

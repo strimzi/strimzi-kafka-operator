@@ -370,6 +370,7 @@ public class MockKube {
 
                     return deployment;
                 });
+                when(resource.isReady()).thenReturn(true);
             }
         }.build();
     }
