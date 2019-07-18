@@ -91,6 +91,8 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      *
      * @param namespace The namespace.
      * @param name The resource name.
+     * @param pollIntervalMs The polling interval
+     * @param timeoutMs The timeout
      * @return  A future which completes when the observed generation of the deployment matches the
      * generation sequence number of the desired state.
      */
