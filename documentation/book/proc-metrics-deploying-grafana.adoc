@@ -5,7 +5,7 @@
 
 = Deploying Grafana
 
-Deploy Grafana to provide visualizations of Prometheus metrics using the source for the Grafana docker image in the `./metrics/examples/grafana/` directory.
+To deploy Grafana to provide visualizations of Prometheus metrics, apply the xref:ref-metrics-config-files-{context}[example configuration file].
 
 .Prerequisites
 * xref:assembly-metrics-kafka-{context}[Metrics are configured for the Kafka cluster resource]
@@ -13,7 +13,9 @@ Deploy Grafana to provide visualizations of Prometheus metrics using the source 
 
 .Procedure
 
-* Deploy Grafana:
-
+. Deploy Grafana:
++
 [source,shell,subs="+quotes,attributes"]
-{cmdcli} apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
+kubectl apply -f grafana.yaml
+
+. xref:proc-metrics-grafana-dashboard-{context}[Enable the Grafana dashboards].

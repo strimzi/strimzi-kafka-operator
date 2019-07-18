@@ -43,5 +43,5 @@ This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 
-.Additional Resources
+.Additional resources
 * For information about Configuring init container image for Kafka rack awareness, see xref:assembly-configuring-container-images-deployment-configuration-kafka[].

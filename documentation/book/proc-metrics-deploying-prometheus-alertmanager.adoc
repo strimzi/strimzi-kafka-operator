@@ -5,14 +5,9 @@
 
 = Deploying Alertmanager
 
-The Alertmanager is a Prometheus plugin for handling alerts and routing them to a notification service.
+To deploy Alertmanager, apply the xref:ref-metrics-config-files-{context}[example configuration files].
 
 The sample configuration provided with {ProductName} configures the Alertmanager to send notifications to a Slack channel.
-
-Deploy Alertmanager using:
-
-* https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml[`alert-manager.yaml`] to define the resources required for deploying and configuring the Alertmanager.
-* https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml[`alert-manager-config.yaml`] to define the hook for sending notifications.
 
 The following resources are defined on deployment:
 
@@ -20,20 +15,16 @@ The following resources are defined on deployment:
 * A `Secret` to manage the configuration of the Alertmanager.
 * A `Service` to provide an easy to reference hostname for other services to connect to Alertmanager (such as Prometheus).
 
+.Prerequisites
+* xref:assembly-metrics-kafka-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:assembly-metrics-prometheus-{context}[Prometheus is deployed]
+
 .Procedure
 
-. Download the `alert-manager.yaml`:
+. Create a `Secret` resource from the Alertmanager configuration file (`alert-manager-config.yaml`):
 +
 [source,shell,subs="+quotes,attributes"]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
-+
-Now configure the Alertmanager hook for sending alerts by creating a `Secret` resource.
-
-. Download the `alert-manager-config.yaml` file and create a `Secret` from it:
-+
-[source,shell,subs="+quotes,attributes"]
-curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml
-{cmdcli} create secret generic alertmanager-alertmanager --from-file=alert-manager-config.yaml
+kubectl create secret generic alertmanager-alertmanager --from-file=alert-manager-config.yaml
 
 . Update the `alert-manager-config.yaml` file to replace the:
 +
@@ -43,4 +34,4 @@ curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 . Deploy Alertmanager:
 +
 [source,shell,subs="+quotes,attributes"]
-{cmdcli} apply -f alert-manager.yaml
+kubectl apply -f alert-manager.yaml

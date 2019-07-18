@@ -3,21 +3,14 @@
 // assembly-metrics-setup.adoc
 [id='assembly-metrics-kafka-{context}']
 
-= Kafka metrics configuration
+= Prometheus metrics
 
-{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics from Kafka and ZooKeeper using an HTTP endpoint, which is then scraped by the Prometheus server.
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics from Kafka and Zookeeper using an HTTP endpoint, which is then scraped by the Prometheus server.
 
-The example Grafana dashboards provided with {ProductName} are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Kafka and ZooKeeper as a `Kafka` resource configuration in an example `kafka-metrics.yaml` file.
+include::con-metrics-kafka-options.adoc[leveloffset=+1]
 
-A label is a name-value pair. Relabeling is the process of writing a label dynamically. For example, the value of a label may be derived from the name of a Kafka server and client ID.
+include::con-metrics-kafka-deploy-options.adoc[leveloffset=+1]
 
-To get started with using the example Grafana dashboards, do one of the following:
-
-* link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[Copy the example configuration to your own `Kafka` resource definition^]
-* xref:proc-metrics-deploying-kafka-{context}[Deploy an example Kafka cluster with the metrics configuration]
-
-.Additional resources
-
-For more information on the use of relabeling, see {PrometheusConfig} in the Prometheus documentation.
+include::proc-metrics-config.adoc[leveloffset=+1]
 
 include::proc-metrics-deploying-kafka.adoc[leveloffset=+1]

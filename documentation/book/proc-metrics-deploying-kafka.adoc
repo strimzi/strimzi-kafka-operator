@@ -3,12 +3,12 @@
 // assembly-metrics-kafka.adoc
 [id='proc-metrics-deploying-kafka-{context}']
 
-= Deploying an example Kafka cluster with metrics configuration
+= Deploying a Kafka cluster with Prometheus metrics configuration
 
-To use Grafana dashboards for monitoring, you can deploy an example Kafka cluster with metrics configuration that defines the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules.
+To use Grafana dashboards for monitoring, you can deploy xref:ref-metrics-config-files-{context}[an example Kafka cluster with metrics configuration].
 
 .Procedure
 
 * Deploy the Kafka cluster with the metrics configuration:
-[source,shell,subs="+quotes,attributes"]
-{cmdcli} apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
+[source,shell,subs="+attributes"]
+kubectl apply -f kafka-metrics.yaml

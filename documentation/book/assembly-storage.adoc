@@ -27,6 +27,13 @@ The storage type is configured in the `type` field.
 
 WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
 
+.Additional resources
+
+* For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
+* For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
+* For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
+* For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
+
 include::ref-storage-ephemeral.adoc[leveloffset=+1]
 
 include::ref-storage-persistent.adoc[leveloffset=+1]
@@ -38,12 +45,5 @@ include::ref-storage-jbod.adoc[leveloffset=+1]
 include::proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
 
 include::proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]
-
-.Additional resources
-
-* For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
-* For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
-* For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
-* For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
 
 :context: {parent-context}
