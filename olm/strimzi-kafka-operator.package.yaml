@@ -1,4 +1,0 @@
-packageName: strimzi-kafka-operator
-channels:
-- name: stable
-  currentCSV: strimzi-cluster-operator.v0.13.0-SNAPSHOT
