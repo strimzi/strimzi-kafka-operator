@@ -14,6 +14,8 @@
 
 include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
 
+include::con-topic-operator-cluster-label.adoc[leveloffset=+1]
+
 include::con-how-the-topic-operator-works.adoc[leveloffset=+1]
 
 include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+1]
