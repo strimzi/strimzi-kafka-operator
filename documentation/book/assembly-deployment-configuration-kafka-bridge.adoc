@@ -11,7 +11,7 @@
 :parent-context-deployment-configuration-kafka-bridge: {context}
 
 [id='assembly-deployment-configuration-kafka-bridge-{context}']
-= Kafka Bridge cluster configuration
+= Kafka Bridge configuration
 
 :context: deployment-configuration-kafka-bridge
 
