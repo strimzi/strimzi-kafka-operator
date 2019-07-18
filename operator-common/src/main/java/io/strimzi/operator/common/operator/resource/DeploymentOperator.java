@@ -84,4 +84,24 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
         Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
+
+    public Future<Void> generation(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isGenerated);
+    }
+
+    /**
+     * Check if a deployment has been generated.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @return Whether the deployment has been generated.
+     */
+    public boolean isGenerated(String namespace, String name) {
+        Deployment dep = get(namespace, name);
+        if (dep != null)   {
+            return dep.getMetadata().getGeneration() == dep.getStatus().getObservedGeneration();
+        } else {
+            return false;
+        }
+    }
 }

@@ -7,7 +7,6 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
@@ -65,29 +64,4 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
             return false;
         }
     }
-
-    public Future<Void> generation(StrimziResource resource, long pollIntervalMs, long timeoutMs) {
-        log.info("================================ GENERATION ================================");
-        return waitFor2(resource, pollIntervalMs, timeoutMs, this::isGenerated);
-    }
-
-    /**
-     * Check if a resource has been generated.
-     *
-     * @param strimziResource The strimzi resource.
-     * @return Whether the resource has been generated.
-     */
-    public boolean isGenerated(StrimziResource strimziResource) {
-        Deployment dep = strimziResource.getDeploymentOperations().get(strimziResource.getNamespace(), strimziResource.getName());
-        long generation = dep.getMetadata().getGeneration();
-        long observedGeneration = dep.getStatus().getObservedGeneration();
-
-        if (dep != null)   {
-            log.info("================================ Resource Generated: {} ================================", generation == observedGeneration);
-            return generation == observedGeneration;
-        } else {
-            return false;
-        }
-    }
-
 }
