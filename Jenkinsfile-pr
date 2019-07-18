@@ -53,7 +53,7 @@ pipeline {
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                     if (env.ghprbCommentBody.contains('testonly')) {
-                        env.TEST_ONLY "true"
+                        env.TEST_ONLY = "true"
                     }
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
                 }
