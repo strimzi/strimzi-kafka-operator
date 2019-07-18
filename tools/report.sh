@@ -23,13 +23,9 @@ if [[ $oc_installed = false && $kubectl_installed = false ]]; then
 	exit 1
 fi
 
-# default values
-cluster="my-cluster"
-namespace="myproject"
 
 usage() {
 	echo "Usage: $0 [--namespace <string>] [--cluster <string>]" 1>&2; 
-	echo "Default values namespace=my-project cluster=my-cluster" 1>&2; 
 	exit 1; 
 }
 
@@ -48,13 +44,24 @@ while getopts "$optspec" optchar; do
                     usage
                     ;;
             esac;;
-        *)
-            cluster="my-cluster"
-            namespace="myproject"
-            ;;
     esac
 done
 shift $((OPTIND-1))
+
+if [ -z $cluster ] && [ -z $namespace ]; then
+   echo "Cluster and namespace was not specified. Use --cluster and --namespace options to specify it."
+   usage
+fi
+
+if [ -z $cluster ]; then
+   echo "Cluster was not specified. Use --cluster option to specify it."
+   usage
+fi
+
+if [ -z $namespace ]; then
+   echo "Namespace was not specified. Use --namespace option to specify it."
+   usage
+fi
 
 direct=`mktemp -d`
 resources_to_fetch=(
