@@ -247,14 +247,14 @@ class RecoveryST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        getTestClassResources().clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE).done();
 
         deployTestSpecificResources();
     }
 
     void deployTestSpecificResources() {
-        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-        getTestClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
     }
 
     @Override

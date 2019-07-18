@@ -117,12 +117,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         applyRoleBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<ClusterRoleBinding> clusterRoleBindingList = getTestClassResources().clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        List<ClusterRoleBinding> clusterRoleBindingList = testClassResources().clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-                getTestClassResources().clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
+                testClassResources().clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
 
         LOGGER.info("Deploying CO to watch all namespaces");
-        getTestClassResources().clusterOperator("*").done();
+        testClassResources().clusterOperator("*").done();
 
         String previousNamespace = setNamespace(THIRD_NAMESPACE);
         thirdNamespaceResources = new Resources(kubeClient());
@@ -135,7 +135,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Override
     protected void tearDownEnvironmentAfterAll() {
         thirdNamespaceResources.deleteResources();
-        getTestClassResources().deleteResources();
+        testClassResources().deleteResources();
         teardownEnvForOperator();
     }
 

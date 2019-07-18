@@ -46,7 +46,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
-        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
+        testClassResources().topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = generateHttpMessages(messageCount);
         JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
@@ -59,7 +59,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
-        getTestClassResources().topic(CLUSTER_NAME, topicName).done();
+        testClassResources().topic(CLUSTER_NAME, topicName).done();
 
         String name = "my-kafka-consumer";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -100,7 +100,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         listenerTls.setAuth(auth);
 
         // Deploy kafka
-        getTestClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -115,7 +115,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
                 .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = getTestClassResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser userSource = testClassResources().tlsUser(CLUSTER_NAME, userName).done();
         waitTillSecretExists(userName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -124,7 +124,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         certSecret.setSecretName(clusterCaCertSecretName(CLUSTER_NAME));
 
         // Deploy http bridge
-        getTestClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .editSpec()
             .withNewTls()
             .withTrustedCertificates(certSecret)

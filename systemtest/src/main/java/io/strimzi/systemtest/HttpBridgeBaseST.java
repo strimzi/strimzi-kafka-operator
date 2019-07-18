@@ -179,7 +179,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                 .withType("NodePort")
                 .withSelector(map)
                 .endSpec().build();
-        getTestClassResources().createServiceResource(service, getBridgeNamespace()).done();
+        testClassResources().createServiceResource(service, getBridgeNamespace()).done();
         StUtils.waitForNodePortService(bridgeExternalService);
     }
 
@@ -220,6 +220,6 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         createTestClassResources();
         applyRoleBindings(getBridgeNamespace());
         // 050-Deployment
-        getTestClassResources().clusterOperator(getBridgeNamespace()).done();
+        testClassResources().clusterOperator(getBridgeNamespace()).done();
     }
 }
