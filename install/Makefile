@@ -8,13 +8,6 @@ RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 crd_install:
 	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ./topic-operator/04-Crd-kafkatopic.yaml
 	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ./user-operator/04-Crd-kafkauser.yaml
-	$(CP) ./cluster-operator/040-Crd-kafka.yaml ../olm/kafkas.crd.yaml
-	$(CP) ./cluster-operator/041-Crd-kafkaconnect.yaml ../olm/kafkaconnects.crd.yaml
-	$(CP) ./cluster-operator/042-Crd-kafkaconnects2i.yaml ../olm/kafkaconnects2is.crd.yaml
-	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ../olm/kafkatopics.crd.yaml
-	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ../olm/kafkausers.crd.yaml
-	$(CP) ./cluster-operator/045-Crd-kafkamirrormaker.yaml ../olm/kafkamirrormakers.crd.yaml
-	$(CP) ./cluster-operator/046-Crd-kafkabridge.yaml ../olm/kafkabridges.crd.yaml
 	$(CP) ./cluster-operator/040-Crd-kafka.yaml ../helm-charts/strimzi-kafka-operator/templates/040-Crd-kafka.yaml
 	$(CP) ./cluster-operator/041-Crd-kafkaconnect.yaml ../helm-charts/strimzi-kafka-operator/templates/041-Crd-kafkaconnect.yaml
 	$(CP) ./cluster-operator/042-Crd-kafkaconnects2i.yaml ../helm-charts/strimzi-kafka-operator/templates/042-Crd-kafkaconnects2i.yaml
