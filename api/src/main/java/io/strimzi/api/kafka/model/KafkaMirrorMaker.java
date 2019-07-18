@@ -134,7 +134,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the mirror maker.")
+    @Description("The specification of Kafka Mirror Maker.")
     public KafkaMirrorMakerSpec getSpec() {
         return spec;
     }
@@ -143,7 +143,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka Mirror Maker.")
+    @Description("The status of Kafka Mirror Maker.")
     public KafkaMirrorMakerStatus getStatus() {
         return status;
     }

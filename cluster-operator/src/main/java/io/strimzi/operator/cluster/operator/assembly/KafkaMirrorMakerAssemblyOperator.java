@@ -168,7 +168,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                         }
                     }
                 } else {
-                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    log.error("{}: Current Kafka Mirror Maker resource not found", reconciliation);
                     updateStatusFuture.fail("Current Kafka Mirror Maker resource not found");
                 }
             } else {
