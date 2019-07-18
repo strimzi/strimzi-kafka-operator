@@ -169,7 +169,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                         }
                     }
                 } else {
-                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    log.error("{}: Current Kafka Bridge resource not found", reconciliation);
                     updateStatusFuture.fail("Current Kafka Bridge resource not found");
                 }
             } else {
