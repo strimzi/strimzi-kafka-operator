@@ -603,11 +603,13 @@ public class StUtils {
     }
 
     private static String buildTag(String currentTag) {
-        Matcher t = KAFKA_COMPONENT_PATTERN.matcher(currentTag);
-        if (t.find()) {
-            currentTag = Environment.STRIMZI_TAG + t.group("kafka") + t.group("version");
-        } else {
-            currentTag = Environment.STRIMZI_TAG;
+        if (!currentTag.equals(Environment.STRIMZI_TAG) && !Environment.STRIMZI_TAG_DEFAULT.equals(Environment.STRIMZI_TAG)) {
+            Matcher t = KAFKA_COMPONENT_PATTERN.matcher(currentTag);
+            if (t.find()) {
+                currentTag = Environment.STRIMZI_TAG + t.group("kafka") + t.group("version");
+            } else {
+                currentTag = Environment.STRIMZI_TAG;
+            }
         }
         return currentTag;
     }
