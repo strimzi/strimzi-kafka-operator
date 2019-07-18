@@ -77,7 +77,7 @@ public class KafkaConnectCrdOperatorIT {
         }
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().create(Crds.kafkaUser());
+        client.customResourceDefinitions().create(Crds.kafkaConnect());
         log.info("Created CRD");
     }
 
@@ -85,7 +85,7 @@ public class KafkaConnectCrdOperatorIT {
     public static void after() {
         if (client != null) {
             log.info("Deleting CRD");
-            client.customResourceDefinitions().delete(Crds.kafkaUser());
+            client.customResourceDefinitions().delete(Crds.kafkaConnect());
         }
 
         if (vertx != null) {

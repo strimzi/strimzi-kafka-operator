@@ -25,8 +25,8 @@ pipeline {
         MVN_ARGS="-Dfailsafe.rerunFailingTestsCount=5"
 
         ARTIFACTS_DIR = 'systemtest/target/logs'
-
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
+        TEST_ONLY="false"
     }
     stages {
         stage('Clean WS') {
@@ -52,6 +52,10 @@ pipeline {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
+                    if (env.ghprbCommentBody.contains('testonly')) {
+                        env.TEST_ONLY "true"
+                    }
+                    echo "TEST_ONLY: ${env.TEST_ONLY}"
                 }
             }
         }
@@ -68,7 +72,9 @@ pipeline {
         stage('Build images') {
             steps {
                 script {
-                    lib.buildStrimzi()
+                    if (${env.TEST_ONLY}.equals("false")) {
+                        lib.buildStrimzi()
+                    }
                 }
             }
         }
