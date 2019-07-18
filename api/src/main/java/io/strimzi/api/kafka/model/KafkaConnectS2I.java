@@ -129,7 +129,7 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the Kafka Connect deployment.")
+    @Description("The specification of the Kafka Connect Source-to-Image (S2I) cluster.")
     public KafkaConnectS2ISpec getSpec() {
         return spec;
     }
@@ -138,7 +138,7 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka ConnectS2I.")
+    @Description("The status of the Kafka Connect Source-to-Image (S2I) cluster.")
     public KafkaConnectS2Istatus getStatus() {
         return status;
     }

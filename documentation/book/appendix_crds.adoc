@@ -1041,7 +1041,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |listeners           1.2+<.<|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
@@ -1105,9 +1105,9 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 [options="header"]
 |====
 |Property       |Description
-|spec    1.2+<.<|The specification of the Kafka Connect deployment.
+|spec    1.2+<.<|The specification of the Kafka Connect cluster.
 |xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
-|status  1.2+<.<|The status of the Kafka Connect.
+|status  1.2+<.<|The status of the Kafka Connect cluster.
 |xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
 |====
 
@@ -1375,9 +1375,9 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|restApiAddress      1.2+<.<|REST API address for managing and monitoring connectors.
+|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
 |====
 
@@ -1388,9 +1388,9 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [options="header"]
 |====
 |Property       |Description
-|spec    1.2+<.<|The specification of the Kafka Connect deployment.
+|spec    1.2+<.<|The specification of the Kafka Connect Source-to-Image (S2I) cluster.
 |xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`]
-|status  1.2+<.<|The status of the Kafka ConnectS2I.
+|status  1.2+<.<|The status of the Kafka Connect Source-to-Image (S2I) cluster.
 |xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`]
 |====
 
@@ -1456,11 +1456,11 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|restApiAddress      1.2+<.<|REST API address for managing and monitoring connectors.
+|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
-|buildConfigName     1.2+<.<|Name of the build configuration.
+|buildConfigName     1.2+<.<|The name of the build configuration.
 |string
 |====
 
@@ -1671,7 +1671,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<|The generation of the CRD which was last reconciled by the operator.
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |username            1.2+<.<|Username.
 |string

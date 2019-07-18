@@ -41,7 +41,7 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
         this.conditions = conditions;
     }
 
-    @Description("The generation of the CRD which was last reconciled by the operator.")
+    @Description("The generation of the CRD that was last reconciled by the operator.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public long getObservedGeneration() {
         return observedGeneration;

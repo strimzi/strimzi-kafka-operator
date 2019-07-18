@@ -26,7 +26,7 @@ public class KafkaConnectS2Istatus extends KafkaConnectStatus {
 
     private String buildConfigName;
 
-    @Description("Name of the build configuration")
+    @Description("The name of the build configuration")
     public String getBuildConfigName() {
         return buildConfigName;
     }

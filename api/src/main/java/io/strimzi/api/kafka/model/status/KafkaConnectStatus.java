@@ -26,7 +26,7 @@ public class KafkaConnectStatus extends Status {
 
     private String restApiAddress;
 
-    @Description("REST API address for managing and monitoring connectors")
+    @Description("REST API endpoint for managing and monitoring Kafka Connect connectors.")
     public String getRestApiAddress() {
         return restApiAddress;
     }

@@ -126,7 +126,7 @@ public class KafkaConnect extends CustomResource implements UnknownPropertyPrese
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the Kafka Connect deployment.")
+    @Description("The specification of the Kafka Connect cluster.")
     public KafkaConnectSpec getSpec() {
         return spec;
     }
@@ -135,7 +135,7 @@ public class KafkaConnect extends CustomResource implements UnknownPropertyPrese
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka Connect.")
+    @Description("The status of the Kafka Connect cluster.")
     public KafkaConnectStatus getStatus() {
         return status;
     }
