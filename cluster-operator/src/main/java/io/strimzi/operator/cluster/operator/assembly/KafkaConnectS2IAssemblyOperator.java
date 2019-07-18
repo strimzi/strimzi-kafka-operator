@@ -183,7 +183,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                         }
                     }
                 } else {
-                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    log.error("{}: Current Kafka ConnectS2I resource not found", reconciliation);
                     updateStatusFuture.fail("Current Kafka ConnectS2I resource not found");
                 }
             } else {

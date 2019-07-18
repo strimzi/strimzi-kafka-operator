@@ -166,7 +166,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                         }
                     }
                 } else {
-                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    log.error("{}: Current Kafka Connect resource not found", reconciliation);
                     updateStatusFuture.fail("Current Kafka Connect resource not found");
                 }
             } else {
