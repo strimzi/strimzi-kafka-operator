@@ -38,7 +38,7 @@ def setupEnvironment(String workspace, String openshift) {
     sh "oc --config ${KUBECONFIG} adm policy add-cluster-role-to-user cluster-admin developer"
 
     sh "oc label node localhost rack-key=zone"
-    sh "oc apply -f https://gist.githubusercontent.com/scholzj/614065a081ad92669c32f45894510c8c/raw/96d1a6539a99f0dce2d5eb02a8f15e6eb109a9d6/strimzi-admin.yaml"
+    sh "oc apply -f ${workspace}/install/strimzi-admin/010-ClusterRole-strimzi-admin.yaml"
 }
 
 /**
