@@ -72,7 +72,7 @@ pipeline {
         stage('Build images') {
             steps {
                 script {
-                    if (${env.TEST_ONLY}.equals("false")) {
+                    if (env.TEST_ONLY.equals("false")) {
                         lib.buildStrimzi()
                     }
                 }
