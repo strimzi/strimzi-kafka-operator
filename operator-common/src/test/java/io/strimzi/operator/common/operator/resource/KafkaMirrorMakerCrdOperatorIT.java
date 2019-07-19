@@ -77,7 +77,7 @@ public class KafkaMirrorMakerCrdOperatorIT {
         }
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().create(Crds.kafkaUser());
+        client.customResourceDefinitions().create(Crds.mirrorMaker());
         log.info("Created CRD");
     }
 
@@ -85,7 +85,7 @@ public class KafkaMirrorMakerCrdOperatorIT {
     public static void after() {
         if (client != null) {
             log.info("Deleting CRD");
-            client.customResourceDefinitions().delete(Crds.kafkaUser());
+            client.customResourceDefinitions().delete(Crds.mirrorMaker());
         }
 
         if (vertx != null) {
