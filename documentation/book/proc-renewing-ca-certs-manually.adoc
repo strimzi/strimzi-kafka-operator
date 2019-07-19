@@ -6,7 +6,7 @@
 
 = Renewing CA certificates manually
 
-Unless the `Kafka.spec.clusterCa. generateCertificateAuthority ` and `Kafka.spec.clientsCa. generateCertificateAuthority ` objects are set to `false`, the cluster and clients CA certificates will auto-renew at the start of their respective certificate renewal periods. 
+Unless the `Kafka.spec.clusterCa.generateCertificateAuthority` and `Kafka.spec.clientsCa.generateCertificateAuthority` objects are set to `false`, the cluster and clients CA certificates will auto-renew at the start of their respective certificate renewal periods. 
 You can manually renew one or both of these certificates before the certificate renewal period starts, if required for security reasons. 
 A renewed certificate uses the same private key as the old certificate.
 
@@ -14,7 +14,6 @@ A renewed certificate uses the same private key as the old certificate.
 
 * The Cluster Operator is running.
 * A Kafka cluster in which CA certificates and private keys are installed.
-* One or more maintenance time windows are configured for the Kafka cluster.
 
 .Procedure
 
@@ -37,8 +36,8 @@ m¦kubectl annotate secret _<cluster-name>_-clients-ca-cert strimzi.io/force-ren
 
 |===
 
-If a maintenance time window is active, at the next reconciliation the Cluster Operator generates a new CA certificate for the `Secret` that you annotated. 
-Otherwise, the Cluster Operator will generate a new CA certificate within the next maintenance time window, at the first reconciliation. 
+At the next reconciliation the Cluster Operator will generate a new CA certificate for the `Secret` that you annotated. 
+If maintenance time windows are configured, the Cluster Operator will generate the new CA certificate at the first reconciliation within the next maintenance time window.
 
 Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 

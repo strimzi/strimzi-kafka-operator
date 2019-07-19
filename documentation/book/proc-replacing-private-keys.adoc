@@ -13,7 +13,6 @@ When a private key is replaced, the Cluster Operator generates a new CA certific
 
 * The Cluster Operator is running.
 * A Kafka cluster in which CA certificates and private keys are installed.
-* One or more maintenance time windows are configured for the Kafka cluster.
 
 .Procedure
 
@@ -37,13 +36,13 @@ m¦kubectl annotate secret _<cluster-name>_-clients-ca strimzi.io/force-replace=
 
 |===
 
-If a maintenance time window is active, at the next reconciliation the Cluster Operator:
+At the next reconciliation the Cluster Operator will:
 
-* Generates a new private key for the `Secret` that you annotated
+* Generate a new private key for the `Secret` that you annotated
 
-* Generates a new CA certificate
+* Generate a new CA certificate
 
-Otherwise, the Cluster Operator will generate a new private key within the next maintenance time window, at the first reconciliation. 
+If maintenance time windows are configured, the Cluster Operator will generate the new private key and CA certificate at the first reconciliation within the next maintenance time window.
 
 Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 
