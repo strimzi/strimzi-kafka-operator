@@ -343,6 +343,8 @@ spec:
                               properties:
                                 address:
                                   type: string
+                                dnsAnnotations:
+                                  type: object
                                 nodePort:
                                   type: integer
                             brokers:
@@ -358,6 +360,8 @@ spec:
                                     type: integer
                                   nodePort:
                                     type: integer
+                                  dnsAnnotations:
+                                    type: object
                         tls:
                           type: boolean
                         type:

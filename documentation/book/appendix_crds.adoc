@@ -443,10 +443,12 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 
 [options="header"]
 |====
-|Property         |Description
-|address   1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|Property               |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
-|nodePort  1.2+<.<|Node port for the bootstrap service.
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resource. You can use this field to instrument DNS providers such as External DNS.
+|map
+|nodePort        1.2+<.<|Node port for the bootstrap service.
 |integer
 |====
 
@@ -467,6 +469,8 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 |integer
 |nodePort        1.2+<.<|Node port for the broker service.
 |integer
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resources for individual brokers. You can use this field to instrument DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaListenerExternalIngress-{context}']
