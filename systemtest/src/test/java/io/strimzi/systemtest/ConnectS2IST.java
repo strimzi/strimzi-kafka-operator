@@ -46,7 +46,7 @@ class ConnectS2IST extends AbstractST {
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
 
         // Start a new image build using the plugins directory
-        cmdKubeClient().exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
+        cmdKubeClient().exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath(), "-n", NAMESPACE);
         // Wait for rolling update connect pods
         StUtils.waitTillDepConfigHasRolled(CONNECT_DEPLOYMENT_NAME, 1, connectSnapshot);
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
