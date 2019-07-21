@@ -1050,7 +1050,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1685,9 +1685,11 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 [options="header"]
 |====
-|Property     |Description
-|spec  1.2+<.<|The specification of the mirror maker.
+|Property       |Description
+|spec    1.2+<.<|The specification of Kafka Mirror Maker.
 |xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+|status  1.2+<.<|The status of Kafka Mirror Maker.
+|xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`]
 |====
 
 [id='type-KafkaMirrorMakerSpec-{context}']
@@ -1860,6 +1862,21 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|====
+
+[id='type-KafkaMirrorMakerStatus-{context}']
+### `KafkaMirrorMakerStatus` schema reference
+
+Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
 |====
 
 [id='type-KafkaBridge-{context}']
