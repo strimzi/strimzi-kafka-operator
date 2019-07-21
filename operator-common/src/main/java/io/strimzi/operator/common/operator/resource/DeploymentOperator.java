@@ -96,7 +96,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @return  A future which completes when the observed generation of the deployment matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> observing(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isObserved);
     }
 

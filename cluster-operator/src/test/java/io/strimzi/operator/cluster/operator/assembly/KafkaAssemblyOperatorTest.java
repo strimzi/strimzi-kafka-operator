@@ -465,7 +465,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.getAsync(anyString(), anyString())).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockDepOps.observing(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                 Future.succeededFuture()
         );
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
@@ -902,7 +902,7 @@ public class KafkaAssemblyOperatorTest {
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null))
             );
-            when(mockDepOps.observing(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+            when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
             );
             when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
