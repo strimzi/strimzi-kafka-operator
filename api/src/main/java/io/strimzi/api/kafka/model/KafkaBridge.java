@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -47,6 +48,9 @@ import static java.util.Collections.unmodifiableList;
                                 storage = true
                         )
                 },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
@@ -72,7 +76,7 @@ import static java.util.Collections.unmodifiableList;
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 public class KafkaBridge extends CustomResource implements UnknownPropertyPreserving {
 
@@ -94,6 +98,7 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     private String apiVersion;
     private ObjectMeta metadata;
     private KafkaBridgeSpec spec;
+    private KafkaBridgeStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -123,6 +128,15 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
 
     public void setSpec(KafkaBridgeSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka Bridge.")
+    public KafkaBridgeStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaBridgeStatus status) {
+        this.status = status;
     }
 
     @Override
