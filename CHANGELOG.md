@@ -5,6 +5,11 @@
 * Allow users to manually configure ACL rules (for example, using `kafka-acls.sh`) for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator
 * Add support for configuring a Priority Class name for Pods deployed by Strimzi
 * Add support for Kafka 2.3.0
+* Add support for Kafka User resource status
+* Add support for Kafka Connect resource status
+* Add support for Kafka Connect S2I resource status
+* Add support for Kafka Bridge resource status
+* Add support for Kafka Mirror Maker resource status
 
 ## 0.12.0
 
