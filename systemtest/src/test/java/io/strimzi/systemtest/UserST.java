@@ -122,7 +122,7 @@ class UserST extends AbstractST {
     void testBigAmountOfUsers() {
         int numberOfUsers = 100;
 
-        for (int i = 0; i < numberOfUsers; i++){
+        for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
             testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
