@@ -212,6 +212,7 @@ class KafkaST extends MessagingBaseST {
         // Wait when EO(UO + TO) will be removed
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
         StUtils.waitForPodDeletion(pod.get().getMetadata().getName());
+        LOGGER.info("EO was deleted");
     }
 
     @Test
