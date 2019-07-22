@@ -119,10 +119,10 @@ class UserST extends AbstractST {
 
     @Tag(PERFORMANCE)
     @Test
-    void testBigAmountOfUsers(){
+    void testBigAmountOfUsers() {
         int numberOfUsers = 100;
 
-        for(int i = 0; i < numberOfUsers; i++){
+        for (int i = 0; i < numberOfUsers; i++){
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
             testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
@@ -130,8 +130,8 @@ class UserST extends AbstractST {
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);
-            LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
-            LOGGER.info("Kafka User Type: {}", kafkaCondition.getType());
+            LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
+            LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
             assertEquals("Ready", kafkaCondition.getType());
             LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
         }
