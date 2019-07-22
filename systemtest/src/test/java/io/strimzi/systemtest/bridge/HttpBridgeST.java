@@ -47,6 +47,10 @@ class HttpBridgeST extends HttpBridgeBaseST {
         JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
         checkSendResponse(response, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+
+        // Checking labels for Kafka Bridge
+        verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
+        verifyLabelsForService(CLUSTER_NAME, "my-bridge", "KafkaBridge");
     }
 
     @Test

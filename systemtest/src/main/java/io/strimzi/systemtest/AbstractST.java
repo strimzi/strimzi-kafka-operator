@@ -520,7 +520,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         assertEquals("cluster-operator", coLabels.get("strimzi.io/kind"));
     }
 
-    void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
+    protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
         LOGGER.info("Verifying labels on pod type {}", podType);
         kubeClient().listPods().stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
@@ -565,7 +565,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
+    protected void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
         LOGGER.info("Verifying labels for Kafka Connect Services");
 
         String serviceName = clusterName.concat("-").concat(serviceToTest);
