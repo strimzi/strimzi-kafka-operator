@@ -136,7 +136,9 @@ public class MessagingBaseST extends AbstractST {
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         consumerArguments.put(ClientArgument.GROUP_ID, "my-group" + rng.nextInt(Integer.MAX_VALUE));
-        consumerArguments.put(ClientArgument.GROUP_INSTANCE_ID, "instance" + rng.nextInt(Integer.MAX_VALUE));
+        if (allowParameter("2.3.0")) {
+            consumerArguments.put(ClientArgument.GROUP_INSTANCE_ID, "instance" + rng.nextInt(Integer.MAX_VALUE));
+        }
         consumerArguments.put(ClientArgument.VERBOSE, "");
         consumerArguments.put(ClientArgument.TOPIC, topicName);
         consumerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
@@ -239,5 +241,17 @@ public class MessagingBaseST extends AbstractST {
     void assertSentAndReceivedMessages(int sent, int received) {
         assertThat(String.format("Sent (%s) and receive (%s) message count is not equal", sent, received),
                 sent == received);
+    }
+
+    private boolean allowParameter(String minimalVersion) {
+        Pattern pattern = Pattern.compile("(?<major>[0-9]).(?<minor>[0-9]).(?<micro>[0-9])");
+        Matcher current = pattern.matcher(Environment.ST_KAFKA_VERSION);
+        Matcher minimal = pattern.matcher(minimalVersion);
+        if (current.find() && minimal.find()) {
+            return Integer.valueOf(current.group("major")) >= Integer.valueOf(minimal.group("major"))
+                    && Integer.valueOf(current.group("minor")) >= Integer.valueOf(minimal.group("minor"))
+                    && Integer.valueOf(current.group("micro")) >= Integer.valueOf(minimal.group("micro"));
+        }
+        return false;
     }
 }
