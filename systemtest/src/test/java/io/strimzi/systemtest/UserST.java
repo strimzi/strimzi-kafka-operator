@@ -119,13 +119,27 @@ class UserST extends AbstractST {
 
     @Tag(SCALABILITY)
     @Test
-    void testBigAmountOfUsers() {
+    void testBigAmountOfScramShaUsers() {
+        createBigAmountOfUsers("SCRAM_SHA");
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTlsUsers() {
+        createBigAmountOfUsers("TLS");
+    }
+
+    void createBigAmountOfUsers(String typeOfUser) {
         int numberOfUsers = 100;
 
         for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
-            testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+            if (typeOfUser.equals("TLS")) {
+                testMethodResources().tlsUser(CLUSTER_NAME, userName);
+            } else {
+                testMethodResources().scramShaUser(CLUSTER_NAME, userName);
+            }
             StUtils.waitForSecretReady(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get()
