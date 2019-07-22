@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.PERFORMANCE;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -117,7 +117,7 @@ class UserST extends AbstractST {
         StUtils.waitForKafkaUserDeletion(kafkaUser);
     }
 
-    @Tag(PERFORMANCE)
+    @Tag(SCALABILITY)
     @Test
     void testBigAmountOfUsers() {
         int numberOfUsers = 100;

@@ -220,10 +220,10 @@
             </properties>
         </profile>
         <profile>
-            <id>performance</id>
+            <id>scalability</id>
             <properties>
                 <skippTests>false</skippTests>
-                <groups>performance &amp; !flaky</groups>
+                <groups>scalability &amp; !flaky</groups>
             </properties>
         </profile>
     </profiles>

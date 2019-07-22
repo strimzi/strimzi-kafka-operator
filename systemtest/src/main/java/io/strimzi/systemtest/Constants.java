@@ -85,7 +85,7 @@ public interface Constants {
      */
     String BRIDGE = "bridge";
     /**
-     * Tag for performance tests
+     * Tag for scalability tests
      */
-    String PERFORMANCE = "performance";
+    String SCALABILITY = "scalability";
 }
