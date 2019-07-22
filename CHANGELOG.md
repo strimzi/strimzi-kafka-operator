@@ -10,7 +10,7 @@
 * Add support for Kafka Connect S2I resource status
 * Add support for Kafka Bridge resource status
 * Add support for Kafka Mirror Maker resource status
-* Add support DNS annotations to `nodeport` type external listeners
+* Add support for DNS annotations to `nodeport` type external listeners
 
 ## 0.12.0
 
