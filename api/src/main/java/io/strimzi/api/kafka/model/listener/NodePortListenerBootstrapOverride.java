@@ -42,8 +42,8 @@ public class NodePortListenerBootstrapOverride extends ExternalListenerBootstrap
         this.nodePort = nodePort;
     }
 
-    @Description("Annotations which will be added to the Service resource. " +
-            "You can use this field to instrument DNS providers such as External DNS.")
+    @Description("Annotations that will be added to the `Service` resource. " +
+            "You can use this field to configure DNS providers such as External DNS.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getDnsAnnotations() {
         return dnsAnnotations;
