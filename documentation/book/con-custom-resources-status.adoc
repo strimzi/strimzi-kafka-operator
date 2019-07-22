@@ -6,46 +6,48 @@
 
 = {ProductName} custom resource status
 
-The `status` property of a custom resource publishes the _current state_ of the resource to users and tools that need the information. 
+The `status` property of a {ProductName} custom resource publishes useful information about the resource to users and tools that need it.
+
+Several resources have a `status` property, as described in the following table.
 
 [cols="2*",options="header",stripes="none",separator=¦]
 |===
 
-¦Resource
-¦Provides status information on...
+¦{ProductName} Resource
+¦Publishes information on...
 
 m¦xref:type-KafkaStatus-reference[]
 ¦The Kafka cluster.
 
 m¦xref:type-KafkaTopicStatus-reference[]
-¦Kafka topics.
+¦Kafka topics and their partitions.
 
 m¦xref:type-KafkaConnectStatus-reference[]
-¦The Kafka Connect cluster, if available.
+¦The Kafka Connect cluster, if deployed.
 
 m¦xref:type-KafkaConnectS2Istatus-reference[]
-¦The Kafka Connect cluster with Source-to-Image support, if available.
+¦The Kafka Connect cluster with Source-to-Image support, if deployed.
 
 m¦xref:type-KafkaMirrorMakerStatus-reference[]
-¦The Kafka MirrorMaker tool, if available.
+¦The Kafka MirrorMaker tool, if deployed.
 
 m¦xref:type-KafkaUserStatus-reference[]
 ¦Kafka users.
 
 m¦xref:type-KafkaBridgeStatus-reference[]
-¦The {ProductName} Kafka Bridge, if available.
+¦The {ProductName} Kafka Bridge, if deployed.
 
 |===
 
+The `status` property includes information on:
 
-//* xref:type-ResourceName-reference[]
+* The _current state_ of the resource expressed as _status conditions_
 
-Status information is useful for tracking progress related to a resource achieving its _desired state_, as defined by the `spec` property. The `status` provides the time and reason the state of the resource changed and details of events preventing or delaying the Operator from realizing the resource's desired state.
+* The resource's last `observedGeneration` (the generation of the resource to which the status applies)
 
-// List out the common statuses:
-// - conditions - date and time resource last changed and the reason why
-// - The observedGeneration - the generation of the resource that was most recently observed by the Cluster Operator ?
-// - Additional status info specific to the resource, for example, the HTTP address of the Kafka Bridge or the name of the build configuration of a KafkaConnect S2I resource.
+* Other useful metadata specific to the resource (except `KafkaMirrorMaker`) 
+
+Information about a resource's _current state_ is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the Operator from realizing the resource's desired state.
 
 {ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
 
