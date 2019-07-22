@@ -212,6 +212,7 @@ class KafkaST extends MessagingBaseST {
         // Wait when EO(UO + TO) will be removed
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
         StUtils.waitForPodDeletion(pod.get().getMetadata().getName());
+        LOGGER.info("EO was deleted");
     }
 
     @Test
@@ -1001,7 +1002,7 @@ class KafkaST extends MessagingBaseST {
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
             String imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "zookeeper");
-            assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
+            assertThat("Zookeeper image for pod " + i + " uses wrong image", imgFromPod.contains(Environment.ST_KAFKA_VERSION));
             imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "tls-sidecar");
             assertEquals(imgFromDeplConf.get(TLS_SIDECAR_ZOOKEEPER_IMAGE), imgFromPod);
         }
