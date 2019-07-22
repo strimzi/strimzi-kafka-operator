@@ -125,7 +125,7 @@ class UserST extends AbstractST {
         for (int i = 0; i < numberOfUsers; i++) {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
-            testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+            testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
             StUtils.waitForSecretReady(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get()

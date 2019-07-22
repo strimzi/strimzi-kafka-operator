@@ -542,7 +542,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        StUtils.waitForSecretReady(kafkaUser);
 
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
@@ -573,7 +573,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        StUtils.waitForSecretReady(kafkaUser);
         String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -614,7 +614,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        StUtils.waitForSecretReady(kafkaUser);
 
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
