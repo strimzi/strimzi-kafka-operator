@@ -29,6 +29,8 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -683,6 +685,46 @@ public class KafkaClusterTest {
                                     .withBrokers(brokerOverride0, brokerOverride2)
                                 .endOverrides()
                             .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check annotations
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."), kc.generateExternalBootstrapService().getMetadata().getAnnotations());
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."), kc.generateExternalService(0).getMetadata().getAnnotations());
+        assertTrue(kc.generateExternalService(1).getMetadata().getAnnotations().isEmpty());
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."), kc.generateExternalService(2).getMetadata().getAnnotations());
+    }
+
+    @Test
+    public void testExternalNodePortWithDnsAnnotations() {
+        NodePortListenerBootstrapOverride bootstrapOverride = new NodePortListenerBootstrapOverrideBuilder()
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .build();
+
+        NodePortListenerBrokerOverride brokerOverride0 = new NodePortListenerBrokerOverrideBuilder()
+                .withBroker(0)
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .build();
+
+        NodePortListenerBrokerOverride brokerOverride2 = new NodePortListenerBrokerOverrideBuilder()
+                .withBroker(2)
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewOverrides()
+                                    .withBootstrap(bootstrapOverride)
+                                    .withBrokers(brokerOverride0, brokerOverride2)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()

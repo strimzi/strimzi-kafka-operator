@@ -372,7 +372,7 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 |Property               |Description
 |address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
-|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resource. You can use this field to instrument DNS providers such as External DNS.
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
 |map
 |====
 
@@ -391,7 +391,7 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 |string
 |advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
 |integer
-|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resources for individual brokers. You can use this field to instrument DNS providers such as External DNS.
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
 |map
 |====
 
@@ -443,10 +443,12 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 
 [options="header"]
 |====
-|Property         |Description
-|address   1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|Property               |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
-|nodePort  1.2+<.<|Node port for the bootstrap service.
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
+|map
+|nodePort        1.2+<.<|Node port for the bootstrap service.
 |integer
 |====
 
@@ -467,6 +469,8 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 |integer
 |nodePort        1.2+<.<|Node port for the broker service.
 |integer
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaListenerExternalIngress-{context}']
@@ -518,7 +522,7 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 |Property               |Description
 |address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
-|dnsAnnotations  1.2+<.<|Annotations which will be added to the Ingress resource. You can use this field to instrument DNS providers such as External DNS.
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resource. You can use this field to configure DNS providers such as External DNS.
 |map
 |host            1.2+<.<|Host for the bootstrap route. This field will be used in the Ingress resource.
 |string
@@ -541,7 +545,7 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 |integer
 |host            1.2+<.<|Host for the broker ingress. This field will be used in the Ingress resource.
 |string
-|dnsAnnotations  1.2+<.<|Annotations which will be added to the Ingress resources for individual brokers. You can use this field to instrument DNS providers such as External DNS.
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
 |map
 |====
 

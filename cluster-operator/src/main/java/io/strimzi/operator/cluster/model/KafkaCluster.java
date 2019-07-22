@@ -619,6 +619,12 @@ public class KafkaCluster extends AbstractModel {
                 if (externalLb.getOverrides() != null && externalLb.getOverrides().getBootstrap() != null) {
                     dnsAnnotations = externalLb.getOverrides().getBootstrap().getDnsAnnotations();
                 }
+            } else if (isExposedWithNodePort())    {
+                KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+                if (externalNp.getOverrides() != null && externalNp.getOverrides().getBootstrap() != null) {
+                    dnsAnnotations = externalNp.getOverrides().getBootstrap().getDnsAnnotations();
+                }
             }
 
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
@@ -661,6 +667,16 @@ public class KafkaCluster extends AbstractModel {
                     dnsAnnotations = externalLb.getOverrides().getBrokers().stream()
                             .filter(broker -> broker != null && broker.getBroker() == pod)
                             .map(LoadBalancerListenerBrokerOverride::getDnsAnnotations)
+                            .findAny()
+                            .orElse(Collections.emptyMap());
+                }
+            } else if (isExposedWithNodePort())    {
+                KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+                if (externalNp.getOverrides() != null && externalNp.getOverrides().getBrokers() != null) {
+                    dnsAnnotations = externalNp.getOverrides().getBrokers().stream()
+                            .filter(broker -> broker != null && broker.getBroker() == pod)
+                            .map(NodePortListenerBrokerOverride::getDnsAnnotations)
                             .findAny()
                             .orElse(Collections.emptyMap());
                 }
