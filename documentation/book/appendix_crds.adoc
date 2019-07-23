@@ -2014,7 +2014,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 [options="header"]
 |====
 |Property     |Description
-|port  1.2+<.<|The port which is the server listening on. Avoid using port 8081 which is used for readiness checking.
+|port  1.2+<.<|The port which is the server listening on.
 |integer
 |====
 

@@ -149,7 +149,7 @@ public class KafkaBridgeClusterTest {
         assertEquals("ClusterIP", svc.getSpec().getType());
         assertEquals(expectedLabels(kbc.getServiceName()), svc.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
-        assertEquals(3, svc.getSpec().getPorts().size());
+        assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
@@ -176,7 +176,7 @@ public class KafkaBridgeClusterTest {
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(3, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
         assertEquals(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
         assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
         assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());

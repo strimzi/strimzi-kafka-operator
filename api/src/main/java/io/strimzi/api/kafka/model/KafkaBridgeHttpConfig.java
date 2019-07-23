@@ -41,7 +41,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
         this.port = port;
     }
 
-    @Description("The port which is the server listening on. Avoid using port 8081 which is used for readiness checking.")
+    @Description("The port which is the server listening on.")
     @DefaultValue("8080")
     @Minimum(1023)
     public int getPort() {
