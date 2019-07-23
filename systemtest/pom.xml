@@ -219,5 +219,12 @@
                 <groups>bridge</groups>
             </properties>
         </profile>
+        <profile>
+            <id>scalability</id>
+            <properties>
+                <skippTests>false</skippTests>
+                <groups>scalability &amp; !flaky</groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

@@ -342,7 +342,7 @@ class SecurityST extends AbstractST {
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         // Check if user exists
-        waitTillSecretExists(userName);
+        StUtils.waitForSecretReady(userName);
 
         waitForClusterAvailabilityTls(userName, NAMESPACE);
 

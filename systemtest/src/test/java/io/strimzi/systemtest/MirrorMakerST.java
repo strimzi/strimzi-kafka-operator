@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -145,10 +146,10 @@ public class MirrorMakerST extends MessagingBaseST {
 
         // Create Kafka user
         KafkaUser userSource = testMethodResources().tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
-        waitTillSecretExists(kafkaSourceUserName);
+        StUtils.waitForSecretReady(kafkaSourceUserName);
 
         KafkaUser userTarget = testMethodResources().tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
-        waitTillSecretExists(kafkaUserTargetName);
+        StUtils.waitForSecretReady(kafkaUserTargetName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -226,11 +227,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         // Create Kafka user for source cluster
         KafkaUser userSource = testMethodResources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
-        waitTillSecretExists(kafkaUserSource);
+        StUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
         KafkaUser userTarget = testMethodResources().scramShaUser(kafkaTargetName, kafkaUserTarget).done();
-        waitTillSecretExists(kafkaUserTarget);
+        StUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();

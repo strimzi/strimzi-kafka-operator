@@ -469,16 +469,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return cluster + "-cluster-ca-cert";
     }
 
-    public void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) != null);
-        try {
-            Thread.sleep(60000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     void verifyLabelsForKafkaCluster(String clusterName, String appName) {
         verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
         verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);

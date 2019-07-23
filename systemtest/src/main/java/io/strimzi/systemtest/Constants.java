@@ -84,4 +84,8 @@ public interface Constants {
      * Tag for strimzi bridge tests.
      */
     String BRIDGE = "bridge";
+    /**
+     * Tag for scalability tests
+     */
+    String SCALABILITY = "scalability";
 }

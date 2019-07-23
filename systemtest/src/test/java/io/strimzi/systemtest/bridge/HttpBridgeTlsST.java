@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
+import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -116,7 +117,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         // Create Kafka user
         KafkaUser userSource = testClassResources().tlsUser(CLUSTER_NAME, userName).done();
-        waitTillSecretExists(userName);
+        StUtils.waitForSecretReady(userName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();

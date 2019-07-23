@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -18,11 +19,13 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -114,6 +117,40 @@ class UserST extends AbstractST {
         StUtils.waitForKafkaUserDeletion(kafkaUser);
     }
 
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfScramShaUsers() {
+        createBigAmountOfUsers("SCRAM_SHA");
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTlsUsers() {
+        createBigAmountOfUsers("TLS");
+    }
+
+    void createBigAmountOfUsers(String typeOfUser) {
+        int numberOfUsers = 100;
+
+        for (int i = 0; i < numberOfUsers; i++) {
+            String userName = "alisa" + i;
+            LOGGER.info("Creating user with name {}", userName);
+            if (typeOfUser.equals("TLS")) {
+                testMethodResources().tlsUser(CLUSTER_NAME, userName);
+            } else {
+                testMethodResources().scramShaUser(CLUSTER_NAME, userName);
+            }
+            StUtils.waitForSecretReady(userName);
+            LOGGER.info("Checking status of deployed Kafka User {}", userName);
+            Condition kafkaCondition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userName).get()
+                    .getStatus().getConditions().get(0);
+            LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
+            LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
+            assertEquals("Ready", kafkaCondition.getType());
+            LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
+        }
+    }
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -142,7 +179,6 @@ class UserST extends AbstractST {
                 .endKafkaAuthorizationSimple()
                 .endKafka()
                 .endSpec().build()).done();
-
     }
 
     @Override
