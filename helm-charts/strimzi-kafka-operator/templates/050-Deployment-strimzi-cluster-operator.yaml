@@ -17,6 +17,10 @@ spec:
         strimzi.io/kind: cluster-operator
     spec:
       serviceAccountName: strimzi-cluster-operator
+      {{- if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.image.imagePullSecrets }}
+      {{- end }}
       containers:
         - name: strimzi-cluster-operator
           image: {{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
