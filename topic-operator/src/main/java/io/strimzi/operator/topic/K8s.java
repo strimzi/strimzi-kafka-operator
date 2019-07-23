@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ public interface K8s {
      * Asynchronously list the resources.
      * @return A future which completes with the topics.
      */
-    Future<List<KafkaTopic>> listMaps();
+    Future<List<KafkaTopic>> listResources();
 
     /**
      * Get the resource with the given name, invoking the given handler with the result.

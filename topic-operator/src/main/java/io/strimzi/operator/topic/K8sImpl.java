@@ -10,12 +10,11 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.vertx.core.AsyncResult;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,13 +28,15 @@ public class K8sImpl implements K8s {
     private final Labels labels;
     private final String namespace;
 
-    private KubernetesClient client;
+    private final KubernetesClient client;
+    private final CrdOperator<KubernetesClient, KafkaTopic, KafkaTopicList, DoneableKafkaTopic> crdOperator;
 
-    private Vertx vertx;
+    private final Vertx vertx;
 
     public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
+        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
         this.labels = labels;
         this.namespace = namespace;
     }
@@ -93,29 +94,13 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<List<KafkaTopic>> listMaps() {
-        Future<List<KafkaTopic>> handler = Future.future();
-        vertx.executeBlocking(future -> {
-            try {
-                future.complete(operation().inNamespace(namespace).withLabels(labels.labels()).list().getItems());
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-        return handler;
+    public Future<List<KafkaTopic>> listResources() {
+        return crdOperator.listAsync(namespace, io.strimzi.operator.common.model.Labels.fromMap(labels.labels()));
     }
 
     @Override
     public Future<KafkaTopic> getFromName(ResourceName resourceName) {
-        Future<KafkaTopic> handler = Future.future();
-        vertx.executeBlocking(future -> {
-            try {
-                future.complete(operation().inNamespace(namespace).withName(resourceName.toString()).get());
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-        return handler;
+        return crdOperator.getAsync(namespace, resourceName.toString());
     }
 
     /**

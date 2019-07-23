@@ -1036,7 +1036,7 @@ class TopicOperator {
                 reconcileFromKafka(reconciliationType, topicNamesFromKafka.stream().map(TopicName::new).collect(Collectors.toList()))
 
         ).compose(reconcileState -> {
-            Future<List<KafkaTopic>> ktFut = k8s.listMaps();
+            Future<List<KafkaTopic>> ktFut = k8s.listResources();
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
