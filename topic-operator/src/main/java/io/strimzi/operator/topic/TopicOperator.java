@@ -106,7 +106,7 @@ class TopicOperator {
                     LOGGER.warn("{}", message);
                     break;
             }
-            k8s.createEvent(event, handler);
+            k8s.createEvent(event).setHandler(handler);
         }
 
         public String toString() {
@@ -129,7 +129,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
-            k8s.createResource(kafkaTopic, handler);
+            k8s.createResource(kafkaTopic).setHandler(handler);
         }
 
         @Override
@@ -153,7 +153,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            k8s.deleteResource(resourceName, handler);
+            k8s.deleteResource(resourceName).setHandler(handler);
         }
 
         @Override
@@ -178,7 +178,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
-            k8s.updateResource(kafkaTopic, handler);
+            k8s.updateResource(kafkaTopic).setHandler(handler);
         }
 
         @Override
@@ -530,7 +530,7 @@ class TopicOperator {
     private void update2Way(LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
         TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
         if (diff.isEmpty()) {
-            // they're the same => do nothing, but stil create the private copy
+            // they're the same => do nothing, but still create the private copy
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, but they're identical => just creating in topicStore", logContext);
             LOGGER.debug("{}: k8s and kafka versions of topic '{}' are the same", logContext, kafkaTopic.getTopicName());
             enqueue(new CreateInTopicStore(logContext, kafkaTopic, involvedObject, reconciliationResultHandler));
@@ -757,7 +757,7 @@ class TopicOperator {
                 } else {
                     resourceName = topicName.asKubeName();
                 }
-                k8s.getFromName(resourceName, kubeResult -> {
+                k8s.getFromName(resourceName).setHandler(kubeResult -> {
                     if (kubeResult.succeeded()) {
                         KafkaTopic topic = kubeResult.result();
                         Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
@@ -1036,9 +1036,7 @@ class TopicOperator {
                 reconcileFromKafka(reconciliationType, topicNamesFromKafka.stream().map(TopicName::new).collect(Collectors.toList()))
 
         ).compose(reconcileState -> {
-            Future<List<KafkaTopic>> ktFut = Future.future();
-            // Find all the topics in kube
-            k8s.listMaps(ktFut);
+            Future<List<KafkaTopic>> ktFut = k8s.listResources();
             return ktFut.recover(ex -> Future.failedFuture(
                     new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
             )).map(ktList -> {
@@ -1159,8 +1157,7 @@ class TopicOperator {
      * Reconcile the given topic which has the given {@code privateTopic} in the topic store.
      */
     private Future<Void> reconcileWithPrivateTopic(LogContext logContext, TopicName topicName, Topic privateTopic) {
-        Future<KafkaTopic> kubeFuture = Future.future();
-        k8s.getFromName(privateTopic.getResourceName(), kubeFuture);
+        Future<KafkaTopic> kubeFuture = k8s.getFromName(privateTopic.getResourceName());
         return kubeFuture
             .compose(kafkaTopicResource -> {
                 return getKafkaAndReconcile(logContext, topicName, privateTopic, kafkaTopicResource);
@@ -1207,9 +1204,7 @@ class TopicOperator {
     }
 
     Future<KafkaTopic> getFromKube(ResourceName kubeName) {
-        Future<KafkaTopic> f = Future.future();
-        k8s.getFromName(kubeName, f);
-        return f;
+        return k8s.getFromName(kubeName);
     }
 
     Future<Topic> getFromKafka(TopicName topicName) {

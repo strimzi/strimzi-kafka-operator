@@ -52,7 +52,7 @@ public class K8sImplTest {
 
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new Labels("foo", "bar"), "default");
 
-        k8s.listMaps(ar -> {
+        k8s.listResources().setHandler(ar -> {
             if (ar.failed()) {
                 ar.cause().printStackTrace();
             }
