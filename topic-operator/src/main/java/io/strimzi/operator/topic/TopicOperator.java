@@ -372,10 +372,10 @@ class TopicOperator {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the returned future
      */
-    public <T> Future<T> executeWithTopicLockHeld(LogContext logContext, TopicName key, Handler<Future<T>> action) {
+    public Future<Void> executeWithTopicLockHeld(LogContext logContext, TopicName key, Reconciliation action) {
         String lockName = key.toString();
         int timeoutMs = 30 * 1_000;
-        Future<T> result = Future.future();
+        Future<Void> result = Future.future();
         BiFunction<TopicName, Integer, Integer> decrement = (topicName, waiters) -> {
             if (waiters != null) {
                 if (waiters == 1) {
@@ -403,7 +403,7 @@ class TopicOperator {
         vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
             if (ar.succeeded()) {
                 LOGGER.debug("{}: Lock acquired", logContext);
-                Future<T> f = Future.future();
+                Future<Void> f = Future.future();
                 f.setHandler(ar2 -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
                     try {
@@ -660,22 +660,22 @@ class TopicOperator {
     }
 
     /** Called when a topic znode is deleted in ZK */
-    void onTopicDeleted(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        Handler<Future<Void>> action = new Reconciliation("onTopicDeleted") {
+    Future<Void> onTopicDeleted(LogContext logContext, TopicName topicName) {
+        Reconciliation action = new Reconciliation("onTopicDeleted") {
             @Override
             public void handle(Future<Void> fut) {
                 TopicOperator.this.reconcileOnTopicChange(logContext, topicName, null, fut);
             }
         };
-        executeWithTopicLockHeld(logContext, topicName, action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, topicName, action);
 
     }
 
     /**
      * Called when ZK watch notifies of change to topic's config
      */
-    void onTopicConfigChanged(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        Handler<Future<Void>> action = new Reconciliation("onTopicConfigChanged") {
+    Future<Void> onTopicConfigChanged(LogContext logContext, TopicName topicName) {
+        Reconciliation action = new Reconciliation("onTopicConfigChanged") {
             @Override
             public void handle(Future<Void> fut) {
                 kafka.topicMetadata(topicName, metadataResult -> {
@@ -688,14 +688,14 @@ class TopicOperator {
                 });
             }
         };
-        executeWithTopicLockHeld(logContext, topicName, action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, topicName, action);
     }
 
     /**
      * Called when ZK watch notifies of a change to the topic's partitions
      */
-    void onTopicPartitionsChanged(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        Handler<Future<Void>> action = new Reconciliation("onTopicPartitionsChanged") {
+    Future<Void> onTopicPartitionsChanged(LogContext logContext, TopicName topicName) {
+        Reconciliation action = new Reconciliation("onTopicPartitionsChanged") {
             @Override
             public void handle(Future<Void> fut) {
 
@@ -738,7 +738,7 @@ class TopicOperator {
                 });
             }
         };
-        executeWithTopicLockHeld(logContext, topicName, action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, topicName, action);
     }
 
     /**
@@ -773,10 +773,10 @@ class TopicOperator {
     }
 
     /** Called when a topic znode is created in ZK */
-    void onTopicCreated(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    Future<Void> onTopicCreated(LogContext logContext, TopicName topicName) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
-        Handler<Future<Void>> action = new Reconciliation("onTopicCreated") {
+        Reconciliation action = new Reconciliation("onTopicCreated") {
             @Override
             public void handle(Future<Void> fut) {
 
@@ -810,25 +810,7 @@ class TopicOperator {
                 kafka.topicMetadata(topicName, handler);
             }
         };
-        executeWithTopicLockHeld(logContext, topicName, action).setHandler(resultHandler);
-    }
-
-    /** Called when a resource is added in k8s */
-    void onResourceAdded(LogContext logContext, KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        final Topic k8sTopic;
-        try {
-            k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
-        } catch (InvalidTopicException e) {
-            resultHandler.handle(Future.failedFuture(e));
-            return;
-        }
-        Handler<Future<Void>> action = new Reconciliation("onResourceAdded") {
-            @Override
-            public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, addedTopic, k8sTopic, false, fut);
-            }
-        };
-        executeWithTopicLockHeld(logContext, new TopicName(addedTopic), action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, topicName, action);
     }
 
     abstract class Reconciliation implements Handler<Future<Void>> {
@@ -842,24 +824,23 @@ class TopicOperator {
         public String toString() {
             return name;
         }
-    };
+    }
 
     /** Called when a resource is modified in k8s */
-    void onResourceModified(LogContext logContext, KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    Future<Void> onResourceAddedOrModified(LogContext logContext, KafkaTopic modifiedTopic, boolean modified) {
         final Topic k8sTopic;
         try {
             k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
         } catch (InvalidTopicException e) {
-            resultHandler.handle(Future.failedFuture(e));
-            return;
+            return Future.failedFuture(e);
         }
         Reconciliation action = new Reconciliation("onResourceModified") {
             @Override
             public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, modifiedTopic, k8sTopic, true, fut);
+                TopicOperator.this.reconcileOnResourceChange(logContext, modifiedTopic, k8sTopic, modified, fut);
             }
         };
-        executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic), action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic), action);
     }
 
     private void reconcileOnResourceChange(LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
@@ -883,14 +864,14 @@ class TopicOperator {
     }
 
     /** Called when a resource is deleted in k8s */
-    void onResourceDeleted(LogContext logContext, KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    Future<Void> onResourceDeleted(LogContext logContext, KafkaTopic deletedTopic) {
         Reconciliation action = new Reconciliation("onResourceDeleted") {
             @Override
             public void handle(Future<Void> fut) {
                 TopicOperator.this.reconcileOnResourceChange(logContext, deletedTopic, null, false, fut);
             }
         };
-        executeWithTopicLockHeld(logContext, new TopicName(deletedTopic), action).setHandler(resultHandler);
+        return executeWithTopicLockHeld(logContext, new TopicName(deletedTopic), action);
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -1220,8 +1201,7 @@ class TopicOperator {
     }
 
     private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
-        Future<Void> result = Future.future();
-        executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube") {
+        return executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube") {
             @Override
             public void handle(Future<Void> fut) {
                 CompositeFuture.join(getFromKube(kubeName),
@@ -1249,8 +1229,7 @@ class TopicOperator {
                         }
                     });
             }
-        }).setHandler(result);
-        return result;
+        });
     }
 
 }

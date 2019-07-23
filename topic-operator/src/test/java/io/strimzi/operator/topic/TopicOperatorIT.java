@@ -446,7 +446,7 @@ public class TopicOperatorIT extends BaseITST {
 
     @Test
     public void testTopicAddedWithEncodableName(TestContext context) throws Exception {
-        createTopic(context, "thest-TOPIC_ADDED");
+        createTopic(context, "test-TOPIC_ADDED_ENCODABLE");
     }
 
     @Test
@@ -456,7 +456,7 @@ public class TopicOperatorIT extends BaseITST {
 
     @Test
     public void testTopicDeletedWithEncodableName(TestContext context) throws Exception {
-        createAndDeleteTopic(context, "test-TOPIC_DELETED");
+        createAndDeleteTopic(context, "test-TOPIC_DELETED_ENCODABLE");
     }
 
     @Test
@@ -466,7 +466,7 @@ public class TopicOperatorIT extends BaseITST {
 
     @Test
     public void testTopicConfigChangedWithEncodableName(TestContext context) throws Exception {
-        createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED");
+        createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED_ENCODABLE");
     }
 
     @Test
