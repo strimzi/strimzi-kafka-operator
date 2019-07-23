@@ -1060,11 +1060,11 @@ Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-K
 |string
 |status              1.2+<.<|The status of the condition, one of True, False, Unknown.
 |string
-|lastTransitionTime  1.2+<.<|Last time the condition of a type changes from one status to another.The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+|lastTransitionTime  1.2+<.<|Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
 |string
-|reason              1.2+<.<|One-word CamelCase reason for the condition's last transition.
+|reason              1.2+<.<|The reason for the condition's last transition (a single word in CamelCase).
 |string
-|message             1.2+<.<|Human-readable message indicating details about last transition.
+|message             1.2+<.<|Human-readable message indicating details about the condition's last transition.
 |string
 |====
 
