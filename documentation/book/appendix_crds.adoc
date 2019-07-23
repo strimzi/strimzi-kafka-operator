@@ -1058,7 +1058,7 @@ Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-K
 |Property                   |Description
 |type                1.2+<.<|The unique identifier of a condition, used to distinguish between other conditions in the resource.
 |string
-|status              1.2+<.<|The status of the condition, one of True, False, Unknown.
+|status              1.2+<.<|The status of the condition, either True, False or Unknown.
 |string
 |lastTransitionTime  1.2+<.<|Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
 |string
