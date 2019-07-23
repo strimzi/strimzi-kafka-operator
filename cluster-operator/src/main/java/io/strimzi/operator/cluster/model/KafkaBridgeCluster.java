@@ -48,9 +48,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     public static final int DEFAULT_REST_API_PORT = 8080;
     protected static final String REST_API_PORT_NAME = "rest-api";
 
-    protected static final int HEALTH_CHECK_PORT = 8081;
-    protected static final String HEALTH_CHECK_PORT_NAME = "healthcheck";
-
     private static final String NAME_SUFFIX = "-bridge";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
 
@@ -217,12 +214,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         if (spec.getHttp() != null) {
             kafkaBridgeCluster.setHttpEnabled(true);
-            if (spec.getHttp().getPort() == HEALTH_CHECK_PORT) {
-                log.warn("HTTP port cannot be set to {}. This port is already used for heath check.", HEALTH_CHECK_PORT);
-                throw new InvalidResourceException("HTTP port cannot be set to " + HEALTH_CHECK_PORT + ". This port is already used for heath check.");
-            } else {
-                kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
-            }
+            kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
             log.warn("No protocol specified.");
             throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
@@ -239,7 +231,6 @@ public class KafkaBridgeCluster extends AbstractModel {
             port = http.getPort();
         }
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
-        ports.add(createServicePort(HEALTH_CHECK_PORT_NAME, HEALTH_CHECK_PORT, HEALTH_CHECK_PORT, "TCP"));
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
@@ -250,7 +241,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
         portList.add(createContainerPort(REST_API_PORT_NAME, DEFAULT_REST_API_PORT, "TCP"));
-        portList.add(createContainerPort(HEALTH_CHECK_PORT_NAME, HEALTH_CHECK_PORT, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
@@ -349,8 +339,8 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withCommand("/opt/strimzi/bin/docker/kafka_bridge_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, HEALTH_CHECK_PORT_NAME, livenessProbeOptions))
-                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, HEALTH_CHECK_PORT_NAME, readinessProbeOptions))
+                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

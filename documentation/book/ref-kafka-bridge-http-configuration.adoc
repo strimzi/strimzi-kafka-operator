@@ -10,8 +10,6 @@ This property contains the Kafka Bridge HTTP configuration options.
 
 * `port`
 
-When configuring `port` property avoid the value `8081`. This port is used for the health checks.
-
 .Example Kafka Bridge HTTP configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -25,5 +23,3 @@ spec:
     port: 8080
   # ...
 ----
-
-IMPORTANT: The port must not be set to 8081 as that will cause a conflict with the healthcheck settings.
