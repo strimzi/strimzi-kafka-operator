@@ -19,9 +19,6 @@ Several resources have a `status` property, as described in the following table.
 m¦xref:type-KafkaStatus-reference[]
 ¦The Kafka cluster.
 
-m¦xref:type-KafkaTopicStatus-reference[]
-¦Kafka topics and their partitions.
-
 m¦xref:type-KafkaConnectStatus-reference[]
 ¦The Kafka Connect cluster, if deployed.
 
@@ -38,7 +35,7 @@ m¦xref:type-KafkaBridgeStatus-reference[]
 ¦The {ProductName} Kafka Bridge, if deployed.
 
 |===
-
+//When dev work is complete, add `KafkaTopicStatus` to the above table. `KafkaTopicStatus`: Kafka topics and their partitions
 The `status` property includes information on:
 
 * The _current state_ of the resource described in _status conditions_
