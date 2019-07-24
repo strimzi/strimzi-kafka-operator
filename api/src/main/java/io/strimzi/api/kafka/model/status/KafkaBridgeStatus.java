@@ -19,19 +19,19 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "httpAddress" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
 @EqualsAndHashCode
 public class KafkaBridgeStatus extends Status {
     private static final long serialVersionUID = 1L;
 
-    private String httpAddress;
+    private String url;
 
-    @Description("The HTTP address at which external client applications can access the Kafka Bridge.")
-    public String getHttpAddress() {
-        return httpAddress;
+    @Description("The URL address at which external client applications can access the Kafka Bridge.")
+    public String getUrl() {
+        return url;
     }
 
-    public void setHttpAddress(String httpAddress) {
-        this.httpAddress = httpAddress;
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

@@ -55,6 +55,6 @@ public class KafkaConnectResources {
      * @return The REST address of {@code KafkaConnect} API.
      */
     public static String restApiAddress(String clusterName, String namespace, int port) {
-        return serviceName(clusterName) + "." + namespace + ".svc:" + port;
+        return "http://" + serviceName(clusterName) + "." + namespace + ".svc:" + port;
     }
 }

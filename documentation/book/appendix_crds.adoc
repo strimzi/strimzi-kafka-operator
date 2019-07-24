@@ -1381,7 +1381,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
+|url                 1.2+<.<|URL of REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
 |====
 
@@ -1462,7 +1462,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|restApiAddress      1.2+<.<|REST API endpoint for managing and monitoring Kafka Connect connectors.
+|url                 1.2+<.<|URL of REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
@@ -2076,7 +2076,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|httpAddress         1.2+<.<|The HTTP address at which external client applications can access the Kafka Bridge.
+|url                 1.2+<.<|The URL address at which external client applications can access the Kafka Bridge.
 |string
 |====
 

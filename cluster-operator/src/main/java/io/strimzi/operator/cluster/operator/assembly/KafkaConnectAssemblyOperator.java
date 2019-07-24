@@ -104,7 +104,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 .compose(i -> chainFuture.complete(), chainFuture)
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
-                    kafkaConnectStatus.setRestApiAddress(KafkaConnectResources.restApiAddress(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
+                    kafkaConnectStatus.setUrl(KafkaConnectResources.restApiAddress(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
 
                     updateStatus(kafkaConnect, reconciliation, kafkaConnectStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well

@@ -521,6 +521,6 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-            httpAddress:
+            url:
               type: string
 {{- end -}}
