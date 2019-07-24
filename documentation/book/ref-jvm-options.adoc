@@ -90,10 +90,10 @@ The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE
 ----
 jvmOptions:
   "-XX":
-    "UseG1GC": true,
-    "MaxGCPauseMillis": 20,
-    "InitiatingHeapOccupancyPercent": 35,
-    "ExplicitGCInvokesConcurrent": true,
+    "UseG1GC": true
+    "MaxGCPauseMillis": 20
+    "InitiatingHeapOccupancyPercent": 35
+    "ExplicitGCInvokesConcurrent": true
     "UseParNewGC": false
 ----
 
