@@ -47,7 +47,7 @@ The `status` property includes information on:
 
 * Other information specific to the resource, for example the REST API endpoint for Kafka Connect connectors.
 
-A resource's current state is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the Operator from realizing the resource's desired state.
+A resource's current state is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the operator from realizing the resource's desired state.
 
 {ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
 
