@@ -55,6 +55,7 @@ the documentation for more details.
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
 | `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPresent`                                       |
+| `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
