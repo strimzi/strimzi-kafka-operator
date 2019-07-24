@@ -284,6 +284,11 @@ class KafkaST extends MessagingBaseST {
         int timeoutSeconds = 10;
         int updatedInitialDelaySeconds = 31;
         int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
             .editSpec()
@@ -301,10 +306,16 @@ class KafkaST extends MessagingBaseST {
                     .withNewReadinessProbe()
                         .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
                     .endReadinessProbe()
                     .withNewLivenessProbe()
                         .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
                     .endLivenessProbe()
                     .withConfig(kafkaConfig)
                 .endKafka()
@@ -313,10 +324,16 @@ class KafkaST extends MessagingBaseST {
                         .withNewReadinessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endReadinessProbe()
                         .withNewLivenessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endLivenessProbe()
                     .endTlsSidecar()
                 .withReplicas(2)
@@ -335,30 +352,48 @@ class KafkaST extends MessagingBaseST {
                         .withNewReadinessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endReadinessProbe()
                             .withNewLivenessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endLivenessProbe()
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewReadinessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endReadinessProbe()
                         .withNewLivenessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endLivenessProbe()
                     .endTopicOperator()
                     .withNewTlsSidecar()
                         .withNewReadinessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endReadinessProbe()
                         .withNewLivenessProbe()
                             .withInitialDelaySeconds(initialDelaySeconds)
                             .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
                         .endLivenessProbe()
                     .endTlsSidecar()
                 .endEntityOperator()
@@ -370,21 +405,28 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verify values before update");
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n");
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
 
         LOGGER.info("Testing Zookeepers");
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n");
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
 
         LOGGER.info("Checking configuration of TO and UO");
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds);
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds);
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
 
         LOGGER.info("Updating configuration of Kafka cluster");
         replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -393,35 +435,63 @@ class KafkaST extends MessagingBaseST {
             kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kafkaClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
             kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
             zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"tickTime\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
             zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
             entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             entityOperatorSpec.getUserOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getUserOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getUserOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             entityOperatorSpec.getUserOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             entityOperatorSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             entityOperatorSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
         StUtils.waitTillSsHasRolled(kafkaClusterName(CLUSTER_NAME), 2, kafkaSnapshot);
@@ -429,21 +499,28 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Verify values after update");
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n");
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
 
         LOGGER.info("Testing Zookeepers");
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n");
-        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
-        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
     }
 
     /**
@@ -453,7 +530,8 @@ class KafkaST extends MessagingBaseST {
      * @param initialDelaySeconds expected value for property initialDelaySeconds
      * @param timeoutSeconds expected value for property timeoutSeconds
      */
-    void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds) {
+    void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+                                     int periodSeconds, int successThreshold, int failureThreshold) {
         LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
@@ -466,6 +544,12 @@ class KafkaST extends MessagingBaseST {
                         assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
                         assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
                         assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                        assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                        assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                        assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                        assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                        assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                        assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
                     });
             });
         } else {
