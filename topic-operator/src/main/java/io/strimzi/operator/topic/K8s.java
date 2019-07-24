@@ -28,6 +28,13 @@ public interface K8s {
     Future<Void> updateResource(KafkaTopic topicResource);
 
     /**
+     * Asynchronously update the given resource's status.
+     * @param topicResource The topic.
+     * @return A future which completes when the topic's status has been updated.
+     */
+    Future<Void> updateResourceStatus(KafkaTopic topicResource);
+
+    /**
      * Asynchronously delete the given resource.
      * @param resourceName The name of the resource to be deleted.
      * @return A future which completes when the topic has been deleted.

@@ -104,6 +104,11 @@ public class MockK8s implements K8s {
     }
 
     @Override
+    public Future<Void> updateResourceStatus(KafkaTopic topicResource) {
+        return null;
+    }
+
+    @Override
     public Future<Void> deleteResource(ResourceName resourceName) {
         Future<Void> handler = Future.future();
         AsyncResult<Void> response = deleteResponse.apply(resourceName);

@@ -74,6 +74,11 @@ public class K8sImpl implements K8s {
     }
 
     @Override
+    public Future<Void> updateResourceStatus(KafkaTopic topicResource) {
+        return crdOperator.updateStatusAsync(topicResource);
+    }
+
+    @Override
     public Future<Void> deleteResource(ResourceName resourceName) {
         Future<Void> handler = Future.future();
         vertx.executeBlocking(future -> {
