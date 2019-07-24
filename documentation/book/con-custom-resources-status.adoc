@@ -6,48 +6,63 @@
 
 = {ProductName} custom resource status
 
-The `status` property of a {ProductName} custom resource publishes useful information about the resource to users and tools that need it.
+The `status` property of a {ProductName} custom resource publishes information about the resource to users and tools that need it.
 
 Several resources have a `status` property, as described in the following table.
 
-[cols="2*",options="header",stripes="none",separator=¦]
+[cols="3*",options="header",stripes="none",separator=¦]
 |===
 
-¦{ProductName} Resource
-¦Publishes information on...
+m¦{ProductName} resource
+¦Schema reference
+¦Publishes status information on...
 
-m¦xref:type-KafkaStatus-reference[]
+m¦Kafka
+¦xref:type-KafkaStatus-reference[]
 ¦The Kafka cluster.
 
-m¦xref:type-KafkaConnectStatus-reference[]
+m¦KafkaConnect
+¦xref:type-KafkaConnectStatus-reference[]
 ¦The Kafka Connect cluster, if deployed.
 
-m¦xref:type-KafkaConnectS2Istatus-reference[]
+m¦KafkaConnectS2I
+¦xref:type-KafkaConnectS2Istatus-reference[]
 ¦The Kafka Connect cluster with Source-to-Image support, if deployed.
 
-m¦xref:type-KafkaMirrorMakerStatus-reference[]
+m¦KafkaMirrorMaker
+¦xref:type-KafkaMirrorMakerStatus-reference[]
 ¦The Kafka MirrorMaker tool, if deployed.
 
-m¦xref:type-KafkaUserStatus-reference[]
-¦Kafka users.
+m¦KafkaUser
+¦xref:type-KafkaUserStatus-reference[]
+¦Kafka users in your cluster.
 
-m¦xref:type-KafkaBridgeStatus-reference[]
+m¦KafkaBridge
+¦xref:type-KafkaBridgeStatus-reference[]
 ¦The {ProductName} Kafka Bridge, if deployed.
 
 |===
 //When dev work is complete, add `KafkaTopicStatus` to the above table. `KafkaTopicStatus`: Kafka topics and their partitions
-The `status` property includes information on:
 
-* The _current state_ of the resource described in _status conditions_
+The `status` property of a resource provides information on the resource's:
 
-* The resource's last `observedGeneration` (the generation of the resource to which the status applies)
+* _Current state_, in the `status.conditions` property
 
-* Other information specific to the resource, for example the REST API endpoint for Kafka Connect connectors.
+* _Last observed generation_, in the `status.observedGeneration` property
 
-A resource's current state is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the operator from realizing the resource's desired state.
+The `status` property also provides resource-specific information. For example:
+
+* `KafkaConnectStatus` provides the REST API endpoint for Kafka Connect connectors.
+
+* `KafkaUserStatus` provides the user name of the Kafka user and the `Secret` in which their credentials are stored.
+
+* `KafkaBridgeStatus` provides the HTTP address at which external client applications can access the Bridge service.
+
+A resource's _current state_ is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the operator from realizing the resource's desired state.
+
+The _last observed generation_ is the generation of the resource that was most recently observed by the operator. If the value of `observedGeneration` is less than the value of `metadata.generation`, the operator has not yet processed the latest update to the resource. If these values are the same, the status information reflects the most recent changes to the resource.
 
 {ProductName} creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
-
 When performing an update on a custom resource using `kubectl edit`, for example, its `status` is not editable. Moreover, changing the `status` would not affect the configuration of the Kafka cluster.
 
 Here we see the `status` property specified for a Kafka custom resource.
