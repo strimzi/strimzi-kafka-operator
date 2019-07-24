@@ -127,7 +127,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             final String message = ar.cause().getMessage();
             context.assertTrue(message.contains("lacks an executable arg[0]")
@@ -149,7 +149,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             final String message = ar.cause().getMessage();
             context.assertTrue(message.contains("lacks an executable arg[0]")
@@ -171,7 +171,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             async.complete();
         });
@@ -196,7 +196,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.fail("Bang!"),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             // We should retry anf ultimately succeed
             context.assertTrue(ar.succeeded());
             async.complete();
@@ -217,7 +217,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyFail("Bang!"),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             // We should retry anf ultimately succeed
             context.assertTrue(ar.succeeded());
             async.complete();
@@ -242,7 +242,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             context.assertEquals("Reassigment failed: There is an existing assignment running.", ar.cause().getMessage());
             async.complete();
@@ -268,7 +268,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             context.assertTrue(ar.cause().getMessage().contains("Failed to reassign partitions"));
             async.complete();

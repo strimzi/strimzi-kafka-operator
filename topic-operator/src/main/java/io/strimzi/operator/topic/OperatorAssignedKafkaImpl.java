@@ -9,10 +9,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.operator.common.process.ProcessHelper;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -62,11 +60,13 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
     }
 
     @Override
-    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> increasePartitions(Topic topic) {
+        Future<Void> handler = Future.future();
         final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
         final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
         KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName().toString());
         queueWork(new UniWork<>("increasePartitions", future, handler));
+        return handler;
     }
 
     /**
@@ -74,17 +74,20 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
      * (in a different thread) with the result.
      */
     @Override
-    public void createTopic(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createTopic(Topic topic) {
+        Future<Void> handler = Future.future();
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
 
         LOGGER.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
         queueWork(new UniWork<>("createTopic", future, handler));
+        return handler;
     }
 
     @Override
-    public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> changeReplicationFactor(Topic topic) {
+        Future<Void> handler = Future.future();
 
         LOGGER.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
 
@@ -176,7 +179,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
 
         CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void) null).setHandler(handler);
-
+        return handler;
         // TODO The algorithm should really be more like this:
         // 1. Use the cmdline tool to generate an assignment
         // 2. Set the throttles

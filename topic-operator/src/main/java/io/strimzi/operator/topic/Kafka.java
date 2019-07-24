@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 
 import java.util.Set;
 
@@ -21,9 +21,9 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * @param newTopic The topic to create.
-     * @param handler The result handler.
+     * @return A future which is completed once the topic has been created.
      */
-    void createTopic(Topic newTopic, Handler<AsyncResult<Void>> handler);
+    Future<Void> createTopic(Topic newTopic);
 
     /**
      * Asynchronously delete the given topic in Kafka. Invoke the given
@@ -31,9 +31,9 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * @param topicName The name of the topic to delete.
-     * @param handler The result handler.
+     * @return A future which is completed once the topic has been deleted.
      */
-    void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler);
+    Future<Void> deleteTopic(TopicName topicName);
 
     /**
      * Asynchronously update the topic config in Kafka. Invoke the given
@@ -41,9 +41,9 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * @param topic The topic config to update.
-     * @param handler The result handler.
+     * @return A future which is completed once the topic has been updated.
      */
-    void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> updateTopicConfig(Topic topic);
 
     /**
      * Asynchronously increase the topic's partitions in Kafka. Invoke the given
@@ -51,9 +51,9 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * @param topic The topic.
-     * @param handler The result handler.
+     * @return A future which is completed once the topic has been updated.
      */
-    void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> increasePartitions(Topic topic);
 
     /**
      * Asynchronously change the topic's replication factor in Kafka. Invoke the given
@@ -61,9 +61,9 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      * @param topic The topic.
-     * @param handler The result handler.
+     * @return A future which is completed once the topic has been updated.
      */
-    void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> changeReplicationFactor(Topic topic);
 
     /**
      * Asynchronously fetch the topic metadata in Kafka. Invoke the given
@@ -72,18 +72,18 @@ public interface Kafka {
      * KafkaException (not an ExecutionException).
      * If the topic does not exist the {@link AsyncResult#result()} will be null.
      * @param topicName The name of the topic to get the metadata of.
-     * @param handler The result handler.
+     * @return A future which is completed with the requested metadata.
      */
-    void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler);
+    Future<TopicMetadata> topicMetadata(TopicName topicName);
 
     /**
      * Asynchronously list the topics available in Kafka. Invoke the given
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
-     * @param handler The result handler.
+     * @return A future which is completed with the list of topics.
      */
-    void listTopics(Handler<AsyncResult<Set<String>>> handler);
+    Future<Set<String>> listTopics();
 
 }
 

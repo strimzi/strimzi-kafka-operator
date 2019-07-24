@@ -216,18 +216,22 @@ public abstract class BaseKafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> deleteTopic(TopicName topicName) {
+        Future<Void> handler = Future.future();
         LOGGER.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         queueWork(new UniWork<>("deleteTopic", future, handler));
+        return handler;
     }
 
     @Override
-    public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> updateTopicConfig(Topic topic) {
+        Future<Void> handler = Future.future();
         Map<ConfigResource, Collection<AlterConfigOp>> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.incrementalAlterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>("updateTopicConfig", future, handler));
+        return handler;
     }
 
     /**
@@ -235,7 +239,8 @@ public abstract class BaseKafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler) {
+    public Future<TopicMetadata> topicMetadata(TopicName topicName) {
+        Future<TopicMetadata> handler = Future.future();
         LOGGER.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
@@ -245,10 +250,12 @@ public abstract class BaseKafkaImpl implements Kafka {
         queueWork(new MetadataWork(descriptionFuture,
             configFuture,
             result -> handler.handle(result)));
+        return handler;
     }
 
     @Override
-    public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
+    public Future<Set<String>> listTopics() {
+        Future<Set<String>> handler = Future.future();
         LOGGER.debug("Listing topics");
 
         ListTopicsOptions listOptions = new ListTopicsOptions();
@@ -256,6 +263,7 @@ public abstract class BaseKafkaImpl implements Kafka {
 
         ListTopicsResult future = adminClient.listTopics(listOptions);
         queueWork(new UniWork<>("listTopics", future.names(), handler));
+        return handler;
     }
 
 
