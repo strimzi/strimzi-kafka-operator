@@ -26,7 +26,7 @@ public class KafkaBridgeStatus extends Status {
 
     private String url;
 
-    @Description("The URL address at which external client applications can access the Kafka Bridge.")
+    @Description("The URL at which external client applications can access the Kafka Bridge.")
     public String getUrl() {
         return url;
     }
