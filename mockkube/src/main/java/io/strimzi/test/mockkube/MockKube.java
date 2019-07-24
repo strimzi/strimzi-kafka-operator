@@ -37,6 +37,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionLis
 import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -319,6 +320,8 @@ public class MockKube {
                     checkNotExists(resourceName);
                     Deployment deployment = invocation.getArgument(0);
                     LOGGER.debug("create {} {} -> {}", resourceType, resourceName, deployment);
+                    deployment.getMetadata().setGeneration(Long.valueOf(0));
+                    deployment.setStatus(new DeploymentStatusBuilder().withObservedGeneration(Long.valueOf(0)).build());
                     depDb.put(resourceName, copyResource(deployment));
                     for (int i = 0; i < deployment.getSpec().getReplicas(); i++) {
                         String uuid = UUID.randomUUID().toString();
@@ -343,6 +346,8 @@ public class MockKube {
                 mockDelete(resourceName, resource);
                 when(resource.patch(any())).thenAnswer(invocation -> {
                     Deployment deployment = invocation.getArgument(0);
+                    deployment.getMetadata().setGeneration(Long.valueOf(0));
+                    deployment.setStatus(new DeploymentStatusBuilder().withObservedGeneration(Long.valueOf(0)).build());
                     LOGGER.debug("patched {} {} -> {}", resourceType, resourceName, deployment);
                     depDb.put(resourceName, copyResource(deployment));
                     List<String> newPodNames = new ArrayList<>();
