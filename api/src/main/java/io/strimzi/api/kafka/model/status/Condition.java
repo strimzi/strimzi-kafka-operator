@@ -35,7 +35,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
     private String lastTransitionTime;
     private Map<String, Object> additionalProperties;
 
-    @Description("The status of the condition, one of True, False, Unknown")
+    @Description("The status of the condition, either True, False or Unknown.")
     public String getStatus() {
         return status;
     }
@@ -44,7 +44,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.status = status;
     }
 
-    @Description("One-word CamelCase reason for the condition's last transition")
+    @Description("The reason for the condition's last transition (a single word in CamelCase).")
     public String getReason() {
         return reason;
     }
@@ -53,7 +53,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.reason = reason;
     }
 
-    @Description("The unique identifier of a condition, used to distinguish between other conditions in the resource")
+    @Description("The unique identifier of a condition, used to distinguish between other conditions in the resource.")
     public String getType() {
         return type;
     }
@@ -62,7 +62,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.type = type;
     }
 
-    @Description("Last time the condition of a type changes from one status to another." +
+    @Description("Last time the condition of a type changed from one status to another. " +
             "The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone")
     public String getLastTransitionTime() {
         return lastTransitionTime;
@@ -72,7 +72,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.lastTransitionTime = lastTransitionTime;
     }
 
-    @Description("Human-readable message indicating details about last transition.")
+    @Description("Human-readable message indicating details about the condition's last transition.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public String getMessage() {
         return message;
