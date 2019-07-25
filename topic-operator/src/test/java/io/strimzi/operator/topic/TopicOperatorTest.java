@@ -385,7 +385,7 @@ public class TopicOperatorTest {
         mockK8s.createResource(topicResource).setHandler(ar -> async0.countDown());
 
         Async async = context.async(1);
-        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertExists(context, kubeTopic.getTopicName());
@@ -421,7 +421,7 @@ public class TopicOperatorTest {
 
         Async async = context.async();
 
-        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
@@ -449,7 +449,7 @@ public class TopicOperatorTest {
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString());
         Async async = context.async(2);
-        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -488,7 +488,7 @@ public class TopicOperatorTest {
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString());
         Async async = context.async();
-        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertNotExists(context, topicName);
             mockK8s.assertNotExists(context, topicName.asKubeName());
@@ -519,7 +519,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Async async = context.async();
-        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, null, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -560,7 +560,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Async async = context.async(2);
-        topicOperator.reconcile(logContext, topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, topic, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -602,7 +602,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Async async = context.async(2);
-        topicOperator.reconcile(logContext, topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, topic, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertContainsEvent(context, e ->
                     e.getMessage().contains("KafkaTopic is incompatible with the topic metadata. " +
@@ -650,7 +650,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Async async = context.async(3);
-        topicOperator.reconcile(logContext, resource, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(logContext, resource, kubeTopic, kafkaTopic, privateTopic).setHandler(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertNoEvents(context);
             mockTopicStore.read(topicName).setHandler(readResult -> {

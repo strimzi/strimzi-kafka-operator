@@ -451,10 +451,9 @@ class TopicOperator {
      * Topic identification should be by uid/cxid, not by name.
      * Topic identification should be by uid/cxid, not by name.
      */
-    void reconcile(final LogContext logContext, final HasMetadata involvedObject,
-                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic,
-                   final Handler<AsyncResult<Void>> reconciliationResultHandler) {
-
+    Future<Void> reconcile(final LogContext logContext, final HasMetadata involvedObject,
+                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic) {
+        Future<Void> reconciliationResultHandler = Future.future();
         {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
             LOGGER.info("{}: Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", logContext, topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
@@ -525,6 +524,7 @@ class TopicOperator {
                 update3Way(logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
             }
         }
+        return reconciliationResultHandler;
     }
 
     private void update2Way(LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
@@ -664,7 +664,8 @@ class TopicOperator {
         Reconciliation action = new Reconciliation("onTopicDeleted") {
             @Override
             public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnTopicChange(logContext, topicName, null, fut);
+                reconcileOnTopicChange(logContext, topicName, null)
+                        .setHandler(fut);
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -678,14 +679,12 @@ class TopicOperator {
         Reconciliation action = new Reconciliation("onTopicConfigChanged") {
             @Override
             public void handle(Future<Void> fut) {
-                kafka.topicMetadata(topicName).setHandler(metadataResult -> {
-                    if (metadataResult.succeeded()) {
-                        Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, topic, fut);
-                    } else {
-                        fut.fail(metadataResult.cause());
-                    }
-                });
+                kafka.topicMetadata(topicName)
+                    .compose(metadata -> {
+                        Topic topic = TopicSerialization.fromTopicMetadata(metadata);
+                        return reconcileOnTopicChange(logContext, topicName, topic);
+                    })
+                    .setHandler(fut);
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -715,7 +714,8 @@ class TopicOperator {
                                         retry();
                                     } else {
                                         LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut);
+                                        reconcileOnTopicChange(logContext, topicName, kafkaTopic)
+                                            .setHandler(fut);
                                     }
 
                                 } else {
@@ -744,32 +744,16 @@ class TopicOperator {
     /**
      * Called when one of the ZK watches notifies of a change to the topic
      */
-    private void reconcileOnTopicChange(LogContext logContext, TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
-        // TODO Here I need to lookup the name of the kafkatopic from the name of the topic.
-        // I can either do that from the topicStore, or maintain an in-memory map
-        // I can then look up the KafkaTopic from k8s
-        topicStore.read(topicName).setHandler(storeResult -> {
-            if (storeResult.succeeded()) {
-                Topic storeTopic = storeResult.result();
-                ResourceName resourceName = null;
-                if (storeTopic != null) {
-                    resourceName = storeTopic.getResourceName();
-                } else {
-                    resourceName = topicName.asKubeName();
-                }
-                k8s.getFromName(resourceName).setHandler(kubeResult -> {
-                    if (kubeResult.succeeded()) {
-                        KafkaTopic topic = kubeResult.result();
-                        Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
-                        reconcile(logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic, resultHandler);
-                    } else {
-                        resultHandler.handle(kubeResult.map((Void) null));
-                    }
+    private Future<Void> reconcileOnTopicChange(LogContext logContext, TopicName topicName, Topic kafkaTopic) {
+        // Look up the private topic to discover the name of kube KafkaTopic
+        return topicStore.read(topicName)
+            .compose(storeTopic -> {
+                ResourceName resourceName = storeTopic != null ? storeTopic.getResourceName() : topicName.asKubeName();
+                return k8s.getFromName(resourceName).compose(topic -> {
+                    Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
+                    return reconcile(logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                 });
-            } else {
-                resultHandler.handle(storeResult.map((Void) null));
-            }
-        });
+            });
     }
 
     /** Called when a topic znode is created in ZK */
@@ -795,7 +779,8 @@ class TopicOperator {
                                 // We now have the metadata we need to create the
                                 // resource...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                                reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut);
+                                reconcileOnTopicChange(logContext, topicName, kafkaTopic)
+                                        .setHandler(fut);
                             }
                         } else {
                             fut.handle(metadataResult.map((Void) null));
@@ -837,30 +822,31 @@ class TopicOperator {
         Reconciliation action = new Reconciliation("onResourceModified") {
             @Override
             public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, modifiedTopic, k8sTopic, modified, fut);
+                reconcileOnResourceChange(logContext, modifiedTopic, k8sTopic, modified)
+                        .setHandler(fut);
             }
         };
         return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic), action);
     }
 
-    private void reconcileOnResourceChange(LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
-                                           boolean isModify, Handler<AsyncResult<Void>> handler) {
+    private Future<Void> reconcileOnResourceChange(LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
+                                           boolean isModify) {
         TopicName topicName = new TopicName(topicResource);
-        CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName)).setHandler(ar -> {
-            if (ar.succeeded()) {
-                Topic kafkaTopic = ar.result().resultAt(0);
-                Topic privateTopic = ar.result().resultAt(1);
+        return CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName))
+            .compose(compositeResult -> {
+                Topic kafkaTopic = compositeResult.resultAt(0);
+                Topic privateTopic = compositeResult.resultAt(1);
+                Future<Void> result;
                 if (privateTopic == null && isModify) {
+                    result = Future.future();
                     enqueue(new Event(topicResource,
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
-                            EventType.WARNING, handler));
+                            EventType.WARNING, result));
                 } else {
-                    reconcile(logContext, topicResource, k8sTopic, kafkaTopic, privateTopic, handler);
+                    result = reconcile(logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
                 }
-            } else {
-                handler.handle(Future.failedFuture(ar.cause()));
-            }
-        });
+                return result;
+            });
     }
 
     /** Called when a resource is deleted in k8s */
@@ -868,7 +854,8 @@ class TopicOperator {
         Reconciliation action = new Reconciliation("onResourceDeleted") {
             @Override
             public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, deletedTopic, null, false, fut);
+                reconcileOnResourceChange(logContext, deletedTopic, null, false)
+                        .setHandler(fut);
             }
         };
         return executeWithTopicLockHeld(logContext, new TopicName(deletedTopic), action);
@@ -1151,29 +1138,25 @@ class TopicOperator {
             });
     }
 
-    private Future<Void> getKafkaAndReconcile(LogContext logContext, TopicName topicName, Topic privateTopic, KafkaTopic kafkaTopicResource) {
+    private Future<Void> getKafkaAndReconcile(LogContext logContext, TopicName topicName,
+                                              Topic privateTopic, KafkaTopic kafkaTopicResource) {
         logContext.withKubeTopic(kafkaTopicResource);
         Future<Void> topicFuture = Future.future();
         try {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
-            kafka.topicMetadata(topicName).setHandler(metadataResult -> {
-                if (metadataResult.succeeded()) {
-                    TopicMetadata kafkaTopicMeta = metadataResult.result();
+            kafka.topicMetadata(topicName)
+                .compose(kafkaTopicMeta -> {
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                    reconcile(logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic, reconcileResult -> {
-                        if (reconcileResult.succeeded()) {
-                            LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
-                            topicFuture.complete();
-                        } else {
-                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), reconcileResult.cause());
-                            topicFuture.fail(reconcileResult.cause());
-                        }
-                    });
-                } else {
-                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), metadataResult.cause());
-                    topicFuture.fail(metadataResult.cause());
-                }
-            });
+                    return reconcile(logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
+                })
+                .setHandler(ar -> {
+                    if (ar.failed()) {
+                        LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());
+                    } else {
+                        LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
+                    }
+                    topicFuture.handle(ar);
+                });
         } catch (InvalidTopicException e) {
             LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
             topicFuture.fail(e);
@@ -1196,33 +1179,30 @@ class TopicOperator {
         return topicStore.read(topicName);
     }
 
-    private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
+    private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject,
+                                                String reconciliationType, ResourceName kubeName, TopicName topicName) {
         return executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube") {
             @Override
             public void handle(Future<Void> fut) {
-                CompositeFuture.join(getFromKube(kubeName),
+                CompositeFuture.all(
+                        getFromKube(kubeName),
                         getFromKafka(topicName),
                         getFromTopicStore(topicName))
+                    .compose(compositeResult -> {
+                        KafkaTopic ktr = compositeResult.resultAt(0);
+                        logContext.withKubeTopic(ktr);
+                        Topic k8sTopic = TopicSerialization.fromTopicResource(ktr);
+                        Topic kafkaTopic = compositeResult.resultAt(1);
+                        Topic privateTopic = compositeResult.resultAt(2);
+                        return reconcile(logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic);
+                    })
                     .setHandler(ar -> {
-                        if (ar.succeeded()) {
-                            KafkaTopic ktr = ar.result().resultAt(0);
-                            logContext.withKubeTopic(ktr);
-                            Topic k8sTopic = TopicSerialization.fromTopicResource(ktr);
-                            Topic kafkaTopic = ar.result().resultAt(1);
-                            Topic privateTopic = ar.result().resultAt(2);
-                            reconcile(logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
-                                if (reconcileResult.succeeded()) {
-                                    LOGGER.info("{}: Success reconciling KafkaTopic {}", logContext, logTopic(involvedObject));
-                                    fut.complete();
-                                } else {
-                                    LOGGER.error("{}: Error reconciling KafkaTopic {}", logContext, logTopic(involvedObject), reconcileResult.cause());
-                                    fut.fail(reconcileResult.cause());
-                                }
-                            });
-                        } else {
+                        if (ar.failed()) {
                             LOGGER.error("{}: Error reconciling KafkaTopic {}", logContext, kubeName, ar.cause());
-                            fut.fail(ar.cause());
+                        } else {
+                            LOGGER.info("{}: Success reconciling KafkaTopic {}", logContext, logTopic(involvedObject));
                         }
+                        fut.handle(ar);
                     });
             }
         });
