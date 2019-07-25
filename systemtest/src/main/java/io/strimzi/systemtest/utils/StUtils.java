@@ -398,7 +398,7 @@ public class StUtils {
         LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         waitForPodsReady(deploymentConfigSelector, expectedPods, true);
         String clusterOperatorPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
-        String log = "BuildConfigOperator:191 - BuildConfig " + name + " in namespace connect-s2i-cluster-test has been created";
+        String log = "BuildConfigOperator:191 - BuildConfig " + name + " in namespace " + kubeClient().getNamespace() + " has been created";
 
         TestUtils.waitFor("build config creation " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().logs(clusterOperatorPodName).contains(log));

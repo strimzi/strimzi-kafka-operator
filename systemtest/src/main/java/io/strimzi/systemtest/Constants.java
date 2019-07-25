@@ -33,6 +33,8 @@ public interface Constants {
     long TIMEOUT_FOR_GET_SECRETS = Duration.ofMinutes(1).toMillis();
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
+    long CONNECT_STATUS_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
 
     long CO_OPERATION_TIMEOUT = Duration.ofMinutes(1).toMillis();
