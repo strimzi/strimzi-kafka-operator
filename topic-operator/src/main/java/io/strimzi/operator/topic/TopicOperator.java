@@ -700,7 +700,7 @@ class TopicOperator {
             public void handle(Future<Void> fut) {
 
                 // getting topic information from the private store
-                topicStore.read(topicName, topicResult -> {
+                topicStore.read(topicName).setHandler(topicResult -> {
 
                     TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
                         @Override
@@ -748,7 +748,7 @@ class TopicOperator {
         // TODO Here I need to lookup the name of the kafkatopic from the name of the topic.
         // I can either do that from the topicStore, or maintain an in-memory map
         // I can then look up the KafkaTopic from k8s
-        topicStore.read(topicName, storeResult -> {
+        topicStore.read(topicName).setHandler(storeResult -> {
             if (storeResult.succeeded()) {
                 Topic storeTopic = storeResult.result();
                 ResourceName resourceName = null;
@@ -889,7 +889,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            topicStore.update(topic, ar -> {
+            topicStore.update(topic).setHandler(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -920,7 +920,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             LOGGER.debug("Executing {}", this);
-            topicStore.create(topic, ar -> {
+            topicStore.create(topic).setHandler(ar -> {
                 LOGGER.debug("Completing {}", this);
                 if (ar.failed()) {
                     LOGGER.debug("{} failed", this);
@@ -954,7 +954,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            topicStore.delete(topicName, ar -> {
+            topicStore.delete(topicName).setHandler(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -1195,9 +1195,7 @@ class TopicOperator {
     }
 
     Future<Topic> getFromTopicStore(TopicName topicName) {
-        Future<Topic> f = Future.future();
-        topicStore.read(topicName, f);
-        return f;
+        return topicStore.read(topicName);
     }
 
     private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
