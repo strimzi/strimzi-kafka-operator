@@ -42,7 +42,6 @@ m¦KafkaBridge
 ¦The {ProductName} Kafka Bridge, if deployed.
 
 |===
-//When dev work is complete, add `KafkaTopicStatus` to the above table. `KafkaTopicStatus`: Kafka topics and their partitions
 
 The `status` property of a resource provides information on the resource's:
 
