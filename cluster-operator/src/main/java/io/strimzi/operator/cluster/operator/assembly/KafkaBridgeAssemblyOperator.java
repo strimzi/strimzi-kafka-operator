@@ -109,7 +109,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 if (bridge.getHttp() != null) {
                     port = bridge.getHttp().getPort();
                 }
-                kafkaBridgeStatus.setHttpAddress(bridge.getServiceName() + "." + namespace + ".svc:" + port);
+                kafkaBridgeStatus.setUrl(KafkaBridgeResources.url(bridge.getName(), namespace, port));
 
                 updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).setHandler(statusResult -> {
                     // If both features succeeded, createOrUpdate succeeded as well

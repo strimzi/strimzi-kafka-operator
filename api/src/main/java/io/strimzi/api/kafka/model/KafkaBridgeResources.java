@@ -48,4 +48,14 @@ public class KafkaBridgeResources {
         return deploymentName(clusterName);
     }
 
+    /**
+     * Returns the URL of the Kafka Bridge for a {@code KafkaBridge} cluster of the given name.
+     * @param bridgeName  The {@code metadata.name} of the {@code KafkaBridge} resource.
+     * @param namespace The namespace where the {@code KafkaBridge} cluster is running.
+     * @param port The port on which the {@code KafkaBridge} is available.
+     * @return The URL of {@code KafkaBridge}.
+     */
+    public static String url(String bridgeName, String namespace, int port) {
+        return "http://" + serviceName(bridgeName) + "." + namespace + ".svc:" + port;
+    }
 }

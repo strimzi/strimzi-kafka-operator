@@ -812,6 +812,6 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-            restApiAddress:
+            url:
               type: string
 {{- end -}}

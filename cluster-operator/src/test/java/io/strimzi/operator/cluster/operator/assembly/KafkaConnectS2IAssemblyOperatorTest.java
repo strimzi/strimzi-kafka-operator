@@ -191,7 +191,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
             // Verify status
             List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
-            context.assertEquals(capturedConnects.get(0).getStatus().getRestApiAddress(), "foo-connect-api.test.svc:8083");
+            context.assertEquals(capturedConnects.get(0).getStatus().getUrl(), "http://foo-connect-api.test.svc:8083");
             context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), "Ready");
 
@@ -755,7 +755,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
             // Verify status
             List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
-            context.assertEquals(capturedConnects.get(0).getStatus().getRestApiAddress(), "foo-connect-api.test.svc:8083");
+            context.assertEquals(capturedConnects.get(0).getStatus().getUrl(), "http://foo-connect-api.test.svc:8083");
             context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
             context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), failureMessage);
