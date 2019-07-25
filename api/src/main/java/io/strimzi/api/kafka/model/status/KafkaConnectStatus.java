@@ -26,7 +26,7 @@ public class KafkaConnectStatus extends Status {
 
     private String url;
 
-    @Description("URL of REST API endpoint for managing and monitoring Kafka Connect connectors.")
+    @Description("The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.")
     public String getUrl() {
         return url;
     }

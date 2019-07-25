@@ -49,9 +49,9 @@ public class KafkaBridgeResources {
     }
 
     /**
-     * Returns the URL the Kafka Bridge for a {@code KafkaBridge} cluster of the given name.
+     * Returns the URL of the Kafka Bridge for a {@code KafkaBridge} cluster of the given name.
      * @param bridgeName  The {@code metadata.name} of the {@code KafkaBridge} resource.
-     * @param namespace The namespace where {@code KafkaBridge} cluster is running.
+     * @param namespace The namespace where the {@code KafkaBridge} cluster is running.
      * @param port The port on which the {@code KafkaBridge} is available.
      * @return The URL of {@code KafkaBridge}.
      */

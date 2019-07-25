@@ -48,11 +48,11 @@ public class KafkaConnectResources {
     }
 
     /**
-     * Returns the URL the Kafka Connect REST API for a {@code KafkaConnect} cluster of the given name.
+     * Returns the URL of the Kafka Connect REST API for a {@code KafkaConnect} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @param namespace The namespace where {@code KafkaConnect} cluster is running.
      * @param port The port on which the {@code KafkaConnect} API is available.
-     * @return The REST address of {@code KafkaConnect} API.
+     * @return The base URL of the {@code KafkaConnect} REST API.
      */
     public static String url(String clusterName, String namespace, int port) {
         return "http://" + serviceName(clusterName) + "." + namespace + ".svc:" + port;
