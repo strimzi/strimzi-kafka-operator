@@ -1410,12 +1410,10 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testPersistentStorageSize() throws Exception {
-        String diskSizeGi = "70Gi";
-
         JbodStorage jbodStorage =  new JbodStorageBuilder()
                 .withVolumes(
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi).build(),
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi).build()
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize("70Gi").build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize("20Gi").build()
                 ).build();
 
         testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 2)
@@ -1440,12 +1438,21 @@ class KafkaST extends MessagingBaseST {
                 .done();
 
         for (PersistentVolumeClaim volume : kubeClient().listPersistentVolumeClaims()) {
-            LOGGER.info("Checking volume {} and size of storage {}", volume.getMetadata().getName(),
-                    volume.getSpec().getResources().getRequests().get("storage").getAmount());
-            assertEquals(diskSizeGi, volume.getSpec().getResources().getRequests().get("storage").getAmount());
+            checkStorageSizeForVolume(volume);
         }
 
         waitForClusterAvailability(NAMESPACE);
+    }
+
+    void checkStorageSizeForVolume(PersistentVolumeClaim volume){
+        LOGGER.info("Checking volume {} and size of storage {}", volume.getMetadata().getName(),
+                volume.getSpec().getResources().getRequests().get("storage").getAmount());
+
+        if (volume.getMetadata().getName().startsWith("data-0")) {
+            assertEquals("70Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+        } else {
+            assertEquals("20Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+        }
     }
 
     @BeforeEach
