@@ -136,9 +136,9 @@ class UserST extends AbstractST {
             String userName = "alisa" + i;
             LOGGER.info("Creating user with name {}", userName);
             if (typeOfUser.equals("TLS")) {
-                testMethodResources().tlsUser(CLUSTER_NAME, userName);
+                testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
             } else {
-                testMethodResources().scramShaUser(CLUSTER_NAME, userName);
+                testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
             }
             StUtils.waitForSecretReady(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
@@ -170,13 +170,13 @@ class UserST extends AbstractST {
                 .editSpec()
                 .editKafka()
                 .editListeners()
-                .editTls()
-                .withNewKafkaListenerAuthenticationTlsAuth()
-                .endKafkaListenerAuthenticationTlsAuth()
-                .endTls()
+                .withNewKafkaListenerExternalNodePort()
+                .withNewOverrides()
+                .withNewBootstrap()
+                .endBootstrap()
+                .endOverrides()
+                .endKafkaListenerExternalNodePort()
                 .endListeners()
-                .withNewKafkaAuthorizationSimple()
-                .endKafkaAuthorizationSimple()
                 .endKafka()
                 .endSpec().build()).done();
     }
