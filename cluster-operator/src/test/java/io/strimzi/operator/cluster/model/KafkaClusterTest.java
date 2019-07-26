@@ -2120,14 +2120,14 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withNewListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .withNewKafkaListenerAuthenticationTlsAuth()
-                .endKafkaListenerAuthenticationTlsAuth()
-                .endKafkaListenerExternalNodePort()
-                .endListeners()
-                .endKafka()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
                 .endSpec()
                 .build();
 
