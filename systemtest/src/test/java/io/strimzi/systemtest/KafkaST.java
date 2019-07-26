@@ -1410,13 +1410,17 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testPersistentStorageSize() throws Exception {
+        String[] diskSizes = {"70Gi", "20Gi"};
+        int kafkaRepl = 2;
+        int diskCount = 2;
+
         JbodStorage jbodStorage =  new JbodStorageBuilder()
                 .withVolumes(
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize("70Gi").build(),
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize("20Gi").build()
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizes[0]).build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
                 ).build();
 
-        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 2)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, kafkaRepl)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -1437,21 +1441,22 @@ class KafkaST extends MessagingBaseST {
                 .build())
                 .done();
 
-        for (PersistentVolumeClaim volume : kubeClient().listPersistentVolumeClaims()) {
-            checkStorageSizeForVolume(volume);
-        }
+        List<PersistentVolumeClaim> volumes = kubeClient().listPersistentVolumeClaims();
+
+        checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
 
         waitForClusterAvailability(NAMESPACE);
     }
 
-    void checkStorageSizeForVolume(PersistentVolumeClaim volume){
-        LOGGER.info("Checking volume {} and size of storage {}", volume.getMetadata().getName(),
-                volume.getSpec().getResources().getRequests().get("storage").getAmount());
-
-        if (volume.getMetadata().getName().startsWith("data-0")) {
-            assertEquals("70Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
-        } else {
-            assertEquals("20Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
+        int k = 0;
+        for (int i = 0; i < kafkaRepl; i++) {
+            for (int j = 0; j < diskCount; j++) {
+                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                assertEquals(diskSizes[i], volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                k++;
+            }
         }
     }
 
