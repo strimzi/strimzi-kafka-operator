@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -1403,6 +1404,58 @@ class KafkaST extends MessagingBaseST {
             for (int j = 0; j < diskCountPerReplica; j++) {
                 dataSourcesOnPod.contains("data-" + j);
                 pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+    }
+
+    @Test
+    void testPersistentStorageSize() throws Exception {
+        String[] diskSizes = {"70Gi", "20Gi"};
+        int kafkaRepl = 2;
+        int diskCount = 2;
+
+        JbodStorage jbodStorage =  new JbodStorageBuilder()
+                .withVolumes(
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizes[0]).build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
+                ).build();
+
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, kafkaRepl)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                                .withNewOverrides()
+                                    .withNewBootstrap()
+                                    .endBootstrap()
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                        .withStorage(jbodStorage)
+                    .endKafka()
+                    .editZookeeper().
+                        withReplicas(1)
+                    .endZookeeper()
+                .endSpec()
+                .build())
+                .done();
+
+        List<PersistentVolumeClaim> volumes = kubeClient().listPersistentVolumeClaims();
+
+        checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
+        int k = 0;
+        for (int i = 0; i < kafkaRepl; i++) {
+            for (int j = 0; j < diskCount; j++) {
+                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                assertEquals(diskSizes[i], volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                k++;
             }
         }
     }
