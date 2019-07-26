@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
@@ -2110,5 +2111,67 @@ public class KafkaClusterTest {
                 // pass
             }
         }
+    }
+
+    @Test
+    public void testClusterRoleBindingNodePort() {
+        String testNamespace = "other-namespace";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewKafkaListenerExternalNodePort()
+                .withNewKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+
+        assertEquals(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster), crb.getMetadata().getName());
+        assertNull(crb.getMetadata().getNamespace());
+        assertEquals(testNamespace, crb.getSubjects().get(0).getNamespace());
+        assertEquals(KafkaCluster.initContainerServiceAccountName(cluster), crb.getSubjects().get(0).getName());
+    }
+
+    @Test
+    public void testClusterRoleBindingRack() {
+        String testNamespace = "other-namespace";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewRack("my-topology-label")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+
+        assertEquals(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster), crb.getMetadata().getName());
+        assertNull(crb.getMetadata().getNamespace());
+        assertEquals(testNamespace, crb.getSubjects().get(0).getNamespace());
+        assertEquals(KafkaCluster.initContainerServiceAccountName(cluster), crb.getSubjects().get(0).getName());
+    }
+
+    @Test
+    public void testNullClusterRoleBinding() {
+        String testNamespace = "other-namespace";
+
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+
+        assertNull(crb);
     }
 }

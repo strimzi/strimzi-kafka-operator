@@ -1377,7 +1377,6 @@ public class KafkaCluster extends AbstractModel {
             return new ClusterRoleBindingBuilder()
                     .withNewMetadata()
                         .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                        .withNamespace(assemblyNamespace)
                         .withOwnerReferences(createOwnerReference())
                         .withLabels(labels.toMap())
                     .endMetadata()
