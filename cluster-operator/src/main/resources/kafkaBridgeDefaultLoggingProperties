@@ -3,3 +3,7 @@ log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
 bridge.root.logger=INFO
 log4j.rootLogger=${bridge.root.logger}, CONSOLE
+log4j.logger.http.openapi.operation.healthy=WARN, CONSOLE
+log4j.additivity.http.openapi.operation.healthy=false
+log4j.logger.http.openapi.operation.ready=WARN, CONSOLE
+log4j.additivity.http.openapi.operation.ready=false
