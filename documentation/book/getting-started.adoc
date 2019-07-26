@@ -10,7 +10,7 @@
 = Getting started with {ProductName}
 
 {ProductName} is designed to work on all types of Kubernetes cluster regardless of distribution, from public and private clouds to local deployments intended for development.
-{ProductName} supports a few features which are specific to OpenShift and OKD, where such integration benefits OpenShift users and cannot be implemented equivalently using standard Kubernetes.
+{ProductName} supports a few features which are specific to OpenShift, where such integration benefits OpenShift users and cannot be implemented equivalently using standard Kubernetes.
 
 This guide assumes that a Kubernetes cluster is available and the `kubectl` command-line tool is installed and configured to connect to the running cluster.
 
