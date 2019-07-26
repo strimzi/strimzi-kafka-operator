@@ -28,7 +28,16 @@ public abstract class AbstractNamespaceST extends AbstractST {
     void checkKafkaInDiffNamespaceThanCO() {
         String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
         StUtils.waitForAllStatefulSetPodsReady(kafkaName, 3);
