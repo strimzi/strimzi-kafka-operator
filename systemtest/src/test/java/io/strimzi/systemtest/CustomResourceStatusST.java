@@ -304,25 +304,25 @@ class CustomResourceStatusST extends AbstractST {
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
         KafkaStatus kafkaStatus = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("", kafkaStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("Kafka cluster status has incorrect Observed Generation", kafkaStatus.getObservedGeneration(), is(expectedObservedGeneration));
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
             switch (listener.getType()) {
                 case "tls":
-                    assertThat("", listener.getAddresses().get(0).getPort(), is(9093));
-                    assertThat("", listener.getAddresses().get(0).getHost(), is(internalAddress));
+                    assertThat("TLS bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9093));
+                    assertThat("TLS bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
                 case "plain":
-                    assertThat("", listener.getAddresses().get(0).getPort(), is(9092));
-                    assertThat("", listener.getAddresses().get(0).getHost(), is(internalAddress));
+                    assertThat("Plain bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9092));
+                    assertThat("Plain bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
                 case "external":
                     Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
                             .inNamespace(NAMESPACE)
                             .withName(externalBootstrapServiceName(CLUSTER_NAME))
                             .get();
-                    assertThat("", listener.getAddresses().get(0).getPort(), is(extBootstrapService.getSpec().getPorts().get(0).getNodePort()));
-                    assertThat("", listener.getAddresses().get(0).getHost() != null);
+                    assertThat("External bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(extBootstrapService.getSpec().getPorts().get(0).getNodePort()));
+                    assertThat("External bootstrap has incorrect host", listener.getAddresses().get(0).getHost() != null);
                     break;
             }
         }
@@ -330,25 +330,25 @@ class CustomResourceStatusST extends AbstractST {
 
     void assertKafkaMirrorMakerStatus(long expectedObservedGeneration) {
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("", kafkaMirrorMakerStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("Kafka MirrorMaker cluster status has incorrect Observed Generation", kafkaMirrorMakerStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
         KafkaBridgeStatus kafkaBridgeStatus = testClassResources().kafkaBridge().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
+        assertThat("Kafka Bridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("Kafka Bridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
     }
 
     void assertKafkaConnectStatus(long expectedObservedGeneration, String expectedUrl) {
         KafkaConnectStatus kafkaConnectStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("", kafkaConnectStatus.getUrl(), is(expectedUrl));
+        assertThat("Kafka Connect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
     }
 
     void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
         KafkaConnectS2Istatus kafkaConnectS2IStatus = testMethodResources().kafkaConnectS2I().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
-        assertThat("", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
+        assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
+        assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
     }
 }
