@@ -48,16 +48,12 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
-        Condition kafkaCondition = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
-        logCurrentStatus(kafkaCondition, Kafka.RESOURCE_KIND);
-        assertThat("Kafka cluster is in wrong state!", kafkaCondition.getType(), is("Ready"));
-        LOGGER.info("Kafka cluster is in desired state: Ready");
-
+        waitForKafkaStatus("Ready");
         waitForClusterAvailability(NAMESPACE, TOPIC_NAME);
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
         });
@@ -67,7 +63,7 @@ class CustomResourceStatusST extends AbstractST {
 
         LOGGER.info("Recovery cluster to Ready state ...");
         replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("10m"))
                     .build());
         });
@@ -130,7 +126,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
-    @Disabled("Currently, readiness check for MM is not working correctly so MM status is not set properly when MM confug is corrupted by wrong bootstrap server")
+    @Disabled("Currently, readiness check for MM is not working correctly so MM status is not set properly when MM config is corrupted by wrong bootstrap server")
     void testKafkaMirrorMakerStatusWrongBootstrap() {
         createTestMethodResources();
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
@@ -151,7 +147,7 @@ class CustomResourceStatusST extends AbstractST {
 
         testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
         waitForKafkaBridgeStatus("Ready");
-        assertKafkaBridgeStatus(1, "my-cluster-bridge-service.status-cluster-test.svc:8080");
+        assertKafkaBridgeStatus(1, "http://my-cluster-bridge-bridge-service.status-cluster-test.svc:8080");
 
         replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -162,7 +158,7 @@ class CustomResourceStatusST extends AbstractST {
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaBridgeStatus("Ready");
-        assertKafkaBridgeStatus(3, "my-cluster-bridge-service.status-cluster-test.svc:8080");
+        assertKafkaBridgeStatus(3, "http://my-cluster-bridge-bridge-service.status-cluster-test.svc:8080");
     }
 
     @Test
@@ -170,7 +166,7 @@ class CustomResourceStatusST extends AbstractST {
         createTestMethodResources();
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1).done();
         waitForKafkaConnectStatus("Ready");
-        assertKafkaConnectStatus(1);
+        assertKafkaConnectStatus(1, "http://my-cluster-connect-api.status-cluster-test.svc:8083");
 
         replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -181,7 +177,7 @@ class CustomResourceStatusST extends AbstractST {
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
-        assertKafkaConnectStatus(3);
+        assertKafkaConnectStatus(3, "http://my-cluster-connect-api.status-cluster-test.svc:8083");
     }
 
     @Test
@@ -190,7 +186,7 @@ class CustomResourceStatusST extends AbstractST {
 
         testMethodResources().kafkaConnectS2I(CLUSTER_NAME, 1, CLUSTER_NAME).done();
         waitForKafkaConnectS2IStatus("Ready");
-        assertKafkaConnectS2IStatus(1, "my-cluster-connect-api.status-cluster-test.svc:8083");
+        assertKafkaConnectS2IStatus(1, "http://my-cluster-connect-api.status-cluster-test.svc:8083", "my-cluster-connect");
 
         replaceConnectS2IResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -201,7 +197,7 @@ class CustomResourceStatusST extends AbstractST {
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
-        assertKafkaConnectS2IStatus(3, "my-cluster-connect-api.status-cluster-test.svc:8083");
+        assertKafkaConnectS2IStatus(3, "http://my-cluster-connect-api.status-cluster-test.svc:8083", "my-cluster-connect");
     }
 
     @BeforeAll
@@ -222,11 +218,6 @@ class CustomResourceStatusST extends AbstractST {
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         createTestEnvironment();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterAll() {
-        teardownEnvForOperator();
     }
 
     void createTestEnvironment() {
@@ -345,17 +336,19 @@ class CustomResourceStatusST extends AbstractST {
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
         KafkaBridgeStatus kafkaBridgeStatus = testClassResources().kafkaBridge().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("", kafkaBridgeStatus.getHttpAddress(), is(bridgeAddress));
+        assertThat("", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
     }
 
-    void assertKafkaConnectStatus(long expectedObservedGeneration) {
+    void assertKafkaConnectStatus(long expectedObservedGeneration, String expectedUrl) {
         KafkaConnectStatus kafkaConnectStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("", kafkaConnectStatus.getUrl(), is(expectedUrl));
     }
 
-    void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedRestApi) {
+    void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
         KafkaConnectS2Istatus kafkaConnectS2IStatus = testMethodResources().kafkaConnectS2I().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("", kafkaConnectS2IStatus.getRestApiAddress(), is(expectedRestApi));
+        assertThat("", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
+        assertThat("", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
     }
 }

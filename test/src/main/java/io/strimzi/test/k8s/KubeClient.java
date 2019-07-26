@@ -295,12 +295,19 @@ public class KubeClient {
         return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get();
     }
 
-
     /**
      * Gets deployment config selector
      */
     public Map<String, String> getDeploymentConfigSelectors(String deploymentConfigName) {
         return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get().getSpec().getSelector();
+    }
+
+    /**
+     * Delete deployment config
+     * @param deploymentConfigName deployment config name
+     */
+    public void deleteDeploymentConfig(String deploymentConfigName) {
+        client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).delete();
     }
 
     /**
