@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -582,12 +583,11 @@ public class Resources extends AbstractResources {
         client().deleteDeploymentConfig(KafkaConnectS2IResources.buildConfigName(kafkaConnectS2I.getMetadata().getName()));
 
         client().listPods().stream()
-                .filter(p -> p.getMetadata().getName().contains("build"))
-                .forEach(p -> client().deletePod(p));
-
-        client().listPods().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .filter(p -> p.getMetadata().getName().contains("-connect-"))
+                .forEach(p -> {
+                    LOGGER.debug("Deleting: {}", p.getMetadata().getName());
+                    client().deletePod(p);
+                });
     }
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
