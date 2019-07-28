@@ -77,13 +77,20 @@ pipeline {
                 }
             }
         }
+        stage('Build project') {
+            steps {
+                script {
+                    sh "mvn clean install -DskipTests"
+                }
+            }
+        }
         stage('Build images') {
             when {
                 environment name: 'TEST_ONLY', value: 'false'
             }
             steps {
                 script {
-                    lib.buildStrimzi()
+                    lib.buildStrimziImages()
                 }
             }
         }
