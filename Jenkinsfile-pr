@@ -26,7 +26,7 @@ pipeline {
 
         ARTIFACTS_DIR = 'systemtest/target/logs'
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
-        TEST_ONLY="false"
+        TEST_ONLY=false
     }
     stages {
         stage('Clean WS') {
@@ -53,9 +53,14 @@ pipeline {
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                     if (env.ghprbCommentBody.contains('testonly')) {
-                        env.TEST_ONLY = "true"
+                        env.TEST_ONLY = true
+                        env.DOCKER_TAG = "latest"
+                        env.DOCKER_REGISTRY = "docker.io"
                     }
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
+                    echo "DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}"
+                    echo "DOCKER_ORG: ${env.DOCKER_ORG}"
+                    echo "DOCKER_TAG: ${env.DOCKER_TAG}"
                 }
             }
         }
@@ -70,11 +75,12 @@ pipeline {
             }
         }
         stage('Build images') {
+            when {
+                environment name: 'TEST_ONLY', value: 'false'
+            }
             steps {
                 script {
-                    if (env.TEST_ONLY.equals("false")) {
-                        lib.buildStrimzi()
-                    }
+                    lib.buildStrimzi()
                 }
             }
         }
