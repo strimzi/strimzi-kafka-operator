@@ -19,4 +19,6 @@ include::con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
 
 include::con-requests-kafka-bridge.adoc[leveloffset=+1]
 
+include::con-loggers-kafka-bridge.adoc[leveloffset=+1]
+
 include::ref-api-resources-kafka-bridge.adoc[leveloffset=+1]
