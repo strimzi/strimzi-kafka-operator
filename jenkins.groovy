@@ -63,8 +63,7 @@ def clearImages() {
 }
 
 
-def buildStrimzi() {
-    sh "mvn clean install -DskipTests"
+def buildStrimziImages() {
     sh "make docker_build"
     sh "make docker_tag"
 }

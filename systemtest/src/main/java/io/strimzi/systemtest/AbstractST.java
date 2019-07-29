@@ -15,18 +15,24 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -206,6 +212,14 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
         replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
+    }
+
+    void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
+        replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
+    }
+
+    void replaceConnectS2IResource(String resourceName, Consumer<KafkaConnectS2I> editor) {
+        replaceCrdResource(KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, resourceName, editor);
     }
 
     String getBrokerApiVersions(String podName) {
@@ -941,6 +955,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         if (Environment.SKIP_TEARDOWN == null) {
             if (context.getExecutionException().isPresent()) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
+                context.getExecutionException().get().printStackTrace();
                 recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
                 LOGGER.info("Env recreated.");
             }

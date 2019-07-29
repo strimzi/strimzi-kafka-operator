@@ -17,16 +17,12 @@ pipeline {
         ansiColor('xterm')
     }
     environment {
-        DOCKER_ORG="strimzi"
-        DOCKER_REGISTRY="localhost:5000"
-        DOCKER_TAG="pr"
         OPENSHIFT_URL="https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz"
         // Workaround for skip flaky tests
         MVN_ARGS="-Dfailsafe.rerunFailingTestsCount=5"
 
         ARTIFACTS_DIR = 'systemtest/target/logs'
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
-        TEST_ONLY="false"
     }
     stages {
         stage('Clean WS') {
@@ -42,6 +38,7 @@ pipeline {
         stage('Parse parameters from comment') {
             steps {
                 script {
+                    echo "Comment body: ${env.ghprbCommentBody}"
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
                     if (env.ghprbCommentBody.contains('testcase=')) {
@@ -52,10 +49,21 @@ pipeline {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
                     }
                     echo "TEST_PROFILE: ${env.TEST_PROFILE}"
-                    if (env.ghprbCommentBody.contains('testonly')) {
-                        env.TEST_ONLY = "true"
+                    if (env.ghprbCommentBody.contains('test_only')) {
+                        env.TEST_ONLY = true
+                        env.DOCKER_REGISTRY = "docker.io"
+                        env.DOCKER_ORG="strimzi"
+                        env.DOCKER_TAG = "latest"
+                    } else {
+                        env.TEST_ONLY = false
+                        env.DOCKER_ORG="strimzi"
+                        env.DOCKER_REGISTRY="localhost:5000"
+                        env.DOCKER_TAG="pr"
                     }
                     echo "TEST_ONLY: ${env.TEST_ONLY}"
+                    echo "DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}"
+                    echo "DOCKER_ORG: ${env.DOCKER_ORG}"
+                    echo "DOCKER_TAG: ${env.DOCKER_TAG}"
                 }
             }
         }
@@ -69,12 +77,20 @@ pipeline {
                 }
             }
         }
-        stage('Build images') {
+        stage('Build project') {
             steps {
                 script {
-                    if (env.TEST_ONLY.equals("false")) {
-                        lib.buildStrimzi()
-                    }
+                    sh "mvn clean install -DskipTests"
+                }
+            }
+        }
+        stage('Build images') {
+            when {
+                environment name: 'TEST_ONLY', value: 'false'
+            }
+            steps {
+                script {
+                    lib.buildStrimziImages()
                 }
             }
         }

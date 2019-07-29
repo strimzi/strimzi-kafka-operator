@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -578,13 +579,14 @@ public class Resources extends AbstractResources {
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
 
-        client().listPods().stream()
-                .filter(p -> p.getMetadata().getName().contains("build"))
-                .forEach(p -> client().deletePod(p));
+        client().deleteDeploymentConfig(KafkaConnectS2IResources.buildConfigName(kafkaConnectS2I.getMetadata().getName()));
 
         client().listPods().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .filter(p -> p.getMetadata().getName().contains("-connect-"))
+                .forEach(p -> {
+                    LOGGER.debug("Deleting: {}", p.getMetadata().getName());
+                    client().deletePod(p);
+                });
     }
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {

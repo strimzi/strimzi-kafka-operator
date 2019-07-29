@@ -117,7 +117,9 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                TimeoutException exception = new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                exception.printStackTrace();
+                throw exception;
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
