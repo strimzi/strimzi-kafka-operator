@@ -9,7 +9,9 @@
 [id='getting-started-{context}']
 = Getting started with {ProductName}
 
-{ProductName} works on all types of clusters, from public and private clouds to local deployments intended for development.
+{ProductName} is designed to work on all types of Kubernetes cluster regardless of distribution, from public and private clouds to local deployments intended for development.
+{ProductName} supports a few features which are specific to OpenShift, where such integration benefits OpenShift users and cannot be implemented equivalently using standard Kubernetes.
+
 This guide assumes that a Kubernetes cluster is available and the `kubectl` command-line tool is installed and configured to connect to the running cluster.
 
 ifndef::Downloading[]
@@ -19,13 +21,12 @@ endif::Downloading[]
 ifdef::InstallationAppendix[]
 When no existing Kubernetes cluster is available, `minikube` can be used to create a local cluster.
 More details can be found in xref:installing_kubernetes_cluster[Installing Kubernetes clusters].
-{ProductName} supports a few specific OpenShift-specific features. 
-If you need an OpenShift cluster to use these and none is available `minishift` can be used to create a local cluster.
+
+If you want to use OpenShift-specific features and have no OpenShift cluster `minishift` can be used to create a local cluster.
 More details can be found in xref:installing_openshift_cluster[Installing OpenShift clusters].
 endif::InstallationAppendix[]
 
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
-
 
 include::con-product-downloads.adoc[leveloffset=+1]
 
