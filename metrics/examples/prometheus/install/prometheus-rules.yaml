@@ -33,6 +33,14 @@ spec:
       annotations:
         summary: 'Kafka abnormal controller state'
         description: 'There are {{ $value }} active controllers in the cluster'
+    - alert: OfflinePartitions
+      expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka offline partitions'
+        description: 'There are offline partitions on pod {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
     - alert: UnderMinIsrPartitionCount
       expr: kafka_server_replicamanager_underminisrpartitioncount > 0
       for: 10s
@@ -48,7 +56,46 @@ spec:
         severity: warning
       annotations:
         summary: 'Kafka offline log directories'
-        description: 'There are {{ $value }} offline log directoris on {{ $labels.kubernetes_pod_name }}'
+        description: 'There are {{ $value }} offline log directories on {{ $labels.kubernetes_pod_name }}'
+    - alert: ScrapeProblem
+      expr: up{job="kubernetes-cadvisor", kubernetes_name!~".+-cluster-zookeeper-client"} == 0
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
+        description: 'Prometheus has not been able to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes'
+    - alert: ClusterOperatorContainerDown
+      expr: count((container_last_seen{container_name="strimzi-cluster-operator"} > (time() - 90))) < 1 or absent(container_last_seen{container_name="strimzi-cluster-operator"})
+      for: 1m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container strimzi-cluster-operator is down'
+        description: 'Container strimzi-cluster-operator has been down for more than 90 seconds'
+    - alert: KafkaBrokerContainerDown
+      expr: absent(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      for: 3m
+      labels:
+        severity: major
+        group: ngp-kafka
+      annotations:
+        summary: 'Container kafka in pod with index 0 is down or in CrashLookBackOff status'
+        description: 'Container kafka in pod with index 0 is down or in CrashLookBackOff status for 3 minutes'
+    - alert: KafkaContainerRestartedInTheLast5Minutes
+      expr: count(count_over_time(container_last_seen{container_name="kafka"}[5m])) > count(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        description: 'Some of the Kafka containers was restarted too many times in last 5 minutes'
+    - alert: ZookeeperContainerRestartedInTheLast5Minutes
+      expr: count(count_over_time(container_last_seen{container_name="zookeeper"}[5m])) > count(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        description: 'Some of the Zookeeper containers was restarted too many times in last 5 minutes. This alert can be ignored during scaling up the Zookeeper cluster.'
   - name: zookeeper
     rules:
     - alert: AvgRequestLatency
