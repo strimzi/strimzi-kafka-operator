@@ -34,6 +34,7 @@ public class KafkaListenerExternalIngress extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private List<NetworkPolicyPeer> networkPolicyPeers;
     private IngressListenerConfiguration configuration;
+    private String ingressClass;
 
     @Description("Must be `" + TYPE_INGRESS + "`")
     @Override
@@ -77,5 +78,17 @@ public class KafkaListenerExternalIngress extends KafkaListenerExternal {
 
     public void setConfiguration(IngressListenerConfiguration configuration) {
         this.configuration = configuration;
+    }
+
+    @Description("Configures the Ingress class which defines which `Ingress` controller will be used. " +
+            "When not set, the `Ingress` class will be set to `nginx`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("class")
+    public String getIngressClass() {
+        return ingressClass;
+    }
+
+    public void setIngressClass(String ingressClass) {
+        this.ingressClass = ingressClass;
     }
 }
