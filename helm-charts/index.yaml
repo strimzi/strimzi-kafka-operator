@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   strimzi-kafka-operator:
   - apiVersion: v1
-    appVersion: 0.13.0-rc1
-    created: 2019-07-25T17:40:39.963383+02:00
+    appVersion: 0.13.0
+    created: 2019-07-29T18:12:49.026595+02:00
     description: 'Strimzi: Kafka as a Service'
-    digest: 56c5165ebdde0b1ec4b55ba1781d604d387ae8336fcd4cdca48f00c30dbacbf1
+    digest: 19b2654650bff0bf2b449820ce5104bf6cce3a4f72babea32e5217c6fa751601
     home: http://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -24,9 +24,9 @@ entries:
     sources:
     - https://github.com/strimzi/strimzi-kafka-operator
     urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0-rc1/strimzi-kafka-operator-helm-chart-0.13.0-rc1.tgz
-    version: 0.13.0-rc1
-  - apiVersion: v1
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-kafka-operator-helm-chart-0.13.0.tgz
+    version: 0.13.0
+   - apiVersion: v1
     appVersion: 0.12.2
     created: 2019-07-18T10:00:58.022983+02:00
     description: 'Strimzi: Kafka as a Service'
@@ -401,4 +401,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: 2019-07-25T17:40:39.957667+02:00
+generated: 2019-07-29T18:12:49.021431+02:00

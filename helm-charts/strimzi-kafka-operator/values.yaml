@@ -7,7 +7,7 @@ watchNamespaces: []
 image:
   repository: strimzi
   name: operator
-  tag: 0.13.0-rc1
+  tag: 0.13.0
   imagePullPolicy: IfNotPresent
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
@@ -20,62 +20,62 @@ zookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 kafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 topicOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.13.0-rc1
+    tag: 0.13.0
 userOperator:
   image:
     repository: strimzi
     name: operator
-    tag: 0.13.0-rc1
+    tag: 0.13.0
 kafkaInit:
   image:
     repository: strimzi
     name: operator
-    tag: 0.13.0-rc1
+    tag: 0.13.0
 tlsSidecarZookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 kafkaMirrorMaker:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: 0.13.0-rc1
+    tagPrefix: 0.13.0
 kafkaBridge:
   image:
     repository: strimzi
     name: kafka-bridge
-    tag: 0.13.0-rc1
+    tag: 0.13.0
 resources:
   limits:
     memory: 256Mi
