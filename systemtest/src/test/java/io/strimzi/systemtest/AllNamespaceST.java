@@ -4,7 +4,10 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +24,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class AllNamespaceST extends AbstractNamespaceST {
@@ -86,13 +90,50 @@ class AllNamespaceST extends AbstractNamespaceST {
         setNamespace(previousNamespace);
     }
 
+    @Test
+    void testUserInDifferentNamespace() throws Exception {
+        String startingNamespace = setNamespace(SECOND_NAMESPACE);
+        secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        StUtils.waitForSecretReady(USER_NAME);
+        Condition kafkaCondition = secondNamespaceResources.kafkaUser().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
+                .getStatus().getConditions().get(0);
+        LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
+
+        assertEquals("Ready", kafkaCondition.getType());
+
+        List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
+
+        for (Secret s : secretsOfSecondNamespace) {
+            if (s.getMetadata().getName().equals(USER_NAME)) {
+                LOGGER.info("Copying secret {} from namespace {} to namespace {}", s, SECOND_NAMESPACE, THIRD_NAMESPACE);
+                copySecret(s, THIRD_NAMESPACE, USER_NAME);
+            }
+        }
+        waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE);
+
+        setNamespace(startingNamespace);
+    }
+
+    void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {
+        Secret s = new SecretBuilder(sourceSecret)
+                    .withNewMetadata()
+                        .withName(targetName)
+                        .withNamespace(targetNamespace)
+                    .endMetadata()
+                    .build();
+        kubeClient(targetNamespace).getClient().secrets().inNamespace(targetNamespace).createOrReplace(s);
+    }
+
     private void deployTestSpecificResources() {
+
         thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .withNewTls()
-                        .endTls()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
                 .editEntityOperator()
