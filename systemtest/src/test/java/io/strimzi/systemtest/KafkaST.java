@@ -56,6 +56,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
@@ -1457,6 +1458,21 @@ class KafkaST extends MessagingBaseST {
                 assertEquals(diskSizes[i], volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
                 k++;
             }
+        }
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTopics() {
+        int numberOfTopics = 300;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            String topicName = "topic-example" + i;
+            testMethodResources().topic(CLUSTER_NAME, topicName, 3, 3).done();
+            LOGGER.info("Checking that topic {} was created", topicName);
+            assertThat(cmdKubeClient().list("kafkatopic"), hasItems(topicName));
         }
     }
 
