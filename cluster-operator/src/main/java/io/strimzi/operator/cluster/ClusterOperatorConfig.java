@@ -171,10 +171,10 @@ public class ClusterOperatorConfig {
 
     private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String connectS2IImages, String mirrorMakerImages) {
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
-                ModelUtils.parseImageMap(kafkaImages),
-                ModelUtils.parseImageMap(connectImages),
-                ModelUtils.parseImageMap(connectS2IImages),
-                ModelUtils.parseImageMap(mirrorMakerImages));
+                ModelUtils.parseMap(kafkaImages),
+                ModelUtils.parseMap(connectImages),
+                ModelUtils.parseMap(connectS2IImages),
+                ModelUtils.parseMap(mirrorMakerImages));
         try {
             lookup.validateKafkaImages(lookup.supportedVersions());
             lookup.validateKafkaConnectImages(lookup.supportedVersions());

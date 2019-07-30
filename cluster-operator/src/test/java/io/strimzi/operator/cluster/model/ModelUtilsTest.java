@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
+import static io.strimzi.operator.cluster.model.ModelUtils.parseMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -34,17 +34,34 @@ public class ModelUtilsTest {
 
     @Test
     public void testParseImageMap() {
-        Map<String, String> m = parseImageMap("2.0.0=strimzi/kafka:latest-kafka-2.0.0\n  " +
+        Map<String, String> m = parseMap("2.0.0=strimzi/kafka:latest-kafka-2.0.0\n  " +
                 "1.1.1=strimzi/kafka:latest-kafka-1.1.1");
         assertEquals(2, m.size());
         assertEquals("strimzi/kafka:latest-kafka-2.0.0", m.get("2.0.0"));
         assertEquals("strimzi/kafka:latest-kafka-1.1.1", m.get("1.1.1"));
 
-        m = parseImageMap(" 2.0.0=strimzi/kafka:latest-kafka-2.0.0," +
+        m = parseMap(" 2.0.0=strimzi/kafka:latest-kafka-2.0.0," +
                 "1.1.1=strimzi/kafka:latest-kafka-1.1.1");
         assertEquals(2, m.size());
         assertEquals("strimzi/kafka:latest-kafka-2.0.0", m.get("2.0.0"));
         assertEquals("strimzi/kafka:latest-kafka-1.1.1", m.get("1.1.1"));
+    }
+
+    @Test
+    public void testAnnotationsOrLabelsImageMap() {
+        Map<String, String> m = parseMap(" discovery.3scale.net=true");
+        assertEquals(1, m.size());
+        assertEquals("true", m.get("discovery.3scale.net"));
+
+        m = parseMap(" discovery.3scale.net/scheme=http\n" +
+                "        discovery.3scale.net/port=8080\n" +
+                "        discovery.3scale.net/path=path/\n" +
+                "        discovery.3scale.net/description-path=oapi/");
+        assertEquals(4, m.size());
+        assertEquals("http", m.get("discovery.3scale.net/scheme"));
+        assertEquals("8080", m.get("discovery.3scale.net/port"));
+        assertEquals("path/", m.get("discovery.3scale.net/path"));
+        assertEquals("oapi/", m.get("discovery.3scale.net/description-path"));
     }
 
     @Test

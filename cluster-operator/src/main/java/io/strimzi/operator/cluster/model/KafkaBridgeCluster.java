@@ -48,10 +48,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     public static final int DEFAULT_REST_API_PORT = 8080;
     protected static final String REST_API_PORT_NAME = "rest-api";
 
-    private static final String NAME_SUFFIX = "-bridge";
-    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
-
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
 
@@ -64,6 +60,10 @@ public class KafkaBridgeCluster extends AbstractModel {
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+
+    // Cluster Operator environment variables for custom discovery labels and annotations
+    protected static final String CO_ENV_VAR_CUSTOM_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
+    protected static final String CO_ENV_VAR_CUSTOM_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
 
     // Kafka Bridge configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED = "KAFKA_BRIDGE_METRICS_ENABLED";
@@ -235,7 +235,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, templateServiceAnnotations);
+        return createService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
     protected List<ContainerPort> getContainerPortList() {
