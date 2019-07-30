@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -76,6 +77,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1474,6 +1476,54 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Checking that topic {} was created", topicName);
             assertThat(cmdKubeClient().list("kafkatopic"), hasItems(topicName));
         }
+    }
+
+    @Test
+    void testRegenerateCertExternalAddressChange() throws InterruptedException {
+        LOGGER.info("Creating kafka without external listener");
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        List<Secret> secretsWithoutExt = kubeClient().listSecrets();
+
+        LOGGER.info("Editing kafka with external listener");
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Waiting for secrets change");
+        StUtils.waitUntilSecretsChange();
+
+        List<Secret> secretsWithExt = kubeClient().listSecrets();
+        List<Secret> brokerSecrets = new ArrayList<>(2);
+
+        for (Secret secret : secretsWithoutExt) {
+            if (secret.getMetadata().getName().equals("my-cluster-kafka-brokers")) {
+                LOGGER.info("Adding secret with simple configuration of kafka {}", secret);
+                brokerSecrets.add(secret);
+            }
+        }
+
+        for (Secret secret : secretsWithExt) {
+            if (secret.getMetadata().getName().equals("my-cluster-kafka-brokers")) {
+                LOGGER.info("Adding secret with external listener configuration {}", secret);
+                brokerSecrets.add(secret);
+            }
+        }
+
+        LOGGER.info("Checking secrets");
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-0.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-0.crt"));
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-0.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-0.key"));
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-1.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-1.crt"));
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-1.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-1.key"));
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-2.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-2.crt"));
+        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-2.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-2.key"));
     }
 
     @BeforeEach

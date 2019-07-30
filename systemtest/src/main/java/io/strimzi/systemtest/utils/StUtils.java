@@ -595,6 +595,11 @@ public class StUtils {
         return sb.toString();
     }
 
+    public static void waitUntilSecretsChange() throws InterruptedException {
+        LOGGER.info("Waiting until secrets will change");
+        Thread.sleep(4000);
+    }
+
     private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
         if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
             return envVar;
