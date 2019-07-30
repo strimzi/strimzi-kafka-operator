@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
-import io.vertx.core.Handler;
-
 /**
  * ZooKeeper watcher for child znodes of {@code /configs/topics},
- * calling {@link TopicOperator#onTopicConfigChanged(LogContext, TopicName, Handler)}
+ * calling {@link TopicOperator#onTopicConfigChanged(LogContext, TopicName)}
  * for changed children.
  */
 class TopicConfigsWatcher extends ZkWatcher {
@@ -23,7 +21,7 @@ class TopicConfigsWatcher extends ZkWatcher {
     protected void notifyOperator(String child) {
         LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child);
         log.info("{}: Config change {}: topic {}", logContext);
-        topicOperator.onTopicConfigChanged(logContext, new TopicName(child), ar2 -> {
+        topicOperator.onTopicConfigChanged(logContext, new TopicName(child)).setHandler(ar2 -> {
             log.info("{} Reconciliation result due to topic config change on topic {}: {}", logContext, child, ar2);
         });
     }

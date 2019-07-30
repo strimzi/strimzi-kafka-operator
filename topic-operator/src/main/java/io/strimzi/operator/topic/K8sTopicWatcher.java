@@ -52,13 +52,13 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             };
             switch (action) {
                 case ADDED:
-                    topicOperator.onResourceAdded(logContext, kafkaTopic, resultHandler);
+                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, false).setHandler(resultHandler);
                     break;
                 case MODIFIED:
-                    topicOperator.onResourceModified(logContext, kafkaTopic, resultHandler);
+                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, true).setHandler(resultHandler);
                     break;
                 case DELETED:
-                    topicOperator.onResourceDeleted(logContext, kafkaTopic, resultHandler);
+                    topicOperator.onResourceDeleted(logContext, kafkaTopic).setHandler(resultHandler);
                     break;
                 case ERROR:
                     LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
