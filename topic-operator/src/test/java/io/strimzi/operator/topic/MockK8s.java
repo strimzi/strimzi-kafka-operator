@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.ext.unit.TestContext;
@@ -74,8 +75,8 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public Future<Void> createResource(KafkaTopic topicResource) {
-        Future<Void> handler = Future.future();
+    public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
+        Future<KafkaTopic> handler = Future.future();
         AsyncResult<Void> response = createResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
             AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
@@ -84,13 +85,17 @@ public class MockK8s implements K8s {
                 return handler;
             }
         }
-        handler.handle(response);
+        if (response.succeeded()) {
+            handler.complete(new KafkaTopicBuilder(topicResource).editMetadata().withGeneration(1L).endMetadata().build());
+        } else {
+            handler.fail(response.cause());
+        }
         return handler;
     }
 
     @Override
-    public Future<Void> updateResource(KafkaTopic topicResource) {
-        Future<Void> handler = Future.future();
+    public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
+        Future<KafkaTopic> handler = Future.future();
         AsyncResult<Void> response = modifyResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
             AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
@@ -99,13 +104,27 @@ public class MockK8s implements K8s {
                 return handler;
             }
         }
-        handler.handle(response);
+        if (response.succeeded()) {
+            Long generation = topicResource.getMetadata().getGeneration();
+            handler.complete(new KafkaTopicBuilder(topicResource)
+                    .editMetadata()
+                        .withGeneration(generation != null ? generation + 1 : 1)
+                    .endMetadata()
+                .build());
+        } else {
+            handler.fail(response.cause());
+        }
         return handler;
     }
 
     @Override
-    public Future<Void> updateResourceStatus(KafkaTopic topicResource) {
-        return null;
+    public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
+        Long generation = topicResource.getMetadata().getGeneration();
+        return Future.succeededFuture(new KafkaTopicBuilder(topicResource)
+                .editMetadata()
+                    .withGeneration(generation == null ? 1 : generation + 1)
+                .endMetadata()
+            .build());
     }
 
     @Override

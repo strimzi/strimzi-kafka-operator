@@ -42,14 +42,16 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<Void> createResource(KafkaTopic topicResource) {
-        Future<Void> handler = Future.future();
+    public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
+        Future<KafkaTopic> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).create(topicResource);
-                LOGGER.debug("KafkaTopic {} created with version {}", kafkaTopic.getMetadata().getName(),
+                LOGGER.debug("KafkaTopic {} created with version {}->{}",
+                        kafkaTopic.getMetadata().getName(),
+                        topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
                         kafkaTopic.getMetadata().getResourceVersion());
-                future.complete();
+                future.complete(kafkaTopic);
             } catch (Exception e) {
                 future.fail(e);
             }
@@ -58,14 +60,16 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<Void> updateResource(KafkaTopic topicResource) {
-        Future<Void> handler = Future.future();
+    public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
+        Future<KafkaTopic> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
-                LOGGER.debug("KafkaTopic {} updated with version {}", kafkaTopic.getMetadata().getName(),
+                LOGGER.debug("KafkaTopic {} updated with version {}->{}",
+                        kafkaTopic.getMetadata().getName(),
+                        topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
                         kafkaTopic.getMetadata().getResourceVersion());
-                future.complete();
+                future.complete(kafkaTopic);
             } catch (Exception e) {
                 future.fail(e);
             }
@@ -74,7 +78,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<Void> updateResourceStatus(KafkaTopic topicResource) {
+    public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
         return crdOperator.updateStatusAsync(topicResource);
     }
 

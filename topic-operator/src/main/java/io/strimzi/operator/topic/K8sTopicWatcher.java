@@ -33,7 +33,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
-            LOGGER.info("{}: event {} on resource {} with labels {}", logContext, action, name, labels);
+            LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
+                    metadata.getGeneration(), labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
                     LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
@@ -50,18 +51,10 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                     topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
                 }
             };
-            switch (action) {
-                case ADDED:
-                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, false).setHandler(resultHandler);
-                    break;
-                case MODIFIED:
-                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, true).setHandler(resultHandler);
-                    break;
-                case DELETED:
-                    topicOperator.onResourceDeleted(logContext, kafkaTopic).setHandler(resultHandler);
-                    break;
-                case ERROR:
-                    LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
+            if (!action.equals(Action.ERROR)) {
+                topicOperator.onResourceEvent(logContext, kafkaTopic, action).setHandler(resultHandler);
+            } else {
+                LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
             }
         }
     }

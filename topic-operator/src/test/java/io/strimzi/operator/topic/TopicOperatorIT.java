@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
@@ -259,7 +260,31 @@ public class TopicOperatorIT extends BaseITST {
 
         // Wait for the topic to be created
         waitForTopicInKafka(context, topicName);
+        assertStatusReady(context, topicResource.getMetadata().getName());
         return topicResource;
+    }
+
+    private void assertStatusReady(TestContext testContext, String topicName) {
+        waitFor(testContext, () -> {
+            KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
+            if (kafkaTopic != null) {
+                if (kafkaTopic.getStatus() != null
+                        && kafkaTopic.getStatus().getConditions() != null) {
+                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                    testContext.assertTrue(conditions.size() > 0);
+                    if (conditions.stream().anyMatch(condition ->
+                            "Ready".equals(condition.getType()) &&
+                                    "True".equals(condition.getStatus()))) {
+                        return true;
+                    } else {
+                        LOGGER.info(conditions);
+                    }
+                }
+            } else {
+                LOGGER.info("{} does not exist", topicName);
+            }
+            return false;
+        }, 60000, "status ready");
     }
 
     private KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
@@ -670,6 +695,7 @@ public class TopicOperatorIT extends BaseITST {
 
         // Wait for the topic to be created
         waitForTopicInKafka(context, topicName);
+        assertStatusReady(context, topicName);
     }
 
     void waitForTopicInKafka(TestContext context, String topicName) {
@@ -780,6 +806,7 @@ public class TopicOperatorIT extends BaseITST {
             String resourceNameZ = topicResourceZ.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceZ);
             waitForTopicInKafka(testContext, topicNameZ);
+            assertStatusReady(testContext, topicNameZ);
         }
 
         String topicNameA = "topic-a";
@@ -789,6 +816,7 @@ public class TopicOperatorIT extends BaseITST {
             String resourceNameA = topicResourceA.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceA);
             waitForTopicInKafka(testContext, topicNameA);
+            assertStatusReady(testContext, topicNameA);
         }
         String topicNameB = "topic-b";
         String resourceNameB;
@@ -798,6 +826,7 @@ public class TopicOperatorIT extends BaseITST {
             resourceNameB = topicResourceB.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceB);
             waitForTopicInKafka(testContext, topicNameB);
+            assertStatusReady(testContext, topicNameB);
         }
         String topicNameC = "topic-c";
         {
@@ -806,6 +835,7 @@ public class TopicOperatorIT extends BaseITST {
             String resourceNameC = topicResourceC.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceC);
             waitForTopicInKafka(testContext, topicNameC);
+            assertStatusReady(testContext, topicNameC);
         }
 
         // 2. Stop TO
@@ -844,6 +874,9 @@ public class TopicOperatorIT extends BaseITST {
         waitForTopicInKafka(testContext, topicNameA);
         waitForTopicInKafka(testContext, topicNameX);
         waitForTopicInKafka(testContext, topicNameY);
+        assertStatusReady(testContext, topicNameA);
+        assertStatusReady(testContext, topicNameX);
+        assertStatusReady(testContext, topicNameY);
         waitForTopicInKube(testContext, topicNameA);
         waitForTopicInKube(testContext, topicNameX);
         waitForTopicInKube(testContext, topicNameY);

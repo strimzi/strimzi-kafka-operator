@@ -31,17 +31,17 @@ public class StatusUtils {
         Condition readyCondition;
         if (reconciliationResult.succeeded()) {
             readyCondition = new ConditionBuilder()
-                    .withNewLastTransitionTime(iso8601Now())
-                    .withNewType("Ready")
-                    .withNewStatus("True")
+                    .withLastTransitionTime(iso8601Now())
+                    .withType("Ready")
+                    .withStatus("True")
                     .build();
         } else {
             readyCondition = new ConditionBuilder()
-                    .withNewLastTransitionTime(iso8601Now())
-                    .withNewType("NotReady")
-                    .withNewStatus("True")
-                    .withNewReason(reconciliationResult.cause().getClass().getSimpleName())
-                    .withNewMessage(reconciliationResult.cause().getMessage())
+                    .withLastTransitionTime(iso8601Now())
+                    .withType("NotReady")
+                    .withStatus("True")
+                    .withReason(reconciliationResult.cause().getClass().getSimpleName())
+                    .withMessage(reconciliationResult.cause().getMessage())
                     .build();
         }
         return readyCondition;
