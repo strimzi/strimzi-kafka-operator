@@ -746,8 +746,12 @@ public abstract class AbstractModel {
         return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
     }
 
-    protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
+    protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
         return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
+    }
+
+    protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
@@ -776,7 +780,7 @@ public abstract class AbstractModel {
                     .withName(headlessServiceName)
                     .withLabels(getLabelsWithName(headlessServiceName, templateHeadlessServiceLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateHeadlessServiceAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -816,7 +820,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithName(templateStatefulSetLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateStatefulSetAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -829,7 +833,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeAnnotations(null, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(null, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
@@ -866,7 +870,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithName(templateDeploymentLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -876,7 +880,7 @@ public abstract class AbstractModel {
                     .withNewTemplate()
                         .withNewMetadata()
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeAnnotations(podAnnotations, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withAffinity(affinity)
@@ -1139,7 +1143,7 @@ public abstract class AbstractModel {
     }
 
     @SafeVarargs
-    protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String>... templates) {
+    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {
@@ -1151,7 +1155,7 @@ public abstract class AbstractModel {
                 if (template != null) {
                     for (String key : template.keySet()) {
                         if (key.contains("strimzi.io")) {
-                            throw new InvalidResourceException("User annotations includes a Strimzi annotation: " + key);
+                            throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + key);
                         }
                     }
 
