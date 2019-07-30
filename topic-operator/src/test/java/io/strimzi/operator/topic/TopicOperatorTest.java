@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,7 +28,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
@@ -129,6 +132,7 @@ public class TopicOperatorTest {
             context.assertEquals("KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null", ar.cause().getMessage());
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
+            assertNotReadyStatus(context, new InvalidTopicException(null, ar.cause().getMessage()));
             async.complete();
 
         });
@@ -187,6 +191,7 @@ public class TopicOperatorTest {
             }
             async.complete();
         });
+        async.await();
 
         return topicOperator;
     }
@@ -211,6 +216,19 @@ public class TopicOperatorTest {
         resourceAdded(context, createException, null);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
+        assertNotReadyStatus(context, createException);
+    }
+
+    void assertNotReadyStatus(TestContext context, Exception createException) {
+        List<KafkaTopicStatus> statuses = mockK8s.getStatuses();
+        context.assertEquals(1, statuses.size());
+        context.assertEquals(0L, statuses.get(0).getObservedGeneration());
+        context.assertTrue(statuses.get(0).getConditions().stream().anyMatch(
+            condition -> "NotReady".equals(condition.getType())
+                    && "True".equals(condition.getStatus())
+                    && createException.getClass().getSimpleName().equals(condition.getReason())
+                    && Objects.equals(createException.getMessage(), condition.getMessage())),
+                statuses.get(0).getConditions().toString());
     }
 
     /**
@@ -221,6 +239,7 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicAdded_ClusterAuthorizationException(TestContext context) {
         Exception createException = new ClusterAuthorizationException("Test exception");
         TopicOperator op = resourceAdded(context, createException, null);
+        assertNotReadyStatus(context, createException);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
     }
@@ -232,10 +251,12 @@ public class TopicOperatorTest {
      */
     @Test
     public void testOnKafkaTopicAdded_EntityExistsException(TestContext context) {
+        TopicStore.EntityExistsException storeException = new TopicStore.EntityExistsException();
         resourceAdded(context,
                 null,
-                new TopicStore.EntityExistsException());
+                storeException);
         // TODO what happens when we subsequently reconcile?
+        assertNotReadyStatus(context, storeException);
     }
 
     // TODO ^^ but a disconnected/loss of session error

@@ -7,11 +7,14 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatusBuilder;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.ext.unit.TestContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,8 +120,15 @@ public class MockK8s implements K8s {
         return handler;
     }
 
+    private List<KafkaTopicStatus> statuses = new ArrayList<>();
+
+    public List<KafkaTopicStatus> getStatuses() {
+        return Collections.unmodifiableList(statuses);
+    }
+
     @Override
     public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
+        statuses.add(new KafkaTopicStatusBuilder(topicResource.getStatus()).build());
         Long generation = topicResource.getMetadata().getGeneration();
         return Future.succeededFuture(new KafkaTopicBuilder(topicResource)
                 .editMetadata()
