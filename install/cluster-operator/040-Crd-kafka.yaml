@@ -1085,6 +1085,18 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    kafkaContainer:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                        env:
+                          type: object
                     perPodIngress:
                       type: object
                       properties:

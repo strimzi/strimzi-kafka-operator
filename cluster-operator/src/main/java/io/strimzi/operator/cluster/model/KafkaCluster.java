@@ -188,6 +188,9 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
+    protected Map<String, String> templateKafkaContainerLabels;
+    protected Map<String, String> templateKafkaContainerAnnotations;
+    protected Map<String, String> templateKafkaContainerEnvVars;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -464,6 +467,15 @@ public class KafkaCluster extends AbstractModel {
             if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null)  {
                 result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
+            }
+
+            if (template.getKafkaContainer() != null && template.getKafkaContainer().getMetadata() != null) {
+                result.templateKafkaContainerLabels = template.getKafkaContainer().getMetadata().getLabels();
+                result.templateKafkaContainerAnnotations = template.getKafkaContainer().getMetadata().getAnnotations();
+            }
+
+            if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
+                result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -1267,6 +1279,8 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
+
+
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
@@ -1318,6 +1332,25 @@ public class KafkaCluster extends AbstractModel {
         String logDirs = dataVolumeMountPaths.stream()
                 .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
+
+        // Add user defined environment variables to the Kafka broker containers
+        if (templateKafkaContainerEnvVars != null) {
+            // Create set of env var names to test if any user defined template env vars will conflict with those set above
+            Set<String> predefinedEnvs = new HashSet<String>();
+            for (EnvVar envVar : varList) {
+                predefinedEnvs.add(envVar.getName());
+            }
+
+            // Set custom env vars from the user defined template
+            for (Map.Entry<String, String> templateEnvVar : templateKafkaContainerEnvVars.entrySet()) {
+                if (predefinedEnvs.contains(templateEnvVar.getKey())) {
+                    // Do we want to throw an error here?
+                    log.warn("User defined container template environment variable " + templateEnvVar.getKey() + " is already in use and will be ignored");
+                } else {
+                    varList.add(buildEnvVar(templateEnvVar.getKey(), templateEnvVar.getValue()));
+                }
+            }
+        }
 
         return varList;
     }

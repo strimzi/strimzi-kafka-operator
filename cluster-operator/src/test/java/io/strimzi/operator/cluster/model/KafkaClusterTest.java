@@ -56,6 +56,7 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBui
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -2227,5 +2228,95 @@ public class KafkaClusterTest {
         ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
 
         assertNull(crb);
+    }
+
+    @Test
+    public void testKafkaContainerEnvVars() {
+
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+
+        Map<String, String> testEnvs = new HashMap<>();
+        testEnvs.put(testEnvOneKey, testEnvOneValue);
+        testEnvs.put(testEnvTwoKey, testEnvTwoValue);
+        ContainerTemplate kafkaContainer = new ContainerTemplate();
+        kafkaContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewTemplate()
+                .withKafkaContainer(kafkaContainer)
+                .endTemplate()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> kafkaEnvVars = kc.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : kafkaEnvVars) {
+
+            if (testEnvs.containsKey(envVar.getName())) {
+                if (testEnvs.get(envVar.getName()).equals(envVar.getValue())) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testKafkaContainerEnvVarsConflict() {
+
+        String testEnvOneKey = KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS;
+        String testEnvOneValue = "test.env.three";
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        String testEnvThreeKey = KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION;
+        String testEnvThreeValue = "test.env.three";
+        String testEnvFourKey = "TEST_ENV_4";
+        String testEnvFourValue = "test.env.four";
+
+        Map<String, String> testEnvs = new HashMap<>();
+        testEnvs.put(testEnvOneKey, testEnvOneValue);
+        testEnvs.put(testEnvTwoKey, testEnvTwoValue);
+        testEnvs.put(testEnvThreeKey, testEnvThreeValue);
+        testEnvs.put(testEnvFourKey, testEnvFourValue);
+        ContainerTemplate kafkaContainer = new ContainerTemplate();
+        kafkaContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewTemplate()
+                .withKafkaContainer(kafkaContainer)
+                .endTemplate()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> kafkaEnvVars = kc.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : kafkaEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
+                keyCount++;
+            }
+        }
+
+        assertEquals("Failed to ignore container template environment variables which conflict with those already in use", 2, keyCount);
     }
 }

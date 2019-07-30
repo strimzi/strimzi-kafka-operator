@@ -41,6 +41,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate externalBootstrapIngress;
     private ResourceTemplate perPodIngress;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
+    private ContainerTemplate kafkaContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -151,6 +152,16 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setPerPodRoute(ResourceTemplate perPodRoute) {
         this.perPodRoute = perPodRoute;
+    }
+
+    @Description("Template for the Kafka broker container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getKafkaContainer() {
+        return kafkaContainer;
+    }
+
+    public void setKafkaContainer(ContainerTemplate kafkaContainer) {
+        this.kafkaContainer = kafkaContainer;
     }
 
     @Override

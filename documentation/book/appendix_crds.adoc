@@ -714,6 +714,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
@@ -740,7 +742,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 
 
 [options="header"]
@@ -783,6 +785,21 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|====
+
+[id='type-ContainerTemplate-{context}']
+### `ContainerTemplate` schema reference
+
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|metadata  1.2+<.<|Metadata which should be applied to the container.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|env       1.2+<.<|Environment variables which should be applied to the container.
+|map
 |====
 
 [id='type-PodDisruptionBudgetTemplate-{context}']
