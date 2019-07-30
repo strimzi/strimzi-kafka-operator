@@ -39,7 +39,7 @@ Following is the list of operations defined by the OpenAPI specification:
 * `commit`
 * `send`
 * `sendToPartition`
-* `seelToBeginning`
+* `seekToBeginning`
 * `seekToEnd`
 * `seek`
 * `healthy`
