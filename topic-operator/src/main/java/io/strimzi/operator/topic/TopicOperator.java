@@ -957,7 +957,18 @@ class TopicOperator {
                 Topic kafkaTopic = compositeResult.resultAt(0);
                 Topic privateTopic = compositeResult.resultAt(1);
                 Future<Void> result;
-                if (privateTopic == null && isModify) {
+                if (kafkaTopic == null
+                    && privateTopic == null
+                    && isModify
+                    && topicResource.getMetadata().getDeletionTimestamp() != null) {
+                    // When processing a Kafka-side deletion then when we delete the KT
+                    // We first receive a modify event (setting deletionTimestamp etc)
+                    // then the deleted event. We need to ignore the modify event.
+                    LOGGER.debug("Ignoring pre-delete modify event");
+                    reconciliation.observedTopicFuture(null);
+                    result = Future.succeededFuture();
+                } else if (privateTopic == null
+                        && isModify) {
                     result = Future.future();
                     enqueue(new Event(topicResource,
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
