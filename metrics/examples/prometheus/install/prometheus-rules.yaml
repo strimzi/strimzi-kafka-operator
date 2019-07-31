@@ -40,7 +40,7 @@ spec:
         severity: warning
       annotations:
         summary: 'Kafka offline partitions'
-        description: 'There are offline partitions on pod {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
+        description: 'One or more partitions have no leader'
     - alert: UnderMinIsrPartitionCount
       expr: kafka_server_replicamanager_underminisrpartitioncount > 0
       for: 10s
@@ -58,7 +58,7 @@ spec:
         summary: 'Kafka offline log directories'
         description: 'There are {{ $value }} offline log directories on {{ $labels.kubernetes_pod_name }}'
     - alert: ScrapeProblem
-      expr: up{job="kubernetes-cadvisor", kubernetes_name!~".+-cluster-zookeeper-client"} == 0
+      expr: up{job="kubernetes-services",kubernetes_namespace!~"openshift-.+"} == 0
       for: 3m
       labels:
         severity: major
@@ -78,24 +78,24 @@ spec:
       for: 3m
       labels:
         severity: major
-        group: ngp-kafka
       annotations:
-        summary: 'Container kafka in pod with index 0 is down or in CrashLookBackOff status'
-        description: 'Container kafka in pod with index 0 is down or in CrashLookBackOff status for 3 minutes'
+        summary: 'Container kafka in some pod is down or in CrashLookBackOff status'
+        description: 'Container kafka in some pod is down or in CrashLookBackOff status for 3 minutes'
+    - alert: KafkaTlsSidecarContainerDown
+      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container tls-sidecar in some pod is down or in CrashLookBackOff status'
+        description: 'Container tls-sidecar in some pod is down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container_name="kafka"}[5m])) > count(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: count(count_over_time(container_last_seen{container_name="kafka"}[5m])) > 2 * count(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
       for: 5m
       labels:
         severity: warning
       annotations:
         description: 'Some of the Kafka containers was restarted too many times in last 5 minutes'
-    - alert: ZookeeperContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container_name="zookeeper"}[5m])) > count(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        description: 'Some of the Zookeeper containers was restarted too many times in last 5 minutes. This alert can be ignored during scaling up the Zookeeper cluster.'
   - name: zookeeper
     rules:
     - alert: AvgRequestLatency
@@ -122,6 +122,55 @@ spec:
       annotations:
         summary: 'Zookeeper is running out of free disk space'
         description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
+    - alert: ZookeeperContainerRestartedInTheLast5Minutes
+      expr: count(count_over_time(container_last_seen{container_name="zookeeper"}[5m])) > 2 * count(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        description: 'Some of the Zookeeper containers was restarted too many times in last 5 minutes. This alert can be ignored during scaling up the Zookeeper cluster.'
+    - alert: ZookeeperContainerDown
+      expr: absent(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container zookeeper in some pod is down or in CrashLookBackOff status'
+        description: 'Container zookeeper some in some pod is down or in CrashLookBackOff status for 3 minutes'
+    - alert: ZookeeperTlsSidecarContainerDown
+      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container tls-sidecar in some pod is down or in CrashLookBackOff status'
+        description: 'Container tls-sidecar in some pod is down or in CrashLookBackOff status for 3 minutes'
+  - name: entityOperator
+    rules:
+    - alert: TopicOperatorContainerDown
+      expr: absent(container_last_seen{container_name="topic-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container topic-operator in Entity Operator pod is down or in CrashLookBackOff status'
+        description: 'Container topic-operator in Entity Operator pod is down or in CrashLookBackOff status for 3 minutes'
+    - alert: UserOperatorContainerDown
+      expr: absent(container_last_seen{container_name="user-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container user-operator in Entity Operator pod is down or in CrashLookBackOff status'
+        description: 'Container user-operator in Entity Operator pod is down or in CrashLookBackOff status for 3 minutes'
+    - alert: EntityOperatorTlsSidecarContainerDown
+      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container tls-sidecar Entity Operator pod is down or in CrashLookBackOff status'
+        description: 'Container tls-sidecar in Entity Operator pod is down or in CrashLookBackOff status for 3 minutes'
   - name: kafkaExporter
     rules:
     - alert: UnderReplicatedPartition
@@ -132,8 +181,6 @@ spec:
       annotations:
         summary: 'Topic has under-replicated partitions'
         description: 'Topic  {{ $labels.topic }} has {{ $value }} under-replicated partition {{ $labels.partition }}'
-  - name: kafkaExporter
-    rules:
     - alert: TooLargeConsumerGroupLag
       expr: kafka_consumergroup_lag > 1000
       for: 10s
@@ -142,13 +189,11 @@ spec:
       annotations:
         summary: 'Consumer group lag is too big'
         description: 'Consumer group {{ $labels.consumergroup}} lag is too big ({{ $value }}) on topic {{ $labels.topic }}/partition {{ $labels.partition }}'
-   - name: kafkaExporter
-     rules:
-     - alert: NoMessageForTooLong
-       expr: changes(kafka_topic_partition_current_offset{topic!="__consumer_offsets"}[10m]) == 0
-       for: 10s
-       labels:
-         severity: warning
-        annotations:
-          summary: 'No message for 10 minutes'
+    - alert: NoMessageForTooLong
+      expr: changes(kafka_topic_partition_current_offset{topic!="__consumer_offsets"}[10m]) == 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'No message for 10 minutes'
         description: 'There is no messages in topic {{ $labels.topic}}/partition {{ $labels.partition }} for 10 minutes'
