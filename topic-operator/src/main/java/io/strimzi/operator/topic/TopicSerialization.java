@@ -158,14 +158,6 @@ class TopicSerialization {
                     .withReplicas((int) topic.getNumReplicas())
                     .withConfig(new LinkedHashMap<>(topic.getConfig()))
                 .endSpec()
-                .withNewStatus()
-                    .withObservedGeneration(om != null && om.getGeneration() != null ? om.getGeneration() : 0)
-                    .addNewCondition()
-                        .withLastTransitionTime(StatusUtils.iso8601Now())
-                        .withType("Ready")
-                        .withStatus("True")
-                    .endCondition()
-                .endStatus()
                 .build();
         // for some reason when the `topic.getMetadata().getAnnotations()` is null
         // topic is created with annotations={} (empty map but should be null as well)

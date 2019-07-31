@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -439,6 +440,7 @@ class TopicOperator {
                 action.execute().setHandler(ar2 -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
                     action.result = ar2;
+                    // Update status with lock held so that event is ignored via statusUpdateGeneration
                     action.updateStatus(logContext).setHandler(ar3 -> {
                         if (ar3.failed()) {
                             LOGGER.error("{}: Error updating KafkaTopic.status for action {}", logContext, action,
@@ -517,16 +519,6 @@ class TopicOperator {
                     .compose(ignore -> createInTopicStore(logContext, k8sTopic, involvedObject))
                     // Kafka will set the message.format.version, so we need to update the KafkaTopic to reflect
                     // that to avoid triggering another reconciliation
-                    /*.compose(createdKafkaTopic -> {
-                        LOGGER.debug("Getting post-create metadata");
-                        return kafka.topicMetadata(k8sTopic.getTopicName());
-                    })
-                    .compose(meta -> {
-                        LOGGER.debug("Post-create config {}", meta.getConfig());
-                        KafkaTopic topicResource = TopicSerialization.toTopicResource(TopicSerialization.fromTopicMetadata(meta), labels);
-                        LOGGER.debug("Post-create update {}", topicResource);
-                        return k8s.updateResource(topicResource);
-                    }).map((Void) null);*/
                     .compose(ignored -> getFromKafka(k8sTopic.getTopicName()))
                     .compose(kafkaTopic2 -> {
                         LOGGER.debug("Post-create kafka {}", kafkaTopic2);
@@ -560,12 +552,6 @@ class TopicOperator {
                         k8sTopic, kafkaTopic, privateTopic);
             }
         }
-        return reconciliationResultHandler;
-    }
-
-    private Future<Void> deleteFromTopicStore(LogContext logContext, HasMetadata involvedObject, TopicName topicName) {
-        Future<Void> reconciliationResultHandler = Future.future();
-        enqueue(new DeleteFromTopicStore(logContext, topicName, involvedObject, reconciliationResultHandler));
         return reconciliationResultHandler;
     }
 
@@ -884,15 +870,16 @@ class TopicOperator {
                     if (!ksDiff.isEmpty()) {
                         statusFuture = Future.future();
                         k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).setHandler(ar -> {
-                            if (ar.succeeded() && ar.result() != null) {
+                            if (ar.succeeded()) {
+                                ObjectMeta metadata = ar.result().getMetadata();
                                 LOGGER.debug("{}: status was set rv={}, generation={}, observedGeneration={}",
                                         logContext,
-                                        ar.result().getMetadata().getResourceVersion(),
-                                        ar.result().getMetadata().getGeneration(),
+                                        metadata.getResourceVersion(),
+                                        metadata.getGeneration(),
                                         ar.result().getStatus().getObservedGeneration());
                                 statusUpdateGeneration.put(
-                                        ar.result().getMetadata().getName(),
-                                        ar.result().getMetadata().getGeneration());
+                                        metadata.getName(),
+                                        metadata.getGeneration());
                             } else {
                                 LOGGER.error("{}: Error setting resource status", logContext, ar.cause());
                             }
@@ -1048,6 +1035,13 @@ class TopicOperator {
         public String toString() {
             return "CreateInTopicStore(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
+    }
+
+
+    private Future<Void> deleteFromTopicStore(LogContext logContext, HasMetadata involvedObject, TopicName topicName) {
+        Future<Void> reconciliationResultHandler = Future.future();
+        enqueue(new DeleteFromTopicStore(logContext, topicName, involvedObject, reconciliationResultHandler));
+        return reconciliationResultHandler;
     }
 
     class DeleteFromTopicStore implements Handler<Void> {
