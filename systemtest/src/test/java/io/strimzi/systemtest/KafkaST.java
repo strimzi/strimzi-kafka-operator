@@ -1465,17 +1465,93 @@ class KafkaST extends MessagingBaseST {
 
     @Tag(SCALABILITY)
     @Test
-    void testBigAmountOfTopics() {
-        int numberOfTopics = 300;
+    void testBigAmountOfTopicsCreatingViaK8s() {
+        final String topicName = "topic-example";
+        String currentTopic;
+        int numberOfTopics = 50;
+        int topicPartitions = 3;
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
+        LOGGER.info("Creating topics via Kubernetes");
         for (int i = 0; i < numberOfTopics; i++) {
-            String topicName = "topic-example" + i;
-            testMethodResources().topic(CLUSTER_NAME, topicName, 3, 3).done();
-            LOGGER.info("Checking that topic {} was created", topicName);
-            assertThat(cmdKubeClient().list("kafkatopic"), hasItems(topicName));
+            currentTopic = topicName + i;
+            testMethodResources().topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
         }
+
+        for (int i = 0; i < numberOfTopics; i++){
+            currentTopic = topicName + i;
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+
+        topicPartitions = 5;
+        LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
+
+        for (int i = 0; i < numberOfTopics; i++){
+            currentTopic = topicName + i;
+
+            replaceTopicResource(currentTopic, topic -> {
+                    topic.getSpec().setPartitions(5);
+            });
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
+            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTopicsCreatingViaKafka() {
+        final String topicName = "topic-example";
+        String currentTopic;
+        int numberOfTopics = 50;
+        int topicPartitions = 3;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        LOGGER.info("Creating topics via Kafka");
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
+        }
+
+        for (int i = 0; i < numberOfTopics; i++){
+            currentTopic = topicName + i;
+            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().withName(currentTopic).get();
+            verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
+        }
+
+        topicPartitions = 5;
+        LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
+
+        for (int i = 0; i < numberOfTopics; i++){
+            currentTopic = topicName + i;
+            updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+    }
+
+    void verifyTopicViaKafka(String topicName, int topicPartitions) {
+        LOGGER.info("Checking topic in Kafka {}", describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName));
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
+                hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+    }
+
+    void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {
+        LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
+        assertNotNull(kafkaTopic);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
+        assertEquals(topicName, kafkaTopic.getMetadata().getName());
+        assertEquals(topicPartitions, kafkaTopic.getSpec().getPartitions());
     }
 
     @Test
@@ -1483,7 +1559,9 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Creating kafka without external listener");
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
-        List<Secret> secretsWithoutExt = kubeClient().listSecrets();
+        String brokerSecret = "my-cluster-kafka-brokers";
+
+        Secret secretsWithoutExt = kubeClient().getSecret(brokerSecret);
 
         LOGGER.info("Editing kafka with external listener");
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
@@ -1497,33 +1575,18 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        LOGGER.info("Waiting for secrets change");
-        StUtils.waitUntilSecretsChange();
+        LOGGER.info("Waiting until secrets will change");
+        Thread.sleep(4000);
 
-        List<Secret> secretsWithExt = kubeClient().listSecrets();
-        List<Secret> brokerSecrets = new ArrayList<>(2);
-
-        for (Secret secret : secretsWithoutExt) {
-            if (secret.getMetadata().getName().equals("my-cluster-kafka-brokers")) {
-                LOGGER.info("Adding secret with simple configuration of kafka {}", secret);
-                brokerSecrets.add(secret);
-            }
-        }
-
-        for (Secret secret : secretsWithExt) {
-            if (secret.getMetadata().getName().equals("my-cluster-kafka-brokers")) {
-                LOGGER.info("Adding secret with external listener configuration {}", secret);
-                brokerSecrets.add(secret);
-            }
-        }
+        Secret secretsWithExt = kubeClient().getSecret(brokerSecret);
 
         LOGGER.info("Checking secrets");
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-0.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-0.crt"));
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-0.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-0.key"));
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-1.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-1.crt"));
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-1.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-1.key"));
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-2.crt"), brokerSecrets.get(1).getData().get("my-cluster-kafka-2.crt"));
-        assertNotEquals(brokerSecrets.get(0).getData().get("my-cluster-kafka-2.key"), brokerSecrets.get(1).getData().get("my-cluster-kafka-2.key"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.crt"), secretsWithExt.getData().get("my-cluster-kafka-0.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.key"), secretsWithExt.getData().get("my-cluster-kafka-0.key"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.crt"), secretsWithExt.getData().get("my-cluster-kafka-1.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"), secretsWithExt.getData().get("my-cluster-kafka-1.key"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"), secretsWithExt.getData().get("my-cluster-kafka-2.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"), secretsWithExt.getData().get("my-cluster-kafka-2.key"));
     }
 
     @BeforeEach
