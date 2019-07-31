@@ -46,9 +46,9 @@ listeners:
 
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
 
-= Configuring `Ingress` class
+= Configuring the `Ingress` class
 
-By default, the `Ingress` class will be set to `nginx`.
+By default, the `Ingress` class is set to `nginx`.
 You can change the `Ingress` class using the `class` property.
 
 .Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
