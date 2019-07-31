@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 
+@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
+        justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>,
@@ -83,8 +85,6 @@ public class CrdOperator<C extends KubernetesClient,
         return Crds.operation(client, cls, listCls, doneableCls);
     }
 
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
-            justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
     public Future<T> updateStatusAsync(T resource) {
         Future<T> blockingFuture = Future.future();
 
