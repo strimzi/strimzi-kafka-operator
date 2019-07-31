@@ -4,9 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.ext.unit.TestContext;
 
 import java.util.HashMap;
@@ -16,54 +14,54 @@ import java.util.function.Function;
 public class MockTopicStore implements TopicStore {
 
     private Map<TopicName, Topic> topics = new HashMap<>();
-    private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a createTopicResponse configured.");
-    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a deleteTopicResponse configured.");
-    private Function<TopicName, AsyncResult<Void>> updateTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a updateTopicResponse configured.");
-    private Function<TopicName, AsyncResult<Topic>> getTopicResponse = t -> null;
+    private Function<TopicName, Future<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a createTopicResponse configured.");
+    private Function<TopicName, Future<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a deleteTopicResponse configured.");
+    private Function<TopicName, Future<Void>> updateTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a updateTopicResponse configured.");
+    private Function<TopicName, Future<Topic>> getTopicResponse = t -> null;
 
     @Override
-    public void read(TopicName name, Handler<AsyncResult<Topic>> handler) {
-        AsyncResult<Topic> result1 = getTopicResponse.apply(name);
+    public Future<Topic> read(TopicName name) {
+        Future<Topic> result1 = getTopicResponse.apply(name);
         if (result1 == null) {
             Topic result = topics.get(name);
-            handler.handle(Future.succeededFuture(result));
+            return Future.succeededFuture(result);
         } else {
-            handler.handle(result1);
+            return result1;
         }
     }
 
     @Override
-    public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = createTopicResponse.apply(topic.getTopicName());
+    public Future<Void> create(Topic topic) {
+        Future<Void> response = createTopicResponse.apply(topic.getTopicName());
         if (response.succeeded()) {
             Topic old = topics.put(topic.getTopicName(), topic);
             if (old != null) {
-                handler.handle(Future.failedFuture(new TopicStore.EntityExistsException()));
+                return Future.failedFuture(new TopicStore.EntityExistsException());
             }
         }
-        handler.handle(response);
+        return response;
     }
 
     @Override
-    public void update(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> update(Topic topic) {
         Topic old = topics.put(topic.getTopicName(), topic);
         if (old != null) {
-            handler.handle(Future.succeededFuture());
+            return Future.succeededFuture();
         } else {
-            handler.handle(Future.failedFuture(new TopicStore.NoSuchEntityExistsException()));
+            return Future.failedFuture(new TopicStore.NoSuchEntityExistsException());
         }
     }
 
     @Override
-    public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = deleteTopicResponse.apply(topicName);
+    public Future<Void> delete(TopicName topicName) {
+        Future<Void> response = deleteTopicResponse.apply(topicName);
         if (response.succeeded()) {
             Topic topic = topics.remove(topicName);
             if (topic == null) {
-                handler.handle(Future.failedFuture(new TopicStore.NoSuchEntityExistsException()));
+                return Future.failedFuture(new TopicStore.NoSuchEntityExistsException());
             }
         }
-        handler.handle(response);
+        return response;
     }
 
     public void assertExists(TestContext context, TopicName topicName) {
@@ -79,7 +77,7 @@ public class MockTopicStore implements TopicStore {
     }
 
     public MockTopicStore setCreateTopicResponse(TopicName createTopic, Exception exception) {
-        Function<TopicName, AsyncResult<Void>> old = this.createTopicResponse;
+        Function<TopicName, Future<Void>> old = this.createTopicResponse;
         this.createTopicResponse = t -> {
             if (t.equals(createTopic)) {
                 if (exception != null) {
@@ -95,7 +93,7 @@ public class MockTopicStore implements TopicStore {
     }
 
     public MockTopicStore setDeleteTopicResponse(TopicName createTopic, Exception exception) {
-        Function<TopicName, AsyncResult<Void>> old = this.deleteTopicResponse;
+        Function<TopicName, Future<Void>> old = this.deleteTopicResponse;
         this.deleteTopicResponse = t -> {
             if (t.equals(createTopic)) {
                 if (exception != null) {
@@ -111,7 +109,7 @@ public class MockTopicStore implements TopicStore {
     }
 
     public MockTopicStore setUpdateTopicResponse(TopicName updateTopic, Exception exception) {
-        Function<TopicName, AsyncResult<Void>> old = this.updateTopicResponse;
+        Function<TopicName, Future<Void>> old = this.updateTopicResponse;
         this.updateTopicResponse = t -> {
             if (t.equals(updateTopic)) {
                 if (exception != null) {
@@ -127,7 +125,7 @@ public class MockTopicStore implements TopicStore {
     }
 
     public MockTopicStore setGetTopicResponse(TopicName topic, Future<Topic> f) {
-        Function<TopicName, AsyncResult<Topic>> old = this.getTopicResponse;
+        Function<TopicName, Future<Topic>> old = this.getTopicResponse;
         this.getTopicResponse = t -> {
             if (t.equals(topic)) {
                 return f;

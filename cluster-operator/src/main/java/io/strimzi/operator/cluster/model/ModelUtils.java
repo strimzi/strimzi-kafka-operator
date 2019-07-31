@@ -92,27 +92,24 @@ public class ModelUtils {
     }
 
     /**
-     * <p>Parse an image map. It has the structure:</p>
-     * <pre><code>
-     * imageMap ::= versionImage ( ',' versionImage )*
-     * versionImage ::= version '=' image
-     * version ::= [0-9.]+
-     * image ::= [, \t\r\n]+
-     * </code></pre>
-     * For example {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}.
+     * Parse a map from String.
+     * For example a map of images {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}
+     * or a map with labels / annotations {@code key1=value1 key2=value2}.
+     *
      * @param str The string to parse.
+     *
      * @return The parsed map.
      */
-    public static Map<String, String> parseImageMap(String str) {
+    public static Map<String, String> parseMap(String str) {
         if (str != null) {
             StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
             HashMap<String, String> map = new HashMap<>();
             while (tok.hasMoreTokens()) {
-                String versionImage = tok.nextToken();
-                int endIndex = versionImage.indexOf('=');
-                String version = versionImage.substring(0, endIndex);
-                String image = versionImage.substring(endIndex + 1);
-                map.put(version.trim(), image.trim());
+                String record = tok.nextToken();
+                int endIndex = record.indexOf('=');
+                String key = record.substring(0, endIndex);
+                String value = record.substring(endIndex + 1);
+                map.put(key.trim(), value.trim());
             }
             return Collections.unmodifiableMap(map);
         } else {
@@ -338,4 +335,14 @@ public class ModelUtils {
         }
     }
 
+    /**
+     * Gets a map with custom labels or annotations from an environment variable
+     *
+     * @param envVarName Name of the environment variable which should be used as input
+     *
+     * @return A map with labels or annotations
+     */
+    public static Map<String, String> getCustomLabelsOrAnnotations(String envVarName)   {
+        return parseMap(System.getenv().get(envVarName));
+    }
 }

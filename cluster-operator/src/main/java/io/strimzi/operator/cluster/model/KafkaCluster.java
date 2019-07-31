@@ -572,7 +572,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createService("ClusterIP", getServicePorts(), mergeAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     /**
@@ -630,7 +630,7 @@ public class KafkaCluster extends AbstractModel {
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
                 getSelectorLabels(),
-                mergeAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations));
         }
 
         return null;
@@ -686,7 +686,7 @@ public class KafkaCluster extends AbstractModel {
 
             return createService(perPodServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
-                mergeAnnotations(dnsAnnotations, templatePerPodServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations));
         }
 
         return null;
@@ -706,7 +706,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName, templatePerPodRouteLabels))
-                        .withAnnotations(mergeAnnotations(null, templatePerPodRouteAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templatePerPodRouteAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -754,7 +754,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapRouteLabels))
-                        .withAnnotations(mergeAnnotations(null, templateExternalBootstrapRouteAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -835,7 +835,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
-                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -891,7 +891,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
-                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()

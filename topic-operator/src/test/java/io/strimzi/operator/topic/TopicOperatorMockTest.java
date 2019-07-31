@@ -214,8 +214,7 @@ public class TopicOperatorMockTest {
     Topic getFromKafka(TestContext context, String topicName) {
         AtomicReference<Topic> ref = new AtomicReference<>();
         Async async = context.async();
-        Future<TopicMetadata> kafkaMetadata = Future.future();
-        session.kafka.topicMetadata(new TopicName(topicName), kafkaMetadata.completer());
+        Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(new TopicName(topicName));
         kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).setHandler(fromKafka -> {
             if (fromKafka.succeeded()) {
                 ref.set(fromKafka.result());
