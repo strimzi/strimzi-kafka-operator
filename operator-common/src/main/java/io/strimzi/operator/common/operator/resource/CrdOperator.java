@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -16,9 +17,9 @@ import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -82,6 +83,8 @@ public class CrdOperator<C extends KubernetesClient,
         return Crds.operation(client, cls, listCls, doneableCls);
     }
 
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
+            justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
     public Future<T> updateStatusAsync(T resource) {
         Future<T> blockingFuture = Future.future();
 
