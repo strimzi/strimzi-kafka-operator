@@ -665,7 +665,9 @@ class TopicOperator {
                             return configFuture;
                         })
                         .compose(ignored -> {
-                            if (partitionsDelta > 0) {
+                            if (partitionsDelta > 0
+                                    // Kafka throws an error if we attempt a noop change #partitions
+                                    && result.getNumPartitions() > kafkaTopic.getNumPartitions()) {
                                 Future<Void> partitionsFuture = Future.future();
                                 enqueue(new IncreaseKafkaPartitions(logContext, result, involvedObject, partitionsFuture));
                                 return partitionsFuture;
