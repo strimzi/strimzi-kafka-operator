@@ -205,7 +205,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.createTopic(topic, ar -> {
+            kafka.createTopic(topic).setHandler(ar -> {
                 if (ar.succeeded()) {
                     LOGGER.info("{}: Created topic '{}' for KafkaTopic '{}'", logContext, topic.getTopicName(), topic.getResourceName());
                     handler.handle(ar);
@@ -246,7 +246,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.updateTopicConfig(topic, ar -> {
+            kafka.updateTopicConfig(topic).setHandler(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -279,7 +279,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.increasePartitions(topic, ar -> {
+            kafka.increasePartitions(topic).setHandler(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -310,7 +310,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            kafka.changeReplicationFactor(topic, ar -> {
+            kafka.changeReplicationFactor(topic).setHandler(ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
@@ -341,7 +341,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) throws OperatorException {
             LOGGER.info("{}: Deleting topic '{}'", logContext, topicName);
-            kafka.deleteTopic(topicName, handler);
+            kafka.deleteTopic(topicName).setHandler(handler);
         }
 
         @Override
@@ -678,7 +678,7 @@ class TopicOperator {
         Reconciliation action = new Reconciliation("onTopicConfigChanged") {
             @Override
             public void handle(Future<Void> fut) {
-                kafka.topicMetadata(topicName, metadataResult -> {
+                kafka.topicMetadata(topicName).setHandler(metadataResult -> {
                     if (metadataResult.succeeded()) {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
                         TopicOperator.this.reconcileOnTopicChange(logContext, topicName, topic, fut);
@@ -734,7 +734,7 @@ class TopicOperator {
                             fut.complete();
                         }
                     };
-                    kafka.topicMetadata(topicName, handler);
+                    kafka.topicMetadata(topicName).setHandler(handler);
                 });
             }
         };
@@ -807,7 +807,7 @@ class TopicOperator {
                         fut.fail(e);
                     }
                 };
-                kafka.topicMetadata(topicName, handler);
+                kafka.topicMetadata(topicName).setHandler(handler);
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -1009,7 +1009,7 @@ class TopicOperator {
     Future<?> reconcileAllTopics(String reconciliationType) {
         LOGGER.info("Starting {} reconciliation", reconciliationType);
         Future<Set<String>> listFut = Future.future();
-        kafka.listTopics(listFut);
+        kafka.listTopics().setHandler(listFut);
         return listFut.recover(ex -> Future.failedFuture(
                 new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", ex)
         )).compose(topicNamesFromKafka ->
@@ -1156,7 +1156,7 @@ class TopicOperator {
         Future<Void> topicFuture = Future.future();
         try {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
-            kafka.topicMetadata(topicName, metadataResult -> {
+            kafka.topicMetadata(topicName).setHandler(metadataResult -> {
                 if (metadataResult.succeeded()) {
                     TopicMetadata kafkaTopicMeta = metadataResult.result();
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
@@ -1189,9 +1189,7 @@ class TopicOperator {
     }
 
     Future<Topic> getFromKafka(TopicName topicName) {
-        Future<TopicMetadata> f = Future.future();
-        kafka.topicMetadata(topicName, f);
-        return f.map(TopicSerialization::fromTopicMetadata);
+        return kafka.topicMetadata(topicName).map(TopicSerialization::fromTopicMetadata);
     }
 
     Future<Topic> getFromTopicStore(TopicName topicName) {

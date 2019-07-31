@@ -4,9 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.ext.unit.TestContext;
 import org.apache.kafka.clients.admin.NewTopic;
 
@@ -24,17 +22,17 @@ public class MockKafka implements Kafka {
 
     private Map<TopicName, Topic> topics = new HashMap<>();
 
-    private AsyncResult<Set<String>> topicsListResponse = Future.succeededFuture(Collections.emptySet());
-    private Function<TopicName, AsyncResult<TopicMetadata>> topicMetadataRespose =
+    private Future<Set<String>> topicsListResponse = Future.succeededFuture(Collections.emptySet());
+    private Function<TopicName, Future<TopicMetadata>> topicMetadataRespose =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse.");
-    private Function<String, AsyncResult<Void>> createTopicResponse =
+    private Function<String, Future<Void>> createTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
-    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse =
+    private Function<TopicName, Future<Void>> deleteTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
-    private Function<TopicName, AsyncResult<Void>> updateTopicResponse =
+    private Function<TopicName, Future<Void>> updateTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
 
-    public MockKafka setTopicsListResponse(AsyncResult<Set<String>> topicsListResponse) {
+    public MockKafka setTopicsListResponse(Future<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;
         return this;
     }
@@ -44,13 +42,13 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setTopicMetadataResponse(Function<TopicName, AsyncResult<TopicMetadata>> topicMetadataRespose) {
+    public MockKafka setTopicMetadataResponse(Function<TopicName, Future<TopicMetadata>> topicMetadataRespose) {
         this.topicMetadataRespose = topicMetadataRespose;
         return this;
     }
 
     public MockKafka setTopicMetadataResponse(TopicName topic, TopicMetadata topicMetadata, Exception exception) {
-        Function<TopicName, AsyncResult<TopicMetadata>> old = this.topicMetadataRespose;
+        Function<TopicName, Future<TopicMetadata>> old = this.topicMetadataRespose;
         this.topicMetadataRespose = t -> {
             if (t.equals(topic)) {
                 if (exception != null) {
@@ -65,13 +63,13 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setCreateTopicResponse(Function<String, AsyncResult<Void>> createTopicResponse) {
+    public MockKafka setCreateTopicResponse(Function<String, Future<Void>> createTopicResponse) {
         this.createTopicResponse = createTopicResponse;
         return this;
     }
 
     public MockKafka setCreateTopicResponse(String createTopic, Exception exception) {
-        Function<String, AsyncResult<Void>> old = this.createTopicResponse;
+        Function<String, Future<Void>> old = this.createTopicResponse;
         this.createTopicResponse = t -> {
             if (t.equals(createTopic)) {
                 if (exception != null) {
@@ -86,13 +84,13 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setDeleteTopicResponse(Function<TopicName, AsyncResult<Void>> deleteTopicResponse) {
+    public MockKafka setDeleteTopicResponse(Function<TopicName, Future<Void>> deleteTopicResponse) {
         this.deleteTopicResponse = deleteTopicResponse;
         return this;
     }
 
     public MockKafka setDeleteTopicResponse(TopicName topic, Exception exception) {
-        Function<TopicName, AsyncResult<Void>> old = this.deleteTopicResponse;
+        Function<TopicName, Future<Void>> old = this.deleteTopicResponse;
         this.deleteTopicResponse = t -> {
             if (t.equals(topic)) {
                 if (exception != null) {
@@ -108,9 +106,9 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public void createTopic(Topic t, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createTopic(Topic t) {
         NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
-        AsyncResult<Void> event = createTopicResponse.apply(newTopic.name());
+        Future<Void> event = createTopicResponse.apply(newTopic.name());
         if (event.succeeded()) {
             Topic.Builder topicBuilder = new Topic.Builder()
                     .withTopicName(newTopic.name())
@@ -127,26 +125,26 @@ public class MockKafka implements Kafka {
             Topic topic = topicBuilder.build();
             topics.put(topic.getTopicName(), topic);
         }
-        handler.handle(event);
+        return event;
     }
 
     @Override
-    public void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> event = deleteTopicResponse.apply(topicName);
+    public Future<Void> deleteTopic(TopicName topicName) {
+        Future<Void> event = deleteTopicResponse.apply(topicName);
         if (event.succeeded()) {
             topics.remove(topicName);
         }
-        handler.handle(event);
+        return event;
     }
 
-    public MockKafka setUpdateTopicResponse(Function<TopicName, AsyncResult<Void>> updateTopicResponse) {
+    public MockKafka setUpdateTopicResponse(Function<TopicName, Future<Void>> updateTopicResponse) {
         this.updateTopicResponse = updateTopicResponse;
         return this;
     }
 
     @Override
-    public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+    public Future<Void> updateTopicConfig(Topic topic) {
+        Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
         if (event.succeeded()) {
             Topic t = topics.get(topic.getTopicName());
             if (t == null) {
@@ -155,12 +153,12 @@ public class MockKafka implements Kafka {
             t = new Topic.Builder(t).withConfig(topic.getConfig()).build();
             topics.put(topic.getTopicName(), t);
         }
-        handler.handle(event);
+        return event;
     }
 
     @Override
-    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+    public Future<Void> increasePartitions(Topic topic) {
+        Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
         if (event.succeeded()) {
             Topic t = topics.get(topic.getTopicName());
             if (t == null) {
@@ -169,12 +167,12 @@ public class MockKafka implements Kafka {
             t = new Topic.Builder(t).withNumPartitions(topic.getNumPartitions()).build();
             topics.put(topic.getTopicName(), t);
         }
-        handler.handle(event);
+        return event;
     }
 
     @Override
-    public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+    public Future<Void> changeReplicationFactor(Topic topic) {
+        Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
         if (event.succeeded()) {
             Topic t = topics.get(topic.getTopicName());
             if (t == null) {
@@ -183,17 +181,17 @@ public class MockKafka implements Kafka {
             t = new Topic.Builder(t).withNumReplicas(topic.getNumReplicas()).build();
             topics.put(topic.getTopicName(), t);
         }
-        handler.handle(event);
+        return event;
     }
 
     @Override
-    public void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler) {
-        handler.handle(topicMetadataRespose.apply(topicName));
+    public Future<TopicMetadata> topicMetadata(TopicName topicName) {
+        return topicMetadataRespose.apply(topicName);
     }
 
     @Override
-    public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
-        handler.handle(topicsListResponse);
+    public Future<Set<String>> listTopics() {
+        return topicsListResponse;
     }
 
     public void assertExists(TestContext context, TopicName topicName) {
