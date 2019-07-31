@@ -784,7 +784,7 @@ class TopicOperator {
             .compose(storeTopic -> {
                 ResourceName resourceName = storeTopic != null ? storeTopic.getResourceName() : topicName.asKubeName();
                 return k8s.getFromName(resourceName).compose(topic -> {
-                    reconciliation.observedTopicFuture(topic);
+                    reconciliation.observedTopicFuture(kafkaTopic != null ? topic : null);
                     Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
                     return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                 });
