@@ -1479,7 +1479,7 @@ class KafkaST extends MessagingBaseST {
             testMethodResources().topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
         }
 
-        for (int i = 0; i < numberOfTopics; i++){
+        for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             verifyTopicViaKafka(currentTopic, topicPartitions);
         }
@@ -1487,12 +1487,10 @@ class KafkaST extends MessagingBaseST {
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++){
+        for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
 
-            replaceTopicResource(currentTopic, topic -> {
-                    topic.getSpec().setPartitions(5);
-            });
+            replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -1519,7 +1517,7 @@ class KafkaST extends MessagingBaseST {
             createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
         }
 
-        for (int i = 0; i < numberOfTopics; i++){
+        for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().withName(currentTopic).get();
             verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
@@ -1528,7 +1526,7 @@ class KafkaST extends MessagingBaseST {
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
 
-        for (int i = 0; i < numberOfTopics; i++){
+        for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
         }
