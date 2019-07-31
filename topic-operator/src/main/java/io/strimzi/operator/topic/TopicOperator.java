@@ -872,7 +872,7 @@ class TopicOperator {
                     if (!ksDiff.isEmpty()) {
                         statusFuture = Future.future();
                         k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).setHandler(ar -> {
-                            if (ar.succeeded()) {
+                            if (ar.succeeded() && ar.result() != null) {
                                 ObjectMeta metadata = ar.result().getMetadata();
                                 LOGGER.debug("{}: status was set rv={}, generation={}, observedGeneration={}",
                                         logContext,

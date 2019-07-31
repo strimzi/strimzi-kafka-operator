@@ -30,11 +30,10 @@ class MockZk implements Zk {
         }
     }
 
-    public void triggerData(AsyncResult<byte[]> dataResult) {
-        if (!dataHandlers.isEmpty()) {
-            for (Handler<AsyncResult<byte[]>> handler: dataHandlers.values()) {
-                handler.handle(dataResult);
-            }
+    public void triggerData(String path, AsyncResult<byte[]> dataResult) {
+        Handler<AsyncResult<byte[]>> asyncResultHandler = dataHandlers.get(path);
+        if (asyncResultHandler != null) {
+            asyncResultHandler .handle(dataResult);
         }
     }
 
