@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.BaseITST.kubeClient;
 
 public class StUtils {
@@ -522,6 +525,37 @@ public class StUtils {
         TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
             Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null
         );
+    }
+
+    public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
+        LOGGER.info("Waiting for Kafka topic change {}", topicName);
+        TestUtils.waitFor("Waits for Kafka topic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
+                        .withName(topicName).get().getSpec().getPartitions() == partitions
+        );
+    }
+
+    public static void waitForKafkaServiceLabelsChange(String serviceName, Map<String, String> labels) {
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            // ignoring strimzi.io labels
+            if (!entry.getKey().startsWith("strimzi.io/")) {
+                LOGGER.info("Waiting for Kafka service label change {} -> {}", entry.getKey(), entry.getValue());
+                TestUtils.waitFor("Waits for Kafka service label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                        Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                                kubeClient().getService(serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                );
+            }
+        }
+    }
+
+    public static void waitForReconciliation(String testClass, String testName, String nameSpace) {
+        String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT,
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
+                    TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
+                    "'Triggering periodic reconciliation for namespace " + nameSpace + "'").isEmpty());
+        TimeMeasuringSystem.stopOperation(reconciliation);
     }
 
     public static void waitForLoadBalancerService(String serviceName) {
