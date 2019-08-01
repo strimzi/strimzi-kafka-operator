@@ -82,10 +82,8 @@ public class Labels {
     public static Labels userLabels(Map<String, String> userLabels) {
         if (userLabels != null) {
             for (String key : userLabels.keySet()) {
-                if (key.startsWith(STRIMZI_DOMAIN)
-                        && !key.equals(STRIMZI_KIND_LABEL)) {
-                    throw new IllegalArgumentException("User labels includes a Strimzi label that is not "
-                            + STRIMZI_KIND_LABEL + ": " + key);
+                if (key.startsWith(STRIMZI_DOMAIN)) {
+                    throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed at Custom Resources.");
                 }
             }
             return new Labels(userLabels);
