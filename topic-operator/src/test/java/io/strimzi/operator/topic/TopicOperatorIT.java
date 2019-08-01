@@ -61,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -72,7 +73,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
@@ -446,20 +446,13 @@ public class TopicOperatorIT extends BaseITST {
                     && kafkaTopic.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
-            if (!filtered.isEmpty()) {
-                assertEquals(1, filtered.size());
-                Event event = filtered.get(0);
-
-                assertEquals(expectedMessage, event.getMessage());
-                assertEquals(expectedType.name, event.getType());
-                assertNotNull(event.getInvolvedObject());
-                assertNotNull(event.getLastTimestamp());
-                assertEquals("KafkaTopic", event.getInvolvedObject().getKind());
-                assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
-                return true;
-            } else {
-                return false;
-            }
+            return filtered.stream().anyMatch(event ->
+                    Objects.equals(expectedMessage, event.getMessage()) &&
+                    Objects.equals(expectedType.name, event.getType()) &&
+                    event.getInvolvedObject() != null &&
+                    event.getLastTimestamp() != null &&
+                    Objects.equals("KafkaTopic", event.getInvolvedObject().getKind()) &&
+                    Objects.equals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName()));
         }, timeout, "Expected an error event");
     }
 

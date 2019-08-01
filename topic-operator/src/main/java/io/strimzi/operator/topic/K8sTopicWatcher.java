@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,11 +19,13 @@ import java.util.Map;
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
+    private final Future<Void> initReconcileFuture;
 
     private TopicOperator topicOperator;
 
-    public K8sTopicWatcher(TopicOperator topicOperator) {
+    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture) {
         this.topicOperator = topicOperator;
+        this.initReconcileFuture = initReconcileFuture;
     }
 
     @Override
@@ -33,6 +36,10 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
+            if (action == Action.ADDED && !initReconcileFuture.isComplete()) {
+                LOGGER.debug("Ignoring initial added event for {} {} during initial reconcile", kind, name);
+                return;
+            }
             LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
                     metadata.getGeneration(), labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {

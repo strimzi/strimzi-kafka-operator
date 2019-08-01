@@ -175,11 +175,14 @@ public class Session extends AbstractVerticle {
                 topicsWatcher.start(zk);
 
                 Future<Void> f = Future.future();
+                Future<Void> initReconcileFuture = Future.future();
+                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcileFuture);
                 Thread resourceThread = new Thread(() -> {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
+
                         Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
-                                .inNamespace(namespace).withLabels(labels.labels()).watch(new K8sTopicWatcher(topicOperator));
+                                .inNamespace(namespace).withLabels(labels.labels()).watch(watcher);
                         LOGGER.debug("Watching setup");
 
                         // start the HTTP server for healthchecks
@@ -199,7 +202,11 @@ public class Session extends AbstractVerticle {
                     public void handle(Long oldTimerId) {
                         if (!stopped) {
                             timerId = null;
-                            topicOperator.reconcileAllTopics(oldTimerId == null ? "initial " : "periodic ").setHandler(result -> {
+                            boolean isInitialReconcile = oldTimerId == null;
+                            topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
+                                if (isInitialReconcile) {
+                                    initReconcileFuture.complete();
+                                }
                                 if (!stopped) {
                                     timerId = vertx.setTimer(interval, this);
                                 }
