@@ -55,6 +55,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -107,7 +109,7 @@ public class TopicOperatorIT extends BaseITST {
     private Session session;
 
     @BeforeClass
-    public static void setupKubeCluster() {
+    public static void setupKubeCluster() throws IOException {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -116,10 +118,16 @@ public class TopicOperatorIT extends BaseITST {
         cmdKubeClient()
                 .createNamespace(NAMESPACE);
         oldNamespace = setNamespace(NAMESPACE);
-        cmdKubeClient()
-                .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .create(TestUtils.CRD_TOPIC)
-                .create("src/test/resources/TopicOperatorIT-rbac.yaml");
+        LOGGER.info("#### Creating " + "../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
+        LOGGER.info(new String(Files.readAllBytes(new File("../install/topic-operator/02-Role-strimzi-topic-operator.yaml").toPath())));
+        cmdKubeClient().create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
+        LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
+        LOGGER.info(new String(Files.readAllBytes(new File(TestUtils.CRD_TOPIC).toPath())));
+        cmdKubeClient().create(TestUtils.CRD_TOPIC);
+        LOGGER.info("#### Creating " + "src/test/resources/TopicOperatorIT-rbac.yaml");
+        LOGGER.info(new String(Files.readAllBytes(new File("src/test/resources/TopicOperatorIT-rbac.yaml").toPath())));
+
+        cmdKubeClient().create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
     @AfterClass
