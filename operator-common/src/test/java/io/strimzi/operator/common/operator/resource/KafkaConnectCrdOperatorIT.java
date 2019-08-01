@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -263,6 +264,7 @@ public class KafkaConnectCrdOperatorIT {
      * @param context
      */
     @Test
+    @Ignore
     public void testUpdateStatusWhileResourceUpdated(TestContext context)    {
         log.info("Getting Kubernetes version");
         Async versionAsync = context.async();
