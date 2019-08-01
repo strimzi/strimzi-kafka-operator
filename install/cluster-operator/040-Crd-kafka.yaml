@@ -254,6 +254,8 @@ spec:
                               - scram-sha-512
                           required:
                           - type
+                        class:
+                          type: string
                         configuration:
                           type: object
                           properties:

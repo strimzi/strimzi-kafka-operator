@@ -2042,6 +2042,7 @@ public class KafkaClusterTest {
         // Check bootstrap ingress
         Ingress bing = kc.generateExternalBootstrapIngress();
         assertEquals(KafkaCluster.serviceName(cluster), bing.getMetadata().getName());
+        assertEquals("nginx", bing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"));
         assertEquals(1, bing.getSpec().getTls().size());
         assertEquals(1, bing.getSpec().getTls().get(0).getHosts().size());
         assertEquals("my-kafka-bootstrap.com", bing.getSpec().getTls().get(0).getHosts().get(0));
@@ -2053,10 +2054,11 @@ public class KafkaClusterTest {
         assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort());
         checkOwnerReference(kc.createOwnerReference(), bing);
 
-        // Check per pod router
+        // Check per pod ingress
         for (int i = 0; i < replicas; i++)  {
             Ingress ing = kc.generateExternalIngress(i);
             assertEquals(KafkaCluster.externalServiceName(cluster, i), ing.getMetadata().getName());
+            assertEquals("nginx", ing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"));
             assertEquals(1, ing.getSpec().getTls().size());
             assertEquals(1, ing.getSpec().getTls().get(0).getHosts().size());
             assertTrue(addresses.contains(ing.getSpec().getTls().get(0).getHosts().get(0)));
@@ -2067,6 +2069,58 @@ public class KafkaClusterTest {
             assertEquals(KafkaCluster.externalServiceName(cluster, i), ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName());
             assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort());
             checkOwnerReference(kc.createOwnerReference(), ing);
+        }
+    }
+
+    @Test
+    public void testExternalIngressClass() {
+        IngressListenerBrokerConfiguration broker0 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-0.com")
+                .withBroker(0)
+                .build();
+
+        IngressListenerBrokerConfiguration broker1 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-1.com")
+                .withBroker(1)
+                .build();
+
+        IngressListenerBrokerConfiguration broker2 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-2.com")
+                .withBroker(2)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withNewIngressClass("nginx-internal")
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withDnsAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                    .endBootstrap()
+                                    .withBrokers(broker0, broker1, broker2)
+                                .endConfiguration()
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+         // Check bootstrap ingress
+        Ingress bing = kc.generateExternalBootstrapIngress();
+        assertEquals("nginx-internal", bing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"));
+
+        // Check per pod ingress
+        for (int i = 0; i < replicas; i++)  {
+            Ingress ing = kc.generateExternalIngress(i);
+            assertEquals("nginx-internal", ing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"));
         }
     }
 
