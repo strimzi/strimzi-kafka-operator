@@ -524,6 +524,15 @@ public class StUtils {
         );
     }
 
+    public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
+        LOGGER.info("Waiting for Kafka topic change {}", topicName);
+        TestUtils.waitFor("Waits for Kafka topic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
+                        .withName(topicName).get().getSpec().getPartitions() == partitions
+        );
+    }
+
     public static void waitForLoadBalancerService(String serviceName) {
         LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
 
