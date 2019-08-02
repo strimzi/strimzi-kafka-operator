@@ -83,7 +83,7 @@ public class Labels {
         if (userLabels != null) {
             for (String key : userLabels.keySet()) {
                 if (key.startsWith(STRIMZI_DOMAIN)) {
-                    throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed at Custom Resources.");
+                    throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
                 }
             }
             return new Labels(userLabels);
