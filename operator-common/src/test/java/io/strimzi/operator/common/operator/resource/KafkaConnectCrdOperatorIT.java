@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -29,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -264,7 +262,6 @@ public class KafkaConnectCrdOperatorIT {
      * @param context
      */
     @Test
-    @Ignore
     public void testUpdateStatusWhileResourceUpdated(TestContext context)    {
         log.info("Getting Kubernetes version");
         Async versionAsync = context.async();
@@ -307,7 +304,7 @@ public class KafkaConnectCrdOperatorIT {
         log.info("Updating resource");
         KafkaConnect updated = new KafkaConnectBuilder(kafkaConnectOperator.get(namespace, RESOURCE_NAME))
                 .editSpec()
-                .withLogging(new InlineLogging())
+                .withNewLivenessProbe().withInitialDelaySeconds(14).endLivenessProbe()
                 .endSpec()
                 .build();
 
