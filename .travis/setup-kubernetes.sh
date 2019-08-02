@@ -91,10 +91,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     sudo chown -R travis: /home/travis/.minikube/
     sudo -E minikube addons enable default-storageclass
 
-    #wait_for_minikube
-    kubectl cluster-info
-    JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lcomponent=kube-addon-manager -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-addon-manager to be available"; kubectl get pods --all-namespaces; done
-    JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lk8s-app=kube-dns -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-dns to be available"; kubectl get pods --all-namespaces; done
+    wait_for_minikube
 
     if [ $? -ne 0 ]
     then
