@@ -554,7 +554,7 @@ public class StUtils {
     public static void waitForKafkaServiceLabelsDeletion(String serviceName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Kafka service label {} change to {}", labelKey, null);
-            TestUtils.waitFor("Waiting for Kafka service label" + labelKey + " change to " + null , Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            TestUtils.waitFor("Waiting for Kafka service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                             kubeClient().getService(serviceName).getMetadata().getLabels().get(labelKey) == null
             );
