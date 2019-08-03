@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.14.0
+
+* Add support for configuring Ingress class (#1716)
+
 ## 0.13.0
 
 * Allow users to manually configure ACL rules (for example, using `kafka-acls.sh`) for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator

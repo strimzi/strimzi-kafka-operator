@@ -835,7 +835,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
-                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -891,7 +891,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
-                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -910,11 +910,19 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates the annotations needed to configure the Ingress as TLS passthrough
      *
+     * @param ingressListener   The Ingress listener object with additional parameters and options
+     *
      * @return  Map with the annotations
      */
-    private Map<String, String> generateInternalIngressAnnotations() {
+    private Map<String, String> generateInternalIngressAnnotations(KafkaListenerExternalIngress ingressListener) {
         Map<String, String> internalAnnotations = new HashMap<>(4);
-        internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
+
+        if (ingressListener.getIngressClass() != null) {
+            internalAnnotations.put("kubernetes.io/ingress.class", ingressListener.getIngressClass());
+        } else {
+            internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
+        }
+
         internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
         internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
         internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");

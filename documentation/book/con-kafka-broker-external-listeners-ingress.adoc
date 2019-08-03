@@ -46,6 +46,23 @@ listeners:
 
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
 
+= Configuring the `Ingress` class
+
+By default, the `Ingress` class is set to `nginx`.
+You can change the `Ingress` class using the `class` property.
+
+.Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    class: nginx-internal
+    # ...
+# ...
+----
+
 = Customizing the DNS names of external ingress listeners
 
 On `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources.
