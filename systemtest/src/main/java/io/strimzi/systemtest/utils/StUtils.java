@@ -538,12 +538,54 @@ public class StUtils {
 
     public static void waitForKafkaServiceLabelsChange(String serviceName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-            // ignoring strimzi.io labels
-            if (!entry.getKey().startsWith("strimzi.io/")) {
+            boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
+            boolean isStrimziTag = entry.getKey().startsWith("strimzi.io/");
+            // ignoring strimzi.io and k8s labels
+            if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Kafka service label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for Kafka service label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                         Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                                 kubeClient().getService(serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                );
+            }
+        }
+    }
+
+    public static void waitForKafkaServiceLabelsDeletion(String serviceName, String... labelKeys) {
+        for (final String labelKey : labelKeys) {
+            LOGGER.info("Waiting for Kafka service label {} change to {}", labelKey, null);
+            TestUtils.waitFor("Waiting for Kafka service label" + labelKey + " change to " + null , Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                            kubeClient().getService(serviceName).getMetadata().getLabels().get(labelKey) == null
+            );
+        }
+    }
+
+    public static void waitForKafkaConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
+            boolean isStrimziTag = entry.getKey().startsWith("strimzi.io/");
+            // ignoring strimzi.io and k8s labels
+            if (!(isStrimziTag || isK8sTag)) {
+                LOGGER.info("Waiting for Kafka config map label change {} -> {}", entry.getKey(), entry.getValue());
+                TestUtils.waitFor("Waits for Kafka config map label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                        Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                                kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                );
+            }
+        }
+    }
+
+    public static void waitForKafkaStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
+            boolean isStrimziTag = entry.getKey().startsWith("strimzi.io/");
+            // ignoring strimzi.io and k8s labels
+            if (!(isStrimziTag || isK8sTag)) {
+                LOGGER.info("Waiting for Kafka stateful set label change {} -> {}", entry.getKey(), entry.getValue());
+                TestUtils.waitFor("Waits for Kafka stateful set label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                        Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                                kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
