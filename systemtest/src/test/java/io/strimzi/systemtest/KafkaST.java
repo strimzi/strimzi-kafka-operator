@@ -1808,8 +1808,8 @@ class KafkaST extends MessagingBaseST {
         waitForClusterAvailability(NAMESPACE);
     }
 
-    void verifyPresentLabels (Map<String, String> labels, HasMetadata resources) {
-        for (Map.Entry<String, String> label : labels.entrySet()){
+    void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
+        for (Map.Entry<String, String> label : labels.entrySet()) {
             assertEquals(label.getValue(), resources.getMetadata().getLabels().get(label.getKey()));
         }
     }
