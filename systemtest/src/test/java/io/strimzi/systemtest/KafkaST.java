@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -1701,16 +1702,17 @@ class KafkaST extends MessagingBaseST {
                 .endMetadata()
                 .done();
 
-        LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        StUtils.waitForKafkaServiceLabelsChange(brokerServiceName, labels);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForKafkaStatefulSetLabelsChange(kafkaClusterName(CLUSTER_NAME), labels);
 
         LOGGER.info("Getting labels from stateful set resource");
         StatefulSet statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
-        labels = statefulSet.getSpec().getTemplate().getMetadata().getLabels();
-        LOGGER.info("Verifying default labels in the KafkaCR");
+        LOGGER.info("Verifying default labels in the Kafka CR");
 
-        assertEquals(labelValues[0], labels.get(labelKeys[0]));
-        assertEquals(labelValues[1], labels.get(labelKeys[1]));
+        assertEquals(labelValues[0], statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[0]));
+        assertEquals(labelValues[1], statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[1]));
 
         String newLabelKey = "label-name-3";
         String newLabelValue = "name-of-the-label-3";
@@ -1722,6 +1724,7 @@ class KafkaST extends MessagingBaseST {
             resource.getMetadata().getLabels().put(newLabelKey, newLabelValue);
         });
 
+
         labels.put(labelKeys[0], labelNewValues[0]);
         labels.put(labelKeys[1], labelNewValues[1]);
         labels.put(newLabelKey, newLabelValue);
@@ -1732,9 +1735,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verifying kafka labels via services");
         Service service = kubeClient().getService(brokerServiceName);
 
-        assertEquals(labelNewValues[0], service.getMetadata().getLabels().get(labelKeys[0]));
-        assertEquals(labelNewValues[1], service.getMetadata().getLabels().get(labelKeys[1]));
-        assertEquals(newLabelValue, service.getMetadata().getLabels().get(newLabelKey));
+        verifyPresentLabels(labels, service);
 
         LOGGER.info("Waiting for kafka config map labels changed {}", labels);
         StUtils.waitForKafkaConfigMapLabelsChange(configMapName, labels);
@@ -1742,24 +1743,22 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verifying kafka labels via config maps");
         ConfigMap configMap = kubeClient().getConfigMap(configMapName);
 
-        assertEquals(labelNewValues[0], configMap.getMetadata().getLabels().get(labelKeys[0]));
-        assertEquals(labelNewValues[1], configMap.getMetadata().getLabels().get(labelKeys[1]));
-        assertEquals(newLabelValue, configMap.getMetadata().getLabels().get(newLabelKey));
+        verifyPresentLabels(labels, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         StUtils.waitForKafkaStatefulSetLabelsChange(kafkaClusterName(CLUSTER_NAME), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
-        labels = statefulSet.getSpec().getTemplate().getMetadata().getLabels();
 
-        assertEquals(labelNewValues[0], labels.get(labelKeys[0]));
-        assertEquals(labelNewValues[1], labels.get(labelKeys[1]));
-        assertEquals(newLabelValue, labels.get(newLabelKey));
+        verifyPresentLabels(labels, statefulSet);
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
+
         assertEquals(labelNewValues[0], labels.get(labelKeys[0]));
         assertEquals(labelNewValues[1], labels.get(labelKeys[1]));
         assertEquals(newLabelValue, labels.get(newLabelKey));
@@ -1782,35 +1781,43 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verifying kafka labels via services");
         service = kubeClient().getService(brokerServiceName);
 
-        assertNull(service.getMetadata().getLabels().get(labelKeys[0]));
-        assertNull(service.getMetadata().getLabels().get(labelKeys[1]));
-        assertNull(service.getMetadata().getLabels().get(newLabelKey));
+        verifyNullLabels(labelKeys, newLabelKey, service);
 
         LOGGER.info("Verifying kafka labels via config maps");
         configMap = kubeClient().getConfigMap(configMapName);
 
-        assertNull(configMap.getMetadata().getLabels().get(labelKeys[0]));
-        assertNull(configMap.getMetadata().getLabels().get(labelKeys[1]));
-        assertNull(configMap.getMetadata().getLabels().get(newLabelKey));
+        verifyNullLabels(labelKeys, newLabelKey, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
-        labels = statefulSet.getSpec().getTemplate().getMetadata().getLabels();
 
-        assertNull(labels.get(labelKeys[0]));
-        assertNull(labels.get(labelKeys[1]));
-        assertNull(labels.get(newLabelKey));
+        verifyNullLabels(labelKeys, newLabelKey, statefulSet);
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
+
         assertNull(labels.get(labelKeys[0]));
         assertNull(labels.get(labelKeys[1]));
         assertNull(labels.get(newLabelKey));
 
         waitForClusterAvailability(NAMESPACE);
+    }
+
+    void verifyPresentLabels (Map<String, String> labels, HasMetadata resources) {
+        for (Map.Entry<String, String> label : labels.entrySet()){
+            assertEquals(label.getValue(), resources.getMetadata().getLabels().get(label.getKey()));
+        }
+    }
+
+    void verifyNullLabels(String[] labelKeys, String newLabelKey, HasMetadata resources) {
+        assertNull(resources.getMetadata().getLabels().get(labelKeys[0]));
+        assertNull(resources.getMetadata().getLabels().get(labelKeys[1]));
+        assertNull(resources.getMetadata().getLabels().get(newLabelKey));
     }
 
 
