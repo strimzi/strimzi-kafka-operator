@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
@@ -303,15 +302,9 @@ public class KafkaUserCrdOperatorIT {
                 .build();
 
         log.info("Updating resource");
-        KafkaUserAuthentication kua = new KafkaUserAuthentication() {
-            @Override
-            public String getType() {
-                return "tls";
-            }
-        };
         KafkaUser updated = new KafkaUserBuilder(kafkaUserOperator.get(namespace, RESOURCE_NAME))
                 .editSpec()
-                    .withAuthentication(kua)
+                    .withNewKafkaUserTlsClientAuthentication().endKafkaUserTlsClientAuthentication()
                 .endSpec()
                 .build();
 

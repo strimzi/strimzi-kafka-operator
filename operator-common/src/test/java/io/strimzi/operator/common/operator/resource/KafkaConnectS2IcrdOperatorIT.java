@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -305,7 +304,7 @@ public class KafkaConnectS2IcrdOperatorIT {
         log.info("Updating resource");
         KafkaConnectS2I updated = new KafkaConnectS2IBuilder(kafkaConnectS2Ioperator.get(namespace, RESOURCE_NAME))
                 .editSpec()
-                .withLogging(new InlineLogging())
+                .withNewLivenessProbe().withInitialDelaySeconds(14).endLivenessProbe()
                 .endSpec()
                 .build();
 
