@@ -23,7 +23,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaConnectV1alpha1() {
-        assumeKube1_11Plus();
+        assumeNotTravis();
         createDelete(KafkaConnect.class, "KafkaConnectV1alpha1.yaml");
     }
 
