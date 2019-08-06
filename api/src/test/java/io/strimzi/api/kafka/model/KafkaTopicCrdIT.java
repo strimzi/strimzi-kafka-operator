@@ -24,7 +24,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicV1alpha1() {
-        assumeNotTravis();
+        assumeKube1_11Plus();
         createDelete(KafkaTopic.class, "KafkaTopicV1alpha1.yaml");
     }
     @Test

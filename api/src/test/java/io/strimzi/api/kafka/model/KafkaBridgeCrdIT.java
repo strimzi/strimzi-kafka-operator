@@ -24,7 +24,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerV1alpha1() {
-        assumeNotTravis();
+        assumeKube1_11Plus();
         createDelete(KafkaBridge.class, "KafkaBridgeV1alpha1.yaml");
     }
 

@@ -23,7 +23,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserV1alpha1() {
-        assumeNotTravis();
+        assumeKube1_11Plus();
         createDelete(KafkaUser.class, "KafkaUserV1alpha1.yaml");
     }
 

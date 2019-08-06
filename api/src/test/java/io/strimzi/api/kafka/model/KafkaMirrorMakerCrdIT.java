@@ -24,7 +24,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerV1alpha1() {
-        assumeNotTravis();
+        assumeKube1_11Plus();
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMakerV1alpha1.yaml");
     }
 
