@@ -1088,13 +1088,6 @@ spec:
                     kafkaContainer:
                       type: object
                       properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              type: object
-                            annotations:
-                              type: object
                         env:
                           type: object
                     perPodIngress:

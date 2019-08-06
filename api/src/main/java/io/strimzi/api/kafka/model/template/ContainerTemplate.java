@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -24,25 +23,12 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata", "env"})
 @EqualsAndHashCode
 public class ContainerTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private MetadataTemplate metadata;
     private Map<String, String> env;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    @Description("Metadata which should be applied to the container.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public MetadataTemplate getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(MetadataTemplate metadata) {
-        this.metadata = metadata;
-    }
 
     @Description("Environment variables which should be applied to the container.")
     public Map<String, String> getEnv() {

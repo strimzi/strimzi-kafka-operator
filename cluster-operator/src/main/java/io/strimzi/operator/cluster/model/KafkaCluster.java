@@ -188,8 +188,6 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
-    protected Map<String, String> templateKafkaContainerLabels;
-    protected Map<String, String> templateKafkaContainerAnnotations;
     protected Map<String, String> templateKafkaContainerEnvVars;
 
     // Configuration defaults
@@ -467,11 +465,6 @@ public class KafkaCluster extends AbstractModel {
             if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null)  {
                 result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
-            }
-
-            if (template.getKafkaContainer() != null && template.getKafkaContainer().getMetadata() != null) {
-                result.templateKafkaContainerLabels = template.getKafkaContainer().getMetadata().getLabels();
-                result.templateKafkaContainerAnnotations = template.getKafkaContainer().getMetadata().getAnnotations();
             }
 
             if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {

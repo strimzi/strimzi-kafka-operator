@@ -742,7 +742,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 
 
 [options="header"]
@@ -795,10 +795,8 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 
 [options="header"]
 |====
-|Property         |Description
-|metadata  1.2+<.<|Metadata which should be applied to the container.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|env       1.2+<.<|Environment variables which should be applied to the container.
+|Property    |Description
+|env  1.2+<.<|Environment variables which should be applied to the container.
 |map
 |====
 
