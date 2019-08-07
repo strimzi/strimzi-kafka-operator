@@ -11,6 +11,8 @@ JVM options can be configured using the `jvmOptions` property in following resou
 * `Kafka.spec.zookeeper`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
+* `KafkaMirrorMaker.spec`
+* `KafkaBridge.spec`
 
 Only a selected subset of available JVM options can be configured.
 The following options are supported:
