@@ -1,0 +1,31 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-customizing-deployments.adoc
+
+[id='con-customizing-containers-{context}']
+= Customizing Containers
+
+Using the `kafkaContainer` template field you can set environment variables to be applied to the Kafka broker containers.
+
+Environment variables should be supplied under the `env` field as a list of objects with `name` and `value` fields. The following example shows two custom environment variables being set for the Kafka broker:
+
+[source,yaml,subs=attributes+]
+----
+# ...
+spec:
+    kafka:
+        template:
+            kafkaContainer:
+                env:
+                    - name: TEST_ENV_1
+                      value: test.env.one
+                    - name: TEST_ENV_2
+                      value: test.env.two
+# ...
+----
+
+Environment variables used internally by Strimzi typically (although not always) begin with the `KAFKA_` prefix and should be avoided. If an environment variable is set that is already in use by Strimzi then it will be ignored and a warning will be posted in the log output.
+
+.Additional resources
+
+* For more information, see xref:type-ContainerTemplate-reference[].
