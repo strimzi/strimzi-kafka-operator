@@ -26,6 +26,8 @@ import java.util.Map;
 @EqualsAndHashCode
 public class ContainerEnvVar implements UnknownPropertyPreserving, Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private String name;
     private String value;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
