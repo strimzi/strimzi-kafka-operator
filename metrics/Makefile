@@ -7,11 +7,13 @@ RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/examples/$(PROJECT_NAME)
 
 release:
 	mkdir -p $(RELEASE_PATH)
+	mkdir -p $(RELEASE_PATH)/grafana-install
 	mkdir -p $(RELEASE_PATH)/grafana-dashboards
 	mkdir -p $(RELEASE_PATH)/prometheus-install
 	mkdir -p $(RELEASE_PATH)/prometheus-additional-properties
 	mkdir -p $(RELEASE_PATH)/prometheus-alertmanager-config
 	$(CP) -r ./examples/kafka/* $(RELEASE_PATH)/
+	$(CP) -r ./examples/grafana/*.yaml $(RELEASE_PATH)/grafana-install/
 	$(CP) -r ./examples/grafana/*.json $(RELEASE_PATH)/grafana-dashboards/
 	$(CP) -r ./examples/prometheus/install/*.yaml $(RELEASE_PATH)/prometheus-install/
 	$(CP) -r ./examples/prometheus/additional-properties/*.yaml $(RELEASE_PATH)/prometheus-additional-properties/
