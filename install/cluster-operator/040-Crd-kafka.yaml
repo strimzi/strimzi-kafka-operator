@@ -1089,7 +1089,14 @@ spec:
                       type: object
                       properties:
                         env:
-                          type: object
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                     perPodIngress:
                       type: object
                       properties:

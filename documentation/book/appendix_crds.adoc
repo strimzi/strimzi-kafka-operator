@@ -797,7 +797,22 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 |====
 |Property    |Description
 |env  1.2+<.<|Environment variables which should be applied to the container.
-|map
+|xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
+|====
+
+[id='type-ContainerEnvVar-{context}']
+### `ContainerEnvVar` schema reference
+
+Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+
+
+[options="header"]
+|====
+|Property      |Description
+|name   1.2+<.<|The environment variable key.
+|string
+|value  1.2+<.<|The environment variable value.
+|string
 |====
 
 [id='type-PodDisruptionBudgetTemplate-{context}']

@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
@@ -188,7 +189,7 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
-    protected Map<String, String> templateKafkaContainerEnvVars;
+    protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -1335,12 +1336,12 @@ public class KafkaCluster extends AbstractModel {
             }
 
             // Set custom env vars from the user defined template
-            for (Map.Entry<String, String> templateEnvVar : templateKafkaContainerEnvVars.entrySet()) {
-                if (predefinedEnvs.contains(templateEnvVar.getKey())) {
+            for (ContainerEnvVar templateEnvVar : templateKafkaContainerEnvVars) {
+                if (predefinedEnvs.contains(templateEnvVar.getName())) {
                     // Do we want to throw an error here?
-                    log.warn("User defined container template environment variable " + templateEnvVar.getKey() + " is already in use and will be ignored");
+                    log.warn("User defined container template environment variable " + templateEnvVar.getName() + " is already in use and will be ignored");
                 } else {
-                    varList.add(buildEnvVar(templateEnvVar.getKey(), templateEnvVar.getValue()));
+                    varList.add(buildEnvVar(templateEnvVar.getName(), templateEnvVar.getValue()));
                 }
             }
         }

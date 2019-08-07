@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -2233,14 +2234,21 @@ public class KafkaClusterTest {
     @Test
     public void testKafkaContainerEnvVars() {
 
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
         String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
         String testEnvTwoKey = "TEST_ENV_2";
         String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
 
-        Map<String, String> testEnvs = new HashMap<>();
-        testEnvs.put(testEnvOneKey, testEnvOneValue);
-        testEnvs.put(testEnvTwoKey, testEnvTwoValue);
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
         ContainerTemplate kafkaContainer = new ContainerTemplate();
         kafkaContainer.setEnv(testEnvs);
 
@@ -2263,8 +2271,8 @@ public class KafkaClusterTest {
 
         for (EnvVar envVar : kafkaEnvVars) {
 
-            if (testEnvs.containsKey(envVar.getName())) {
-                if (testEnvs.get(envVar.getName()).equals(envVar.getValue())) {
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
                     keyCount++;
                 }
             }
@@ -2276,21 +2284,35 @@ public class KafkaClusterTest {
 
     @Test
     public void testKafkaContainerEnvVarsConflict() {
-
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS;
-        String testEnvOneValue = "test.env.three";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
         String testEnvTwoKey = "TEST_ENV_2";
         String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
         String testEnvThreeKey = KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION;
         String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        ContainerEnvVar envVar4 = new ContainerEnvVar();
         String testEnvFourKey = "TEST_ENV_4";
         String testEnvFourValue = "test.env.four";
+        envVar4.setName(testEnvFourKey);
+        envVar4.setValue(testEnvFourValue);
 
-        Map<String, String> testEnvs = new HashMap<>();
-        testEnvs.put(testEnvOneKey, testEnvOneValue);
-        testEnvs.put(testEnvTwoKey, testEnvTwoValue);
-        testEnvs.put(testEnvThreeKey, testEnvThreeValue);
-        testEnvs.put(testEnvFourKey, testEnvFourValue);
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        testEnvs.add(envVar4);
         ContainerTemplate kafkaContainer = new ContainerTemplate();
         kafkaContainer.setEnv(testEnvs);
 

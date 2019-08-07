@@ -1,44 +1,51 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.template;
+
+package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of a template for Strimzi containers.
+ * Representation for environment variables for Strimzi containers.
  */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
-public class ContainerTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class ContainerEnvVar implements UnknownPropertyPreserving, Serializable {
 
-    private List<ContainerEnvVar> env;
+    private String name;
+    private String value;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Environment variables which should be applied to the container.")
-    public List<ContainerEnvVar> getEnv() {
-        return env;
+    @Description("The environment variable key.")
+    public String getName() {
+        return name;
     }
 
-    public void setEnv(List<ContainerEnvVar> env) {
-        this.env = env;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Description("The environment variable value.")
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     @Override
@@ -50,4 +57,5 @@ public class ContainerTemplate implements Serializable, UnknownPropertyPreservin
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
+
 }

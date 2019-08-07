@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -282,13 +283,21 @@ class KafkaST extends MessagingBaseST {
         kafkaConfig.put("transaction.state.log.replication.factor", "1");
         kafkaConfig.put("default.replication.factor", "1");
 
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
         String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
         String testEnvTwoKey = "TEST_ENV_2";
         String testEnvTwoValue = "test.env.two";
-        Map<String, String> testEnvs = new HashMap<String, String>();
-        testEnvs.put(testEnvOneKey, testEnvOneValue);
-        testEnvs.put(testEnvTwoKey, testEnvTwoValue);
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
         ContainerTemplate kafkaContainer = new ContainerTemplate();
         kafkaContainer.setEnv(testEnvs);
 
@@ -298,12 +307,20 @@ class KafkaST extends MessagingBaseST {
         zookeeperConfig.put("syncLimit", "2");
         zookeeperConfig.put("autopurge.purgeInterval", "1");
 
+        ContainerEnvVar updatedEnvVar2 = new ContainerEnvVar();
         String updatedTestEnvTwoValue = "updated.test.env.two";
+        updatedEnvVar2.setName(testEnvTwoKey);
+        updatedEnvVar2.setValue(updatedTestEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
         String testEnvThreeKey = "TEST_ENV_3";
         String testEnvThreeValue = "test.env.three";
-        Map<String, String> updatedTestEnvs = new HashMap<String, String>();
-        updatedTestEnvs.put(testEnvThreeKey, testEnvThreeValue);
-        updatedTestEnvs.put(testEnvTwoKey, updatedTestEnvTwoValue);
+        envVar3.setName(testEnvTwoKey);
+        envVar3.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> updatedTestEnvs = new ArrayList<>();
+        updatedTestEnvs.add(updatedEnvVar2);
+        updatedTestEnvs.add(envVar3);
 
         int initialDelaySeconds = 30;
         int timeoutSeconds = 10;
