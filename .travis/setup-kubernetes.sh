@@ -85,6 +85,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     docker run -d -p 5000:5000 registry
 
+    date +%F_%T
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minikube start --vm-driver=none --kubernetes-version=v1.15.0 \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC
@@ -92,6 +93,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     sudo -E minikube addons enable default-storageclass
 
     wait_for_minikube
+    date +%F_%T
 
     if [ $? -ne 0 ]
     then
