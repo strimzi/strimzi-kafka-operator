@@ -14,7 +14,14 @@
 
 = JVM Options
 
-Apache Kafka, Apache Zookeeper, Apache Kafka Connect, Apache Kafka Mirror Maker and the Kafka Bridge run inside a Java Virtual Machine (JVM).
+The following components of {ProductName} run inside a Virtual Machine (VM):
+
+* Apache Kafka
+* Apache Zookeeper
+* Apache Kafka Connect
+* Apache Kafka Mirror Maker
+* {ProductName} Kafka Bridge
+
 JVM configuration options optimize the performance for different platforms and architectures.
 {ProductName} allows you to configure some of these options.
 

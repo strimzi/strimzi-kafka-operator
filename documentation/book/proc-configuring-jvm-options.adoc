@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `jvmOptions` property in the `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaMirrorMaker` or `KafkaBridge` resource.
+. Edit the `jvmOptions` property in the `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaMirrorMaker`, or `KafkaBridge` resource.
 For example:
 +
 [source,yaml,subs=attributes+]
