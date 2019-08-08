@@ -1336,7 +1336,6 @@ public class KafkaCluster extends AbstractModel {
             // Set custom env vars from the user defined template
             for (ContainerEnvVar templateEnvVar : templateKafkaContainerEnvVars) {
                 if (predefinedEnvs.contains(templateEnvVar.getName())) {
-                    // Do we want to throw an error here?
                     log.warn("User defined container template environment variable " + templateEnvVar.getName() + " is already in use and will be ignored");
                 } else {
                     varList.add(buildEnvVar(templateEnvVar.getName(), templateEnvVar.getValue()));
