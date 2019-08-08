@@ -5,75 +5,86 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.KafkaListenerPlain;
-import io.strimzi.api.kafka.model.KafkaListenerTls;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Failed;
-import static io.strimzi.systemtest.k8s.Events.FailedSync;
-import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
-import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@ExtendWith(StrimziExtension.class)
-class KafkaST extends AbstractST {
+@Tag(REGRESSION)
+class KafkaST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -81,116 +92,140 @@ class KafkaST extends AbstractST {
     private static final String TOPIC_NAME = "test-topic";
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
-    private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
-    private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
-    private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
-    private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
-    private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
-    private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
-
     @Test
-    @Tag(FLAKY)
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
         createCustomResources("../examples/templates/cluster-operator");
-        Oc oc = (Oc) KUBE_CLIENT;
+        String appName = "strimzi-ephemeral";
+        Oc oc = (Oc) cmdKubeClient();
         String clusterName = "openshift-my-cluster";
-        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperClusterName(clusterName), 3);
-        oc.waitForStatefulSet(kafkaClusterName(clusterName), 3);
-        oc.waitForDeployment(entityOperatorDeploymentName(clusterName), 1);
+        oc.newApp(appName, map("CLUSTER_NAME", clusterName));
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(clusterName), 3);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(clusterName), 3);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
+        //Testing labels
+        verifyLabelsForKafkaCluster(clusterName, appName);
+
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
 
-        // Delete all pods created by this test
-        CLIENT.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> CLIENT.pods().delete(p));
+        //Wait for kafka deletion
+        oc.waitForResourceDeletion("Kafka", clusterName);
+        kubeClient().listPods().stream()
+            .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+            .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
 
-        oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
-        oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
-        oc.waitForResourceDeletion("deployment", entityOperatorDeploymentName(clusterName));
-
-        CLIENT.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+        StUtils.waitForStatefulSetDeletion(kafkaClusterName(clusterName));
+        StUtils.waitForStatefulSetDeletion(zookeeperClusterName(clusterName));
+        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(clusterName));
         deleteCustomResources("../examples/templates/cluster-operator");
     }
 
     @Test
     @Tag(ACCEPTANCE)
-    void testKafkaAndZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring(Operation.SCALE_UP);
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+        setOperationID(startTimeMeasuring(Operation.SCALE_UP));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .addToConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig("auto.create.topics.enable", "false")
+                .endKafka()
+            .endSpec().done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
-        final int initialReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(3, initialReplicas);
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
-        final int newBrokerId = newPodId;
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
-        final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
+        // Create snapshot of current cluster
+        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
 
-        // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
-        // (execute bash because we want the env vars expanded in the pod)
-        String versions = getBrokerApiVersions(newPodName);
-        for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
-            assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0, versions);
-        }
+        String firstTopicName = "test-topic";
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
 
         //Test that the new pod does not have errors or failures in events
-        List<Event> events = getEvents("Pod", newPodName);
+        String uid = kubeClient().getPodUid(newPodName);
+        List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForClusterAvailability(NAMESPACE, firstTopicName);
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         // scale down
         LOGGER.info("Scaling down");
-        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setReplicas(initialReplicas);
-        });
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
+        // Get kafka new pod uid before deletion
+        uid = kubeClient().getPodUid(newPodName);
+        setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
+        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
 
-        final int finalReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int finalReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
-        versions = getBrokerApiVersions(firstPodName);
-
-        assertTrue(versions.indexOf("(id: " + newBrokerId + " rack: ") == -1,
-                "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
-        assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
+        assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        uid = kubeClient().getStatefulSetUid(kafkaClusterName(CLUSTER_NAME));
+        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+
+        String secondTopicName = "test-topic-2";
+        testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
+        waitForClusterAvailability(NAMESPACE, secondTopicName);
     }
 
     @Test
-    @Tag(FLAKY)
+    void testEODeletion() {
+        // Deploy kafka cluster with EO
+        Kafka kafka = testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // Get pod name to check termination process
+        Optional<Pod> pod = kubeClient().listPods()
+                .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
+                .findFirst();
+
+        assertTrue(pod.isPresent(), "EO pod does not exist");
+
+        // Remove EO from Kafka DTO
+        kafka.getSpec().setEntityOperator(null);
+        // Replace Kafka configuration with removed EO
+        testMethodResources.kafka(kafka).done();
+
+        // Wait when EO(UO + TO) will be removed
+        StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
+        StUtils.waitForPodDeletion(pod.get().getMetadata().getName());
+        LOGGER.info("EO was deleted");
+    }
+
+    @Test
     void testZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring(Operation.SCALE_UP);
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        setOperationID(startTimeMeasuring(Operation.SCALE_UP));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
-        final int initialZkReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialZkReplicas = kubeClient().getStatefulSet(zookeeperClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(3, initialZkReplicas);
 
         final int scaleZkTo = initialZkReplicas + 4;
@@ -209,33 +244,36 @@ class KafkaST extends AbstractST {
         checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
-        TimeMeasuringSystem.stopOperation(operationID);
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         // scale down
         LOGGER.info("Scaling down");
-        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
+        // Get zk-3 uid before deletion
+        String uid = kubeClient().getPodUid(newZkPodNames.get(3));
+        setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         for (String name : newZkPodNames) {
-            KUBE_CLIENT.waitForResourceDeletion("pod", name);
+            StUtils.waitForPodDeletion(name);
         }
 
         // Wait for one zk pods will became leader and others follower state
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodNames.get(4)), hasAllOfReasons(Killing));
+        assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        uid = kubeClient().getStatefulSetUid(zookeeperClusterName(CLUSTER_NAME));
+        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
-        TimeMeasuringSystem.stopOperation(operationID);
+        TimeMeasuringSystem.stopOperation(getOperationID());
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
-    @Tag(FLAKY)
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -243,105 +281,310 @@ class KafkaST extends AbstractST {
         kafkaConfig.put("default.replication.factor", "1");
 
         Map<String, Object> zookeeperConfig = new HashMap<>();
-        zookeeperConfig.put("timeTick", "2000");
+        zookeeperConfig.put("tickTime", "2000");
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
+        zookeeperConfig.put("autopurge.purgeInterval", "1");
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 2)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
                     .withNewReadinessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
                     .endReadinessProbe()
                     .withNewLivenessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
                     .endLivenessProbe()
                     .withConfig(kafkaConfig)
                 .endKafka()
                 .editZookeeper()
-                    .withReplicas(2)
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
+                .withReplicas(2)
                     .withNewReadinessProbe()
-                       .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                       .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endReadinessProbe()
                         .withNewLivenessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endLivenessProbe()
                     .withConfig(zookeeperConfig)
                 .endZookeeper()
-            .endSpec()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endReadinessProbe()
+                            .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endLivenessProbe()
+                    .endUserOperator()
+                    .editTopicOperator()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endLivenessProbe()
+                    .endTopicOperator()
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                            .withPeriodSeconds(periodSeconds)
+                            .withSuccessThreshold(successThreshold)
+                            .withFailureThreshold(failureThreshold)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
+                .endEntityOperator()
+                .endSpec()
             .done();
 
-        int expectedZKPods = 2;
-        int expectedKafkaPods = 2;
-        List<Date> zkPodStartTime = new ArrayList<>();
-        for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(KUBE_CLIENT.getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
-        }
-        List<Date> kafkaPodStartTime = new ArrayList<>();
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(KUBE_CLIENT.getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
-        }
+        Map<String, String> kafkaSnapshot = StUtils.ssSnapshot(kafkaClusterName(CLUSTER_NAME));
+        Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperClusterName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verify values before update");
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1")));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
-        }
-        LOGGER.info("Testing Zookeepers");
-        for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
-            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
-        }
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
+                "default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n");
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
 
+        LOGGER.info("Testing Zookeepers");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
+                "autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+
+        LOGGER.info("Checking configuration of TO and UO");
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+
+        LOGGER.info("Updating configuration of Kafka cluster");
         replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
-            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
-            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
-            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
+            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kafkaClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
-            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
-            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
-            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
-            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
-            zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"tickTime\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        for (int i = 0; i < expectedZKPods; i++) {
-            KUBE_CLIENT.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            KUBE_CLIENT.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
-        }
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            KUBE_CLIENT.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            KUBE_CLIENT.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
-        }
+        StUtils.waitTillSsHasRolled(kafkaClusterName(CLUSTER_NAME), 2, kafkaSnapshot);
+        StUtils.waitTillSsHasRolled(zookeeperClusterName(CLUSTER_NAME), 2, zkSnapshot);
+        StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Verify values after update");
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
-        }
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
+                "default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n");
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+
         LOGGER.info("Testing Zookeepers");
-        for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
-            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
+                "autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+
+        LOGGER.info("Getting entity operator to check configuration of TO and UO");
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+    }
+
+    /**
+     * Verifies readinessProbe and livenessProbe properties in expected container
+     * @param podNamePrefix Prexif of pod name where container is located
+     * @param containerName The container where verifying is expected
+     * @param initialDelaySeconds expected value for property initialDelaySeconds
+     * @param timeoutSeconds expected value for property timeoutSeconds
+     */
+    void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+                                     int periodSeconds, int successThreshold, int failureThreshold) {
+        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                    .forEach(container -> {
+                        assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                        assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                        assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                        assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                        assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                        assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                        assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                        assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                        assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                        assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
+                    });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies container configuration by environment key
+     * @param podNamePrefix Name of pod where container is located
+     * @param containerName The container where verifying is expected
+     * @param configKey Expected configuration key
+     * @param config Expected configuration
+     */
+    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                    .forEach(container -> {
+                        container.getEnv().stream().filter(
+                            envVar -> envVar.getName().equals(configKey))
+                                .forEach(envVar -> assertEquals(config, envVar.getValue()));
+                    });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
     }
 
@@ -350,30 +593,25 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(ACCEPTANCE)
-    void testSendMessagesPlainAnonymous() throws InterruptedException {
-        String name = "send-messages-plain-anon";
-        int messagesCount = 20;
+    void testSendMessagesPlainAnonymous() throws Exception {
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
-        // Now get the pod logs (which will be both producer and consumer logs)
-        checkPings(messagesCount, job);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesTlsAuthenticated() {
+    void testSendMessagesTlsAuthenticated() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-auth";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
@@ -381,7 +619,7 @@ class KafkaST extends AbstractST {
         listenerTls.setAuth(auth);
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -391,26 +629,22 @@ class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
+        StUtils.waitForSecretReady(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesPlainScramSha() {
+    @Tag(ACCEPTANCE)
+    void testSendMessagesPlainScramSha() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-plain-scram-sha";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
@@ -418,7 +652,7 @@ class KafkaST extends AbstractST {
         listenerTls.setAuthentication(auth);
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 1)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -426,10 +660,10 @@ class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
-        String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
+        StUtils.waitForSecretReady(kafkaUser);
+        String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
         boolean found = false;
@@ -442,29 +676,24 @@ class KafkaST extends AbstractST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, false));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, NAMESPACE, user).done();
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesTlsScramSha() {
+    void testSendMessagesTlsScramSha() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-scram-sha";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -472,126 +701,117 @@ class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
+        StUtils.waitForSecretReady(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
+        availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test
-    @Tag(REGRESSION)
     void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
-                    .withNewResources()
-                        .withNewLimits()
-                            .withMemory("2Gi")
-                            .withMilliCpu("400m")
-                        .endLimits()
-                        .withNewRequests()
-                            .withMemory("2Gi")
-                            .withMilliCpu("400m")
-                        .endRequests()
-                    .endResources()
+                    .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("1.5Gi"))
+                            .addToLimits("cpu", new Quantity("1"))
+                            .addToRequests("memory", new Quantity("1Gi"))
+                            .addToRequests("cpu", new Quantity("500m"))
+                            .build())
                     .withNewJvmOptions()
                         .withXmx("1g")
-                        .withXms("1G")
+                        .withXms("512m")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
-                .withNewResources()
-                    .withNewLimits()
-                        .withMemory("1Gi")
-                        .withMilliCpu("300m")
-                    .endLimits()
-                        .withNewRequests()
-                        .withMemory("1Gi")
-                        .withMilliCpu("300m")
-                    .endRequests()
-                .endResources()
+                    .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("1G"))
+                            .addToLimits("cpu", new Quantity("0.5"))
+                            .addToRequests("memory", new Quantity("0.5G"))
+                            .addToRequests("cpu", new Quantity("250m"))
+                            .build())
                     .withNewJvmOptions()
-                        .withXmx("600m")
-                        .withXms("300m")
+                        .withXmx("1G")
+                        .withXms("512M")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endZookeeper()
                 .withNewEntityOperator()
                     .withNewTopicOperator()
-                        .withNewResources()
-                            .withNewLimits()
-                                .withMemory("500M")
-                                .withMilliCpu("300m")
-                            .endLimits()
-                            .withNewRequests()
-                                .withMemory("500M")
-                                .withMilliCpu("300m")
-                            .endRequests()
-                        .endResources()
+                        .withResources(new ResourceRequirementsBuilder()
+                                .addToLimits("memory", new Quantity("1024Mi"))
+                                .addToLimits("cpu", new Quantity("500m"))
+                                .addToRequests("memory", new Quantity("512Mi"))
+                                .addToRequests("cpu", new Quantity("0.25"))
+                                .build())
                     .endTopicOperator()
                     .withNewUserOperator()
-                        .withNewResources()
-                            .withNewLimits()
-                                .withMemory("500M")
-                                .withMilliCpu("300m")
-                            .endLimits()
-                            .withNewRequests()
-                                .withMemory("500M")
-                                .withMilliCpu("300m")
-                            .endRequests()
-                        .endResources()
+                        .withResources(new ResourceRequirementsBuilder()
+                                .addToLimits("memory", new Quantity("512M"))
+                                .addToLimits("cpu", new Quantity("300m"))
+                                .addToRequests("memory", new Quantity("256M"))
+                                .addToRequests("cpu", new Quantity("300m"))
+                                .build())
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec().done();
 
-        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0),
-                "2Gi", "400m", "2Gi", "400m");
-        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
-                "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
+        setOperationID(startTimeMeasuring(Operation.NEXT_RECONCILIATION));
 
-        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
-                "1Gi", "300m", "1Gi", "300m");
-        assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
-                "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
+        // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
+        String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> zkPods = StUtils.ssSnapshot(zkSsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        Map<String, String> eoPods = StUtils.depSnapshot(eoDepName);
 
-        String podName = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
+        assertResources(cmdKubeClient().namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                "1536Mi", "1", "1Gi", "500m");
+        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
+
+        assertResources(cmdKubeClient().namespace(), zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
+                "1G", "500m", "500M", "250m");
+        assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
+                "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
+
+        Optional<Pod> pod = kubeClient().listPods()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
-                .findFirst().get().getMetadata().getName();
+                .findFirst();
+        assertTrue(pod.isPresent(), "EO pod does not exist");
 
-        assertResources(KUBE_CLIENT.namespace(), podName,
-                "500M", "300m", "500M", "300m");
+        assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "topic-operator",
+                "1Gi", "500m", "512Mi", "250m");
+        assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
+                "512M", "300m", "256M", "300m");
+
+        TestUtils.waitFor("Wait till reconciliation timeout", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, getOperationID()), "\"Assembly reconciled\"").isEmpty());
+
+        // Checking no rolling update after last CO reconciliation
+        LOGGER.info("Checking no rolling update for Kafka cluster");
+        assertFalse(StUtils.ssHasRolled(zkSsName, zkPods));
+        assertFalse(StUtils.ssHasRolled(kafkaSsName, kafkaPods));
+        assertFalse(StUtils.depHasRolled(eoDepName, eoPods));
+        TimeMeasuringSystem.stopOperation(getOperationID());
     }
 
     @Test
-    @Tag(REGRESSION)
     void testForTopicOperator() throws InterruptedException {
-
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.min.isr", "2");
-
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-            .endSpec().done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         //Creating topics for testing
-        KUBE_CLIENT.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        cmdKubeClient().create(TOPIC_CM);
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -600,13 +820,13 @@ class KafkaST extends AbstractST {
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
-        assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+        assertThat(cmdKubeClient().list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYamlString(KUBE_CLIENT.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
@@ -617,21 +837,248 @@ class KafkaST extends AbstractST {
         });
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
-        testTopic = fromYamlString(KUBE_CLIENT.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Deleting first topic by deletion of CM
-        KUBE_CLIENT.deleteByName("kafkatopic", "topic-from-cli");
+        cmdKubeClient().deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
-        KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
-        Thread.sleep(10000L);
+        StUtils.waitForKafkaTopicDeletion("my-topic");
+
+        //Checking all topics were deleted
+        Thread.sleep(Constants.TIMEOUT_TEARDOWN);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
+    }
+
+    @Test
+    void testRemoveTopicOperatorFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+            .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
+        //Waiting when EO pod will be recreated without TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that TO was removed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("topic-operator")));
+            });
+        });
+
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
+        //Waiting when EO pod will be recreated with TO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that TO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                    containsString("topic-operator"),
+                    containsString("user-operator"),
+                    containsString("tls-sidecar"))
+                );
+            });
+        });
+    }
+
+    @Test
+    void testRemoveUserOperatorFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(null));
+
+        //Waiting when EO pod will be recreated without UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that UO was removed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("user-operator")));
+            });
+        });
+
+        eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
+        //Waiting when EO pod will be recreated with UO
+        StUtils.waitForPodDeletion(eoPodName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+
+        //Checking that UO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                        containsString("topic-operator"),
+                        containsString("user-operator"),
+                        containsString("tls-sidecar"))
+                );
+            });
+        });
+
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+    }
+
+    @Test
+    void testRemoveUserAndTopicOperatorsFromEntityOperator() {
+        LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        String eoPodName = kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.setTopicOperator(null);
+            entityOperatorSpec.setUserOperator(null);
+            k.getSpec().setEntityOperator(entityOperatorSpec);
+        });
+
+        //Waiting when EO pod will be deleted
+        StUtils.waitForPodDeletion(eoPodName);
+
+        //Checking that EO was removed
+        assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size());
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.setTopicOperator(new EntityTopicOperatorSpec());
+            entityOperatorSpec.setUserOperator(new EntityUserOperatorSpec());
+            k.getSpec().setEntityOperator(entityOperatorSpec);
+        });
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME));
+
+        //Checking that EO was created
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), anyOf(
+                    containsString("topic-operator"),
+                    containsString("user-operator"),
+                    containsString("tls-sidecar"))
+                );
+            });
+        });
+
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+    }
+
+    @Test
+    void testEntityOperatorWithoutTopicOperator() {
+        LOGGER.info("Deploying Kafka cluster without TO in EO");
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                    .withNewUserOperator()
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+
+        //Checking that TO was not deployed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("topic-operator")));
+            });
+        });
+    }
+
+    @Test
+    void testEntityOperatorWithoutUserOperator() {
+        LOGGER.info("Deploying Kafka cluster without UO in EO");
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+
+        //Checking that UO was not deployed
+        kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
+            pod.getSpec().getContainers().forEach(container -> {
+                assertThat(container.getName(), not(containsString("user-operator")));
+            });
+        });
+    }
+
+    @Test
+    void testEntityOperatorWithoutUserAndTopicOperators() {
+        LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
+        setOperationID(startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .withNewEntityOperator()
+                .endEntityOperator()
+            .endSpec()
+        .done();
+
+        TimeMeasuringSystem.stopOperation(getOperationID());
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
+
+        //Checking that EO was not deployed
+        assertEquals(0, kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).size(), "EO should not be deployed");
+    }
+
+    @Test
+    void testTopicWithoutLabels() {
+        // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // Creating topic without any label
+        testMethodResources().topic(CLUSTER_NAME, "topic-without-labels")
+            .editMetadata()
+                .withLabels(null)
+            .endMetadata()
+            .done();
+
+        // Checking that resource was created
+        assertThat(cmdKubeClient().list("kafkatopic"), hasItems("topic-without-labels"));
+        // Checking that TO didn't handle new topic and zk pods don't contain new topic
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
+
+        // Checking TO logs
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
+        assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
+
+        //Deleting topic
+        cmdKubeClient().deleteByName("kafkatopic", "topic-without-labels");
+        StUtils.waitForKafkaTopicDeletion("topic-without-labels");
+
+        //Checking all topics were deleted
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
@@ -643,7 +1090,7 @@ class KafkaST extends AbstractST {
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
             String imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "zookeeper");
-            assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
+            assertThat("Zookeeper image for pod " + i + " uses wrong image", imgFromPod.contains(Environment.ST_KAFKA_VERSION));
             imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "tls-sidecar");
             assertEquals(imgFromDeplConf.get(TLS_SIDECAR_ZOOKEEPER_IMAGE), imgFromPod);
         }
@@ -651,9 +1098,9 @@ class KafkaST extends AbstractST {
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
-            String kafkaVersion = Crds.kafkaOperation(CLIENT).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
+            String kafkaVersion = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
             if (kafkaVersion == null) {
-                kafkaVersion = "2.1.0";
+                kafkaVersion = Environment.ST_KAFKA_VERSION;
             }
             assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
@@ -665,7 +1112,7 @@ class KafkaST extends AbstractST {
         }
 
         //Verifying docker image for entity-operator
-        String entityOperatorPodName = KUBE_CLIENT.listResourcesByLabel("pod",
+        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
         String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
         assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
@@ -678,278 +1125,223 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
-    void testRackAware() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+    void testRackAware() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
                         .withTopologyKey("rack-key")
                     .endRack()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
                 .endKafka()
             .endSpec().done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        KUBE_CLIENT.waitForPod(kafkaPodName);
+        StUtils.waitForPod(kafkaPodName);
 
-        String rackId = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
-        assertEquals("zone", rackId);
+        String rackId = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
+        assertEquals("zone", rackId.trim());
 
-        String brokerRack = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
-        List<Event> events = getEvents("Pod", kafkaPodName);
+        String uid = kubeClient().getPodUid(kafkaPodName);
+        List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForClusterAvailability(NAMESPACE);
     }
 
     @Test
-    @Tag(CCI_FLAKY)
-    void testMirrorMaker() {
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
-        String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+    void testManualTriggeringRollingUpdate() {
+        String coPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
-        // Deploy source kafka
-        resources().kafkaEphemeral(kafkaSourceName, 3).done();
-        // Deploy target kafka
-        resources().kafkaEphemeral(kafkaTargetName, 3).done();
-        // Deploy Topic
-        resources().topic(kafkaSourceName, topicSourceName).done();
-        // Deploy Mirror Maker
-        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+        // rolling update for kafka
+        setOperationID(startTimeMeasuring(Operation.ROLLING_UPDATE));
+        // set annotation to trigger Kafka rolling update
+        kubeClient().statefulSet(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
 
-        TimeMeasuringSystem.stopOperation(operationID);
-        // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
-        );
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME))
+                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, null, false));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        String coLog = kubeClient().logs(coPodName);
+        assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
+
+        // rolling update for zookeeper
+        setOperationID(startTimeMeasuring(Operation.ROLLING_UPDATE));
+        // set annotation to trigger Zookeeper rolling update
+        kubeClient().statefulSet(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(kubeClient().getStatefulSet(zookeeperClusterName(CLUSTER_NAME))
+                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        coLog = kubeClient().logs(coPodName);
+        assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
     }
 
-    /**
-     * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
-     */
     @Test
-    @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsAuthenticated() {
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
-        String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
-        String kafkaUser = "my-user";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+    void testNodePort() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
 
-        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(auth);
+        waitForClusterAvailability(NAMESPACE);
+    }
 
-        // Deploy source kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-source", 3)
+    @Test
+    void testOverrideNodePortConfiguration() throws Exception {
+        int brokerNodePort = 32000;
+        int brokerId = 0;
+
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(brokerId);
+        nodePortListenerBrokerOverride.setNodePort(brokerNodePort);
+        LOGGER.info("Setting nodePort to {} for broker {}", nodePortListenerBrokerOverride.getNodePort(),
+                nodePortListenerBrokerOverride.getBroker());
+
+        int clusterBootstrapNodePort = 32100;
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .withTls(listenerTls)
-                            .withNewTls()
-                            .endTls()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                                .withNewOverrides()
+                                    .withNewBootstrap()
+                                        .withNodePort(clusterBootstrapNodePort)
+                                    .endBootstrap()
+                                    .withBrokers(nodePortListenerBrokerOverride)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
-                .endSpec().build()).done();
-
-        // Deploy target kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-target", 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withTls(listenerTls)
-                            .withNewTls()
-                            .endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().build()).done();
-
-        // Deploy topic
-        resources().topic(kafkaSourceName, topicSourceName).done();
-
-        // Create Kafka user
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
-
-        // Initialize CertSecretSource with certificate and secret names for consumer
-        CertSecretSource certSecretSource = new CertSecretSource();
-        certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
-
-        // Initialize CertSecretSource with certificate and secret names for producer
-        CertSecretSource certSecretTarget = new CertSecretSource();
-        certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
-
-        // Deploy Mirror Maker with tls listener and mutual tls auth
-        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
-                .editSpec()
-                .editConsumer()
-                    .withNewTls()
-                        .withTrustedCertificates(certSecretSource)
-                    .endTls()
-                .endConsumer()
-                .editProducer()
-                    .withNewTls()
-                        .withTrustedCertificates(certSecretTarget)
-                    .endTls()
-                .endProducer()
                 .endSpec()
                 .done();
 
-        TimeMeasuringSystem.stopOperation(operationID);
-        // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
-        );
+        assertEquals(clusterBootstrapNodePort, kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort());
+        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
+                KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
+        assertEquals(brokerNodePort, kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+                .getSpec().getPorts().get(0).getNodePort());
+        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
+                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, user, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        waitForClusterAvailability(NAMESPACE);
     }
 
-    /**
-     * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
-     */
     @Test
-    @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsScramSha() {
-        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
-        String kafkaUserSource = "my-user-source";
-        String kafkaUserTarget = "my-user-target";
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "read-messages-consumer-source";
-        String nameConsumerTarget = "read-messages-consumer-target";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        int messagesCount = 20;
+    @Tag(ACCEPTANCE)
+    void testNodePortTls() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                    .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
 
+        String userName = "alice";
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
+            () -> kubeClient().getSecret("alice") != null,
+            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaSourceName, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().build()).done();
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
+    }
 
-        // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaTargetName, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                          .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().build()).done();
+    @Test
+    void testLoadBalancer() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
 
-        // Deploy topic
-        resources().topic(kafkaSourceName, topicName).done();
+        waitForClusterAvailability(NAMESPACE);
+    }
 
-        // Create Kafka user for source cluster
-        KafkaUser userSource = resources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
-        waitTillSecretExists(kafkaUserSource);
+    @Test
+    @Tag(ACCEPTANCE)
+    void testLoadBalancerTls() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
 
-        // Create Kafka user for target cluster
-        KafkaUser userTarget = resources().scramShaUser(kafkaTargetName, kafkaUserTarget).done();
-        waitTillSecretExists(kafkaUserTarget);
+        String userName = "alice";
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
+            () -> kubeClient().getSecret("alice") != null,
+            () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
-        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
-        passwordSecretSource.setSecretName(kafkaUserSource);
-        passwordSecretSource.setPassword("password");
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
+    }
 
-        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
-        PasswordSecretSource passwordSecretTarget = new PasswordSecretSource();
-        passwordSecretTarget.setSecretName(kafkaUserTarget);
-        passwordSecretTarget.setPassword("password");
-
-        // Initialize CertSecretSource with certificate and secret names for consumer
-        CertSecretSource certSecretSource = new CertSecretSource();
-        certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
-
-        // Initialize CertSecretSource with certificate and secret names for producer
-        CertSecretSource certSecretTarget = new CertSecretSource();
-        certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
-
-        // Deploy Mirror Maker with TLS and ScramSha512
-        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
-                .editSpec()
-                    .editConsumer()
-                        .withNewKafkaMirrorMakerAuthenticationScramSha512()
-                            .withUsername(kafkaUserSource)
-                            .withPasswordSecret(passwordSecretSource)
-                        .endKafkaMirrorMakerAuthenticationScramSha512()
-                        .withNewTls()
-                            .withTrustedCertificates(certSecretSource)
-                        .endTls()
-                    .endConsumer()
-                .editProducer()
-                    .withNewKafkaMirrorMakerAuthenticationScramSha512()
-                        .withUsername(kafkaUserTarget)
-                        .withPasswordSecret(passwordSecretTarget)
-                    .endKafkaMirrorMakerAuthenticationScramSha512()
-                    .withNewTls()
-                        .withTrustedCertificates(certSecretTarget)
-                    .endTls()
-                .endProducer()
-                .endSpec().done();
-
-        TimeMeasuringSystem.stopOperation(operationID);
-        // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
-        );
-
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME + "-source", nameProducerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    private Map<String, String> getAnnotationsForSS(String ssName) {
+        return kubeClient().getStatefulSet(ssName).getMetadata().getAnnotations();
     }
 
     void waitForZkRollUp() {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        zkPods[0] = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             if (!zkSameAsLast) {
                 LOGGER.info("ZK Cluster not stable");
@@ -969,28 +1361,327 @@ class KafkaST extends AbstractST {
         for (String name : newZkPodNames) {
             //Test that second pod does not have errors or failures in events
             LOGGER.info("Checking logs fro pod {}", name);
-            List<Event> eventsForSecondPod = getEvents("Pod", name);
+            String uid = kubeClient().getPodUid(name);
+            List<Event> eventsForSecondPod = getEvents(uid);
             assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         }
     }
 
     void waitForZkPods(List<String> newZkPodNames) {
         for (String name : newZkPodNames) {
-            KUBE_CLIENT.waitForPod(name);
+            StUtils.waitForPod(name);
             LOGGER.info("Pod {} is ready", name);
         }
         waitForZkRollUp();
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrueFalse() {
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, jbodStorage);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrue() {
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
+        // kafka cluster already deployed
+
+        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
+        LOGGER.info("Deleting Kafka cluster {}", CLUSTER_NAME);
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
+        LOGGER.info("Waiting for Kafka pods deletion");
+        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        verifyPVCDeletion(kafkaReplicas, jbodStorage);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsFalse() {
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(kafkaReplicas, jbodStorage.getVolumes().size(), diskSizeGi);
+        LOGGER.info("Deleting cluster");
+        cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
+        LOGGER.info("Waiting for Kafka pods deletion");
+        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        verifyPVCDeletion(kafkaReplicas, jbodStorage);
+    }
+
+    void verifyPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage) {
+        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toList());
+
+        jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
+            for (int i = 0; i < kafkaReplicas; i++) {
+                String volumeName = "data-" + singleVolumeStorage.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
+                LOGGER.info("Verifying volume: " + volumeName);
+                if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
+                    assertThat(pvcs, not(hasItem(volumeName)));
+                } else {
+                    assertThat(pvcs, hasItem(volumeName));
+                }
+            }
+        });
+    }
+
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
+
+        ArrayList pvcs = new ArrayList();
+
+        kubeClient().listPersistentVolumeClaims().stream()
+                .forEach(volume -> {
+                    String volumeName = volume.getMetadata().getName();
+                    pvcs.add(volumeName);
+                    LOGGER.info("Checking labels for volume:" + volumeName);
+                    assertEquals(CLUSTER_NAME, volume.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", volume.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(CLUSTER_NAME.concat("-kafka"), volume.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertEquals(diskSizeGi + "Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+                });
+
+        LOGGER.info("Checking PVC names included in JBOD array");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+
+        LOGGER.info("Checking PVC on Kafka pods");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            ArrayList dataSourcesOnPod = new ArrayList();
+            ArrayList pvcsOnPod = new ArrayList();
+
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
+                        .getSpec().getVolumes().get(j).getName());
+                pvcsOnPod.add(kubeClient().getPod(CLUSTER_NAME.concat("-kafka-" + i))
+                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
+            }
+
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.contains("data-" + j);
+                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+    }
+
+    @Test
+    void testPersistentStorageSize() throws Exception {
+        String[] diskSizes = {"70Gi", "20Gi"};
+        int kafkaRepl = 2;
+        int diskCount = 2;
+
+        JbodStorage jbodStorage =  new JbodStorageBuilder()
+                .withVolumes(
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizes[0]).build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
+                ).build();
+
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, kafkaRepl)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                                .withNewOverrides()
+                                    .withNewBootstrap()
+                                    .endBootstrap()
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                        .withStorage(jbodStorage)
+                    .endKafka()
+                    .editZookeeper().
+                        withReplicas(1)
+                    .endZookeeper()
+                .endSpec()
+                .build())
+                .done();
+
+        List<PersistentVolumeClaim> volumes = kubeClient().listPersistentVolumeClaims();
+
+        checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
+        int k = 0;
+        for (int i = 0; i < kafkaRepl; i++) {
+            for (int j = 0; j < diskCount; j++) {
+                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                assertEquals(diskSizes[i], volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                k++;
+            }
+        }
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTopicsCreatingViaK8s() {
+        final String topicName = "topic-example";
+        String currentTopic;
+        int numberOfTopics = 50;
+        int topicPartitions = 3;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        LOGGER.info("Creating topics via Kubernetes");
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            testMethodResources().topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+
+        topicPartitions = 5;
+        LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+
+            replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
+            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+    }
+
+    @Tag(SCALABILITY)
+    @Test
+    void testBigAmountOfTopicsCreatingViaKafka() {
+        final String topicName = "topic-example";
+        String currentTopic;
+        int numberOfTopics = 50;
+        int topicPartitions = 3;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        LOGGER.info("Creating topics via Kafka");
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().withName(currentTopic).get();
+            verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
+        }
+
+        topicPartitions = 5;
+        LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
+        }
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            currentTopic = topicName + i;
+            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            verifyTopicViaKafka(currentTopic, topicPartitions);
+        }
+    }
+
+    void verifyTopicViaKafka(String topicName, int topicPartitions) {
+        LOGGER.info("Checking topic in Kafka {}", describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName));
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
+                hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+    }
+
+    void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {
+        LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
+        assertNotNull(kafkaTopic);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
+        assertEquals(topicName, kafkaTopic.getMetadata().getName());
+        assertEquals(topicPartitions, kafkaTopic.getSpec().getPartitions());
+    }
+
+    @Test
+    void testRegenerateCertExternalAddressChange() throws InterruptedException {
+        LOGGER.info("Creating kafka without external listener");
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        String brokerSecret = "my-cluster-kafka-brokers";
+
+        Secret secretsWithoutExt = kubeClient().getSecret(brokerSecret);
+
+        LOGGER.info("Editing kafka with external listener");
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Waiting until secrets will change");
+        Thread.sleep(4000);
+
+        Secret secretsWithExt = kubeClient().getSecret(brokerSecret);
+
+        LOGGER.info("Checking secrets");
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.crt"), secretsWithExt.getData().get("my-cluster-kafka-0.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.key"), secretsWithExt.getData().get("my-cluster-kafka-0.key"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.crt"), secretsWithExt.getData().get("my-cluster-kafka-1.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"), secretsWithExt.getData().get("my-cluster-kafka-1.key"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"), secretsWithExt.getData().get("my-cluster-kafka-2.crt"));
+        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"), secretsWithExt.getData().get("my-cluster-kafka-2.key"));
+    }
+
     @BeforeEach
-    void createTestResources() {
-        createResources();
+    void createTestResources() throws Exception {
+        createTestMethodResources();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach
     void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        deleteTestMethodResources();
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @BeforeAll
@@ -1001,12 +1692,12 @@ class KafkaST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    protected void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 }

@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
+import org.junit.jupiter.api.Assumptions;
+
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.
@@ -21,48 +23,66 @@ public class KubeClusterResource {
 
     private final boolean bootstrap;
     private KubeCluster cluster;
+    private KubeCmdClient cmdClient;
     private KubeClient client;
     private HelmClient helmClient;
+    private static KubeClusterResource kubeClusterResource;
 
-    public KubeClusterResource() {
+    private static KubeClusterResource instance;
+
+    public static synchronized KubeClusterResource getInstance() {
+        if (instance == null) {
+            instance = new KubeClusterResource();
+        }
+        return instance;
+    }
+
+    private KubeClusterResource() {
         bootstrap = true;
     }
 
-    public KubeClusterResource(KubeCluster cluster, KubeClient client) {
-        bootstrap = false;
-        this.cluster = cluster;
-        this.client = client;
-    }
-
-    public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
-        bootstrap = false;
-        this.cluster = cluster;
-        this.client = client;
-        this.helmClient = helmClient;
+    public static KubeClusterResource getKubeClusterResource() {
+        synchronized (KubeClusterResource.class) {
+            if (kubeClusterResource == null) {
+                kubeClusterResource = new KubeClusterResource();
+            }
+        }
+        return kubeClusterResource;
     }
 
     /** Gets the namespace in use */
     public String defaultNamespace() {
-        return client().defaultNamespace();
+        return cmdClient().defaultNamespace();
+    }
+
+    public KubeCmdClient cmdClient() {
+        if (cmdClient == null) {
+            this.cmdClient = cluster().defaultCmdClient();
+        }
+        return cmdClient;
     }
 
     public KubeClient client() {
-        if (bootstrap && client == null) {
-            this.client = KubeClient.findClient(cluster());
+        if (client == null) {
+            this.client = cluster().defaultClient();
         }
         return client;
     }
 
     public HelmClient helmClient() {
-        if (bootstrap && helmClient == null) {
-            this.helmClient = HelmClient.findClient(client());
+        if (helmClient == null) {
+            this.helmClient = HelmClient.findClient(cmdClient());
         }
         return helmClient;
     }
 
     public KubeCluster cluster() {
-        if (bootstrap && cluster == null) {
-            this.cluster = KubeCluster.bootstrap();
+        if (cluster == null) {
+            try {
+                this.cluster = KubeCluster.bootstrap();
+            } catch (NoClusterException e) {
+                Assumptions.assumeTrue(false, e.getMessage());
+            }
         }
         return cluster;
     }
@@ -70,10 +90,17 @@ public class KubeClusterResource {
     public void before() {
         if (bootstrap) {
             if (cluster == null) {
-                this.cluster = KubeCluster.bootstrap();
+                try {
+                    this.cluster = KubeCluster.bootstrap();
+                } catch (NoClusterException e) {
+                    Assumptions.assumeTrue(false, e.getMessage());
+                }
+            }
+            if (cmdClient == null) {
+                this.cmdClient = cluster.defaultCmdClient();
             }
             if (client == null) {
-                this.client = KubeClient.findClient(cluster);
+                this.client = cluster.defaultClient();
             }
         }
     }

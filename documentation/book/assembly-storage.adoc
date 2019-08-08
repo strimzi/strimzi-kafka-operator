@@ -8,11 +8,15 @@
 :parent-context: {context}
 
 [id='assembly-storage-{context}']
-= Kafka and Zookeeper storage
+= Kafka and Zookeeper storage types
 
-As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three different types of storage for this data: ephemeral, persistent, and JBOD (Just a Bunch of Disks) storage.
+As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three storage types for this data:
 
-NOTE: JBOD storage is only supported for Kafka, not for Zookeeper.
+* Ephemeral
+* Persistent
+* JBOD storage
+
+NOTE: JBOD storage is supported only for Kafka, not for Zookeeper.
 
 When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding Zookeeper node. You configure the storage type using the `storage` property in the following resources:
 
@@ -23,17 +27,23 @@ The storage type is configured in the `type` field.
 
 WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
 
-include::ref-storage-ephemeral.adoc[leveloffset=+1]
-
-include::ref-storage-persistent.adoc[leveloffset=+1]
-
-include::ref-storage-jbod.adoc[leveloffset=+1]
-
 .Additional resources
 
 * For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
 * For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
 * For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
+
+include::ref-storage-ephemeral.adoc[leveloffset=+1]
+
+include::ref-storage-persistent.adoc[leveloffset=+1]
+
+include::proc-resizing-persistent-volumes.adoc[leveloffset=+1]
+
+include::ref-storage-jbod.adoc[leveloffset=+1]
+
+include::proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
+
+include::proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]
 
 :context: {parent-context}

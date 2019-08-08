@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: strimzi-entity-operator
@@ -27,6 +27,7 @@ rules:
   - kafka.strimzi.io
   resources:
   - kafkausers
+  - kafkausers/status
   verbs:
   - get
   - list

@@ -39,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -80,6 +81,9 @@ public class KafkaUserOperatorTest {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, null, res -> {
@@ -141,8 +145,12 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -212,10 +220,14 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.getSpec().setAuthorization(null);
         user.getSpec().setAuthentication(null);
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -271,14 +283,19 @@ public class KafkaUserOperatorTest {
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
+
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         clientsCa.getData().put("ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes()));
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         clientsCaKey.getData().put("ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
         Secret userCert = ResourceUtils.createUserSecretTls();
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, userCert, res -> {
@@ -376,6 +393,8 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
@@ -448,6 +467,8 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
@@ -558,11 +579,9 @@ public class KafkaUserOperatorTest {
         existingScramShaUserSecret.getMetadata().setName("existing-scram-sha-user");
         KafkaUser existingScramShaUser = ResourceUtils.createKafkaUserTls();
         existingScramShaUser.getMetadata().setName("existing-scram-sha-user");
-        Secret deletedUserCert = ResourceUtils.createUserSecretTls();
-        deletedUserCert.getMetadata().setName("deleted-user");
 
         when(mockCrdOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS)))).thenReturn(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser));
-        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret, deletedUserCert));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
         when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
         when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
@@ -570,18 +589,16 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(newScramShaUser);
         when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUser);
         when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUser);
-        when(mockCrdOps.get(eq(deletedUserCert.getMetadata().getNamespace()), eq(deletedUserCert.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUserSecret);
         when(mockSecretOps.get(eq(existingScramShaUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUserSecret);
-        when(mockSecretOps.get(eq(deletedUserCert.getMetadata().getNamespace()), eq(deletedUserCert.getMetadata().getName()))).thenReturn(deletedUserCert);
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(7);
+        Async async = context.async(6);
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
@@ -609,7 +626,7 @@ public class KafkaUserOperatorTest {
 
         context.assertEquals(new HashSet(asList("new-tls-user", "existing-tls-user",
                 "new-scram-sha-user", "existing-scram-sha-user")), createdOrUpdated);
-        context.assertEquals(new HashSet(asList("deleted-user", "second-deleted-user", "deleted-scram-sha-user")), deleted);
+        context.assertEquals(new HashSet(asList("second-deleted-user", "deleted-scram-sha-user")), deleted);
     }
 
     @Test
@@ -638,6 +655,8 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
@@ -709,6 +728,8 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Async async = context.async();
         op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
@@ -797,6 +818,72 @@ public class KafkaUserOperatorTest {
             context.assertEquals(singletonList(ResourceUtils.NAME), scramUserCaptor.getAllValues());
             context.assertEquals(singletonList(null), scramPasswordCaptor.getAllValues());
 
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testUserStatusNotReady(TestContext context) {
+        String failureMsg = "failure";
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+
+        when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.failedFuture(failureMsg));
+        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
+        when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+
+        Async async = context.async();
+        op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, null, res -> {
+            context.assertFalse(res.succeeded());
+
+            List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getMessage(), failureMsg);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testUserStatusReady(TestContext context) {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+
+        when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
+        when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+
+        Async async = context.async();
+        op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, clientsCaKey, null, res -> {
+            context.assertTrue(res.succeeded());
+
+            List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "Ready");
             async.complete();
         });
     }

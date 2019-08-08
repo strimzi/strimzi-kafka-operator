@@ -1,7 +1,9 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: strimzi-admin
+  labels:
+    app: strimzi
 rules:
 - apiGroups:
   - "kafka.strimzi.io"
@@ -12,6 +14,7 @@ rules:
   - kafkamirrormakers
   - kafkausers
   - kafkatopics
+  - kafkabridges
   verbs:
   - get
   - list

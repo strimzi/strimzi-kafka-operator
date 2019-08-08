@@ -6,6 +6,7 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -123,11 +124,11 @@ public class DocGenerator {
 
         out.append("[options=\"header\"]").append(NL);
         out.append("|====").append(NL);
-        out.append("|Field");
+        out.append("|Property");
         String gunk = "1.2+<.<";
         final Map<String, Property> properties = properties(cls);
         int maxLen = computePadding(gunk, properties);
-        appendRepeated(' ', maxLen - "Field".length() + 1);
+        appendRepeated(' ', maxLen - "Property".length() + 1);
         out.append("|Description");
         out.append(NL);
 
@@ -143,6 +144,18 @@ public class DocGenerator {
             out.append(' ');
             out.append(gunk);
             out.append("|");
+
+            DeprecatedProperty strimziDeprecated = property.getAnnotation(DeprecatedProperty.class);
+            Deprecated langDeprecated = property.getAnnotation(Deprecated.class);
+            if (strimziDeprecated != null || langDeprecated != null) {
+                if (strimziDeprecated == null || langDeprecated == null) {
+                    err(property + " must be annotated with both @" + Deprecated.class.getName()
+                            + " and @" + DeprecatedProperty.class.getName());
+                }
+                if (strimziDeprecated != null) {
+                    out.append(getDeprecation(property, strimziDeprecated));
+                }
+            }
 
             Description description2 = property.getAnnotation(Description.class);
             if (description2 == null) {
@@ -177,6 +190,22 @@ public class DocGenerator {
         out.append("|====").append(NL).append(NL);
 
         appendNestedTypes(crd, types);
+    }
+
+    private String getDeprecation(Property property, DeprecatedProperty deprecated) {
+        String msg = String.format("*The property `%s` has been deprecated.",
+                property.getName());
+        if (!deprecated.movedToPath().isEmpty()) {
+            msg += " This feature should now be configured at path `" + deprecated.movedToPath() + "`.";
+        }
+        if (!deprecated.description().isEmpty()) {
+            msg += deprecated.description() + " ";
+        }
+        if (!deprecated.removalVersion().isEmpty()) {
+            msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
+        }
+        msg += "* ";
+        return msg;
     }
 
     private String getDescription(Object property, Description description2) {
@@ -384,6 +413,7 @@ public class DocGenerator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Class<? extends T> classInherits(Class<?> cls, Class<T> test) {
         if (test.isAssignableFrom(cls)) {
             return (Class<? extends T>) cls;

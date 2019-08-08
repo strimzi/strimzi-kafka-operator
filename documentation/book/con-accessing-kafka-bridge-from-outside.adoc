@@ -1,0 +1,29 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='con-accessing-kafka-bridge-from-outside-{context}']
+
+= Accessing the {ProductName} Kafka Bridge from outside of Kubernetes
+
+After deployment, the {ProductName} Kafka Bridge can only be accessed by applications running in the same Kubernetes cluster. These applications use the `_kafka-bridge-name_-bridge-service` Service to access the API.
+
+If you want to make the Kafka Bridge accessible to applications running outside of the Kubernetes cluster, you can expose it manually by using one of the following features:
+
+* Services of types LoadBalancer or NodePort
+
+* Ingress resources
+
+* OpenShift Routes
+
+If you decide to create Services, use the following labels in the `selector` to configure the pods to which the service will route the traffic:
+
+[source,yaml,subs=attributes+]
+----
+  # ...
+  selector:
+    strimzi.io/cluster: kafka-bridge-name <1>
+    strimzi.io/kind: KafkaBridge
+  #...
+----
+<1> Name of the Kafka Bridge custom resource in your Kubernetes cluster.

@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -27,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class Rack implements Serializable {
+public class Rack implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +39,7 @@ public class Rack implements Serializable {
         this.topologyKey = topologyKey;
     }
 
-    @Description("A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. " +
+    @Description("A key that matches labels assigned to the Kubernetes cluster nodes. " +
             "The value of the label is used to set the broker's `broker.rack` config.")
     @Example("failure-domain.beta.kubernetes.io/zone")
     @JsonProperty(required = true)
@@ -49,12 +47,12 @@ public class Rack implements Serializable {
         return topologyKey;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -26,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 
@@ -78,7 +80,7 @@ public class Main {
                     log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                     System.exit(1);
                 }
-                fut.completer().handle(res);
+                fut.handle(res);
             });
 
         return fut;
@@ -86,7 +88,7 @@ public class Main {
 
     private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
         log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
-        Map authorizerConfig = new HashMap<String, Object>();
+        Map<String, Object> authorizerConfig = new HashMap<>();
         // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
         // See the comments in the SimpleAclAuthorizer.scala class for more details
         authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());

@@ -38,7 +38,7 @@ def setupEnvironment(String workspace, String openshift) {
     sh "oc --config ${KUBECONFIG} adm policy add-cluster-role-to-user cluster-admin developer"
 
     sh "oc label node localhost rack-key=zone"
-    sh "oc apply -f https://gist.githubusercontent.com/scholzj/614065a081ad92669c32f45894510c8c/raw/96d1a6539a99f0dce2d5eb02a8f15e6eb109a9d6/strimzi-admin.yaml"
+    sh "oc apply -f ${workspace}/install/strimzi-admin/010-ClusterRole-strimzi-admin.yaml"
 }
 
 /**
@@ -63,18 +63,16 @@ def clearImages() {
 }
 
 
-def buildStrimzi() {
-    sh "mvn clean install -DskipTests"
+def buildStrimziImages() {
     sh "make docker_build"
     sh "make docker_tag"
 }
 
-def runSystemTests(String workspace, String tags) {
-    echo "inside run tests"
-    sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+def runSystemTests(String workspace, String testCases, String testProfile) {
+    sh "mvn -f ${workspace}/systemtest/pom.xml -P ${testProfile} verify -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dfailsafe.rerunFailingTestsCount=2"
 }
 
-def postAction(String artifactDir, String jobName, String buildUrl, String workspace) {
+def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {
     def status = currentBuild.result
     //store test results from build and system tests
     junit testResults: '**/TEST-*.xml', allowEmptyResults: true
@@ -89,13 +87,24 @@ def postAction(String artifactDir, String jobName, String buildUrl, String works
     }
     if (status == null) {
         currentBuild.result = 'SUCCESS'
-        sendMail(env.STRIMZI_MAILING_LIST, "succeeded", jobName, buildUrl)
+        sendMail(address, "succeeded", prID, prAuthor, prTitle, prUrl, buildUrl)
     }
     teardownEnvironment(workspace)
 }
 
-def sendMail(String address, String status, String jobName, String buildUrl) {
-    mail to:"${address}", subject:"Strimzi PR build of job ${jobName} has ${status}", body:"See ${buildUrl}"
+def sendMail(String address, String status, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl) {
+    mail to:"${address}", subject:"Build of Strimzi PR#${prID} by ${prAuthor} - '${prTitle}' has ${status}", body:"PR link: ${prUrl}\nBuild link: ${buildUrl}"
+}
+
+def postGithubPrComment(def file) {
+    echo "Posting github comment"
+    echo "Going to run curl command"
+    withCredentials([string(credentialsId: 'strimzi-ci-github-token', variable: 'GITHUB_TOKEN')]) {
+        sh "curl -v -H \"Authorization: token ${GITHUB_TOKEN}\" -X POST -H \"Content-type: application/json\" -d \"@${file}\" \"https://api.github.com/repos/Strimzi/strimzi-kafka-operator/issues/${ghprbPullId}/comments\" > out.log 2> out.err"
+        def output=readFile("out.log").trim()
+        def output_err=readFile("out.err").trim()
+        echo "curl output=$output output_err=$output_err"
+    }
 }
 
 return this

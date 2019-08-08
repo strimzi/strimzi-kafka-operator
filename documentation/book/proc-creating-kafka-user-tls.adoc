@@ -8,7 +8,7 @@
 .Prerequisites
 
 * A running Kafka cluster configured with a listener using TLS authentication.
-* A running User Operator.
+* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 
 .Procedure
 
@@ -46,19 +46,12 @@ spec:
         operation: Read
 ----
 
-. Create the `KafkaUser` resource in {ProductPlatformName}.
+. Create the `KafkaUser` resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 . Use the credentials from the secret `my-user` in your application
 

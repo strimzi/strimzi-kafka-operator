@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -29,7 +27,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"partitions", "replicas", "config"})
 @EqualsAndHashCode
-public class KafkaTopicSpec implements Serializable {
+public class KafkaTopicSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -91,12 +89,12 @@ public class KafkaTopicSpec implements Serializable {
         this.config = config;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

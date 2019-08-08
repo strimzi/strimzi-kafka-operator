@@ -11,34 +11,30 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Order;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {
-    static final String NAMESPACE = "log-level-cluster-test";
+    static final String NAMESPACE = "log-setting-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
     private static final String KAFKA_MAP = String.format("%s-%s", CLUSTER_NAME, "kafka-config");
     private static final String ZOOKEEPER_MAP = String.format("%s-%s", CLUSTER_NAME, "zookeeper-config");
@@ -104,74 +100,58 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(1)
     void testLoggersKafka() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), "Kafka's log level is set properly");
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), "Zookeeper's log level is set properly");
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), "Topic operator's log level is set properly");
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), "User operator's log level is set properly");
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), "Kafka connect's log level is set properly");
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
+        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
         assertTrue(checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), "Mirror maker's log level is set properly");
     }
 
     @Test
     @Order(7)
     void testGcLoggingNonSetEnabled() {
-        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
-        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_SET_NAME)), "Kafka GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is enabled");
 
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is enabled");
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is enabled");
     }
 
     @Test
     @Order(8)
     void testGcLoggingSetEnabled() {
-        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(true);
-
-        JvmOptions jvmOptions = new JvmOptions();
-        jvmOptions.setGcLoggingEnabled(true);
-
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setJvmOptions(jvmOptions);
-            k.getSpec().getKafka().setJvmOptions(jvmOptions);
-            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
-            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
-        });
-
-        replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-        replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-
         assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
         assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
 
@@ -185,25 +165,44 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(9)
     void testGcLoggingSetDisabled() {
-        String connectName = CLUSTER_NAME + "-connect";
-        String mmName = CLUSTER_NAME + "-mirror-maker";
-        Map<String, String> connectPods = StUtils.depSnapshot(CLIENT, NAMESPACE, connectName);
-        Map<String, String> mmPods = StUtils.depSnapshot(CLIENT, NAMESPACE, mmName);
+        String connectName = kafkaConnectName(CLUSTER_NAME);
+        String mmName = kafkaMirrorMakerName(CLUSTER_NAME);
+        String eoName = entityOperatorDeploymentName(CLUSTER_NAME);
+        String kafkaName = kafkaClusterName(CLUSTER_NAME);
+        String zkName = zookeeperClusterName(CLUSTER_NAME);
+        Map<String, String> connectPods = StUtils.depSnapshot(connectName);
+        Map<String, String> mmPods = StUtils.depSnapshot(mmName);
+        Map<String, String> eoPods = StUtils.depSnapshot(eoName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
 
+        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
+        entityOperatorJvmOptions.setGcLoggingEnabled(false);
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setJvmOptions(jvmOptions);
+            k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
+            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
+            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
+        });
+
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
+        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
+        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
+        StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
+        StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
-        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_SET_NAME)), "Kafka GC logging is disabled");
-        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is disabled");
 
         assertFalse(checkGcLoggingDeployments(kafkaConnectName(CLUSTER_NAME)), "Connect GC logging is disabled");
         assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker GC logging is disabled");
@@ -213,12 +212,12 @@ class LogSettingST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = KUBE_CLIENT.get("configMap", configMapName);
+            String configMap = cmdKubeClient().get("configMap", configMapName);
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
             if (result) {
-                String log = KUBE_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
+                String log = cmdKubeClient().searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
                 result = log.isEmpty();
             }
         }
@@ -228,7 +227,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -236,14 +235,14 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
@@ -268,90 +267,92 @@ class LogSettingST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE).done();
 
-        operationID = startDeploymentMeasuring();
+        setOperationID(startDeploymentMeasuring());
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
                         .withLoggers(KAFKA_LOGGERS)
                     .endInlineLogging()
-                    .withJvmOptions(null)
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
                     .withNewInlineLogging()
                         .withLoggers(ZOOKEEPER_LOGGERS)
                     .endInlineLogging()
-                .withJvmOptions(null)
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
                 .endZookeeper()
                 .editEntityOperator()
-                    .withNewUserOperator()
+                    .editOrNewUserOperator()
                         .withNewInlineLogging()
                             .withLoggers(OPERATORS_LOGGERS)
                         .endInlineLogging()
-                        .withJvmOptions(null)
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(true)
+                        .endJvmOptions()
                     .endUserOperator()
-                    .withNewTopicOperator()
+                    .editOrNewTopicOperator()
                         .withNewInlineLogging()
                             .withLoggers(OPERATORS_LOGGERS)
                         .endInlineLogging()
-                        .withJvmOptions(null)
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(true)
+                        .endJvmOptions()
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
             .done();
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(false)
-                    .endJvmOptions()
-                .endKafka()
-                .editZookeeper()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(false)
-                    .endJvmOptions()
-                .endZookeeper()
-                .withNewEntityOperator()
-                    .withNewTopicOperator()
+        testClassResources().kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
                         .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
                         .endJvmOptions()
-                    .endTopicOperator()
-                    .withNewUserOperator()
+                    .endKafka()
+                    .editZookeeper()
                         .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
                         .endJvmOptions()
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec().done();
+                    .endZookeeper()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withNewJvmOptions()
+                            .endJvmOptions()
+                        .endTopicOperator()
+                        .editUserOperator()
+                            .withNewJvmOptions()
+                            .endJvmOptions()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
 
-        testClassResources.kafkaConnect(CLUSTER_NAME, 1)
+        testClassResources().kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
                 .endInlineLogging()
-                .withJvmOptions(null)
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
             .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        testClassResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
                 .endInlineLogging()
-                .withJvmOptions(null)
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
             .endSpec()
             .done();
-    }
-
-    @AfterAll
-    void deleteClassResources() {
-        TimeMeasuringSystem.stopOperation(operationID);
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     private String startDeploymentMeasuring() {
@@ -360,7 +361,12 @@ class LogSettingST extends AbstractST {
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skip env recreation after failed tests!");
+    }
+
+    @Override
+    protected void tearDownEnvironmentAfterAll() {
+        teardownEnvForOperator();
     }
 }

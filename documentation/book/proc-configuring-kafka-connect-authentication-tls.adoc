@@ -7,24 +7,20 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
+* A Kubernetes cluster
 * A running Cluster Operator
+* If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
 
 .Procedure
 
-. Find out the name of the `Secret` with the public and private keys which should be used for TLS Client Authentication and the keys under which they are stored in the `Secret`.
-If such a `Secret` does not exist yet, prepare the keys in a file and create the `Secret`.
+. (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl create`:
+NOTE: Secrets created by the User Operator may be used.
++
+This can be done using `kubectl create`:
 [source,shell,subs=+quotes]
 kubectl create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc create`:
-+
-[source,shell,subs=+quotes]
-oc create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
+
 . Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
 For example:
 +
@@ -47,13 +43,6 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_

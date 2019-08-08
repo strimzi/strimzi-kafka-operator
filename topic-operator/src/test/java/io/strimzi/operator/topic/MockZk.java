@@ -63,9 +63,9 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+    public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
         childrenHandler = watcher;
-        return this;
+        return Future.succeededFuture(this);
     }
 
     @Override
@@ -81,9 +81,9 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+    public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
         dataHandlers.put(path, watcher);
-        return this;
+        return Future.succeededFuture(this);
     }
 
     @Override

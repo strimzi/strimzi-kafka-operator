@@ -52,36 +52,36 @@ public class SimpleAclRule {
     }
 
     /**
-     * Returns the type of the ACL rule
+     * Returns the type of the ACL rule.
      *
-     * @return
+     * @return The type.
      */
     public AclRuleType getType() {
         return type;
     }
 
     /**
-     * Returns the resource to which this rule applies
+     * Returns the resource to which this rule applies.
      *
-     * @return
+     * @return The resource.
      */
     public SimpleAclRuleResource getResource() {
         return resource;
     }
 
     /**
-     * Returns the host from which this rule is allowed / denied
+     * Returns the host from which this rule is allowed / denied.
      *
-     * @return
+     * @return The host.
      */
     public String getHost() {
         return host;
     }
 
     /**
-     * Returns the operation which is allowed / denied
+     * Returns the operation which is allowed / denied.
      *
-     * @return
+     * @return The operation.
      */
     public AclOperation getOperation() {
         return operation;
@@ -121,8 +121,8 @@ public class SimpleAclRule {
     /**
      * Create Kafka's Acl object from SimpleAclRule object.
      *
-     * @param principal     Kafka prinmcipal needed to create Kafka's Acl object
-     * @return
+     * @param principal Kafka prinmcipal needed to create Kafka's Acl object.
+     * @return The Kafka ACL.
      */
     public Acl toKafkaAcl(KafkaPrincipal principal)   {
         PermissionType kafkaType;
@@ -185,7 +185,7 @@ public class SimpleAclRule {
      *
      * @param resource  The resource the newly created rule should apply to
      * @param acl       The Acl object which should be used to create the rule
-     * @return
+     * @return The SimpleAclRule.
      */
     public static SimpleAclRule fromKafkaAcl(SimpleAclRuleResource resource, Acl acl)   {
         AclRuleType type;
@@ -247,7 +247,7 @@ public class SimpleAclRule {
      * Creates SimpleAclRule object based on AclRule object which is received as part ofthe KafkaUser CRD.
      *
      * @param rule  AclRule object from KafkaUser CR
-     * @return
+     * @return The SimpleAclRule.
      */
     public static SimpleAclRule fromCrd(AclRule rule)   {
         return new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation());

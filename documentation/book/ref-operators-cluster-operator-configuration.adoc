@@ -7,8 +7,9 @@
 
 The Cluster Operator can be configured through the following supported environment variables:
 
-`STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
-operate in. The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
+When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
+The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -20,67 +21,74 @@ env:
         fieldPath: metadata.namespace
 ----
 
-[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. The interval between periodic reconciliations, in milliseconds.
 
 `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
 The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
 
-`STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 300000 ms. The timeout for internal operations, in milliseconds. This value should be
-increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+`STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
+The timeout for internal operations, in milliseconds. This value should be
+increased when using {ProductName} on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
-This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version. 
+This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
-`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
+`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
 The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
+`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `{DockerKafkaStunnel}`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for Kafka,
 if no image is specified as the `Kafka.spec.kafka.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
-`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `{DockerZookeeper}`.
 The image name to use as the default when deploying Zookeeper, if
 no image is specified as the `Kafka.spec.zookeeper.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
+`STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `{DockerZookeeperStunnel}`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for Zookeeper, if
 no image is specified as the `Kafka.spec.zookeeper.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version. 
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0=strimzi/kafka:latest-kafka-connect-2.0.0, 2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
 
 `STRIMZI_KAFKA_CONNECT_S2I_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version. 
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0=strimzi/kafka:latest-kafka-connect-s2i-2.0.0, 2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect-s2i[].
 
 `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version. 
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0, 2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0`.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-mirror-maker[].
 
-`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
+`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
 The image name to use as the default when deploying the topic operator,
 if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
 
-`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `strimzi/user-operator:latest`.
+`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `{DockerUserOperator}`.
 The image name to use as the default when deploying the user operator,
 if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `strimzi/entity-operator-stunnel:latest`.
+`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `{DockerEntityOperatorStunnel}`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
 no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 `STRIMZI_IMAGE_PULL_POLICY`:: Optional.
 The `ImagePullPolicy` which will be applied to containers in all pods managed by {ProductName} Cluster Operator.
 The valid values are `Always`, `IfNotPresent`, and `Never`.
-If not specified, the {ProductPlatformName} defaults will be used.
+If not specified, the Kubernetes defaults will be used.
 Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
+
+`STRIMZI_IMAGE_PULL_SECRETS`:: Optional.
+A comma-separated list of `Secret` names.
+The secrets referenced here contain the credentials to the container registries where the container images are pulled from.
+The secrets are used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
+Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.

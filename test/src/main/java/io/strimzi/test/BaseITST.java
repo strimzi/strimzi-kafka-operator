@@ -4,13 +4,15 @@
  */
 package io.strimzi.test;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.Config;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.KubeCmdClient;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -28,18 +30,84 @@ import java.util.stream.Collectors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseITST {
-
     private static final String CO_INSTALL_DIR = "../install/cluster-operator";
 
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
-    protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient();
-    public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
-    private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
+    private static KubeClusterResource cluster;
+    private static String namespace;
+    private static String defaultNamespace;
 
-    protected String clusterOperatorNamespace = DEFAULT_NAMESPACE;
+    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+
+    public static synchronized KubeClusterResource kubeCluster() {
+        if (cluster == null) {
+            try {
+                cluster = KubeClusterResource.getKubeClusterResource();
+                namespace = cluster.defaultNamespace();
+                defaultNamespace = cluster.cmdClient().defaultNamespace();
+            } catch (RuntimeException e) {
+                Assumptions.assumeTrue(false, e.getMessage());
+            }
+        }
+        return cluster;
+    }
+
+    /**
+     * Sets the namespace value for Kubernetes clients
+     * @param futureNamespace Namespace which should be used in Kubernetes clients
+     * @return Previous namespace which was used in Kubernetes clients
+     */
+    public static String setNamespace(String futureNamespace) {
+        String previousNamespace = namespace;
+        namespace = futureNamespace;
+        return previousNamespace;
+    }
+
+    /**
+     * Gets namespace which is used in Kubernetes clients at the moment
+     * @return Used namespace
+     */
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Provides appropriate CMD client for running cluster
+     * @return CMD client
+     */
+    public static KubeCmdClient<?> cmdKubeClient() {
+        return kubeCluster().cmdClient().namespace(namespace);
+    }
+
+    /**
+     * Provides appropriate CMD client with expected namespace for running cluster
+     * @param inNamespace Namespace will be used as a current namespace for client
+     * @return CMD client with expected namespace in configuration
+     */
+    public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
+        return kubeCluster().cmdClient().namespace(inNamespace);
+    }
+
+    /**
+     * Provides appropriate Kubernetes client for running cluster
+     * @return Kubernetes client
+     */
+    public static KubeClient kubeClient() {
+        return kubeCluster().client().namespace(namespace);
+    }
+
+    /**
+     * Provides appropriate Kubernetes client with expected namespace for running cluster
+     * @param inNamespace Namespace will be used as a current namespace for client
+     * @return Kubernetes client with expected namespace in configuration
+     */
+    public static KubeClient kubeClient(String inNamespace) {
+        return kubeCluster().client().namespace(inNamespace);
+    }
+
+    protected String clusterOperatorNamespace = defaultNamespace;
     protected List<String> bindingsNamespaces = new ArrayList<>();
     public List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
@@ -61,7 +129,7 @@ public class BaseITST {
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
             clusterOperatorConfigs.push(entry.getValue());
-            KUBE_CLIENT.clientWithAdmin().applyContent(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).applyContent(entry.getValue());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
@@ -74,7 +142,7 @@ public class BaseITST {
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
 
         while (!clusterOperatorConfigs.empty()) {
-            KUBE_CLIENT.clientWithAdmin().deleteContent(clusterOperatorConfigs.pop());
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).deleteContent(clusterOperatorConfigs.pop());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
@@ -87,14 +155,21 @@ public class BaseITST {
     protected void createNamespaces(String useNamespace, List<String> namespaces) {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
+
+            if (kubeClient().getNamespace(namespace) != null) {
+                LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
+                kubeClient().deleteNamespace(namespace);
+                cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            }
+
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
-            KUBE_CLIENT.createNamespace(namespace);
-            KUBE_CLIENT.waitForResourceCreation("Namespace", namespace);
+            kubeClient().createNamespace(namespace);
+            cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
         clusterOperatorNamespace = useNamespace;
         LOGGER.info("Using namespace {}", useNamespace);
-        KUBE_CLIENT.namespace(useNamespace);
+        setNamespace(useNamespace);
     }
 
     /**
@@ -113,12 +188,12 @@ public class BaseITST {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
-            KUBE_CLIENT.deleteNamespace(namespace);
-            KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
-        LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
-        KUBE_CLIENT.namespace(CLUSTER.defaultNamespace());
+        LOGGER.info("Using namespace {}", defaultNamespace);
+        setNamespace(defaultNamespace);
     }
 
     /**
@@ -130,7 +205,7 @@ public class BaseITST {
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
             deploymentResources.add(resource);
-            KUBE_CLIENT.clientWithAdmin().create(resource);
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
         }
     }
 
@@ -141,7 +216,7 @@ public class BaseITST {
         Collections.reverse(deploymentResources);
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
-            KUBE_CLIENT.delete(resource);
+            cmdKubeClient().delete(resource);
         }
         deploymentResources.clear();
     }
@@ -152,7 +227,7 @@ public class BaseITST {
     protected void deleteCustomResources(String... resources) {
         for (String resource : resources) {
             LOGGER.info("Deleting resources {}", resource);
-            KUBE_CLIENT.delete(resource);
+            cmdKubeClient().delete(resource);
             deploymentResources.remove(resource);
         }
     }

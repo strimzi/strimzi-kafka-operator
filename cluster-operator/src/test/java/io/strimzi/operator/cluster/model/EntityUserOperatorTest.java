@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
@@ -15,8 +16,8 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class EntityUserOperatorTest {
 
@@ -40,6 +42,23 @@ public class EntityUserOperatorTest {
     {
         userOperatorLogging.setLoggers(Collections.singletonMap("user-operator.root.logger", "OFF"));
     }
+    private final Probe livenessProbe = new Probe();
+    {
+        livenessProbe.setInitialDelaySeconds(15);
+        livenessProbe.setTimeoutSeconds(20);
+        livenessProbe.setFailureThreshold(12);
+        livenessProbe.setSuccessThreshold(5);
+        livenessProbe.setPeriodSeconds(180);
+    }
+
+    private final Probe readinessProbe = new Probe();
+    {
+        readinessProbe.setInitialDelaySeconds(15);
+        livenessProbe.setInitialDelaySeconds(20);
+        readinessProbe.setFailureThreshold(12);
+        readinessProbe.setSuccessThreshold(5);
+        readinessProbe.setPeriodSeconds(180);
+    }
 
     private final String uoWatchedNamespace = "my-user-namespace";
     private final String uoImage = "my-user-operator-image";
@@ -51,6 +70,8 @@ public class EntityUserOperatorTest {
             .withImage(uoImage)
             .withReconciliationIntervalSeconds(uoReconciliationInterval)
             .withZookeeperSessionTimeoutSeconds(uoZookeeperSessionTimeout)
+            .withLivenessProbe(livenessProbe)
+            .withReadinessProbe(readinessProbe)
             .withLogging(userOperatorLogging)
             .build();
 
@@ -83,9 +104,17 @@ public class EntityUserOperatorTest {
         return expected;
     }
 
+    private void checkEnvVars(List<EnvVar> expected, List<EnvVar> actual)   {
+        assertEquals(expected.size(), actual.size());
+
+        for (EnvVar var : expected) {
+            assertTrue(actual.contains(var));
+        }
+    }
+
     @Test
     public void testEnvVars()   {
-        Assert.assertEquals(getExpectedEnvVars(), entityUserOperator.getEnvVars());
+        checkEnvVars(getExpectedEnvVars(), entityUserOperator.getEnvVars());
     }
 
     @Test
@@ -93,10 +122,16 @@ public class EntityUserOperatorTest {
         assertEquals(namespace, entityUserOperator.namespace);
         assertEquals(cluster, entityUserOperator.cluster);
         assertEquals(uoImage, entityUserOperator.image);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessTimeout);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessTimeout);
+        assertEquals(readinessProbe.getInitialDelaySeconds(), entityUserOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(readinessProbe.getTimeoutSeconds(), entityUserOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(readinessProbe.getSuccessThreshold(), entityUserOperator.readinessProbeOptions.getSuccessThreshold());
+        assertEquals(readinessProbe.getFailureThreshold(), entityUserOperator.readinessProbeOptions.getFailureThreshold());
+        assertEquals(readinessProbe.getPeriodSeconds(), entityUserOperator.readinessProbeOptions.getPeriodSeconds());
+        assertEquals(livenessProbe.getInitialDelaySeconds(), entityUserOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(livenessProbe.getTimeoutSeconds(), entityUserOperator.livenessProbeOptions.getTimeoutSeconds());
+        assertEquals(livenessProbe.getSuccessThreshold(), entityUserOperator.livenessProbeOptions.getSuccessThreshold());
+        assertEquals(livenessProbe.getFailureThreshold(), entityUserOperator.livenessProbeOptions.getFailureThreshold());
+        assertEquals(livenessProbe.getPeriodSeconds(), entityUserOperator.livenessProbeOptions.getPeriodSeconds());
         assertEquals(uoWatchedNamespace, entityUserOperator.getWatchedNamespace());
         assertEquals(uoReconciliationInterval * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(uoZookeeperSessionTimeout * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
@@ -121,9 +156,13 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
 
         assertEquals(namespace, entityUserOperator.getWatchedNamespace());
-        assertEquals(EntityUserOperatorSpec.DEFAULT_IMAGE, entityUserOperator.getImage());
+        assertEquals("strimzi/operator:latest", entityUserOperator.getImage());
         assertEquals(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(EntityUserOperator.defaultZookeeperConnect(cluster), entityUserOperator.getZookeeperConnect());
         assertNull(entityUserOperator.getLogging());
     }
@@ -157,11 +196,11 @@ public class EntityUserOperatorTest {
         Container container = containers.get(0);
         assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, container.getName());
         assertEquals(entityUserOperator.getImage(), container.getImage());
-        assertEquals(getExpectedEnvVars(), container.getEnv());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getReadinessProbe().getTimeoutSeconds());
+        checkEnvVars(getExpectedEnvVars(), container.getEnv());
+        assertEquals(new Integer(livenessProbe.getInitialDelaySeconds()), container.getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(livenessProbe.getTimeoutSeconds()), container.getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(readinessProbe.getInitialDelaySeconds()), container.getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(readinessProbe.getTimeoutSeconds()), container.getReadinessProbe().getTimeoutSeconds());
         assertEquals(1, container.getPorts().size());
         assertEquals(new Integer(EntityUserOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
         assertEquals(EntityUserOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
@@ -225,5 +264,13 @@ public class EntityUserOperatorTest {
         List<EnvVar> envvar = f.getEnvVars();
         assertEquals(validity, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().get().getValue()));
         assertEquals(renewal, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()));
+    }
+
+    @Test
+    public void testRoleBinding()   {
+        RoleBinding binding = entityUserOperator.generateRoleBinding(namespace, uoWatchedNamespace);
+
+        assertEquals(namespace, binding.getSubjects().get(0).getNamespace());
+        assertEquals(uoWatchedNamespace, binding.getMetadata().getNamespace());
     }
 }

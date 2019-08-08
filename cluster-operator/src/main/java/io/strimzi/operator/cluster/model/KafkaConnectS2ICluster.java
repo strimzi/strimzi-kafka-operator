@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -26,10 +27,14 @@ import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.common.model.Labels;
 
+import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -64,18 +69,24 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Generate new DeploymentConfig
      *
-     * @return      Source ImageStream resource definition
+     * @param annotations The annotations.
+     * @param isOpenShift Whether we're on OpenShift.
+     * @param imagePullPolicy The image pull policy.
+     * @param imagePullSecrets The image pull secrets.
+     * @return Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy,
+                                                     List<LocalObjectReference> imagePullSecrets) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvVars())
+                .withCommand("/opt/kafka/s2i/run")
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
                 .build();
 
@@ -107,7 +118,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithName(templateDeploymentLabels))
-                    .withAnnotations(mergeAnnotations(null, templateDeploymentAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
@@ -116,7 +127,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withSelector(getSelectorLabels())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withAnnotations(mergeAnnotations(annotations, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
                             .withLabels(getLabelsWithName(templatePodLabels))
                         .endMetadata()
                         .withNewSpec()
@@ -125,8 +136,9 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)
@@ -157,9 +169,9 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                    .withName(getSourceImageStreamName())
+                    .withName(KafkaConnectS2IResources.sourceImageStreamName(cluster))
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName(getSourceImageStreamName()))
+                    .withLabels(getLabelsWithName(KafkaConnectS2IResources.sourceImageStreamName(cluster)))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -179,7 +191,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     public ImageStream generateTargetImageStream() {
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(KafkaConnectS2IResources.targetImageStreamName(cluster))
                     .withNamespace(namespace)
                     .withLabels(getLabelsWithName())
                     .withOwnerReferences(createOwnerReference())
@@ -207,7 +219,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         BuildConfig build = new BuildConfigBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(KafkaConnectS2IResources.buildConfigName(cluster))
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
@@ -228,9 +240,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withNewStrategy()
                         .withType("Source")
                         .withNewSourceStrategy()
+                            .withScripts("image:///opt/kafka/s2i")
                             .withNewFrom()
                                 .withKind("ImageStreamTag")
-                                .withName(getSourceImageStreamName() + ":" + sourceImageTag)
+                                .withName(KafkaConnectS2IResources.sourceImageStreamName(cluster) + ":" + sourceImageTag)
                             .endFrom()
                         .endSourceStrategy()
                     .endStrategy()
@@ -239,25 +252,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .build();
 
         return build;
-    }
-
-    /**
-     * Generates the name of the source ImageStream
-     *
-     * @return               Name of the source ImageStream instance
-     */
-    public String getSourceImageStreamName() {
-        return getSourceImageStreamName(name);
-    }
-
-    /**
-     * Generates the name of the source ImageStream
-     *
-     * @param baseName       Name of the Kafka Connect cluster
-     * @return               Name of the source ImageStream instance
-     */
-    public static String getSourceImageStreamName(String baseName) {
-        return baseName + "-source";
     }
 
     @Override

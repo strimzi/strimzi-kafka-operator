@@ -4,12 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -24,26 +23,29 @@ import java.util.Map;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationTls.TYPE_TLS, value = KafkaMirrorMakerAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaMirrorMakerAuthenticationScramSha512.class),
+        @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationPlain.TYPE_PLAIN, value = KafkaMirrorMakerAuthenticationPlain.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class KafkaMirrorMakerAuthentication implements Serializable {
+@EqualsAndHashCode
+public abstract class KafkaMirrorMakerAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported types are `tls` and `scram-sha-512`. " +
+            "Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
+            "`plain` type uses SASL PLAIN Authentication. " +
             "The `tls` type uses TLS Client Authentication. " +
             "The `tls` type is supported only over TLS connections.")
     public abstract String getType();
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -27,13 +26,14 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.fabric8.kubernetes.api.model.Probe;
-import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
@@ -50,15 +50,15 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
-import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -68,6 +68,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -97,6 +98,8 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    /** Annotation on PVCs storing the original configuration (so we can revert changes). */
+    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
     private static final Pattern LOGGER_PATTERN = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
@@ -114,11 +117,7 @@ public abstract class AbstractModel {
     protected int replicas;
 
     protected String readinessPath;
-    protected int readinessTimeout;
-    protected int readinessInitialDelay;
     protected String livenessPath;
-    protected int livenessTimeout;
-    protected int livenessInitialDelay;
 
     protected String serviceName;
     protected String headlessServiceName;
@@ -144,7 +143,7 @@ public abstract class AbstractModel {
     protected String logAndMetricsConfigVolumeName;
 
     private JvmOptions jvmOptions;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Affinity userAffinity;
     private List<Toleration> tolerations;
 
@@ -170,11 +169,14 @@ public abstract class AbstractModel {
     protected Map<String, String> templatePodDisruptionBudgetLabels;
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
+    protected String templatePodPriorityClassName;
 
     // Owner Reference information
     private String ownerApiVersion;
     private String ownerKind;
     private String ownerUid;
+    protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
+    protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
 
     /**
      * Constructor
@@ -205,41 +207,40 @@ public abstract class AbstractModel {
         this.image = image;
     }
 
-    protected void setReadinessTimeout(int readinessTimeout) {
-        this.readinessTimeout = readinessTimeout;
+    protected void setReadinessProbe(io.strimzi.api.kafka.model.Probe probe) {
+        this.readinessProbeOptions = probe;
     }
 
-    protected void setReadinessInitialDelay(int readinessInitialDelay) {
-        this.readinessInitialDelay = readinessInitialDelay;
-    }
-
-    protected void setLivenessTimeout(int livenessTimeout) {
-        this.livenessTimeout = livenessTimeout;
-    }
-
-    protected void setLivenessInitialDelay(int livenessInitialDelay) {
-        this.livenessInitialDelay = livenessInitialDelay;
+    protected void setLivenessProbe(io.strimzi.api.kafka.model.Probe probe) {
+        this.livenessProbeOptions = probe;
     }
 
     /**
-     * Returns the Docker image which should be used by this cluster
-     *
-     * @return
+     * @return the Docker image which should be used by this cluster
      */
     public String getName() {
         return name;
     }
 
+    /**
+     * @return The service name.
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * @return The name of the headless service.
+     */
     public String getHeadlessServiceName() {
         return headlessServiceName;
     }
 
 
-    protected Map<String, String> getSelectorLabels() {
+    /**
+     * @return The selector labels.
+     */
+    public Map<String, String> getSelectorLabels() {
         return labels.withName(name).strimziLabels().toMap();
     }
 
@@ -260,6 +261,9 @@ public abstract class AbstractModel {
         return labels.withName(name).withUserLabels(userLabels).toMap();
     }
 
+    /**
+     * @return Whether metrics are enabled.
+     */
     public boolean isMetricsEnabled() {
         return isMetricsEnabled;
     }
@@ -282,7 +286,10 @@ public abstract class AbstractModel {
         return getOrderedProperties(getDefaultLogConfigFileName());
     }
 
-    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION") // InputStream is closed by properties.addStringPairs
+    /**
+     * @param configFileName The filename
+     * @return The OrderedProperties
+     */
     public static OrderedProperties getOrderedProperties(String configFileName) {
         OrderedProperties properties = new OrderedProperties();
         if (configFileName != null && !configFileName.isEmpty()) {
@@ -294,6 +301,12 @@ public abstract class AbstractModel {
                     properties.addStringPairs(is);
                 } catch (IOException e) {
                     log.warn("Unable to read default log config from '{}'", configFileName);
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        log.error("Failed to close stream. Reason: " + e.getMessage());
+                    }
                 }
             }
         }
@@ -309,6 +322,9 @@ public abstract class AbstractModel {
         return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
     }
 
+    /**
+     * @return The logging.
+     */
     public Logging getLogging() {
         return logging;
     }
@@ -317,6 +333,11 @@ public abstract class AbstractModel {
         this.logging = logging;
     }
 
+    /**
+     * @param logging The logging to parse.
+     * @param externalCm The external ConfigMap.
+     * @return The logging properties as a String in log4j properties file format.
+     */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             // validate all entries
@@ -385,14 +406,15 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generates a metrics and logging ConfigMap according to configured defaults
-     * @return The generated ConfigMap
+     * Generates a metrics and logging ConfigMap according to configured defaults.
+     * @param cm The ConfigMap.
+     * @return The generated ConfigMap.
      */
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
         Map<String, String> data = new HashMap<>();
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            HashMap m = new HashMap();
+            HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
             }
@@ -400,18 +422,6 @@ public abstract class AbstractModel {
         }
 
         return createConfigMap(getAncillaryConfigName(), data);
-    }
-
-    public String getLogConfigName() {
-        return logConfigName;
-    }
-
-    /**
-     * Sets name of field in cluster config map, where logging configuration is stored
-     * @param logConfigName
-     */
-    protected void setLogConfigName(String logConfigName) {
-        this.logConfigName = logConfigName;
     }
 
     protected Iterable<Map.Entry<String, Object>>  getMetricsConfig() {
@@ -423,27 +433,50 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Returns name of config map used for storing metrics and logging configuration
-     * @return
+     * Returns name of config map used for storing metrics and logging configuration.
+     * @return The name of config map used for storing metrics and logging configuration.
      */
     public String getAncillaryConfigName() {
         return ancillaryConfigName;
-    }
-
-    protected void setMetricsConfigName(String metricsAndLogsConfigName) {
-        this.ancillaryConfigName = metricsAndLogsConfigName;
     }
 
     protected List<EnvVar> getEnvVars() {
         return null;
     }
 
+    /**
+     * @return The storage.
+     */
     public Storage getStorage() {
         return storage;
     }
 
     protected void setStorage(Storage storage) {
+        if (storage instanceof PersistentClaimStorage) {
+            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
+            checkPersistentStorageSize(persistentClaimStorage);
+        } else if (storage instanceof JbodStorage)  {
+            JbodStorage jbodStorage = (JbodStorage) storage;
+
+            if (jbodStorage.getVolumes().size() == 0)   {
+                throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
+            }
+
+            for (Storage jbodVolume : jbodStorage.getVolumes()) {
+                if (jbodVolume instanceof PersistentClaimStorage) {
+                    PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;
+                    checkPersistentStorageSize(persistentClaimStorage);
+                }
+            }
+        }
+
         this.storage = storage;
+    }
+
+    private void checkPersistentStorageSize(PersistentClaimStorage storage)   {
+        if (storage.getSize() == null || storage.getSize().isEmpty()) {
+            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+        }
     }
 
     /**
@@ -464,10 +497,9 @@ public abstract class AbstractModel {
         this.configuration = configuration;
     }
 
-    public String getVolumeName() {
-        return this.VOLUME_NAME;
-    }
-
+    /**
+     * @return The image name.
+     */
     public String getImage() {
         return this.image;
     }
@@ -486,6 +518,11 @@ public abstract class AbstractModel {
         return cluster;
     }
 
+    /**
+     * Gets the name of a given pod in a StatefulSet.
+     * @param podId The Id of the pod.
+     * @return The name of the pod with the given name.
+     */
     public String getPodName(int podId) {
         return name + "-" + podId;
     }
@@ -507,6 +544,7 @@ public abstract class AbstractModel {
 
     /**
      * Gets the tolerations as configured by the user in the cluster CR
+     * @return The tolerations.
      */
     public List<Toleration> getTolerations() {
         return tolerations;
@@ -515,7 +553,7 @@ public abstract class AbstractModel {
     /**
      * Sets the tolerations as configured by the user in the cluster CR
      *
-     * @param tolerations
+     * @param tolerations The tolerations.
      */
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
@@ -574,22 +612,23 @@ public abstract class AbstractModel {
             .withPort(port)
             .withNewTargetPort(targetPort);
         if (nodePort != null) {
-            builder.withNewNodePort(nodePort);
+            builder.withNodePort(nodePort);
         }
         ServicePort servicePort = builder.build();
         log.trace("Created service port {}", servicePort);
         return servicePort;
     }
 
-    protected PersistentVolumeClaim createPersistentVolumeClaim(String name, PersistentClaimStorage storage) {
+    protected PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
+
         LabelSelector selector = null;
         if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
             selector = new LabelSelector(null, storage.getSelector());
         }
 
-        PersistentVolumeClaimBuilder pvcb = new PersistentVolumeClaimBuilder()
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withName(name)
                 .endMetadata()
@@ -600,9 +639,51 @@ public abstract class AbstractModel {
                     .endResources()
                     .withStorageClassName(storage.getStorageClass())
                     .withSelector(selector)
-                .endSpec();
+                .endSpec()
+                .build();
 
-        return pvcb.build();
+        return pvc;
+    }
+
+    protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
+        Map<String, Quantity> requests = new HashMap<>();
+        requests.put("storage", new Quantity(storage.getSize(), null));
+
+        LabelSelector selector = null;
+        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
+            selector = new LabelSelector(null, storage.getSelector());
+        }
+
+        String storageClass = storage.getStorageClass();
+        if (storage.getOverrides() != null) {
+            storageClass = storage.getOverrides().stream().filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == podNumber && broker.getStorageClass() != null)
+                    .map(PersistentClaimStorageOverride::getStorageClass)
+                    .findAny()
+                    .orElse(storageClass);
+        }
+
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
+                    .withAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())))
+                .endMetadata()
+                .withNewSpec()
+                    .withAccessModes("ReadWriteOnce")
+                    .withNewResources()
+                        .withRequests(requests)
+                    .endResources()
+                    .withStorageClassName(storageClass)
+                    .withSelector(selector)
+                .endSpec()
+                .build();
+
+        if (storage.isDeleteClaim())    {
+            pvc.getMetadata().setOwnerReferences(Collections.singletonList(createOwnerReference()));
+        }
+
+        return pvc;
     }
 
     protected Volume createEmptyDirVolume(String name) {
@@ -665,34 +746,12 @@ public abstract class AbstractModel {
         return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
     }
 
-    protected Probe createTcpSocketProbe(int port, int initialDelay, int timeout) {
-        Probe probe = new ProbeBuilder()
-                .withNewTcpSocket()
-                    .withNewPort()
-                        .withIntVal(port)
-                    .endPort()
-                .endTcpSocket()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
-                .build();
-        log.trace("Created TCP socket probe {}", probe);
-        return probe;
-    }
-
-    protected Probe createHttpProbe(String path, String port, int initialDelay, int timeout) {
-        Probe probe = new ProbeBuilder().withNewHttpGet()
-                .withPath(path)
-                .withNewPort(port)
-                .endHttpGet()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
-                .build();
-        log.trace("Created http probe {}", probe);
-        return probe;
-    }
-
-    protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
+    protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
         return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
+    }
+
+    protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
@@ -714,13 +773,14 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(List<ServicePort> ports, Map<String, String> annotations) {
+    protected Service createHeadlessService(List<ServicePort> ports) {
+        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
                     .withLabels(getLabelsWithName(headlessServiceName, templateHeadlessServiceLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateHeadlessServiceAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -728,6 +788,7 @@ public abstract class AbstractModel {
                     .withClusterIP("None")
                     .withSelector(getSelectorLabels())
                     .withPorts(ports)
+                    .withPublishNotReadyAddresses(true)
                 .endSpec()
                 .build();
         log.trace("Created headless service {}", service);
@@ -741,6 +802,7 @@ public abstract class AbstractModel {
             Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
+            List<LocalObjectReference> imagePullSecrets,
             boolean isOpenShift) {
 
         PodSecurityContext securityContext = templateSecurityContext;
@@ -758,7 +820,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withLabels(getLabelsWithName(templateStatefulSetLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateStatefulSetAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(annotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -771,7 +833,7 @@ public abstract class AbstractModel {
                         .withNewMetadata()
                             .withName(name)
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeAnnotations(null, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(null, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
@@ -781,8 +843,9 @@ public abstract class AbstractModel {
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(securityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -799,14 +862,15 @@ public abstract class AbstractModel {
             Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
-            List<Volume> volumes) {
+            List<Volume> volumes,
+            List<LocalObjectReference> imagePullSecrets) {
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithName(templateDeploymentLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -816,7 +880,7 @@ public abstract class AbstractModel {
                     .withNewTemplate()
                         .withNewMetadata()
                             .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeAnnotations(podAnnotations, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
                             .withAffinity(affinity)
@@ -826,8 +890,9 @@ public abstract class AbstractModel {
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
+                            .withPriorityClassName(templatePodPriorityClassName)
                         .endSpec()
                     .endTemplate()
                 .endSpec()
@@ -868,6 +933,8 @@ public abstract class AbstractModel {
 
     /**
      * Gets the given container's environment.
+     * @param container The container
+     * @return The environment of the given container.
      */
     public static Map<String, String> containerEnvVars(Container container) {
         return container.getEnv().stream().collect(
@@ -876,14 +943,23 @@ public abstract class AbstractModel {
                 (u, v) -> v));
     }
 
-    public void setResources(Resources resources) {
+    /**
+     * @param resources The resource requirements.
+     */
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
-    public Resources getResources() {
+    /**
+     * @return The resource requirements.
+     */
+    public ResourceRequirements getResources() {
         return resources;
     }
 
+    /**
+     * @param jvmOptions The JVM options.
+     */
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
     }
@@ -906,12 +982,11 @@ public abstract class AbstractModel {
             // Honour explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            Resources resources = getResources();
-            CpuMemory cpuMemory = resources == null ? null : resources.getLimits();
-
+            ResourceRequirements resources = getResources();
+            Map<String, Quantity> cpuMemory = resources == null ? null : resources.getLimits();
             // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
             // too much memory on the kubelet.
-            if (cpuMemory != null && cpuMemory.getMemory() != null) {
+            if (cpuMemory != null && cpuMemory.get("memory") != null) {
                 envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
@@ -1051,31 +1126,58 @@ public abstract class AbstractModel {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 
+    /**
+     * @param cluster The cluster name
+     * @return The name of the Cluster CA certificate secret.
+     */
     public static String clusterCaCertSecretName(String cluster)  {
         return KafkaResources.clusterCaCertificateSecretName(cluster);
     }
 
+    /**
+     * @param cluster The cluster name
+     * @return The name of the Cluster CA key secret.
+     */
     public static String clusterCaKeySecretName(String cluster)  {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
-    protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String> template) {
+    @SafeVarargs
+    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {
             merged.putAll(internal);
         }
 
-        if (template != null) {
-            for (String key : template.keySet()) {
-                if (key.contains("strimzi.io")) {
-                    throw new IllegalArgumentException("User annotations includes a Strimzi annotation: " + key);
+        if (templates != null) {
+            for (Map<String, String> template : templates) {
+                if (template != null) {
+                    for (String key : template.keySet()) {
+                        if (key.contains("strimzi.io")) {
+                            throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + key);
+                        }
+                    }
+
+                    merged.putAll(template);
                 }
             }
-
-            merged.putAll(template);
         }
 
         return merged;
+    }
+
+    /**
+     * @return The service account.
+     */
+    public ServiceAccount generateServiceAccount() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(getServiceAccountName())
+                    .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+            .build();
     }
 }

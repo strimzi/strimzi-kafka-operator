@@ -5,11 +5,14 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation of a sidecar container configuration
@@ -21,13 +24,15 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class Sidecar implements Serializable {
+public class Sidecar implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private String image;
 
-    private Resources resources;
+    private ResourceRequirements resources;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the container")
     public String getImage() {
@@ -39,11 +44,21 @@ public class Sidecar implements Serializable {
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

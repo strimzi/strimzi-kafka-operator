@@ -2,6 +2,9 @@
 //
 // assembly-deployment-configuration.adoc
 
+//attribute for use in snip-external-logging.adoc
+:kind: Kafka
+
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
@@ -13,8 +16,12 @@
 :context: deployment-configuration-kafka
 
 The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
-All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
-This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
+All labels that are applied to the desired `Kafka` resource will also be applied to the Kubernetes resources making up the Kafka cluster.
+This provides a convenient mechanism for resources to be labeled as required.
+
+include::ref-sample-kafka-resource-config.adoc[leveloffset=+1]
+
+include::con-considerations-for-data-storage.adoc[leveloffset=+1]
 
 include::assembly-storage.adoc[leveloffset=+1]
 
@@ -29,6 +36,8 @@ include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+1]
 include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]
+
+include::assembly-zookeeper-connection.adoc[leveloffset=+1]
 
 include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
 
@@ -61,6 +70,10 @@ include::proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 include::proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
 
 include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
+
+include::proc-renewing-ca-certs-manually.adoc[leveloffset=+1]
+
+include::proc-replacing-private-keys.adoc[leveloffset=+1]
 
 include::ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]
 

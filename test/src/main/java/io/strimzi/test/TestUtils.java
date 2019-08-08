@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.vertx.core.VertxException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +32,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -40,18 +42,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public final class TestUtils {
 
@@ -71,14 +72,14 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
-    private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
+    public static final String CRD_KAFKA_BRIDGE = "../install/cluster-operator/046-Crd-kafkabridge.yaml";
 
     private TestUtils() {
         // All static methods
     }
 
     /** Returns a Map of the given sequence of key, value pairs. */
+    @SafeVarargs
     public static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
@@ -116,7 +117,9 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description + " to be ready");
+                TimeoutException exception = new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                exception.printStackTrace();
+                throw exception;
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
@@ -146,40 +149,6 @@ public final class TestUtils {
             LOGGER.info("File with path {} not found", filePath);
         }
         return "";
-    }
-
-    public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion) {
-        image = image.replaceFirst("^strimzi/", newOrg + "/");
-        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
-        StringBuffer sb = new StringBuffer();
-        if (m.find()) {
-            m.appendReplacement(sb, ":" + newTag + "-kafka-" + kafkaVersion);
-            m.appendTail(sb);
-            image = sb.toString();
-        } else {
-            image = image.replaceFirst(":[^:]+$", ":" + newTag);
-        }
-        return image;
-    }
-
-    public static String changeOrgAndTag(String image) {
-        String strimziOrg = "strimzi";
-        String strimziTag = "latest";
-        String kafkaVersion = "2.1.0";
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
-        kafkaVersion = System.getenv().getOrDefault("KAFKA_VERSION", kafkaVersion);
-        return changeOrgAndTag(image, dockerOrg, dockerTag, kafkaVersion);
-    }
-
-    public static String changeOrgAndTagInImageMap(String imageMap) {
-        Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            m.appendReplacement(sb, m.group("version") + "=" + TestUtils.changeOrgAndTag(m.group("image")));
-        }
-        m.appendTail(sb);
-        return sb.toString();
     }
 
     /**
@@ -251,9 +220,9 @@ public final class TestUtils {
         assertEquals(r, actual);
     }
 
-
+    @SafeVarargs
     public static <T> Set<T> set(T... elements) {
-        return new HashSet(asList(elements));
+        return new HashSet<>(asList(elements));
     }
 
     public static <T> T fromYaml(String resource, Class<T> c) {
@@ -336,10 +305,6 @@ public final class TestUtils {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static void assumeLinux() {
-        assumeTrue(System.getProperty("os.name").contains("nux"));
     }
 
     /** Map Streams utility methods */
@@ -440,5 +405,40 @@ public final class TestUtils {
             return Collections.emptyMap();
         }
     }
-    
+
+    /**
+     * Repeat request n-times in a row in case of call failed
+     *
+     * @param retry count of remaining retries
+     * @param fn    request function
+     * @return The result of the successful call to {@code fn}.
+     */
+    public static <T> T doRequestTillSuccess(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
+        try {
+            return fn.call();
+        } catch (Exception ex) {
+            if (ex.getCause() instanceof VertxException && ex.getCause().getMessage().contains("Connection was closed")) {
+                if (reconnect.isPresent()) {
+                    LOGGER.warn("connection was closed, trying to reconnect...");
+                    reconnect.get().run();
+                }
+            }
+            if ((ex.getCause() instanceof UnknownHostException || ex.getCause() instanceof IllegalStateException) && retry > 0) {
+                try {
+                    LOGGER.info("{} remaining iterations", retry);
+                    return doRequestTillSuccess(retry - 1, fn, reconnect);
+                } catch (Exception ex2) {
+                    throw ex2;
+                }
+            } else {
+                LOGGER.info(ex.getClass().getName());
+                if (ex.getCause() != null) {
+                    ex.getCause().printStackTrace();
+                } else {
+                    ex.printStackTrace();
+                }
+                throw ex;
+            }
+        }
+    }
 }

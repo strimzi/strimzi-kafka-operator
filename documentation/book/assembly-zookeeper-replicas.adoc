@@ -10,23 +10,20 @@
 
 = Zookeeper replicas
 
-Zookeeper clusters or ensembles usually run with an odd number of nodes and always requires the majority of the nodes to be available in order to maintain a quorum.
-Maintaining a quorum is important because when the Zookeeper cluster loses a quorum, it will stop responding to clients.
-As a result, a Zookeeper cluster without a quorum will cause the Kafka brokers to stop working as well.
-This is why having a stable and highly available Zookeeper cluster is very important for {ProductName}.
+Zookeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven.
 
-A Zookeeper cluster is usually deployed with three, five, or seven nodes.
+The majority of nodes must be available in order to maintain an effective quorum. If the Zookeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working. Having a stable and highly available Zookeeper cluster is crucial for {ProductName}.
 
-Three nodes::
-Zookeeper cluster consisting of three nodes requires at least two nodes to be up and running in order to maintain the quorum.
+Three-node cluster::
+A three-node Zookeeper cluster requires at least two nodes to be up and running in order to maintain the quorum.
 It can tolerate only one node being unavailable.
 
-Five nodes::
-Zookeeper cluster consisting of five nodes requires at least three nodes to be up and running in order to maintain the quorum.
+Five-node cluster::
+A five-node Zookeeper cluster requires at least three nodes to be up and running in order to maintain the quorum.
 It can tolerate two nodes being unavailable.
 
-Seven nodes::
-Zookeeper cluster consisting of seven nodes requires at least four nodes to be up and running in order to maintain the quorum.
+Seven-node cluster::
+A seven-node Zookeeper cluster requires at least four nodes to be up and running in order to maintain the quorum.
 It can tolerate three nodes being unavailable.
 
 NOTE: For development purposes, it is also possible to run Zookeeper with a single node.

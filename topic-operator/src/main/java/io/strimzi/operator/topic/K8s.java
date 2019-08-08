@@ -7,26 +7,52 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 
 import java.util.List;
 
 public interface K8s {
 
-    void createResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler);
+    /**
+     * Asynchronously create the given resource.
+     * @param topicResource The resource to be created.
+     * @return A future which completes when the topic has been created.
+     */
+    Future<Void> createResource(KafkaTopic topicResource);
 
-    void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler);
+    /**
+     * Asynchronously update the given resource.
+     * @param topicResource The topic.
+     * @return A future which completes when the topic has been updated.
+     */
+    Future<Void> updateResource(KafkaTopic topicResource);
 
-    void deleteResource(ResourceName resourceName, Handler<AsyncResult<Void>> handler);
+    /**
+     * Asynchronously delete the given resource.
+     * @param resourceName The name of the resource to be deleted.
+     * @return A future which completes when the topic has been deleted.
+     */
+    Future<Void> deleteResource(ResourceName resourceName);
 
-    void listMaps(Handler<AsyncResult<List<KafkaTopic>>> handler);
+    /**
+     * Asynchronously list the resources.
+     * @return A future which completes with the topics.
+     */
+    Future<List<KafkaTopic>> listResources();
 
     /**
      * Get the resource with the given name, invoking the given handler with the result.
      * If a resource with the given name does not exist, the handler will be called with
      * a null {@link AsyncResult#result() result()}.
+     * @param resourceName The name of the resource to get.
+     * @return A future which completes with the topic
      */
-    void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler);
+    Future<KafkaTopic> getFromName(ResourceName resourceName);
 
-    void createEvent(Event event, Handler<AsyncResult<Void>> handler);
+    /**
+     * Create an event.
+     * @param event The event.
+     * @return A future which completes when the event has been created.
+     */
+    Future<Void> createEvent(Event event);
 }

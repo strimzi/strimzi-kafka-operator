@@ -1,4 +1,5 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+{{- if .Values.createGlobalResources -}}
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: strimzi-topic-operator
@@ -27,3 +28,4 @@ rules:
   - events
   verbs:
   - create
+{{- end -}}

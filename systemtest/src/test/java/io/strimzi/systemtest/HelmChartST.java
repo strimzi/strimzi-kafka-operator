@@ -4,22 +4,18 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 
@@ -31,21 +27,15 @@ class HelmChartST extends AbstractST {
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-        KUBE_CLIENT.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(CLUSTER_NAME), 3);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME), 3);
     }
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -55,14 +45,20 @@ class HelmChartST extends AbstractST {
         deployClusterOperatorViaHelmChart();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    protected void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
+    }
+
+    @Override
+    protected void tearDownEnvironmentAfterAll() {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
     }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
         createNamespace(NAMESPACE);

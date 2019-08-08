@@ -208,7 +208,7 @@ public class TimeMeasuringSystem {
 
     public static int getCurrentDuration(String testClass, String testName, String operationID) {
         long duration = System.currentTimeMillis() - TimeMeasuringSystem.getInstance().getTestStartTime(testClass, testName, operationID);
-        return (int) (duration / 1000);
+        return (int) (duration / 1000) + 1;
     }
 
     public static long getDuration(String testClass, String testName, String operationID) {

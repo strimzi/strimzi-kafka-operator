@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-deploying-the-user-operator.adoc
+
+[id='proc-user-operator-with-resource-requests-limits-{context}']
+= Configuring the User Operator with resource requests and limits
+
+You can allocate resources, such as CPU and memory, to the User Operator and set a limit on the amount of resources it can consume.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+
+.Procedure
+
+. Update the Kafka cluster configuration in an editor, as required:
+[source,shell,subs=+quotes]
+kubectl edit kafka my-cluster
+
+
+. In the `spec.entityOperator.userOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the User Operator.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # kafka and zookeeper sections...
+  entityOperator:
+    userOperator:
+      resources:
+        request:
+          cpu: "1"
+          memory: 500Mi
+        limit:
+          cpu: "1"
+          memory: 500Mi
+----
+Save the file and exit the editor.
+The Cluster Operator will apply the changes automatically.
+
+.Additional resources
+
+* For more information about the schema of the `resources` object, see xref:type-ResourceRequirements-reference[].

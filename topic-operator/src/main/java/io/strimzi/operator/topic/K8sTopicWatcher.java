@@ -20,24 +20,23 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
 
     private TopicOperator topicOperator;
-    private final LabelPredicate resourcePredicate;
 
-    public K8sTopicWatcher(TopicOperator topicOperator, LabelPredicate resourcePredicate) {
+    public K8sTopicWatcher(TopicOperator topicOperator) {
         this.topicOperator = topicOperator;
-        this.resourcePredicate = resourcePredicate;
     }
 
     @Override
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
-        if (resourcePredicate.test(kafkaTopic)) {
+        if (kafkaTopic.getSpec() != null) {
+            LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
-            LOGGER.info(kind + " watch received event {} on resource {} with labels {}", action, name, labels);
+            LOGGER.info("{}: event {} on resource {} with labels {}", logContext, action, name, labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("Success processing KafkaTopic watch event {} on resource {} with labels {}", action, name, labels);
+                    LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
                 } else {
                     String message;
                     if (ar.cause() instanceof InvalidTopicException) {
@@ -46,20 +45,20 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
                     } else {
                         message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
-                        LOGGER.error("{}", message, ar.cause());
+                        LOGGER.error("{}: {}", logContext, message, ar.cause());
                     }
                     topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
                 }
             };
             switch (action) {
                 case ADDED:
-                    topicOperator.onResourceAdded(kafkaTopic, resultHandler);
+                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, false).setHandler(resultHandler);
                     break;
                 case MODIFIED:
-                    topicOperator.onResourceModified(kafkaTopic, resultHandler);
+                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, true).setHandler(resultHandler);
                     break;
                 case DELETED:
-                    topicOperator.onResourceDeleted(kafkaTopic, resultHandler);
+                    topicOperator.onResourceDeleted(logContext, kafkaTopic).setHandler(resultHandler);
                     break;
                 case ERROR:
                     LOGGER.error("Watch received action=ERROR for {} {}", kind, name);

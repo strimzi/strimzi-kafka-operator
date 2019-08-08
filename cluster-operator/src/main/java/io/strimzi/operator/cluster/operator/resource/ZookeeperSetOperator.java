@@ -5,9 +5,11 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -31,6 +33,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      *
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
+     * @param leaderFinder The Zookeeper leader finder.
+     * @param operationTimeoutMs The timeout.
      */
     public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs) {
         super(vertx, client, operationTimeoutMs);
@@ -38,12 +42,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
-        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
-        if (diff.changesVolumeClaimTemplates()) {
-            log.warn("Changing Zookeeper storage type or size is not possible. The changes will be ignored.");
-            diff = revertStorageChanges(current, desired);
-        }
+    protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
         return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
@@ -57,9 +56,17 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             log.debug("Changed labels => needs rolling update");
             return true;
         }
-        if (diff.changesSpecTemplateSpec()) {
+        if (diff.changesSpecTemplate()) {
             log.debug("Changed template spec => needs rolling update");
             return true;
+        }
+        if (diff.changesVolumeClaimTemplates()) {
+            log.debug("Changed volume claim template => needs rolling update");
+            return true;
+        }
+        if (diff.changesVolumeSize()) {
+            log.debug("Changed size of the volume claim template => no need for rolling update");
+            return false;
         }
         return false;
     }
@@ -71,6 +78,12 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      */
     @Override
     public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
+        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        return maybeRollingUpdate(ss, podRestart, leaderFinder.secretOperator.get(ss.getMetadata().getNamespace(),
+                ClusterOperator.secretName(cluster)));
+    }
+
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart, Secret coKeySecret) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -89,7 +102,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         if (zkRoll) {
             // Find the leader
             rollFuture = Future.future();
-            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods);
+            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
                 log.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();
@@ -115,7 +128,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                         return maybeRestartPod(ss, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }
-            }).setHandler(rollFuture.completer());
+            }).setHandler(rollFuture);
         } else {
             rollFuture = Future.succeededFuture();
         }

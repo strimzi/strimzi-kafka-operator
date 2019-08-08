@@ -11,16 +11,18 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -112,15 +114,14 @@ public class PartialRollingUpdateTest {
         CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
         KubernetesClient bootstrapClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .build();
-        ResourceUtils.mockHttpClientForWorkaroundRbac(bootstrapClient);
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier, VERSIONS, null);
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
@@ -149,26 +150,25 @@ public class PartialRollingUpdateTest {
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient);
-        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);
+        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 60_000L);
     }
 
     private void startKube() {
         CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
         this.mockClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .withInitialStatefulSets(set(zkSs, kafkaSs))
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
-        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
 
         ResourceOperatorSupplier supplier = supplier(mockClient);
 
-        this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier, VERSIONS, null);
+        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 

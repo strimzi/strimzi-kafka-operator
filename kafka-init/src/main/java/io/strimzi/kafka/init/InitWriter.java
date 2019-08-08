@@ -64,7 +64,7 @@ public class InitWriter {
         String externalAddress = findAddress(addresses);
 
         if (externalAddress == null) {
-            log.error("External address nto found");
+            log.error("External address not found");
             return false;
         } else  {
             log.info("External address found {}", externalAddress);

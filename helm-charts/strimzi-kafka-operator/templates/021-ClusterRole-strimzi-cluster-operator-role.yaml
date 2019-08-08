@@ -1,4 +1,5 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+{{- if .Values.createGlobalResources -}}
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: strimzi-cluster-operator-global
@@ -19,3 +20,12 @@ rules:
     - delete
     - patch
     - update
+# Persistent Volumes can be resized only when it is supported in the storage class.
+# Therefore we need the ability to get the storage class details and we require this access right.
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+   - get
+{{- end -}}

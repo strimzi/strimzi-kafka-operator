@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -19,6 +20,7 @@ import org.apache.kafka.common.config.ConfigResource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +34,7 @@ import static java.lang.String.format;
 /**
  * Serialization of a {@link }Topic} to and from various other representations.
  */
-public class TopicSerialization {
+class TopicSerialization {
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
@@ -127,13 +129,13 @@ public class TopicSerialization {
     /**
      * Create a resource to reflect the given Topic.
      */
-    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
+    public static KafkaTopic toTopicResource(Topic topic, Labels labels) {
         ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
         if (om != null) {
             om.setName(resourceName.toString());
             Map<String, String> lbls = new HashMap<>();
-            lbls.putAll(resourcePredicate.labels());
+            lbls.putAll(labels.labels());
             if (topic.getMetadata().getLabels() != null)
                 lbls.putAll(topic.getMetadata().getLabels());
             om.setLabels(lbls);
@@ -142,11 +144,11 @@ public class TopicSerialization {
         } else {
             om = new ObjectMetaBuilder()
                     .withName(resourceName.toString())
-                    .withLabels(resourcePredicate.labels())
+                    .withLabels(labels.labels())
                     .build();
         }
 
-        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("v1")
+        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("kafka.strimzi.io/v1beta1")
                 .withMetadata(om)
                 // TODO .withUid()
                 .withNewSpec()
@@ -197,16 +199,20 @@ public class TopicSerialization {
     /**
      * Return a singleton map from the topic {@link ConfigResource} for the given topic,
      * to the {@link Config} of the given topic.
+     * @return
      */
-    public static Map<ConfigResource, Config> toTopicConfig(Topic topic) {
-        Set<ConfigEntry> configEntries = new HashSet<>();
+    public static Map<ConfigResource, Collection<AlterConfigOp>> toTopicConfig(Topic topic) {
+        Set<AlterConfigOp> alterConfigOps = new HashSet<>();
+
         for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
-            configEntries.add(new ConfigEntry(entry.getKey(), entry.getValue()));
+            ConfigEntry configEntry = new ConfigEntry(entry.getKey(), entry.getValue());
+            AlterConfigOp alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET);
+            alterConfigOps.add(alterConfigOp);
         }
-        Config config = new Config(configEntries);
+
         return Collections.singletonMap(
                 new ConfigResource(ConfigResource.Type.TOPIC, topic.getTopicName().toString()),
-                config);
+                alterConfigOps);
     }
 
     /**

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -16,6 +17,11 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -24,10 +30,15 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -60,46 +71,55 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
 
-
     protected final Vertx vertx;
-    protected final boolean isOpenShift;
+    protected final PlatformFeaturesAvailability pfa;
     protected final ResourceType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final ServiceOperator serviceOperations;
+    protected final ConfigMapOperator configMapOperations;
+    protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
+    protected final ServiceAccountOperator serviceAccountOperations;
     protected final ImagePullPolicy imagePullPolicy;
+    protected final List<LocalObjectReference> imagePullSecrets;
+    protected final KafkaVersion.Lookup versions;
     private final String kind;
+    protected long operationTimeoutMs;
 
     /**
      * @param vertx The Vertx instance
-     * @param isOpenShift True iff running on OpenShift
+     * @param pfa Properties with features availability
      * @param assemblyType Assembly type
      * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
-     * @param secretOperations For operating secrets
-     * @param networkPolicyOperator For operating NEtworkPolicies
-     * @param podDisruptionBudgetOperator For operating PodDisruptionBudgets
-     * @param imagePullPolicy The user-configured image pull policy. Null if the user didn't configured it.
+     * @param supplier Supplies the operators for different resources
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
-    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
+    protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
-                                       SecretOperator secretOperations,
-                                       NetworkPolicyOperator networkPolicyOperator,
-                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                       ImagePullPolicy imagePullPolicy) {
+                                       ResourceOperatorSupplier supplier,
+                                       ClusterOperatorConfig config) {
         this.vertx = vertx;
-        this.isOpenShift = isOpenShift;
+        this.pfa = pfa;
         this.assemblyType = assemblyType;
         this.kind = assemblyType.name;
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
-        this.secretOperations = secretOperations;
-        this.networkPolicyOperator = networkPolicyOperator;
-        this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
-        this.imagePullPolicy = imagePullPolicy;
+        this.secretOperations = supplier.secretOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.configMapOperations = supplier.configMapOperations;
+        this.serviceOperations = supplier.serviceOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
+        this.serviceAccountOperations = supplier.serviceAccountOperations;
+        this.imagePullPolicy = config.getImagePullPolicy();
+        this.imagePullSecrets = config.getImagePullSecrets();
+        this.versions = config.versions();
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
     /**
@@ -119,13 +139,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
      * @param assemblyResource Resources with the desired cluster configuration.
+     * @return A future which is completed when the resource has been reconciled.
      */
     protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource);
-
-    /**
-     * Subclasses implement this method to delete the cluster.
-     */
-    protected abstract Future<Void> delete(Reconciliation reconciliation);
 
     /**
      * The name of the given {@code resource}, as read from its metadata.
@@ -144,11 +160,13 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Reconcile assembly resources in the given namespace having the given {@code name}.
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resources}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if ConfigMap is without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} if resources without same-named ConfigMap</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if CustomResource is without same-named resources</li>
+     * <li>An assembly will be deleted automatically by garbage collection when the custom resoruce is deleted</li>
      * </ul>
+     * @param reconciliation The reconciliation.
+     * @param handler The result handler.
      */
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
@@ -162,6 +180,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 try {
                     // get CustomResource and related resources for the specific cluster
                     T cr = resourceOperator.get(namespace, assemblyName);
+                    validate(cr);
 
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
@@ -171,7 +190,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
                                 if (createResult.failed()) {
                                     if (createResult.cause() instanceof InvalidResourceException) {
-                                        log.error(createResult.cause().getMessage());
+                                        log.error("{}: createOrUpdate failed. {}", reconciliation, createResult.cause().getMessage());
                                     } else {
                                         log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
                                     }
@@ -180,17 +199,10 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 }
                             });
                     } else {
-                        log.info("{}: Assembly {} should be deleted", reconciliation, assemblyName);
-                        delete(reconciliation).setHandler(deleteResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            if (deleteResult.succeeded())   {
-                                log.info("{}: Assembly {} deleted", reconciliation, assemblyName);
-                            } else {
-                                log.error("{}: Deletion of assembly {} failed", reconciliation, assemblyName, deleteResult.cause());
-                            }
-                            handler.handle(deleteResult);
-                        });
+                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, assemblyName);
+                        lock.release();
+                        log.debug("{}: Lock {} released", reconciliation, lockName);
+                        handler.handle(Future.succeededFuture());
                     }
                 } catch (Throwable ex) {
                     lock.release();
@@ -204,42 +216,39 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     }
 
     /**
+     * Validate the Custom Resource.
+     * This should log at the WARN level (rather than throwing) if the resource can safely be reconciled.
+     * @param resource The custom resource
+     * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     */
+    protected void validate(T resource) {
+        if (resource != null) {
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
+        }
+    }
+
+
+    /**
      * Reconcile assembly resources in the given namespace having the given selector.
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resources}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created} for all ConfigMaps without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created} for all Custom Resource without same-named resources</li>
+     * <li>An assembly will be deleted automatically by the garbage collection when the Custom Resource is deleted</li>
      * </ul>
      *
      * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
+     * @return A latch for knowing when reconciliation is complete.
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace) {
 
-        // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
+        // get Kafka CustomResources (or Connect, Connect-s2i, or Mirror Maker)
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
         Set<NamespaceAndName> desiredNames = desiredResources.stream()
                 .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
-
-        // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
-        Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
-        List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
-        // now extract the cluster name from those
-        Set<NamespaceAndName> resourceNames = resources.stream()
-                .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
-                .map(resource ->
-                        new NamespaceAndName(
-                                resource.getMetadata().getNamespace(),
-                                resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)
-                        )
-                )
-                .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
-
-        desiredNames.addAll(resourceNames);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit
@@ -257,13 +266,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     }
 
     /**
-     * Gets all the assembly resources (for all assemblies) in the given namespace.
-     * Assembly resources (e.g. the {@code KafkaAssembly} resource) may be included in the result.
-     * @param namespace The namespace
-     * @return The matching resources.
+     * Creates a watch on resources in the given namespace.
+     * @param watchNamespace The namespace to watch.
+     * @param onClose A consumer for any exceptions causing the closing of the watcher.
+     * @return A future which completes when watcher has been created.
      */
-    protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
-
     public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
         vertx.<Watch>executeBlocking(
@@ -299,7 +306,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     }
                 });
                 future.complete(watch);
-            }, result.completer()
+            }, result
         );
         return result;
     }
@@ -339,4 +346,5 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         }
         return onlyMetricsSettingChanged && diff.size() == 1;
     }
+
 }

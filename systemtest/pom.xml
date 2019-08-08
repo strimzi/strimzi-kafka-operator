@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>0.14.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>systemtest</artifactId>
@@ -32,14 +32,6 @@
             <groupId>org.valid4j</groupId>
             <artifactId>json-path-matchers</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -101,10 +93,66 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-kafka-client</artifactId>
+            <version>${vertx.kafka.client}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <version>${vertx.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-common</artifactId>
+            <version>${vertx.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
         </dependency>
     </dependencies>
 
@@ -123,10 +171,59 @@
 
     <profiles>
         <profile>
-            <id>systemtests</id>
+            <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <junitTags>acceptance,regression</junitTags>
+                <groups>acceptance &amp; !flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>regression</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression &amp; !flaky &amp; !cci_flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>all</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>acceptance | regression | flaky | travis</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>flaky</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>upgrade</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>upgrade &amp; !flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>travis</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>travis</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>bridge</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>bridge</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>scalability</id>
+            <properties>
+                <skippTests>false</skippTests>
+                <groups>scalability &amp; !flaky</groups>
             </properties>
         </profile>
     </profiles>

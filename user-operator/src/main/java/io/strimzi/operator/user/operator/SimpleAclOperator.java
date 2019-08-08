@@ -19,9 +19,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import scala.Tuple2;
 import scala.collection.Iterator;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +38,8 @@ import java.util.Set;
  */
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
+
+    private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
     private final Vertx vertx;
     private final SimpleAclAuthorizer authorizer;
@@ -92,7 +95,7 @@ public class SimpleAclOperator {
                 }
             },
             false,
-            fut.completer()
+            fut
         );
         return fut;
     }
@@ -104,7 +107,7 @@ public class SimpleAclOperator {
         try {
             HashMap<Resource, Set<Acl>> map = getResourceAclsMap(username, desired);
             for (Map.Entry<Resource, Set<Acl>> entry: map.entrySet()) {
-                scala.collection.mutable.Set add = JavaConversions.asScalaSet(entry.getValue());
+                scala.collection.mutable.Set<Acl> add = JavaConverters.asScalaSet(entry.getValue());
                 authorizer.addAcls(add.toSet(), entry.getKey());
             }
         } catch (Exception e) {
@@ -132,7 +135,7 @@ public class SimpleAclOperator {
         updates.add(internalDelete(username, toBeDeleted));
         updates.add(internalCreate(username, toBeAdded));
 
-        Future fut = Future.future();
+        Future<ReconcileResult<Set<SimpleAclRule>>> fut = Future.future();
 
         CompositeFuture.all(updates).setHandler(res -> {
             if (res.succeeded())    {
@@ -168,7 +171,7 @@ public class SimpleAclOperator {
         try {
             HashMap<Resource, Set<Acl>> map =  getResourceAclsMap(username, current);
             for (Map.Entry<Resource, Set<Acl>> entry: map.entrySet()) {
-                scala.collection.mutable.Set remove = JavaConversions.asScalaSet(entry.getValue());
+                scala.collection.mutable.Set<Acl> remove = JavaConverters.asScalaSet(entry.getValue());
                 authorizer.removeAcls(remove.toSet(), entry.getKey());
             }
         } catch (Exception e) {
@@ -179,10 +182,10 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Returns Set of ACLs applying to single user
+     * Returns Set of ACLs applying to single user.
      *
-     * @param username  Name of the user
-     * @return
+     * @param username  Name of the user.
+     * @return The Set of ACLs applying to single user.
      */
     public Set<SimpleAclRule> getAcls(String username)   {
         log.debug("Searching for ACL rules of user {}", username);
@@ -214,12 +217,13 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Returns set with all usernames which have some ACLs
+     * Returns set with all usernames which have some ACLs.
      *
-     * @return
+     * @return The set with all usernames which have some ACLs.
      */
     public Set<String> getUsersWithAcls()   {
         Set<String> result = new HashSet<String>();
+        Set<String> ignored = new HashSet<String>(IGNORED_USERS.size());
 
         log.debug("Searching for Users with any ACL rules");
 
@@ -244,11 +248,19 @@ public class SimpleAclOperator {
                     // Username in ACL might keep different format (for example based on user's subject) and need to be decoded
                     String username = KafkaUserModel.decodeUsername(principal.getName());
 
-                    if (log.isTraceEnabled())   {
-                        log.trace("Adding user {} to Set of users with ACLs", username);
-                    }
+                    if (IGNORED_USERS.contains(username))   {
+                        if (!ignored.contains(username)) {
+                            // This info message is loged only once per reocnciliation even if there are multiple rules
+                            log.info("Existing ACLs for user '{}' will be ignored.", username);
+                            ignored.add(username);
+                        }
+                    } else {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Adding user {} to Set of users with ACLs", username);
+                        }
 
-                    result.add(username);
+                        result.add(username);
+                    }
                 }
             }
         }

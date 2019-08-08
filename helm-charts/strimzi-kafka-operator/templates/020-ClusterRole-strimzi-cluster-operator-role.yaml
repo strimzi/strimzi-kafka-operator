@@ -1,4 +1,5 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+{{- if .Values.createGlobalResources -}}
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: strimzi-cluster-operator-namespaced
@@ -45,9 +46,15 @@ rules:
   - "kafka.strimzi.io"
   resources:
   - kafkas
+  - kafkas/status
   - kafkaconnects
+  - kafkaconnects/status
   - kafkaconnects2is
+  - kafkaconnects2is/status
   - kafkamirrormakers
+  - kafkamirrormakers/status
+  - kafkabridges
+  - kafkabridges/status
   verbs:
   - get
   - list
@@ -226,6 +233,7 @@ rules:
   - route.openshift.io
   resources:
   - routes
+  - routes/custom-host
   verbs:
   - get
   - list
@@ -256,3 +264,16 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+{{- end -}}

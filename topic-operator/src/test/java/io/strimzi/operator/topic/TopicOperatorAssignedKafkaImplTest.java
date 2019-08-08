@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +110,7 @@ public class TopicOperatorAssignedKafkaImplTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        TestUtils.assumeLinux();
+        Assume.assumeTrue(System.getProperty("os.name").contains("nux") || System.getProperty("os.name").contains("Mac OS X"));
     }
 
     @Test
@@ -127,7 +127,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             final String message = ar.cause().getMessage();
             context.assertTrue(message.contains("lacks an executable arg[0]")
@@ -149,7 +149,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             final String message = ar.cause().getMessage();
             context.assertTrue(message.contains("lacks an executable arg[0]")
@@ -171,7 +171,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             async.complete();
         });
@@ -196,7 +196,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.fail("Bang!"),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             // We should retry anf ultimately succeed
             context.assertTrue(ar.succeeded());
             async.complete();
@@ -217,7 +217,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyFail("Bang!"),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             // We should retry anf ultimately succeed
             context.assertTrue(ar.succeeded());
             async.complete();
@@ -242,7 +242,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             context.assertEquals("Reassigment failed: There is an existing assignment running.", ar.cause().getMessage());
             async.complete();
@@ -268,7 +268,7 @@ public class TopicOperatorAssignedKafkaImplTest {
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
-        sub.changeReplicationFactor(topic, ar -> {
+        sub.changeReplicationFactor(topic).setHandler(ar -> {
             context.assertFalse(ar.succeeded());
             context.assertTrue(ar.cause().getMessage().contains("Failed to reassign partitions"));
             async.complete();

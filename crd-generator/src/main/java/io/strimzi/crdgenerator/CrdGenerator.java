@@ -219,9 +219,44 @@ public class CrdGenerator {
     private ObjectNode buildSpec(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
-        result.put("version", crd.version());
+        if (crd.versions().length != 0) {
+            ArrayNode versions = nf.arrayNode();
+            for (Crd.Spec.Version version : crd.versions()) {
+                ObjectNode versionNode = versions.addObject();
+                versionNode.put("name", version.name());
+                versionNode.put("served", version.served());
+                versionNode.put("storage", version.storage());
+            }
+            result.set("versions", versions);
+        }
+
+        if (!crd.version().isEmpty()) {
+            result.put("version", crd.version());
+        }
         result.put("scope", crd.scope());
         result.set("names", buildNames(crd.names()));
+        if (crd.additionalPrinterColumns().length != 0) {
+            ArrayNode cols = nf.arrayNode();
+            for (Crd.Spec.AdditionalPrinterColumn col : crd.additionalPrinterColumns()) {
+                ObjectNode colNode = cols.addObject();
+                colNode.put("name", col.name());
+                colNode.put("description", col.description());
+                colNode.put("JSONPath", col.jsonPath());
+                colNode.put("type", col.type());
+                colNode.put("priority", col.priority());
+                if (!col.format().isEmpty()) {
+                    colNode.put("format", col.format());
+                }
+            }
+            result.set("additionalPrinterColumns", cols);
+        }
+        if (crd.subresources().status().length != 0) {
+            ObjectNode statusNode = nf.objectNode();
+            if (crd.subresources().status().length > 0) {
+                statusNode.set("status", nf.objectNode());
+            }
+            result.set("subresources", statusNode);
+        }
         result.set("validation", buildValidation(crdClass));
         return result;
     }
@@ -299,13 +334,54 @@ public class CrdGenerator {
                 hasAnyGetterAndAnySetter(c);
             }
         }
+        checkInherits(crdClass, "java.io.Serializable");
+        if (crdClass.getName().startsWith("io.strimzi.api.")) {
+            checkInherits(crdClass, "io.strimzi.api.kafka.model.UnknownPropertyPreserving");
+        }
+        if (!Modifier.isAbstract(crdClass.getModifiers())) {
+            checkClassOverrides(crdClass, "hashCode");
+        }
+        checkClassOverrides(crdClass, "equals", Object.class);
+    }
+
+    private void checkInherits(Class<?> crdClass, String className) {
+        if (!inherits(crdClass, className)) {
+            err(crdClass + " does not inherit " + className);
+        }
+    }
+
+    private boolean inherits(Class<?> crdClass, String className) {
+        Class<?> c = crdClass;
+        boolean found = false;
+        outer: do {
+            if (className.equals(c.getName())) {
+                found = true;
+                break outer;
+            }
+            for (Class<?> i : c.getInterfaces()) {
+                if (inherits(i, className)) {
+                    found = true;
+                    break outer;
+                }
+            }
+            c = c.getSuperclass();
+        } while (c != null);
+        return found;
     }
 
     private void checkForBuilderClass(Class<?> crdClass, String builderClass) {
         try {
             Class.forName(builderClass, false, crdClass.getClassLoader());
         } catch (ClassNotFoundException e) {
-            err(crdClass + " isn't annotated with @Buildable (" + builderClass + " does not exist)");
+            err(crdClass + " is not annotated with @Buildable (" + builderClass + " does not exist)");
+        }
+    }
+
+    private void checkClassOverrides(Class<?> crdClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            crdClass.getDeclaredMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            err(crdClass + " does not override " + methodName);
         }
     }
 
@@ -404,6 +480,7 @@ public class CrdGenerator {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     private ObjectNode addSimpleTypeConstraints(ObjectNode result, Property property) {
 
         Example example = property.getAnnotation(Example.class);
@@ -483,6 +560,7 @@ public class CrdGenerator {
         return arrayNode;
     }
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
         Map<String, String> labels = new LinkedHashMap<>();

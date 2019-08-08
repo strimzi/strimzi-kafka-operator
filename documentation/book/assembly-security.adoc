@@ -28,6 +28,10 @@ include::proc-installing-your-own-ca-certificates.adoc[leveloffset=+1]
 
 include::con-certificate-renewal.adoc[leveloffset=+1]
 
+include::proc-renewing-ca-certs-manually.adoc[leveloffset=+1]
+
+include::proc-replacing-private-keys.adoc[leveloffset=+1]
+
 //include::proc-renewing-your-own-ca-certificates.adoc[leveloffset=+1]
 
 include::con-tls-connections.adoc[leveloffset=+1]

@@ -9,17 +9,24 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Collections.singletonList;
 
 /**
@@ -46,6 +53,8 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
+            .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -63,15 +72,12 @@ public class EntityUserOperator extends AbstractModel {
     protected EntityUserOperator(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = userOperatorName(cluster);
-        this.image = EntityUserOperatorSpec.DEFAULT_IMAGE;
         this.readinessPath = "/";
-        this.readinessTimeout = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
-        // create a default configuration
+                // create a default configuration
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
@@ -147,6 +153,8 @@ public class EntityUserOperator extends AbstractModel {
 
     /**
      * Get the name of the UO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The name of the role binding.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-entity-user-operator";
@@ -183,16 +191,32 @@ public class EntityUserOperator extends AbstractModel {
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
                 result.setOwnerReference(kafkaAssembly);
-                result.setImage(userOperatorSpec.getImage());
+                String image = userOperatorSpec.getImage();
+                if (image == null) {
+                    image = System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/operator:latest");
+                }
+                result.setImage(image);
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
+                if (userOperatorSpec.getReadinessProbe() != null) {
+                    result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
+                }
+                if (userOperatorSpec.getLivenessProbe() != null) {
+                    result.setLivenessProbe(userOperatorSpec.getLivenessProbe());
+                }
+
                 if (kafkaAssembly.getSpec().getClientsCa() != null) {
-                    result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
-                    result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                    if (kafkaAssembly.getSpec().getClientsCa().getValidityDays() > 0) {
+                        result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
+                    }
+
+                    if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
+                        result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                    }
                 }
             }
         }
@@ -202,14 +226,15 @@ public class EntityUserOperator extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        return Collections.singletonList(new ContainerBuilder()
+        return singletonList(new ContainerBuilder()
                 .withName(USER_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/user_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build());
@@ -226,22 +251,44 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         return varList;
     }
 
     public List<Volume> getVolumes() {
-        return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        return singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
-                namespace, EntityOperator.entityOperatorServiceAccountName(cluster), createOwnerReference());
+    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        RoleBinding rb = new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(roleBindingName(cluster))
+                    .withNamespace(watchedNamespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(singletonList(ks))
+                .build();
+
+        return rb;
     }
 }

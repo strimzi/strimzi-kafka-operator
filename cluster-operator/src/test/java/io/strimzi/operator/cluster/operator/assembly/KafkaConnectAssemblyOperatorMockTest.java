@@ -7,23 +7,21 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
@@ -76,7 +74,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     .withReplicas(replicas)
                 .endSpec()
             .build();
-        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class)
+        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
@@ -86,29 +84,23 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
-        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect>
-                connectOperator = new CrdOperator<>(vertx, mockClient,
-                KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
-        ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
-        ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
-        DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
-        SecretOperator secretops = new SecretOperator(vertx, mockClient);
-        NetworkPolicyOperator policyops = new NetworkPolicyOperator(vertx, mockClient);
-        PodDisruptionBudgetOperator pdbops = new PodDisruptionBudgetOperator(vertx, mockClient);
-        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
-                connectOperator,
-                cmops, depops, svcops, secretops, policyops, pdbops, VERSIONS, null);
+                supplier,
+                config);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
-            context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.serviceName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get());
             createAsync.complete();
         });
         createAsync.await();

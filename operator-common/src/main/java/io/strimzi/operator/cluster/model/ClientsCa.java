@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertManager;
 
 public class ClientsCa extends Ca {
@@ -22,6 +22,8 @@ public class ClientsCa extends Ca {
      * In Strimzi 0.6.0 the Secrets and keys used a different convention.
      * Here we adapt the keys in the {@code *-clients-ca} Secret to match what
      * 0.7.0 expects.
+     * @param clientsCaKey The secret to adapt.
+     * @return The same Secret instance.
      */
     public static Secret adapt060ClientsCaSecret(Secret clientsCaKey) {
         if (clientsCaKey != null && clientsCaKey.getData() != null) {

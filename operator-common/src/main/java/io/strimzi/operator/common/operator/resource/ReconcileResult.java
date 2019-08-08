@@ -6,7 +6,9 @@ package io.strimzi.operator.common.operator.resource;
 
 public abstract class ReconcileResult<R> {
 
+    @SuppressWarnings("unchecked")
     private static final ReconcileResult DELETED = new ReconcileResult(null) {
+        @Override
         public String toString() {
             return "DELETED";
         }
@@ -17,6 +19,7 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "NOOP";
         }
@@ -28,6 +31,7 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "CREATED";
         }
@@ -39,27 +43,48 @@ public abstract class ReconcileResult<R> {
             super(resource);
         }
 
+        @Override
         public String toString() {
             return "PATCH";
         }
     }
 
-    /** The resource was patched. */
+    /**
+     * Return a reconciliation result that indicates the resource was patched.
+     * @return a reconciliation result that indicates the resource was patched.
+     * @param resource The patched resource.
+     * @param <D> The type of resource.
+     */
     public static final <D> Patched<D> patched(D resource) {
-        return new Patched(resource);
+        return new Patched<>(resource);
     }
 
-    /** The resource was created. */
+    /**
+     * Return a reconciliation result that indicates the resource was created.
+     * @return a reconciliation result that indicates the resource was created.
+     * @param resource The created resource.
+     * @param <D> The type of resource.
+     */
     public static final <D> ReconcileResult<D> created(D resource) {
         return new Created<>(resource);
     }
 
-    /** The resource was deleted. */
+    /**
+     * Return a reconciliation result that indicates the resource was deleted.
+     * @return a reconciliation result that indicates the resource was deleted.
+     * @param <P> The type of resource.
+     */
+    @SuppressWarnings("unchecked")
     public static final <P> ReconcileResult<P> deleted() {
         return DELETED;
     }
 
-    /** No action was performed. */
+    /**
+     * Return a reconciliation result that indicates the resource was not modified.
+     * @return a reconciliation result that indicates the resource was not modified.
+     * @param resource The unmodified resource.
+     * @param <P> The type of resource.
+     */
     public static final <P> ReconcileResult<P> noop(P resource) {
         return new Noop<>(resource);
     }

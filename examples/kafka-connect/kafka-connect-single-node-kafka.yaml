@@ -1,9 +1,9 @@
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: kafka.strimzi.io/v1beta1
 kind: KafkaConnect
 metadata:
   name: my-connect-cluster
 spec:
-  version: 2.1.0
+  version: 2.3.0
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9093
   tls:

@@ -1,33 +1,34 @@
 // Module included in the following assemblies:
 //
 // assembly-operators-cluster-operator.adoc
-// assembnly-cluster-operator.adoc
+// assembly-cluster-operator.adoc
 
 [id='con-what-the-cluster-operator-does-{context}']
 = Overview of the Cluster Operator component
 
-The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
-As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via `KafkaTopic` custom resources.
-The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
-On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
+{ProductName} uses the Cluster Operator to deploy and manage clusters for:
 
-.Example Architecture diagram of the Cluster Operator.
-image::cluster_operator.png[Cluster Operator]
+* Kafka (including Zookeeper)
+* Kafka Connect
+* Kafka Mirror Maker
+* Kafka Bridge
 
-When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka, Kafka Connect, or Kafka Mirror Maker cluster configuration.
-By default, it watches only in the same namespace or project where it is installed.
-The Cluster Operator can be configured to watch for more {Namespaces}.
-Cluster Operator watches the following resources:
+Custom resources are used to deploy the clusters.
 
-* A `Kafka` resource for the Kafka cluster.
-* A `KafkaConnect` resource for the Kafka Connect cluster.
-* A `KafkaConnectS2I` resource for the Kafka Connect cluster with Source2Image support.
-* A `KafkaMirrorMaker` resource for the Kafka Mirror Maker instance.
+For example, to deploy a Kafka cluster:
 
-When a new `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `Kafka Mirror Maker` resource is created in the {ProductPlatformName} cluster, the operator gets the cluster description from the desired resource and starts creating a new Kafka, Kafka Connect, or Kafka Mirror Maker cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
+* A `Kafka` resource with the cluster configuration is created within the Kubernetes cluster.
+* The Cluster Operator deploys a corresponding Kafka cluster, based on what is declared in the `Kafka` resource.
 
-Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka, Kafka Connect, or Kafka Mirror Maker cluster.
-Resources are either patched or deleted and then re-created in order to make the Kafka, Kafka Connect, or Kafka Mirror Maker cluster reflect the state of the desired cluster resource.
-This might cause a rolling update which might lead to service disruption.
+The Cluster Operator can also deploy (through Entity Operator configuration of the `Kafka` resource):
 
-Finally, when the desired resource is deleted, the operator starts to undeploy the cluster and delete all the related {ProductPlatformName} resources.
+* A Topic Operator to provide operator-style topic management through `KafkaTopic` custom resources
+* A User Operator to provide operator-style topic management through `KafkaUser` custom resources
+
+For more information on the configuration options supported by the `Kafka` resource, see xref:assembly-deployment-configuration-kafka-str[].
+
+NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provides a convenient way to include connectors.
+
+.Example architecture for the Cluster Operator
+
+image:cluster-operator.png[Cluster Operator]

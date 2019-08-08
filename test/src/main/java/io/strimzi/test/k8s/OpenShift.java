@@ -4,14 +4,17 @@
  */
 package io.strimzi.test.k8s;
 
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static io.strimzi.test.k8s.Minishift.CONFIG;
 
 public class OpenShift implements KubeCluster {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
-
     private static final String OC = "oc";
 
     @Override
@@ -22,7 +25,7 @@ public class OpenShift implements KubeCluster {
     @Override
     public boolean isClusterUp() {
         try {
-            Exec.exec(OC, "cluster", "status");
+            Exec.exec(OC, "status");
             return true;
         } catch (KubeClusterException e) {
             if (e.result.exitStatus() == 1) {
@@ -31,7 +34,7 @@ public class OpenShift implements KubeCluster {
                     // In this case it is still coming up, so wait for rather than saying it's not up
                     TestUtils.waitFor("oc cluster up", 1_000, 60_000, () -> {
                         try {
-                            Exec.exec(OC, "cluster", "status");
+                            Exec.exec(OC, "status");
                             LOGGER.trace("oc cluster is up");
                             return true;
                         } catch (KubeClusterException e2) {
@@ -58,8 +61,13 @@ public class OpenShift implements KubeCluster {
     }
 
     @Override
-    public KubeClient defaultClient() {
+    public KubeCmdClient defaultCmdClient() {
         return new Oc();
+    }
+
+    @Override
+    public KubeClient defaultClient() {
+        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     public String toString() {

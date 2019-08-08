@@ -6,8 +6,8 @@
 === Why do I need cluster admin privileges to install {ProductName}?
 
 To install {ProductName}, you must have the ability to create Custom Resource Definitions (CRDs).
-CRDs instruct {ProductPlatformName} about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
-Because CRDs are a cluster-scoped resource rather than being scoped to a particular {ProductPlatformName} namespace, they typically require cluster admin privileges to install.
+CRDs instruct Kubernetes about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
+Because CRDs are a cluster-scoped resource rather than being scoped to a particular Kubernetes namespace, they typically require cluster admin privileges to install.
 
 In addition, you must also have the ability to create ClusterRoles and ClusterRoleBindings. Like CRDs, these are cluster-scoped resources that typically require cluster admin privileges.
 
@@ -22,8 +22,8 @@ These privileges can be granted using normal RBAC resources by the cluster admin
 
 === Why does the Cluster Operator require the ability to create `ClusterRoleBindings`? Is that not a security risk?
 
-{ProductPlatformName} has built-in link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention^].
-That means that the Cluster Operator cannot grant privileges it does not have itself. 
+Kubernetes has built-in link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention^].
+That means that the Cluster Operator cannot grant privileges it does not have itself.
 Which in turn means that the Cluster Operator needs to have the privileges necessary for _all_ the components it orchestrates.
 
 In the context of this question there are two places where the Cluster Operator needs to create bindings to `ClusterRoleBindings` to `ServiceAccounts`:
@@ -35,14 +35,14 @@ However, because of the privilege escalation prevention, the Cluster Operator ca
 
 . When using rack-aware partition assignment, {ProductName} needs to be able to discover the failure domain (for example, the Availability Zone in AWS) of the node on which a broker pod is assigned.
 To do this the broker pod needs to be able to get information about the `Node` it is running on.
-A `Node` is a cluster-scoped resource, so access to it can only be granted via a `ClusterRoleBinding` (not a namespace-scoped `RoleBinding`). 
+A `Node` is a cluster-scoped resource, so access to it can only be granted via a `ClusterRoleBinding` (not a namespace-scoped `RoleBinding`).
 Therefore the Cluster Operator needs to be able to create `ClusterRoleBindings`.
 But again, because of privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` to grant privileges that the Cluster Operator does not not already have).
 
 
-=== Why can standard {ProductPlatformName} users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
+=== Why can standard Kubernetes users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
 
-Because, when they installed {ProductName}, the {ProductPlatformName} cluster administrator did not grant the necessary privileges to standard users.
+Because, when they installed {ProductName}, the Kubernetes cluster administrator did not grant the necessary privileges to standard users.
 
 See xref:normal-user-access-custom-resources-{context}[this FAQ answer] for more details.
 
@@ -69,7 +69,7 @@ the next periodic reconciliation. It will try to acquire the lock again and exec
 
 Should this message appear periodically even in situations when there should be no other operations running for a given
 cluster, it might indicate that due to some error the lock was not properly released. In such cases it is recommended to
-restart the cluster operator.
+restart the Cluster Operator.
 
 === Hostname verification fails when connecting to NodePorts using TLS
 

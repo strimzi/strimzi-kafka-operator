@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.operator.topic.zk.ZkImpl;
+import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -20,7 +20,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,14 +32,13 @@ public class ZkTopicStoreTest {
     private Vertx vertx = Vertx.vertx();
 
     private ZkTopicStore store;
-    private ZkImpl zk;
+    private Zk zk;
 
     @Before
     public void setup()
-            throws IOException, InterruptedException,
-            TimeoutException, ExecutionException {
+            throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         this.store = new ZkTopicStore(zk);
     }
 
@@ -64,7 +62,7 @@ public class ZkTopicStoreTest {
 
         // Create the topic
         Async async0 = context.async();
-        store.create(topic, ar -> {
+        store.create(topic).setHandler(ar -> {
             async0.complete();
         });
         async0.await();
@@ -72,7 +70,7 @@ public class ZkTopicStoreTest {
         // Read the topic
         Async async1 = context.async();
         Future<Topic> topicFuture = Future.future();
-        store.read(new TopicName("my_topic"), ar -> {
+        store.read(new TopicName("my_topic")).setHandler(ar -> {
             topicFuture.complete(ar.result());
             async1.complete();
 
@@ -87,7 +85,7 @@ public class ZkTopicStoreTest {
         assertEquals(topic.getConfig(), readTopic.getConfig());
 
         // try to create it again: assert an error
-        store.create(topic, ar -> {
+        store.create(topic).setHandler(ar -> {
             if (ar.succeeded()) {
                 context.fail("Should throw");
             } else {
@@ -102,13 +100,13 @@ public class ZkTopicStoreTest {
         Topic updated = new Topic.Builder(topic)
                 .withNumPartitions(3)
                 .withConfigEntry("fruit", "apple").build();
-        store.update(updated, ar -> async2.complete());
+        store.update(updated).setHandler(ar -> async2.complete());
         async2.await();
 
         // re-read it and assert equal
         Async async3 = context.async();
         Future<Topic> fut = Future.future();
-        store.read(new TopicName("my_topic"), ar -> {
+        store.read(new TopicName("my_topic")).setHandler(ar -> {
             fut.complete(ar.result());
             async3.complete();
         });
@@ -123,12 +121,12 @@ public class ZkTopicStoreTest {
 
         // delete it
         Async async4 = context.async();
-        store.delete(updated.getTopicName(), ar -> async4.complete());
+        store.delete(updated.getTopicName()).setHandler(ar -> async4.complete());
         async4.await();
 
         // assert we can't read it again
         Async async5 = context.async();
-        store.read(new TopicName("my_topic"), ar -> {
+        store.read(new TopicName("my_topic")).setHandler(ar -> {
             async5.complete();
             if (ar.succeeded()) {
                 context.assertNull(ar.result());
@@ -140,7 +138,7 @@ public class ZkTopicStoreTest {
 
         // delete it again: assert an error
         Async async6 = context.async();
-        store.delete(updated.getTopicName(), ar -> {
+        store.delete(updated.getTopicName()).setHandler(ar -> {
             async6.complete();
             if (ar.succeeded()) {
                 context.fail("Should throw");

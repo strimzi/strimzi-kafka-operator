@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,12 +24,16 @@ public class Helm implements HelmClient {
     // TODO: configurable?
     private static final String INSTALL_TIMEOUT_SECONDS = "60";
 
-    private KubeClient<?> kubeClient;
     private boolean initialized;
+    private String namespace;
 
-    public Helm(KubeClient<?> kubeClient) {
-        this.kubeClient = kubeClient;
-        this.initialized = false;
+    public Helm(String namespace) {
+        this.namespace = namespace;
+    }
+
+    @Override
+    public HelmClient namespace(String namespace) {
+        return new Helm(namespace);
     }
 
     @Override
@@ -74,7 +79,7 @@ public class Helm implements HelmClient {
 
     private List<String> namespace(List<String> args) {
         args.add("--namespace");
-        args.add(this.kubeClient.namespace());
+        args.add(namespace);
         return args;
     }
 

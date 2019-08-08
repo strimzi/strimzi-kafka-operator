@@ -14,10 +14,12 @@ spec:
       serviceAccountName: strimzi-topic-operator
       containers:
         - name: strimzi-topic-operator
-          image: strimzi/topic-operator:latest
+          image: strimzi/operator:latest
+          args:
+          - /opt/strimzi/bin/topic_operator_run.sh
           env:
-            - name: STRIMZI_CONFIGMAP_LABELS
-              value: "strimzi.io/kind=topic"
+            - name: STRIMZI_RESOURCE_LABELS
+              value: "strimzi.io/cluster=my-cluster"
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
               value: my-cluster-kafka-bootstrap:9092
             - name: STRIMZI_ZOOKEEPER_CONNECT

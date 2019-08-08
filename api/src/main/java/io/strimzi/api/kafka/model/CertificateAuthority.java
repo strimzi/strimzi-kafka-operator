@@ -4,11 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.kafka.CertificateExpirationPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -29,7 +26,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "generateCertificateAuthority", "validityDays", "renewalDays" })
 @EqualsAndHashCode
-public class CertificateAuthority implements Serializable {
+public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -85,13 +82,13 @@ public class CertificateAuthority implements Serializable {
     public void setCertificateExpirationPolicy(CertificateExpirationPolicy certificateExpirationPolicy) {
         this.certificateExpirationPolicy = certificateExpirationPolicy;
     }
-
-    @JsonAnyGetter
+    
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

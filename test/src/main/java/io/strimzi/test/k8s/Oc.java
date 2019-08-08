@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,22 +14,26 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * A {@link KubeClient} implementation wrapping {@code oc}.
+ * A {@link KubeCmdClient} implementation wrapping {@code oc}.
  */
-public class Oc extends BaseKubeClient<Oc> {
+public class Oc extends BaseCmdKubeClient<Oc> {
 
     private static final Logger LOGGER = LogManager.getLogger(Oc.class);
 
     private static final String OC = "oc";
 
-    public Oc() {
+    Oc() {
 
+    }
+
+    private Oc(String futureNamespace) {
+        namespace = futureNamespace;
     }
 
     @Override
     protected Context adminContext() {
         String previous = Exec.exec(Oc.OC, "whoami").out().trim();
-        String admin = "system:admin";
+        String admin = System.getenv().getOrDefault("TEST_CLUSTER_ADMIN", "developer");
         LOGGER.trace("Switching from login {} to {}", previous, admin);
         Exec.exec(Oc.OC, "login", "-u", admin);
         return new Context() {
@@ -48,6 +53,16 @@ public class Oc extends BaseKubeClient<Oc> {
     @Override
     public String defaultNamespace() {
         return "myproject";
+    }
+
+    @Override
+    public Oc namespace(String namespace) {
+        return new Oc(namespace);
+    }
+
+    @Override
+    public String namespace() {
+        return namespace;
     }
 
     @Override

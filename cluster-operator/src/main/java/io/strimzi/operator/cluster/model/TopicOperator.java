@@ -8,25 +8,33 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LifecycleBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -34,6 +42,7 @@ import static java.util.Collections.singletonList;
  * Represents the topic operator deployment
  */
 @Deprecated
+@SuppressWarnings("deprecation")
 public class TopicOperator extends AbstractModel {
 
     protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
@@ -65,6 +74,7 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
     public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -77,6 +87,7 @@ public class TopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
 
     private TlsSidecar tlsSidecar;
+    private String tlsSidecarImage;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -86,23 +97,20 @@ public class TopicOperator extends AbstractModel {
 
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
-        this.image = TopicOperatorSpec.DEFAULT_IMAGE;
-        this.replicas = TopicOperatorSpec.DEFAULT_REPLICAS;
+        this.replicas = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
-        this.readinessTimeout = TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
-        this.reconciliationIntervalMs = TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
-        this.zookeeperSessionTimeoutMs = TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
+        this.reconciliationIntervalMs = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
+        this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
-        this.topicMetadataMaxAttempts = TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+        this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
@@ -176,17 +184,19 @@ public class TopicOperator extends AbstractModel {
 
     /**
      * Get the name of the TO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The role binding name.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-topic-operator";
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return KafkaCluster.serviceName(cluster) + ":" + TopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
@@ -202,9 +212,10 @@ public class TopicOperator extends AbstractModel {
      * Create a Topic Operator from given desired resource
      *
      * @param kafkaAssembly desired resource with cluster configuration containing the topic operator one
+     * @param versions The versions.
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static TopicOperator fromCrd(Kafka kafkaAssembly) {
+    public static TopicOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         TopicOperator result;
         if (kafkaAssembly.getSpec().getTopicOperator() != null) {
             String namespace = kafkaAssembly.getMetadata().getNamespace();
@@ -212,10 +223,14 @@ public class TopicOperator extends AbstractModel {
                     namespace,
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-            TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+            io.strimzi.api.kafka.model.TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 
             result.setOwnerReference(kafkaAssembly);
-            result.setImage(tcConfig.getImage());
+            String image = tcConfig.getImage();
+            if (image == null) {
+                image = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
+            }
+            result.setImage(image);
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);
             result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds() * 1_000);
@@ -225,13 +240,22 @@ public class TopicOperator extends AbstractModel {
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
             result.setTlsSidecar(tcConfig.getTlsSidecar());
+            if (tcConfig.getReadinessProbe() != null) {
+                result.setReadinessProbe(tcConfig.getReadinessProbe());
+            }
+            if (tcConfig.getLivenessProbe() != null) {
+                result.setLivenessProbe(tcConfig.getLivenessProbe());
+            }
+
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            result.tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         } else {
             result = null;
         }
         return result;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -243,40 +267,43 @@ public class TopicOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(isOpenShift)
+                getVolumes(isOpenShift),
+                imagePullSecrets
         );
     }
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>();
+
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/topic_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
 
-        String tlsSidecarImage = TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-            tlsSidecarImage = tlsSidecar.getImage();
-        }
-
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
+                        .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh",
+                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 
@@ -291,7 +318,7 @@ public class TopicOperator extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
@@ -304,6 +331,8 @@ public class TopicOperator extends AbstractModel {
 
     /**
      * Get the name of the topic operator service account given the name of the {@code cluster}.
+     * @param cluster The cluster name
+     * @return The service account name.
      */
     public static String topicOperatorServiceAccountName(String cluster) {
         return topicOperatorName(cluster);
@@ -314,18 +343,29 @@ public class TopicOperator extends AbstractModel {
         return topicOperatorServiceAccountName(cluster);
     }
 
-    public ServiceAccount generateServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(getServiceAccountName())
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                .endMetadata()
-            .build();
-    }
+    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(getServiceAccountName())
+                .withNamespace(namespace)
+                .build();
 
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName(), createOwnerReference());
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(TO_CLUSTER_ROLE_NAME)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        return new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(roleBindingName(cluster))
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                    .withNamespace(watchedNamespace)
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(ks)
+            .build();
     }
 
     @Override
@@ -357,6 +397,7 @@ public class TopicOperator extends AbstractModel {
     /**
      * Generate the Secret containing CA self-signed certificates for internal communication
      * It also contains the private key-certificate (signed by internal CA) for communicating with Zookeeper and Kafka
+     * @param clusterCa The cluster CA
      * @return The generated Secret
      */
     public Secret generateSecret(ClusterCa clusterCa) {

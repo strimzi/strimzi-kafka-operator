@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsOptions;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.AlterReplicaLogDirsOptions;
@@ -42,6 +43,8 @@ import org.apache.kafka.clients.admin.DescribeReplicaLogDirsOptions;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsOptions;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ElectPreferredLeadersOptions;
+import org.apache.kafka.clients.admin.ElectPreferredLeadersResult;
 import org.apache.kafka.clients.admin.ExpireDelegationTokenOptions;
 import org.apache.kafka.clients.admin.ExpireDelegationTokenResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsOptions;
@@ -63,13 +66,17 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 
 import java.lang.reflect.Constructor;
+import java.time.Duration;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
@@ -78,7 +85,12 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public void close(long l, TimeUnit timeUnit) {
+        return;
+    }
 
+    @Override
+    public void close(Duration duration) {
+        return;
     }
 
     @Override
@@ -104,7 +116,7 @@ class MockAdminClient extends AdminClient {
     @Override
     public DescribeClusterResult describeCluster(DescribeClusterOptions describeClusterOptions) {
         try {
-            Constructor<DescribeClusterResult> ctor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
+            Constructor<DescribeClusterResult> ctor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
             ctor.setAccessible(true);
             final List<Node> nodes = asList(new Node(0, "localhost", -2),
                     new Node(1, "localhost", -2),
@@ -112,7 +124,8 @@ class MockAdminClient extends AdminClient {
             KafkaFuture<Collection<Node>> nodesFuture = KafkaFutureImpl.completedFuture(nodes);
             KafkaFuture<Node> controllerFuture = KafkaFutureImpl.completedFuture(nodes.get(0));
             KafkaFuture<String> clusterIdFuture = KafkaFutureImpl.completedFuture("mock-cluster");
-            return ctor.newInstance(nodesFuture, controllerFuture, clusterIdFuture);
+            KafkaFuture<Set<AclOperation>> authorizedOperationsFuture = KafkaFutureImpl.completedFuture(new HashSet<AclOperation>());
+            return ctor.newInstance(nodesFuture, controllerFuture, clusterIdFuture, authorizedOperationsFuture);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -140,6 +153,11 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public AlterConfigsResult alterConfigs(Map<ConfigResource, Config> map, AlterConfigsOptions alterConfigsOptions) {
+        return null;
+    }
+
+    @Override
+    public AlterConfigsResult incrementalAlterConfigs(Map<ConfigResource, Collection<AlterConfigOp>> map, AlterConfigsOptions alterConfigsOptions) {
         return null;
     }
 
@@ -205,6 +223,11 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public DeleteConsumerGroupsResult deleteConsumerGroups(Collection<String> collection, DeleteConsumerGroupsOptions deleteConsumerGroupsOptions) {
+        return null;
+    }
+
+    @Override
+    public ElectPreferredLeadersResult electPreferredLeaders(Collection<TopicPartition> collection, ElectPreferredLeadersOptions electPreferredLeadersOptions) {
         return null;
     }
 

@@ -4,14 +4,14 @@
  */
 package io.strimzi.api.kafka.model.connect;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,7 +26,8 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public class ExternalConfigurationEnvVarSource implements Serializable {
+@EqualsAndHashCode
+public class ExternalConfigurationEnvVarSource implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,7 +38,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable {
     // TODO: We should make it possible to generate a CRD configuring that exactly one of secretKeyRef and configMapKeyRef has to be defined.
 
     @Description("Reference to a key in a Secret.")
-    @KubeLink(group = "core", version = "v1", kind = "SecretKeySelector")
+    @KubeLink(group = "core", version = "v1", kind = "secretkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public SecretKeySelector getSecretKeyRef() {
         return secretKeyRef;
@@ -48,7 +49,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable {
     }
 
     @Description("Refernce to a key in a ConfigMap.")
-    @KubeLink(group = "core", version = "v1", kind = "ConfigMapKeySelector")
+    @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {
         return configMapKeyRef;
@@ -58,12 +59,12 @@ public class ExternalConfigurationEnvVarSource implements Serializable {
         this.configMapKeyRef = configMapKeyRef;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

@@ -48,9 +48,6 @@ For example if you want to reassign all the partitions of `topic-a` and `topic-b
 ----
 
 . Copy the `_topics.json_` file to one of the broker pods:
-ifdef::Kubernetes[]
-+
-On {KubernetesName}:
 +
 [source,subs=+quotes]
 ----
@@ -58,20 +55,8 @@ cat _topics.json_ | kubectl exec -c kafka _<BrokerPod>_ -i -- \
   /bin/bash -c \
   'cat > /tmp/topics.json'  
 ----
-endif::Kubernetes[]
-+
-On {OpenShiftName}:
-+
-[source,subs=+quotes]
-----
-cat _topics.json_ | oc rsh -c kafka _<BrokerPod>_ /bin/bash -c \
-  'cat > /tmp/topics.json'
-----
 
 . Use the `kafka-reassign-partitions.sh`` command to generate the reassignment JSON.
-ifdef::Kubernetes[]
-+
-On {KubernetesName}:
 +
 [source,subs=+quotes]
 ----
@@ -81,27 +66,14 @@ kubectl exec _<BrokerPod>_ -c kafka -it -- \
   --broker-list _<BrokerList>_ \
   --generate
 ----
-endif::Kubernetes[]
-+
-On {OpenShiftName}:
-+
-[source,subs=+quotes]
-----
-oc rsh -c kafka _<BrokerPod>_ \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
-  --topics-to-move-json-file /tmp/topics.json \
-  --broker-list _<BrokerList>_ \
-  --generate
-----
 +
 For example, to move all the partitions of `topic-a` and `topic-b` to brokers `4` and `7`
 +
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-oc rsh -c kafka _<BrokerPod>_ \
+kubectl exec _<BrokerPod>_ -c kafka -it -- \
   bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
   --topics-to-move-json-file /tmp/topics.json \
   --broker-list 4,7 \
   --generate
 ----
-

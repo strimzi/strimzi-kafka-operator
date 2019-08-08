@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -56,6 +57,8 @@ public class ClusterCa extends Ca {
      * In Strimzi 0.6.0 the Secrets and keys used a different convention.
      * Here we adapt the keys in the {@code *-cluster-ca} Secret to match what
      * 0.7.0 expects.
+     * @param clusterCaKey The cluster CA key Secret
+     * @return The same Secret.
      */
     public static Secret adapt060ClusterCaSecret(Secret clusterCaKey) {
         if (clusterCaKey != null && clusterCaKey.getData() != null) {
@@ -73,6 +76,7 @@ public class ClusterCa extends Ca {
         return "cluster-ca";
     }
 
+    @SuppressWarnings("deprecation")
     public void initCaSecrets(List<Secret> secrets) {
         for (Secret secret: secrets) {
             String name = secret.getMetadata().getName();
@@ -129,7 +133,7 @@ public class ClusterCa extends Ca {
             podNum -> ZookeeperCluster.zookeeperPodName(cluster, podNum));
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
+    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
         Function<Integer, Subject> subjectFn = i -> {
@@ -141,20 +145,25 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.5", KafkaCluster.podDnsName(namespace, cluster, i));
             int nextDnsId = 6;
             int nextIpId = 1;
-            if (externalBootstrapAddress != null)   {
-                String sna = !ipv4Address.matcher(externalBootstrapAddress).matches() ?
-                        String.format("DNS.%d", nextDnsId++) :
-                        String.format("IP.%d", nextIpId++);
 
-                sbjAltNames.put(sna, externalBootstrapAddress);
+            if (externalBootstrapAddresses != null)   {
+                for (String dnsName : externalBootstrapAddresses) {
+                    String sna = !ipv4Address.matcher(dnsName).matches() ?
+                            String.format("DNS.%d", nextDnsId++) :
+                            String.format("IP.%d", nextIpId++);
+
+                    sbjAltNames.put(sna, dnsName);
+                }
             }
 
             if (externalAddresses.get(i) != null)   {
-                String sna = !ipv4Address.matcher(externalAddresses.get(i)).matches() ?
-                        String.format("DNS.%d", nextDnsId) :
-                        String.format("IP.%d", nextIpId);
+                for (String dnsName : externalAddresses.get(i)) {
+                    String sna = !ipv4Address.matcher(dnsName).matches() ?
+                            String.format("DNS.%d", nextDnsId++) :
+                            String.format("IP.%d", nextIpId++);
 
-                sbjAltNames.put(sna, externalAddresses.get(i));
+                    sbjAltNames.put(sna, dnsName);
+                }
             }
 
             Subject subject = new Subject();

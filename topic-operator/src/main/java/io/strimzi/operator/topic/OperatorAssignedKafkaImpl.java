@@ -7,11 +7,10 @@ package io.strimzi.operator.topic;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.operator.common.process.ProcessHelper;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -45,6 +44,7 @@ import java.util.regex.Pattern;
  * The operator is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
+@SuppressFBWarnings({"REC_CATCH_EXCEPTION", "NP_BOOLEAN_RETURN_NULL"})
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
     private static final Pattern REASSIGN_FAILED = Pattern.compile("Reassignment of partition .* failed");
@@ -60,11 +60,13 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
     }
 
     @Override
-    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> increasePartitions(Topic topic) {
+        Future<Void> handler = Future.future();
         final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
         final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
         KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName().toString());
         queueWork(new UniWork<>("increasePartitions", future, handler));
+        return handler;
     }
 
     /**
@@ -72,17 +74,20 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
      * (in a different thread) with the result.
      */
     @Override
-    public void createTopic(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createTopic(Topic topic) {
+        Future<Void> handler = Future.future();
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
 
         LOGGER.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
         queueWork(new UniWork<>("createTopic", future, handler));
+        return handler;
     }
 
     @Override
-    public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> changeReplicationFactor(Topic topic) {
+        Future<Void> handler = Future.future();
 
         LOGGER.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
 
@@ -104,7 +109,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                 fut.fail(e);
             }
         },
-            generateFuture.completer());
+            generateFuture);
 
         Future<File> executeFuture = Future.future();
 
@@ -120,7 +125,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                     fut.fail(e);
                 }
             },
-                executeFuture.completer());
+                executeFuture);
         }, executeFuture);
 
         Future<Void> periodicFuture = Future.future();
@@ -174,7 +179,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
 
         CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void) null).setHandler(handler);
-
+        return handler;
         // TODO The algorithm should really be more like this:
         // 1. Use the cmdline tool to generate an assignment
         // 2. Set the throttles
@@ -257,7 +262,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         executeArgs.add(reassignmentJsonFile.toString());
         executeArgs.add("--execute");
 
-        if (!forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
+        if (!Boolean.TRUE.equals(forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
@@ -267,11 +272,13 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
             } else {
                 return null;
             }
-        })) {
+        }))) {
             throw new TransientOperatorException("Reassignment execution neither failed nor finished");
         }
     }
 
+    // spotbugs bug
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
         JsonFactory factory = new JsonFactory();
 

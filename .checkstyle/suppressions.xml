@@ -36,6 +36,9 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaConnectCluster.java"/>
 
+    <suppress checks="NPathComplexity|CyclomaticComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaBridgeCluster.java"/>
+
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>
@@ -50,5 +53,10 @@
 
     <suppress checks="ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
+
+    <suppress checks=".*"
+              files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
+    <suppress checks=".*"
+              files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\](Doneable).*\.java"/>
 
 </suppressions>

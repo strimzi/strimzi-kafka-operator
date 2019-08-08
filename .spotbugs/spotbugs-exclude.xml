@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <Match>
+    <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    <Package name="io.strimzi.certs"/>
+  </Match>
+  <Match>
+    <Class name="~io\.strimzi\.api\.kafka\.model\..+(Builder|FluentImpl)(\$.*)?" />
+  </Match>
+  <Match>
+    <Class name="~io\.strimzi\.api\.kafka\.model\.(Doneable).+(\$.*)?" />
+  </Match>
+  <Match>
+    <Class name="~io\.fabric8\.kubernetes\.api\.model\..+(Builder|FluentImpl)(\$.*)?" />
+  </Match>
+  <Match>
+    <Class name="~io\.fabric8\.kubernetes\.api\.model\.(Doneable).+(\$.*)?" />
+  </Match>
+</FindBugsFilter>

@@ -15,15 +15,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public abstract class AbstractCrdTest<R extends CustomResource, T> {
+public abstract class AbstractCrdTest<R extends CustomResource> {
 
     private final Class<R> crdClass;
     private final String kind;
-    private final Class<T> visitorClass;
 
-    protected AbstractCrdTest(Class<R> crdClass, Class<T> visitorClass) {
+    protected AbstractCrdTest(Class<R> crdClass) {
         this.crdClass = crdClass;
-        this.visitorClass = visitorClass;
         try {
             this.kind = crdClass.newInstance().getKind();
         } catch (ReflectiveOperationException e) {
@@ -43,7 +41,7 @@ public abstract class AbstractCrdTest<R extends CustomResource, T> {
     }
 
     @Test
-    public void roundTrip() throws IOException {
+    public void roundTrip() throws IOException, ReflectiveOperationException {
         String resourceName = crdClass.getSimpleName() + ".yaml";
         R model = TestUtils.fromYaml(resourceName, crdClass);
         assertNotNull("The classpath resource " + resourceName + " does not exist", model);

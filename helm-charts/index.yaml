@@ -2,10 +2,235 @@ apiVersion: v1
 entries:
   strimzi-kafka-operator:
   - apiVersion: v1
-    appVersion: 0.10.0
-    created: 2019-02-04T16:34:47.320764+01:00
+    appVersion: 0.13.0
+    created: 2019-07-29T18:12:49.026595+02:00
     description: 'Strimzi: Kafka as a Service'
-    digest: 42dcc3156fab7a31a72dbbc53bca137741adeca34f740f8b8dde63a1b4c695a0
+    digest: 19b2654650bff0bf2b449820ce5104bf6cce3a4f72babea32e5217c6fa751601
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.13.0/strimzi-kafka-operator-helm-chart-0.13.0.tgz
+    version: 0.13.0
+  - apiVersion: v1
+    appVersion: 0.12.2
+    created: 2019-07-18T10:00:58.022983+02:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 2d9941e9f73e0e57ed521ddffbd1eb1a5edb39d891cdf7756ecd73e761075b55
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.2/strimzi-kafka-operator-helm-chart-0.12.2.tgz
+    version: 0.12.2
+  - apiVersion: v1
+    appVersion: 0.12.1
+    created: 2019-06-24T11:35:41.042200072+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: a9e82303e02d412e4e1b5e13d2b9b2d5c6290d6411f3aa78cd7647cd617dfd89
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.1/strimzi-kafka-operator-helm-chart-0.12.1.tgz
+    version: 0.12.1
+  - apiVersion: v1
+    appVersion: 0.12.0
+    created: 2019-06-14T16:28:55.590731075+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 42f957fc2d2df0943e75cf274baba3c839e65e4aafb70e0593e77d69be715098
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.12.0/strimzi-kafka-operator-helm-chart-0.12.0.tgz
+    version: 0.12.0
+  - apiVersion: v1
+    appVersion: 0.11.4
+    created: 2019-05-15T17:15:58.840777+02:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 58bb338054aff06dc0ebbdd13f544ec7802bb4dac8a23c32b7533bfa78c4209d
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.4/strimzi-kafka-operator-helm-chart-0.11.4.tgz
+    version: 0.11.4
+  - apiVersion: v1
+    appVersion: 0.11.3
+    created: 2019-04-29T21:15:08.617707+02:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 03086beb8771c0fe95fd6ef8003ea68dd79f81e66937456c3957d2dd79aa15b8
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.3/strimzi-kafka-operator-helm-chart-0.11.3.tgz
+    version: 0.11.3
+  - apiVersion: v1
+    appVersion: 0.11.2
+    created: 2019-04-27T14:46:09.201004+02:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 2c8ae7ee38f49cb57ed501a89128d503bb28e034855b2d9cc6f504bd9f65c35d
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.2/strimzi-kafka-operator-helm-chart-0.11.2.tgz
+    version: 0.11.2
+  - apiVersion: v1
+    appVersion: 0.11.1
+    created: 2019-03-05T00:09:37.350407+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: eb5d8fb9f8861a98c22ded2a7143597d49d2276ea55225af2564c365ad2f356d
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.1/strimzi-kafka-operator-helm-chart-0.11.1.tgz
+    version: 0.11.1
+  - apiVersion: v1
+    appVersion: 0.11.0
+    created: 2019-03-05T00:09:37.352282+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 8d429c9b44b2fffe14ff5f00e462934fbdaa83374d7b7221b186c4e24690ef8a
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.0/strimzi-kafka-operator-helm-chart-0.11.0.tgz
+    version: 0.11.0
+  - apiVersion: v1
+    appVersion: 0.10.0
+    created: 2019-02-21T11:16:28.462123+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: d172fa9e91e254e4ba2057ec70a8c047402513f585e07edce59a96fb6d59dd90
     home: http://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -26,56 +251,6 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-kafka-operator-helm-chart-0.10.0.tgz
     version: 0.10.0
-  - apiVersion: v1
-    appVersion: 0.10.0-rc2
-    created: 2019-02-04T16:34:47.319734+01:00
-    description: 'Strimzi: Kafka as a Service'
-    digest: 124a3e92fcc3fda0c3d5b51f85e2330b215c7c754cdf8803e6f0ac06b23ee69f
-    home: http://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
-    keywords:
-    - kafka
-    - queue
-    - stream
-    - event
-    - messaging
-    - datastore
-    - topic
-    maintainers:
-    - name: ppatierno
-    - name: scholzj
-    - name: tombentley
-    name: strimzi-kafka-operator
-    sources:
-    - https://github.com/strimzi/strimzi-kafka-operator
-    urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-kafka-operator-helm-chart-0.10.0-rc2.tgz
-    version: 0.10.0-rc2
-  - apiVersion: v1
-    appVersion: 0.10.0-rc1
-    created: 2019-01-30T19:44:51.368224+01:00
-    description: 'Strimzi: Kafka as a Service'
-    digest: 45c3d6f4d55b15ff7a40b4101dfcd1f19c65a2f0d1c8a04662f561f95b88224a
-    home: http://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
-    keywords:
-    - kafka
-    - queue
-    - stream
-    - event
-    - messaging
-    - datastore
-    - topic
-    maintainers:
-    - name: ppatierno
-    - name: scholzj
-    - name: tombentley
-    name: strimzi-kafka-operator
-    sources:
-    - https://github.com/strimzi/strimzi-kafka-operator
-    urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0-rc2/strimzi-kafka-operator-helm-chart-0.10.0-rc1.tgz
-    version: 0.10.0-rc1
   - apiVersion: v1
     appVersion: 0.9.0
     created: 2018-12-13T19:20:03.332037+01:00
@@ -226,4 +401,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: 2019-02-04T16:34:47.317794+01:00
+generated: 2019-07-29T18:12:49.021431+02:00

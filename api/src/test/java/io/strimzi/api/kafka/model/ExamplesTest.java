@@ -13,8 +13,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionSpec;
-import io.fabric8.openshift.api.model.ClusterRoleBinding;
-import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
 import org.junit.Test;
@@ -123,6 +123,7 @@ public class ExamplesTest {
             }
         } else {
             if (isGetter(method)) {
+                method.setAccessible(true);
                 Object result = method.invoke(resource);
                 if (result != null
                     && !result.getClass().isPrimitive()

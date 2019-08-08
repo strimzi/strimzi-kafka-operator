@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,6 +19,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ClusterOperatorConfigTest {
 
@@ -28,6 +29,10 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
     }
 
     @Test
@@ -47,7 +52,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());
@@ -67,7 +72,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testEnvVarsDefault() {
 
-        Map<String, String> envVars = new HashMap<>(2);
+        Map<String, String> envVars = envWithImages();
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
@@ -75,6 +80,15 @@ public class ClusterOperatorConfigTest {
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
         assertEquals(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
+    }
+
+    private Map<String, String> envWithImages() {
+        Map<String, String> envVars = new HashMap<>(2);
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        return envVars;
     }
 
     @Test
@@ -95,19 +109,19 @@ public class ClusterOperatorConfigTest {
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testNoNamespace() {
-
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.remove(ClusterOperatorConfig.STRIMZI_NAMESPACE);
 
-        ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testEmptyEnvVars() {
-
-        ClusterOperatorConfig.fromMap(Collections.emptyMap());
+    @Test
+    public void testMinimalEnvVars() {
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envWithImages());
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
     }
 
     @Test
@@ -173,5 +187,29 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Sometimes");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1,  secret2 ,  secret3    ");
+        assertEquals(3, ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size());
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret1").build()));
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret2").build()));
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret3").build()));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testImagePullSecretsInvalidCharacter() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1, secret2 , secret_3 ");
+        ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testImagePullSecretsUpperCaseCharacter() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "Secret");
+        ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
     }
 }

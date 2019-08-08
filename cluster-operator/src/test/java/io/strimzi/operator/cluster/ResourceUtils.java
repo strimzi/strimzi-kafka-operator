@@ -4,22 +4,31 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.KafkaListenerPlain;
-import io.strimzi.api.kafka.model.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -28,8 +37,8 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -37,27 +46,41 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -66,10 +89,11 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -88,6 +112,9 @@ public class ResourceUtils {
         Probe probe = new ProbeBuilder()
                 .withInitialDelaySeconds(healthDelay)
                 .withTimeoutSeconds(healthTimeout)
+                .withFailureThreshold(10)
+                .withSuccessThreshold(4)
+                .withPeriodSeconds(33)
                 .build();
 
         ObjectMetaBuilder meta = new ObjectMetaBuilder();
@@ -127,6 +154,7 @@ public class ResourceUtils {
                     .endKafka()
                     .editZookeeper()
                         .withConfig(zooConfigurationJson)
+                        .withMetrics(metricsCm)
                     .endZookeeper()
                 .endSpec().build();
     }
@@ -319,6 +347,9 @@ public class ResourceUtils {
         Probe livenessProbe = new Probe();
         livenessProbe.setInitialDelaySeconds(healthDelay);
         livenessProbe.setTimeoutSeconds(healthTimeout);
+        livenessProbe.setSuccessThreshold(4);
+        livenessProbe.setFailureThreshold(10);
+        livenessProbe.setPeriodSeconds(33);
         kafkaClusterSpec.setLivenessProbe(livenessProbe);
         kafkaClusterSpec.setReadinessProbe(livenessProbe);
         if (metricsCm != null) {
@@ -405,6 +436,22 @@ public class ResourceUtils {
     }
 
     /**
+     * Generate empty Kafka Bridge ConfigMap
+     */
+    public static KafkaBridge createEmptyKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaBridgeBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec()
+                .withNewHttp(8080).endSpec()
+                .build();
+    }
+
+    /**
      * Generate empty Kafka MirrorMaker ConfigMap
      */
     public static KafkaMirrorMaker createEmptyKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName) {
@@ -437,6 +484,25 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, Map<String, Object> metricsCm) {
+        return new KafkaBridgeBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec()
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withBootstrapServers(bootstrapservers)
+                    .withProducer(producer)
+                    .withConsumer(consumer)
+                    .withMetrics(metricsCm)
+                    .withHttp(http)
+                .endSpec()
+                .build();
+    }
 
     public static void cleanUpTemporaryTLSFiles() {
         String tmpString = "/tmp";
@@ -471,25 +537,77 @@ public class ResourceUtils {
         };
     }
 
-    /**
-     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
-     */
-    @Deprecated
-    public static void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
-        when(mockClient.isAdaptable(OkHttpClient.class)).thenReturn(true);
-        OkHttpClient mc = mock(OkHttpClient.class);
-        try {
-            doAnswer(i -> {
-                Call call = mock(Call.class);
-                Request req = i.getArgument(0);
-                Response resp = new Response.Builder().protocol(Protocol.HTTP_1_1).request(req).code(200).message("OK").build();
-                doReturn(resp).when(call).execute();
-                return call;
-            }).when(mc).newCall(any());
-            when(mockClient.adapt(OkHttpClient.class)).thenReturn(mc);
-            when(mockClient.getMasterUrl()).thenReturn(new URL("http://localhost"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
+        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
+
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
+                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
+                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
+                mock(PvcOperator.class), mock(DeploymentOperator.class),
+                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
+                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(PodOperator.class),
+                mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
+                mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
+                mock(CrdOperator.class), mock(CrdOperator.class),
+                mock(StorageClassOperator.class));
+        when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+
+        if (openShift) {
+            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
+                return new RouteBuilder()
+                        .withNewStatus()
+                        .addNewIngress()
+                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
+                        .endIngress()
+                        .endStatus()
+                        .build();
+            });
         }
+
+        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
+            return new ServiceBuilder()
+                    .withNewStatus()
+                    .withNewLoadBalancer()
+                    .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
+                    .endLoadBalancer()
+                    .endStatus()
+                    .withNewSpec()
+                    .withPorts(new ServicePortBuilder().withNodePort(31245).build())
+                    .endSpec()
+                    .build();
+        });
+
+        return supplier;
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+        ClusterOperatorConfig config = new ClusterOperatorConfig(
+                singleton("dummy"),
+                60_000,
+                operationTimeoutMs,
+                false,
+                versions,
+                null,
+                null);
+
+        return config;
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
+        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()));
     }
 }

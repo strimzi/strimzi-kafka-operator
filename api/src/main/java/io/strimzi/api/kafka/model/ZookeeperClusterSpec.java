@@ -4,13 +4,14 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -39,16 +40,12 @@ import java.util.Map;
         "jvmOptions", "resources",
          "metrics", "logging", "tlsSidecar", "template"})
 @EqualsAndHashCode
-public class ZookeeperClusterSpec implements Serializable {
+public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 3;
 
     protected SingleVolumeStorage storage;
@@ -60,7 +57,7 @@ public class ZookeeperClusterSpec implements Serializable {
     private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -133,11 +130,11 @@ public class ZookeeperClusterSpec implements Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
@@ -182,9 +179,11 @@ public class ZookeeperClusterSpec implements Serializable {
         this.metrics = metrics;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.zookeeper.template.pod.affinity")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
@@ -193,9 +192,11 @@ public class ZookeeperClusterSpec implements Serializable {
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty(movedToPath = "spec.zookeeper.template.pod.tolerations")
+    @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;
     }
@@ -215,12 +216,12 @@ public class ZookeeperClusterSpec implements Serializable {
         this.template = template;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

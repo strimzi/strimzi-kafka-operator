@@ -7,9 +7,11 @@
 
 [options="header"]
 |====
-|Field        |Description
-|spec  1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
+|status  1.2+<.<|The status of the Kafka and Zookeeper clusters, and Topic Operator.
+|xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |====
 
 [id='type-KafkaSpec-{context}']
@@ -20,12 +22,12 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field                          |Description
+|Property                       |Description
 |kafka                   1.2+<.<|Configuration of the Kafka cluster.
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |zookeeper               1.2+<.<|Configuration of the Zookeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator           1.2+<.<|Configuration of the Topic Operator.
+|topicOperator           1.2+<.<|*The property `topicOperator` has been deprecated. This feature should now be configured at path `spec.entityOerator.topicOperator`.* Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
 |entityOperator          1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
@@ -45,7 +47,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |replicas             1.2+<.<|The number of pods in the cluster.
 |integer
 |image                1.2+<.<|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
@@ -62,14 +64,14 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
-|affinity             1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity             1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|tolerations          1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations          1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |livenessProbe        1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe       1.2+<.<|Pod readiness checking.
@@ -77,7 +79,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |jvmOptions           1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources            1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -100,7 +102,7 @@ The `type` property is a discriminator that distinguishes the use of the type `E
 It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |id    1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
 |integer
 |type  1.2+<.<|Must be `ephemeral`.
@@ -117,7 +119,7 @@ The `type` property is a discriminator that distinguishes the use of the type `P
 It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |type         1.2+<.<|Must be `persistent-claim`.
 |string
 |size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
@@ -129,6 +131,23 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
 |id           1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
+|overrides    1.2+<.<|Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+|xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
+|====
+
+[id='type-PersistentClaimStorageOverride-{context}']
+### `PersistentClaimStorageOverride` schema reference
+
+Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|class   1.2+<.<|The storage class to use for dynamic volume allocation for this broker.
+|string
+|broker  1.2+<.<|Id of the kafka broker (broker identifier).
 |integer
 |====
 
@@ -142,7 +161,7 @@ The `type` property is a discriminator that distinguishes the use of the type `J
 It must have the value `jbod` for the type `JbodStorage`.
 [options="header"]
 |====
-|Field           |Description
+|Property        |Description
 |type     1.2+<.<|Must be `jbod`.
 |string
 |volumes  1.2+<.<|List of volumes as Storage objects representing the JBOD disks array.
@@ -157,13 +176,13 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 [options="header"]
 |====
-|Field            |Description
+|Property         |Description
 |plain     1.2+<.<|Configures plain listener on port 9092.
 |xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
 |tls       1.2+<.<|Configures TLS listener on port 9093.
 |xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport].
-|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport, ingress].
+|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
 |====
 
 [id='type-KafkaListenerPlain-{context}']
@@ -174,26 +193,26 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
 |====
 
 [id='type-KafkaListenerAuthenticationTls-{context}']
 ### `KafkaListenerAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
 It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `tls`.
 |string
 |====
@@ -201,14 +220,14 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [id='type-KafkaListenerAuthenticationScramSha512-{context}']
 ### `KafkaListenerAuthenticationScramSha512` schema reference
 
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`].
 It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `scram-sha-512`.
 |string
 |====
@@ -221,13 +240,13 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
 |====
 
 [id='type-KafkaListenerExternalRoute-{context}']
@@ -236,19 +255,70 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `route` for the type `KafkaListenerExternalRoute`.
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |type                1.2+<.<|Must be `route`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
+|====
+
+[id='type-RouteListenerOverride-{context}']
+### `RouteListenerOverride` schema reference
+
+Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-RouteListenerBootstrapOverride-{context}[`RouteListenerBootstrapOverride`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-RouteListenerBrokerOverride-{context}[`RouteListenerBrokerOverride`] array
+|====
+
+[id='type-RouteListenerBootstrapOverride-{context}']
+### `RouteListenerBootstrapOverride` schema reference
+
+Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+
+
+[options="header"]
+|====
+|Property        |Description
+|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|host     1.2+<.<|Host for the bootstrap route. This field will be used in the `spec.host` field of the OpenShift Route.
+|string
+|====
+
+[id='type-RouteListenerBrokerOverride-{context}']
+### `RouteListenerBrokerOverride` schema reference
+
+Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|host            1.2+<.<|Host for the broker route. This field will be used in the `spec.host` field of the OpenShift Route.
+|string
 |====
 
 [id='type-KafkaListenerExternalLoadBalancer-{context}']
@@ -257,21 +327,72 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalLoadBalancer` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalLoadBalancer` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBalancer`.
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |type                1.2+<.<|Must be `loadbalancer`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
+|====
+
+[id='type-LoadBalancerListenerOverride-{context}']
+### `LoadBalancerListenerOverride` schema reference
+
+Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-LoadBalancerListenerBootstrapOverride-{context}[`LoadBalancerListenerBootstrapOverride`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-LoadBalancerListenerBrokerOverride-{context}[`LoadBalancerListenerBrokerOverride`] array
+|====
+
+[id='type-LoadBalancerListenerBootstrapOverride-{context}']
+### `LoadBalancerListenerBootstrapOverride` schema reference
+
+Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
+|map
+|====
+
+[id='type-LoadBalancerListenerBrokerOverride-{context}']
+### `LoadBalancerListenerBrokerOverride` schema reference
+
+Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaListenerExternalNodePort-{context}']
@@ -280,62 +401,66 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalNodePort` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalNodePort` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 [options="header"]
 |====
-|Field                      |Description
+|Property                   |Description
 |type                1.2+<.<|Must be `nodeport`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
-
-
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+|xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
 |====
 
-[id='type-KafkaExternalServiceOverrides-{context}']
-### `KafkaExternalServiceOverrides` schema reference
+[id='type-NodePortListenerOverride-{context}']
+### `NodePortListenerOverride` schema reference
 
 Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
 
 
 [options="header"]
 |====
-|Field             |Description
+|Property          |Description
 |bootstrap  1.2+<.<|External bootstrap service configuration.
-|xref:type-KafkaExternalBootstrapService-{context}[`KafkaExternalBootstrapService`]
+|xref:type-NodePortListenerBootstrapOverride-{context}[`NodePortListenerBootstrapOverride`]
 |brokers    1.2+<.<|External broker services configuration.
-|xref:type-KafkaExternalBrokerService-{context}[`KafkaExternalBrokerService`] array
+|xref:type-NodePortListenerBrokerOverride-{context}[`NodePortListenerBrokerOverride`] array
 |====
 
-[id='type-KafkaExternalBootstrapService-{context}']
-### `KafkaExternalBootstrapService` schema reference
+[id='type-NodePortListenerBootstrapOverride-{context}']
+### `NodePortListenerBootstrapOverride` schema reference
 
-Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 
 
 [options="header"]
 |====
-|Field            |Description
-|nodePort  1.2+<.<|Node port for the bootstrap service.
+|Property               |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
+|map
+|nodePort        1.2+<.<|Node port for the bootstrap service.
 |integer
 |====
 
-[id='type-KafkaExternalBrokerService-{context}']
-### `KafkaExternalBrokerService` schema reference
+[id='type-NodePortListenerBrokerOverride-{context}']
+### `NodePortListenerBrokerOverride` schema reference
 
-Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 
 
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |broker          1.2+<.<|Id of the kafka broker (broker identifier).
 |integer
 |advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
@@ -344,6 +469,86 @@ Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalService
 |integer
 |nodePort        1.2+<.<|Node port for the broker service.
 |integer
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
+|map
+|====
+
+[id='type-KafkaListenerExternalIngress-{context}']
+### `KafkaListenerExternalIngress` schema reference
+
+Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalIngress` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
+[options="header"]
+|====
+|Property                   |Description
+|type                1.2+<.<|Must be `ingress`.
+|string
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|class               1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
+|string
+|configuration       1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
+|====
+
+[id='type-IngressListenerConfiguration-{context}']
+### `IngressListenerConfiguration` schema reference
+
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|bootstrap  1.2+<.<|External bootstrap ingress configuration.
+|xref:type-IngressListenerBootstrapConfiguration-{context}[`IngressListenerBootstrapConfiguration`]
+|brokers    1.2+<.<|External broker ingress configuration.
+|xref:type-IngressListenerBrokerConfiguration-{context}[`IngressListenerBrokerConfiguration`] array
+|====
+
+[id='type-IngressListenerBootstrapConfiguration-{context}']
+### `IngressListenerBootstrapConfiguration` schema reference
+
+Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resource. You can use this field to configure DNS providers such as External DNS.
+|map
+|host            1.2+<.<|Host for the bootstrap route. This field will be used in the Ingress resource.
+|string
+|====
+
+[id='type-IngressListenerBrokerConfiguration-{context}']
+### `IngressListenerBrokerConfiguration` schema reference
+
+Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|host            1.2+<.<|Host for the broker ingress. This field will be used in the Ingress resource.
+|string
+|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']
@@ -356,7 +561,7 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
 |====
-|Field              |Description
+|Property           |Description
 |type        1.2+<.<|Must be `simple`.
 |string
 |superUsers  1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
@@ -371,21 +576,27 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 [options="header"]
 |====
-|Field               |Description
-|topologyKey  1.2+<.<|A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+|Property            |Description
+|topologyKey  1.2+<.<|A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
 |string
 |====
 
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
+|failureThreshold     1.2+<.<|Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+|integer
 |initialDelaySeconds  1.2+<.<|The initial delay before first the health is first checked.
+|integer
+|periodSeconds        1.2+<.<|How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+|integer
+|successThreshold     1.2+<.<|Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
 |integer
 |timeoutSeconds       1.2+<.<|The timeout for each attempted health check.
 |integer
@@ -394,12 +605,12 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 [id='type-JvmOptions-{context}']
 ### `JvmOptions` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
 |====
-|Field                    |Description
+|Property                 |Description
 |-XX               1.2+<.<|A map of -XX options to the JVM.
 |map
 |-Xms              1.2+<.<|-Xms option to to the JVM.
@@ -410,47 +621,32 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 |boolean
 |====
 
-[id='type-Resources-{context}']
-### `Resources` schema reference
+[id='type-ResourceRequirements-{context}']
+### `ResourceRequirements` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-[options="header"]
-|====
-|Field            |Description
-|limits    1.2+<.<|Resource limits applied at runtime.
-|xref:type-CpuMemory-{context}[`CpuMemory`]
-|requests  1.2+<.<|Resource requests applied during pod scheduling.
-|xref:type-CpuMemory-{context}[`CpuMemory`]
-|====
-
-[id='type-CpuMemory-{context}']
-### `CpuMemory` schema reference
-
-Used in: xref:type-Resources-{context}[`Resources`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
 |====
-|Field          |Description
-|cpu     1.2+<.<|CPU.
-|string
-|memory  1.2+<.<|Memory.
-|string
+|Property         |Description
+|limits    1.2+<.<|
+|map
+|requests  1.2+<.<|
+|map
 |====
 
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `InlineLogging` from xref:type-ExternalLogging-{context}[`ExternalLogging`].
 It must have the value `inline` for the type `InlineLogging`.
 [options="header"]
 |====
-|Field           |Description
+|Property        |Description
 |type     1.2+<.<|Must be `inline`.
 |string
 |loggers  1.2+<.<|A Map from logger name to logger level.
@@ -460,14 +656,14 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 ### `ExternalLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `ExternalLogging` from xref:type-InlineLogging-{context}[`InlineLogging`].
 It must have the value `external` for the type `ExternalLogging`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `external`.
 |string
 |name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
@@ -482,7 +678,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |image           1.2+<.<|The docker image for the container.
 |string
 |livenessProbe   1.2+<.<|Pod liveness checking.
@@ -492,7 +688,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
 |resources       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |====
 
 [id='type-KafkaClusterTemplate-{context}']
@@ -503,7 +699,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 [options="header"]
 |====
-|Field                            |Description
+|Property                         |Description
 |statefulset               1.2+<.<|Template for Kafka `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                       1.2+<.<|Template for Kafka `Pods`.
@@ -512,9 +708,13 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |brokersService            1.2+<.<|Template for Kafka broker `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
@@ -527,12 +727,12 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Field            |Description
+|Property         |Description
 |metadata  1.2+<.<|Metadata which should be applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |====
@@ -545,7 +745,7 @@ Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTem
 
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |labels       1.2+<.<|Labels which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
 |annotations  1.2+<.<|Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
@@ -555,35 +755,45 @@ Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTem
 [id='type-PodTemplate-{context}']
 ### `PodTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Field                                 |Description
-|metadata                       1.2+<.<|Metadata which should be applied to the resource.
+|Property                              |Description
+|metadata                       1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#localobjectreference-v1-core[core/v1 localobjectreference].
+|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[core/v1 localobjectreference].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#localobjectreference-v1-core[LocalObjectReference] array
-|securityContext                1.2+<.<|Configures pod-level security attributes and common container settings.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[LocalObjectReference] array
+|securityContext                1.2+<.<|Configures pod-level security attributes and common container settings.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[PodSecurityContext]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#podsecuritycontext-v1-core[PodSecurityContext]
 |terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
 |integer
+|affinity                       1.2+<.<|The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|priorityClassName              1.2+<.<|The name of the Priority Class to which these pods will be assigned.
+|string
+|tolerations                    1.2+<.<|The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |====
 
 [id='type-PodDisruptionBudgetTemplate-{context}']
 ### `PodDisruptionBudgetTemplate` schema reference
 
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
@@ -598,7 +808,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |replicas        1.2+<.<|The number of pods in the cluster.
 |integer
 |image           1.2+<.<|The docker image for the pods.
@@ -607,14 +817,14 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |config          1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme.
 |map
-|affinity        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
@@ -622,7 +832,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -641,7 +851,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |statefulset          1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                  1.2+<.<|Template for Zookeeper `Pods`.
@@ -662,7 +872,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Field                                  |Description
+|Property                               |Description
 |watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
 |string
 |image                           1.2+<.<|The image to use for the Topic Operator.
@@ -671,12 +881,12 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
-|affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
 |tlsSidecar                      1.2+<.<|TLS sidecar configuration.
@@ -685,6 +895,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
 |xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`]
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |====
 
 [id='type-EntityOperatorJvmOptions-{context}']
@@ -695,7 +909,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 
 [options="header"]
 |====
-|Field                    |Description
+|Property                 |Description
 |gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
 |boolean
 |====
@@ -708,19 +922,19 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Field                 |Description
+|Property              |Description
 |topicOperator  1.2+<.<|Configuration of the Topic Operator.
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |userOperator   1.2+<.<|Configuration of the User Operator.
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
-|affinity       1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity       1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|tolerations    1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations    1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |tlsSidecar     1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template       1.2+<.<|Template for Entity Operator resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
@@ -735,7 +949,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Field                                  |Description
+|Property                               |Description
 |watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
 |string
 |image                           1.2+<.<|The image to use for the Topic Operator.
@@ -744,8 +958,12 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -762,7 +980,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Field                                  |Description
+|Property                               |Description
 |watchedNamespace                1.2+<.<|The namespace the User Operator should watch.
 |string
 |image                           1.2+<.<|The image to use for the User Operator.
@@ -771,8 +989,12 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
@@ -787,7 +1009,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Field              |Description
+|Property           |Description
 |deployment  1.2+<.<|Template for Entity Operator `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod         1.2+<.<|Template for Entity Operator `Pods`.
@@ -803,7 +1025,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 
 [options="header"]
 |====
-|Field                                |Description
+|Property                             |Description
 |generateCertificateAuthority  1.2+<.<|If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
 |boolean
 |validityDays                  1.2+<.<|The number of days generated certificates should be valid for. The default is 365.
@@ -814,15 +1036,85 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |string (one of [replace-key, renew-certificate])
 |====
 
+[id='type-KafkaStatus-{context}']
+### `KafkaStatus` schema reference
+
+Used in: xref:type-Kafka-{context}[`Kafka`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|listeners           1.2+<.<|Addresses of the internal and external listeners.
+|xref:type-ListenerStatus-{context}[`ListenerStatus`] array
+|====
+
+[id='type-Condition-{context}']
+### `Condition` schema reference
+
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|type                1.2+<.<|The unique identifier of a condition, used to distinguish between other conditions in the resource.
+|string
+|status              1.2+<.<|The status of the condition, either True, False or Unknown.
+|string
+|lastTransitionTime  1.2+<.<|Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+|string
+|reason              1.2+<.<|The reason for the condition's last transition (a single word in CamelCase).
+|string
+|message             1.2+<.<|Human-readable message indicating details about the condition's last transition.
+|string
+|====
+
+[id='type-ListenerStatus-{context}']
+### `ListenerStatus` schema reference
+
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|type       1.2+<.<|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
+|string
+|addresses  1.2+<.<|A list of the addresses for this listener.
+|xref:type-ListenerAddress-{context}[`ListenerAddress`] array
+|====
+
+[id='type-ListenerAddress-{context}']
+### `ListenerAddress` schema reference
+
+Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
+
+
+[options="header"]
+|====
+|Property     |Description
+|host  1.2+<.<|The DNS name or IP address of Kafka bootstrap service.
+|string
+|port  1.2+<.<|The port of the Kafka bootstrap service.
+|integer
+|====
+
 [id='type-KafkaConnect-{context}']
 ### `KafkaConnect` schema reference
 
 
 [options="header"]
 |====
-|Field        |Description
-|spec  1.2+<.<|The specification of the Kafka Connect deployment.
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Connect cluster.
 |xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+|status  1.2+<.<|The status of the Kafka Connect cluster.
+|xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
 |====
 
 [id='type-KafkaConnectSpec-{context}']
@@ -833,7 +1125,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
 [options="header"]
 |====
-|Field                         |Description
+|Property                      |Description
 |replicas               1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
 |image                  1.2+<.<|The docker image for the pods.
@@ -844,22 +1136,22 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions             1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|affinity               1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|authentication         1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]
+|authentication         1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
 |config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
@@ -867,7 +1159,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |resources              1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                    1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
@@ -882,7 +1174,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |deployment           1.2+<.<|Template for Kafka Connect `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                  1.2+<.<|Template for Kafka Connect `Pods`.
@@ -899,11 +1191,11 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationTls` from xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationTls` from xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`].
 It must have the value `tls` for the type `KafkaConnectAuthenticationTls`.
 [options="header"]
 |====
-|Field                     |Description
+|Property                  |Description
 |certificateAndKey  1.2+<.<|Certificate and private key pair for TLS authentication.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |type               1.2+<.<|Must be `tls`.
@@ -913,12 +1205,12 @@ It must have the value `tls` for the type `KafkaConnectAuthenticationTls`.
 [id='type-CertAndKeySecretSource-{context}']
 ### `CertAndKeySecretSource` schema reference
 
-Used in: xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`]
+Used in: xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`]
 
 
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |certificate  1.2+<.<|The name of the file certificate in the Secret.
 |string
 |key          1.2+<.<|The name of the private key in the Secret.
@@ -933,11 +1225,11 @@ Used in: xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenti
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationScramSha512` from xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationScramSha512` from xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`].
 It must have the value `scram-sha-512` for the type `KafkaConnectAuthenticationScramSha512`.
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |passwordSecret  1.2+<.<|Password used for the authentication.
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |type            1.2+<.<|Must be `scram-sha-512`.
@@ -949,15 +1241,34 @@ It must have the value `scram-sha-512` for the type `KafkaConnectAuthenticationS
 [id='type-PasswordSecretSource-{context}']
 ### `PasswordSecretSource` schema reference
 
-Used in: xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
+Used in: xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
 
 
 [options="header"]
 |====
-|Field              |Description
+|Property           |Description
 |password    1.2+<.<|The name of the key in the Secret under which the password is stored.
 |string
 |secretName  1.2+<.<|The name of the Secret containing the password.
+|string
+|====
+
+[id='type-KafkaConnectAuthenticationPlain-{context}']
+### `KafkaConnectAuthenticationPlain` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationPlain` from xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`].
+It must have the value `plain` for the type `KafkaConnectAuthenticationPlain`.
+[options="header"]
+|====
+|Property               |Description
+|passwordSecret  1.2+<.<|Password used for the authentication.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|type            1.2+<.<|Must be `plain`.
+|string
+|username        1.2+<.<|Username used for the authentication.
 |string
 |====
 
@@ -969,7 +1280,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 [options="header"]
 |====
-|Field           |Description
+|Property        |Description
 |env      1.2+<.<|Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as environment variables.
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
 |volumes  1.2+<.<|Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
@@ -984,7 +1295,7 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
 [options="header"]
 |====
-|Field             |Description
+|Property          |Description
 |name       1.2+<.<|Name of the environment variable which will be passed to the Kafka Connect pods. The name of the environment variable cannot start with `KAFKA_` or `STRIMZI_`.
 |string
 |valueFrom  1.2+<.<|Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
@@ -999,15 +1310,15 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 
 [options="header"]
 |====
-|Field                   |Description
-|configMapKeyRef  1.2+<.<|Refernce to a key in a ConfigMap.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#ConfigMapKeySelector-v1-core[core/v1 ConfigMapKeySelector].
+|Property                |Description
+|configMapKeyRef  1.2+<.<|Refernce to a key in a ConfigMap.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#ConfigMapKeySelector-v1-core[ConfigMapKeySelector]
-|secretKeyRef     1.2+<.<|Reference to a key in a Secret.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#SecretKeySelector-v1-core[core/v1 SecretKeySelector].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|secretKeyRef     1.2+<.<|Reference to a key in a Secret.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core[core/v1 secretkeyselector].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#SecretKeySelector-v1-core[SecretKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core[SecretKeySelector]
 |====
 
 [id='type-ExternalConfigurationVolumeSource-{context}']
@@ -1018,17 +1329,17 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
 [options="header"]
 |====
-|Field             |Description
-|configMap  1.2+<.<|Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#ConfigMapVolumeSource-v1-core[core/v1 ConfigMapVolumeSource].
+|Property          |Description
+|configMap  1.2+<.<|Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapvolumesource-v1-core[core/v1 configmapvolumesource].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#ConfigMapVolumeSource-v1-core[ConfigMapVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |name       1.2+<.<|Name of the volume which will be added to the Kafka Connect pods.
 |string
-|secret     1.2+<.<|Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#SecretVolumeSource-v1-core[core/v1 SecretVolumeSource].
+|secret     1.2+<.<|Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretvolumesource-v1-core[core/v1 secretvolumesource].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#SecretVolumeSource-v1-core[SecretVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretvolumesource-v1-core[SecretVolumeSource]
 |====
 
 [id='type-KafkaConnectTls-{context}']
@@ -1039,7 +1350,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |====
@@ -1047,15 +1358,32 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 [id='type-CertSecretSource-{context}']
 ### `CertSecretSource` schema reference
 
-Used in: xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`], xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
+Used in: xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`], xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`], xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 
 
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |certificate  1.2+<.<|The name of the file certificate in the Secret.
 |string
 |secretName   1.2+<.<|The name of the Secret containing the certificate.
+|string
+|====
+
+[id='type-KafkaConnectStatus-{context}']
+### `KafkaConnectStatus` schema reference
+
+Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
 |====
 
@@ -1065,9 +1393,11 @@ Used in: xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`], xref:type-Kafka
 
 [options="header"]
 |====
-|Field        |Description
-|spec  1.2+<.<|The specification of the Kafka Connect deployment.
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Connect Source-to-Image (S2I) cluster.
 |xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`]
+|status  1.2+<.<|The status of the Kafka Connect Source-to-Image (S2I) cluster.
+|xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`]
 |====
 
 [id='type-KafkaConnectS2ISpec-{context}']
@@ -1078,7 +1408,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 [options="header"]
 |====
-|Field                            |Description
+|Property                         |Description
 |replicas                  1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
 |image                     1.2+<.<|The docker image for the pods.
@@ -1089,18 +1419,18 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions                1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|affinity                  1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|affinity                  1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]
+|authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
@@ -1110,14 +1440,33 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
 |resources                 1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
-|tolerations               1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|tolerations               1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|====
+
+[id='type-KafkaConnectS2Istatus-{context}']
+### `KafkaConnectS2Istatus` schema reference
+
+Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
+|string
+|buildConfigName     1.2+<.<|The name of the build configuration.
 |string
 |====
 
@@ -1127,7 +1476,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |spec  1.2+<.<|The specification of the topic.
 |xref:type-KafkaTopicSpec-{context}[`KafkaTopicSpec`]
 |====
@@ -1140,7 +1489,7 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 
 [options="header"]
 |====
-|Field              |Description
+|Property           |Description
 |partitions  1.2+<.<|The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning.
 |integer
 |replicas    1.2+<.<|The number of replicas the topic should have.
@@ -1157,9 +1506,11 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 
 [options="header"]
 |====
-|Field        |Description
-|spec  1.2+<.<|The specification of the user.
+|Property       |Description
+|spec    1.2+<.<|The specification of the user.
 |xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+|status  1.2+<.<|The status of the Kafka User.
+|xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 |====
 
 [id='type-KafkaUserSpec-{context}']
@@ -1170,7 +1521,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
@@ -1187,7 +1538,7 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `tls`.
 |string
 |====
@@ -1202,7 +1553,7 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `scram-sha-512`.
 |string
 |====
@@ -1217,7 +1568,7 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `simple`.
 |string
 |acls  1.2+<.<|List of ACL rules which should be applied to this user.
@@ -1232,7 +1583,7 @@ Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizatio
 
 [options="header"]
 |====
-|Field             |Description
+|Property          |Description
 |host       1.2+<.<|The host from which the action described in the ACL rule is allowed or denied.
 |string
 |operation  1.2+<.<|Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
@@ -1253,7 +1604,7 @@ The `type` property is a discriminator that distinguishes the use of the type `A
 It must have the value `topic` for the type `AclRuleTopicResource`.
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |type         1.2+<.<|Must be `topic`.
 |string
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
@@ -1272,7 +1623,7 @@ The `type` property is a discriminator that distinguishes the use of the type `A
 It must have the value `group` for the type `AclRuleGroupResource`.
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |type         1.2+<.<|Must be `group`.
 |string
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
@@ -1291,7 +1642,7 @@ The `type` property is a discriminator that distinguishes the use of the type `A
 It must have the value `cluster` for the type `AclRuleClusterResource`.
 [options="header"]
 |====
-|Field        |Description
+|Property     |Description
 |type  1.2+<.<|Must be `cluster`.
 |string
 |====
@@ -1306,7 +1657,7 @@ The `type` property is a discriminator that distinguishes the use of the type `A
 It must have the value `transactionalId` for the type `AclRuleTransactionalIdResource`.
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |type         1.2+<.<|Must be `transactionalId`.
 |string
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
@@ -1315,15 +1666,36 @@ It must have the value `transactionalId` for the type `AclRuleTransactionalIdRes
 |string (one of [prefix, literal])
 |====
 
+[id='type-KafkaUserStatus-{context}']
+### `KafkaUserStatus` schema reference
+
+Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|username            1.2+<.<|Username.
+|string
+|secret              1.2+<.<|The name of `Secret` where the credentials are stored.
+|string
+|====
+
 [id='type-KafkaMirrorMaker-{context}']
 ### `KafkaMirrorMaker` schema reference
 
 
 [options="header"]
 |====
-|Field        |Description
-|spec  1.2+<.<|The specification of the mirror maker.
+|Property       |Description
+|spec    1.2+<.<|The specification of Kafka Mirror Maker.
 |xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+|status  1.2+<.<|The status of Kafka Mirror Maker.
+|xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`]
 |====
 
 [id='type-KafkaMirrorMakerSpec-{context}']
@@ -1334,7 +1706,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 [options="header"]
 |====
-|Field               |Description
+|Property            |Description
 |replicas     1.2+<.<|The number of pods in the `Deployment`.
 |integer
 |image        1.2+<.<|The docker image for the pods.
@@ -1346,15 +1718,15 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |producer     1.2+<.<|Configuration of target cluster.
 |xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 |resources    1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
-|affinity     1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|affinity     1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|tolerations  1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations  1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
-|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |jvmOptions   1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging      1.2+<.<|Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -1375,18 +1747,20 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Field                    |Description
-|numStreams        1.2+<.<|Specifies the number of consumer stream threads to create.
+|Property                     |Description
+|numStreams            1.2+<.<|Specifies the number of consumer stream threads to create.
 |integer
-|groupId           1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
+|offsetCommitInterval  1.2+<.<|Specifies the offset auto-commit interval in ms. Default value is 60000.
+|integer
+|groupId               1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
 |string
-|bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+|bootstrapServers      1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
-|config            1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
+|authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
+|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
 |map
-|tls               1.2+<.<|TLS configuration for connecting to the cluster.
+|tls                   1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 
@@ -1396,11 +1770,11 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationTls` from xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationTls` from xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`].
 It must have the value `tls` for the type `KafkaMirrorMakerAuthenticationTls`.
 [options="header"]
 |====
-|Field                     |Description
+|Property                  |Description
 |certificateAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |type               1.2+<.<|Must be `tls`.
@@ -1413,14 +1787,33 @@ It must have the value `tls` for the type `KafkaMirrorMakerAuthenticationTls`.
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationScramSha512` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationScramSha512` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`].
 It must have the value `scram-sha-512` for the type `KafkaMirrorMakerAuthenticationScramSha512`.
 [options="header"]
 |====
-|Field                  |Description
+|Property               |Description
 |passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |type            1.2+<.<|Must be `scram-sha-512`.
+|string
+|username        1.2+<.<|Username used for the authentication.
+|string
+|====
+
+[id='type-KafkaMirrorMakerAuthenticationPlain-{context}']
+### `KafkaMirrorMakerAuthenticationPlain` schema reference
+
+Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationPlain` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`].
+It must have the value `plain` for the type `KafkaMirrorMakerAuthenticationPlain`.
+[options="header"]
+|====
+|Property               |Description
+|passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|type            1.2+<.<|Must be `plain`.
 |string
 |username        1.2+<.<|Username used for the authentication.
 |string
@@ -1434,7 +1827,7 @@ Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsu
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |====
@@ -1447,14 +1840,16 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Field                    |Description
-|bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+|Property                   |Description
+|bootstrapServers    1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
-|config            1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+|abortOnSendFailure  1.2+<.<|Flag to set the Mirror Maker to exit on a failed send. Default value is `true`.
+|boolean
+|authentication      1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
+|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
 |map
-|tls               1.2+<.<|TLS configuration for connecting to the cluster.
+|tls                 1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 |====
 
@@ -1466,12 +1861,224 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Field                       |Description
+|Property                    |Description
 |deployment           1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                  1.2+<.<|Template for Kafka Mirror Maker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|====
+
+[id='type-KafkaMirrorMakerStatus-{context}']
+### `KafkaMirrorMakerStatus` schema reference
+
+Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|====
+
+[id='type-KafkaBridge-{context}']
+### `KafkaBridge` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Bridge.
+|xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+|status  1.2+<.<|The status of the Kafka Bridge.
+|xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`]
+|====
+
+[id='type-KafkaBridgeSpec-{context}']
+### `KafkaBridgeSpec` schema reference
+
+Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|replicas          1.2+<.<|The number of pods in the `Deployment`.
+|integer
+|image             1.2+<.<|The docker image for the pods.
+|string
+|bootstrapServers  1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
+|string
+|tls               1.2+<.<|TLS configuration for connecting Kafka Bridge to the cluster.
+|xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`]
+|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`]
+|http              1.2+<.<|The HTTP related configuration.
+|xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+|consumer          1.2+<.<|Kafka consumer related configuration.
+|xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
+|producer          1.2+<.<|Kafka producer related configuration.
+|xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
+|resources         1.2+<.<|Resource constraints (limits and requests).
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
+|xref:type-JvmOptions-{context}[`JvmOptions`]
+|logging           1.2+<.<|Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
+|map
+|livenessProbe     1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe    1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|template          1.2+<.<|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
+|====
+
+[id='type-KafkaBridgeTls-{context}']
+### `KafkaBridgeTls` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|====
+
+[id='type-KafkaBridgeAuthenticationTls-{context}']
+### `KafkaBridgeAuthenticationTls` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationTls` from xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`].
+It must have the value `tls` for the type `KafkaBridgeAuthenticationTls`.
+[options="header"]
+|====
+|Property                  |Description
+|certificateAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
+|type               1.2+<.<|Must be `tls`.
+|string
+|====
+
+[id='type-KafkaBridgeAuthenticationScramSha512-{context}']
+### `KafkaBridgeAuthenticationScramSha512` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationScramSha512` from xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`].
+It must have the value `scram-sha-512` for the type `KafkaBridgeAuthenticationScramSha512`.
+[options="header"]
+|====
+|Property               |Description
+|passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|type            1.2+<.<|Must be `scram-sha-512`.
+|string
+|username        1.2+<.<|Username used for the authentication.
+|string
+|====
+
+[id='type-KafkaBridgeAuthenticationPlain-{context}']
+### `KafkaBridgeAuthenticationPlain` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationPlain` from xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`].
+It must have the value `plain` for the type `KafkaBridgeAuthenticationPlain`.
+[options="header"]
+|====
+|Property               |Description
+|passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|type            1.2+<.<|Must be `plain`.
+|string
+|username        1.2+<.<|Username used for the authentication.
+|string
+|====
+
+[id='type-KafkaBridgeHttpConfig-{context}']
+### `KafkaBridgeHttpConfig` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property     |Description
+|port  1.2+<.<|The port which is the server listening on.
+|integer
+|====
+
+[id='type-KafkaBridgeConsumerSpec-{context}']
+### `KafkaBridgeConsumerSpec` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|config  1.2+<.<|The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
+|map
+|====
+
+[id='type-KafkaBridgeProducerSpec-{context}']
+### `KafkaBridgeProducerSpec` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|config  1.2+<.<|The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+|map
+|====
+
+[id='type-KafkaBridgeTemplate-{context}']
+### `KafkaBridgeTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|deployment           1.2+<.<|Template for Kafka Bridge `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod                  1.2+<.<|Template for Kafka Bridge `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|apiService           1.2+<.<|Template for Kafka Bridge API `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget  1.2+<.<|Template for Kafka Bridge `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|====
+
+[id='type-KafkaBridgeStatus-{context}']
+### `KafkaBridgeStatus` schema reference
+
+Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
+|string
 |====
 

@@ -26,7 +26,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
                 ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
 
         DEFAULTS = new HashMap<>();
-        DEFAULTS.put("timeTick", "2000");
+        DEFAULTS.put("tickTime", "2000");
         DEFAULTS.put("initLimit", "5");
         DEFAULTS.put("syncLimit", "2");
         DEFAULTS.put("autopurge.purgeInterval", "1");

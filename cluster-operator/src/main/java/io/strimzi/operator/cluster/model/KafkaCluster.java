@@ -13,70 +13,93 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
+import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPathBuilder;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
+import io.fabric8.kubernetes.api.model.extensions.IngressRule;
+import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.extensions.IngressTLS;
+import io.fabric8.kubernetes.api.model.extensions.IngressTLSBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
-import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
-import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
-import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
+import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
+import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.RouteListenerOverride;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
-
     protected static final String INIT_NAME = "kafka-init";
     protected static final String INIT_VOLUME_NAME = "rack-volume";
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
@@ -92,7 +115,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
     /** The authentication to configure for the CLIENTTLS listener (TLS transport) . */
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
-    protected static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
+    public static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_TLS = "KAFKA_EXTERNAL_TLS";
@@ -115,6 +138,9 @@ public class KafkaCluster extends AbstractModel {
 
     protected static final int EXTERNAL_PORT = 9094;
     protected static final String EXTERNAL_PORT_NAME = "external";
+
+    protected static final int ROUTE_PORT = 443;
+    protected static final String ROUTE_PORT_NAME = "route";
 
     protected static final String KAFKA_NAME = "kafka";
     protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
@@ -146,7 +172,7 @@ public class KafkaCluster extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
-    private SortedMap<Integer, String> externalAddresses = new TreeMap<>();
+    private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
 
     // Templates
@@ -158,11 +184,15 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapRouteAnnotations;
     protected Map<String, String> templatePerPodRouteLabels;
     protected Map<String, String> templatePerPodRouteAnnotations;
+    protected Map<String, String> templateExternalBootstrapIngressLabels;
+    protected Map<String, String> templateExternalBootstrapIngressAnnotations;
+    protected Map<String, String> templatePerPodIngressLabels;
+    protected Map<String, String> templatePerPodIngressAnnotations;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
+            .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     /**
@@ -192,10 +222,8 @@ public class KafkaCluster extends AbstractModel {
         this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
@@ -205,7 +233,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
-        this.initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
+        this.initImage = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -229,96 +257,148 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates the name of the service used as bootstrap service for external clients
+     * Generates the name of the service used as bootstrap service for external clients.
      *
-     * @param cluster Name of the cluster
-     * @return
+     * @param cluster The name of the cluster.
+     * @return The name of the external bootstrap service.
      */
     public static String externalBootstrapServiceName(String cluster) {
         return KafkaResources.externalBootstrapServiceName(cluster);
     }
 
     /**
-     * Generates the name of the service for exposing individual pods
+     * Generates the name of the service for exposing individual pods.
      *
-     * @param cluster Name of the cluster
-     * @param pod   Pod sequence number assign by StatefulSet
-     * @return
+     * @param cluster The name of the cluster.
+     * @param pod   Pod sequence number assign by StatefulSet.
+     * @return The name of the external service.
      */
     public static String externalServiceName(String cluster, int pod) {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the headless service.
+     */
     public static String headlessServiceName(String cluster) {
         return KafkaResources.brokersServiceName(cluster);
     }
 
+    /**
+     * Gets the name of the given Kafka pod.
+     * @param cluster The name of the cluster.
+     * @param pod The id of the pod
+     * @return The name of the pod.
+     */
     public static String kafkaPodName(String cluster, int pod) {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the clients CA key Secret.
+     */
     public static String clientsCaKeySecretName(String cluster) {
         return KafkaResources.clientsCaKeySecretName(cluster);
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the brokers Secret.
+     */
     public static String brokersSecretName(String cluster) {
         return cluster + KafkaCluster.SECRET_BROKERS_SUFFIX;
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the clients CA certificate Secret.
+     */
     public static String clientsCaCertSecretName(String cluster) {
         return KafkaResources.clientsCaCertificateSecretName(cluster);
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        return fromCrd(kafkaAssembly, versions, null);
+    }
+
+    @SuppressWarnings("checkstyle:MethodLength")
+    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+
         result.setOwnerReference(kafkaAssembly);
+
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+
         result.setReplicas(kafkaClusterSpec.getReplicas());
-        String image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
-        if (image == null) {
-            throw new InvalidResourceException("Version is not supported");
-        }
-        result.setImage(image);
+
+        result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
+
         if (kafkaClusterSpec.getReadinessProbe() != null) {
-            result.setReadinessInitialDelay(kafkaClusterSpec.getReadinessProbe().getInitialDelaySeconds());
-            result.setReadinessTimeout(kafkaClusterSpec.getReadinessProbe().getTimeoutSeconds());
+            result.setReadinessProbe(kafkaClusterSpec.getReadinessProbe());
         }
+
         if (kafkaClusterSpec.getLivenessProbe() != null) {
-            result.setLivenessInitialDelay(kafkaClusterSpec.getLivenessProbe().getInitialDelaySeconds());
-            result.setLivenessTimeout(kafkaClusterSpec.getLivenessProbe().getTimeoutSeconds());
+            result.setLivenessProbe(kafkaClusterSpec.getLivenessProbe());
         }
+
         result.setRack(kafkaClusterSpec.getRack());
 
         String initImage = kafkaClusterSpec.getBrokerRackInitImage();
         if (initImage == null) {
-            initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
+            initImage = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/operator:latest");
         }
         result.setInitImage(initImage);
+
         Logging logging = kafkaClusterSpec.getLogging();
         result.setLogging(logging == null ? new InlineLogging() : logging);
+
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? true : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
+
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
+
         result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
+
         Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null) {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        if (kafkaClusterSpec.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) kafkaClusterSpec.getStorage();
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-            }
-        }
-        result.setStorage(kafkaClusterSpec.getStorage());
-        result.setDataVolumesClaimsAndMountPaths(result.getStorage());
-        result.setUserAffinity(kafkaClusterSpec.getAffinity());
-        result.setResources(kafkaClusterSpec.getResources());
-        result.setTolerations(kafkaClusterSpec.getTolerations());
 
-        result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
+        if (oldStorage != null) {
+            Storage newStorage = kafkaClusterSpec.getStorage();
+            StorageDiff diff = new StorageDiff(oldStorage, newStorage);
+
+            if (!diff.isEmpty()) {
+                log.warn("Only the following changes to Kafka storage are allowed: changing the deleteClaim flag, adding volumes to Jbod storage or removing volumes from Jbod storage and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
+                log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
+                result.setStorage(oldStorage);
+            } else {
+                result.setStorage(newStorage);
+            }
+        } else {
+            result.setStorage(kafkaClusterSpec.getStorage());
+        }
+
+        result.setDataVolumesClaimsAndMountPaths(result.getStorage());
+
+        result.setUserAffinity(affinity(kafkaClusterSpec));
+
+        result.setResources(kafkaClusterSpec.getResources());
+
+        result.setTolerations(tolerations(kafkaClusterSpec));
+
+        TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
+        if (tlsSidecar == null) {
+            tlsSidecar = new TlsSidecar();
+        }
+        if (tlsSidecar.getImage() == null) {
+            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+        }
+        result.setTlsSidecar(tlsSidecar);
 
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);
@@ -376,6 +456,16 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
             }
 
+            if (template.getExternalBootstrapIngress() != null && template.getExternalBootstrapIngress().getMetadata() != null)  {
+                result.templateExternalBootstrapIngressLabels = template.getExternalBootstrapIngress().getMetadata().getLabels();
+                result.templateExternalBootstrapIngressAnnotations = template.getExternalBootstrapIngress().getMetadata().getAnnotations();
+            }
+
+            if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null)  {
+                result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
+                result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
@@ -383,11 +473,43 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
+    static List<Toleration> tolerations(KafkaClusterSpec kafkaClusterSpec) {
+        if (kafkaClusterSpec.getTemplate() != null
+                && kafkaClusterSpec.getTemplate().getPod() != null
+                && kafkaClusterSpec.getTemplate().getPod().getTolerations() != null) {
+            if (kafkaClusterSpec.getTolerations() != null) {
+                log.warn("Tolerations given on both spec.kafka.tolerations and spec.kafka.template.statefulset.tolerations; latter takes precedence");
+            }
+            return kafkaClusterSpec.getTemplate().getPod().getTolerations();
+        } else {
+            return kafkaClusterSpec.getTolerations();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    static Affinity affinity(KafkaClusterSpec kafkaClusterSpec) {
+        if (kafkaClusterSpec.getTemplate() != null
+                && kafkaClusterSpec.getTemplate().getPod() != null
+                && kafkaClusterSpec.getTemplate().getPod().getAffinity() != null) {
+            if (kafkaClusterSpec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.kafka.affinity and spec.kafka.template.statefulset.affinity; latter takes precedence");
+            }
+            return kafkaClusterSpec.getTemplate().getPod().getAffinity();
+        } else {
+            return kafkaClusterSpec.getAffinity();
+        }
+    }
+
     /**
      * Manage certificates generation based on those already present in the Secrets
-     * @param clusterCa The certificates
+     *
+     * @param kafka     The Kafka custom resource
+     * @param clusterCa The CA for cluster certificates
+     * @param externalBootstrapDnsName  The set of DNS names for bootstrap service (should be appended to every broker certificate)
+     * @param externalDnsNames The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, String externalBootstrapDnsName, Map<Integer, String> externalDnsNames) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames) {
         log.debug("Generating certificates");
 
         try {
@@ -450,7 +572,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createService("ClusterIP", getServicePorts(), mergeAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     /**
@@ -490,10 +612,25 @@ public class KafkaCluster extends AbstractModel {
             ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT,
                 nodePort, "TCP"));
 
+            Map<String, String> dnsAnnotations = Collections.emptyMap();
+            if (isExposedWithLoadBalancer())    {
+                KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
+
+                if (externalLb.getOverrides() != null && externalLb.getOverrides().getBootstrap() != null) {
+                    dnsAnnotations = externalLb.getOverrides().getBootstrap().getDnsAnnotations();
+                }
+            } else if (isExposedWithNodePort())    {
+                KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+                if (externalNp.getOverrides() != null && externalNp.getOverrides().getBootstrap() != null) {
+                    dnsAnnotations = externalNp.getOverrides().getBootstrap().getDnsAnnotations();
+                }
+            }
+
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
                 getSelectorLabels(),
-                mergeAnnotations(Collections.EMPTY_MAP, templateExternalBootstrapServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations));
         }
 
         return null;
@@ -515,18 +652,41 @@ public class KafkaCluster extends AbstractModel {
                 KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
                 if (externalNodePort.getOverrides() != null &&  externalNodePort.getOverrides().getBrokers() != null) {
                     nodePort = externalNodePort.getOverrides().getBrokers().stream()
-                        .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod)
-                        .map(KafkaExternalBrokerService::getNodePort)
+                        .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getNodePort() != null)
+                        .map(NodePortListenerBrokerOverride::getNodePort)
                         .findAny().orElse(null);
                 }
             }
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
 
+            Map<String, String> dnsAnnotations = Collections.emptyMap();
+            if (isExposedWithLoadBalancer())    {
+                KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
+
+                if (externalLb.getOverrides() != null && externalLb.getOverrides().getBrokers() != null) {
+                    dnsAnnotations = externalLb.getOverrides().getBrokers().stream()
+                            .filter(broker -> broker != null && broker.getBroker() == pod)
+                            .map(LoadBalancerListenerBrokerOverride::getDnsAnnotations)
+                            .findAny()
+                            .orElse(Collections.emptyMap());
+                }
+            } else if (isExposedWithNodePort())    {
+                KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+                if (externalNp.getOverrides() != null && externalNp.getOverrides().getBrokers() != null) {
+                    dnsAnnotations = externalNp.getOverrides().getBrokers().stream()
+                            .filter(broker -> broker != null && broker.getBroker() == pod)
+                            .map(NodePortListenerBrokerOverride::getDnsAnnotations)
+                            .findAny()
+                            .orElse(Collections.emptyMap());
+                }
+            }
+
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
             return createService(perPodServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
-                mergeAnnotations(Collections.EMPTY_MAP, templatePerPodServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations));
         }
 
         return null;
@@ -546,7 +706,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName, templatePerPodRouteLabels))
-                        .withAnnotations(mergeAnnotations(null, templatePerPodRouteAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templatePerPodRouteAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -564,6 +724,20 @@ public class KafkaCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
+            KafkaListenerExternalRoute listener = (KafkaListenerExternalRoute) listeners.getExternal();
+            if (listener.getOverrides() != null && listener.getOverrides().getBrokers() != null)  {
+                String specHost = listener.getOverrides().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod
+                                && broker.getHost() != null)
+                        .map(RouteListenerBrokerOverride::getHost)
+                        .findAny()
+                        .orElse(null);
+
+                if (specHost != null && !specHost.isEmpty()) {
+                    route.getSpec().setHost(specHost);
+                }
+            }
+
             return route;
         }
 
@@ -580,7 +754,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapRouteLabels))
-                        .withAnnotations(mergeAnnotations(null, templateExternalBootstrapRouteAnnotations))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -598,11 +772,162 @@ public class KafkaCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
-            return route;
+            KafkaListenerExternalRoute listener = (KafkaListenerExternalRoute) listeners.getExternal();
+            if (listener.getOverrides() != null && listener.getOverrides().getBootstrap() != null && listener.getOverrides().getBootstrap().getHost() != null && !listener.getOverrides().getBootstrap().getHost().isEmpty())  {
+                route.getSpec().setHost(listener.getOverrides().getBootstrap().getHost());
+            }
 
+            return route;
         }
 
         return null;
+    }
+
+    /**
+     * Generates ingress for pod. This ingress is used for exposing it externally using Nginx Ingress.
+     *
+     * @param pod   Number of the pod for which this ingress should be generated
+     * @return The generated Ingress
+     */
+    public Ingress generateExternalIngress(int pod) {
+        if (isExposedWithIngress()) {
+            KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
+            Map<String, String> dnsAnnotations = null;
+            String host = null;
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null) {
+                host = listener.getConfiguration().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod
+                                && broker.getHost() != null)
+                        .map(IngressListenerBrokerConfiguration::getHost)
+                        .findAny()
+                        .orElseThrow(() -> new InvalidResourceException("Hostname for broker with id " + pod + " is required for exposing Kafka cluster using Ingress"));
+
+                dnsAnnotations = listener.getConfiguration().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod)
+                        .map(IngressListenerBrokerConfiguration::getDnsAnnotations)
+                        .findAny()
+                        .orElse(null);
+            }
+
+            String perPodServiceName = externalServiceName(cluster, pod);
+
+            HTTPIngressPath path = new HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(perPodServiceName)
+                    .endBackend()
+                    .build();
+
+            IngressRule rule = new IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            IngressTLS tls = new IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            Ingress ingress = new IngressBuilder()
+                    .withNewMetadata()
+                        .withName(perPodServiceName)
+                        .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            return ingress;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates a bootstrap ingress which can be used to bootstrap clients outside of Kubernetes.
+     * @return The generated Ingress
+     */
+    public Ingress generateExternalBootstrapIngress() {
+        if (isExposedWithIngress()) {
+            KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
+            Map<String, String> dnsAnnotations;
+            String host;
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null && listener.getConfiguration().getBootstrap().getHost() != null) {
+                host = listener.getConfiguration().getBootstrap().getHost();
+                dnsAnnotations = listener.getConfiguration().getBootstrap().getDnsAnnotations();
+            } else {
+                throw new InvalidResourceException("Boostrap hostname is required for exposing Kafka cluster using Ingress");
+            }
+
+            HTTPIngressPath path = new HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(externalBootstrapServiceName(cluster))
+                    .endBackend()
+                    .build();
+
+            IngressRule rule = new IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            IngressTLS tls = new IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            Ingress ingress = new IngressBuilder()
+                    .withNewMetadata()
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            return ingress;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates the annotations needed to configure the Ingress as TLS passthrough
+     *
+     * @param ingressListener   The Ingress listener object with additional parameters and options
+     *
+     * @return  Map with the annotations
+     */
+    private Map<String, String> generateInternalIngressAnnotations(KafkaListenerExternalIngress ingressListener) {
+        Map<String, String> internalAnnotations = new HashMap<>(4);
+
+        if (ingressListener.getIngressClass() != null) {
+            internalAnnotations.put("kubernetes.io/ingress.class", ingressListener.getIngressClass());
+        } else {
+            internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
+        }
+
+        internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
+
+        return internalAnnotations;
     }
 
     /**
@@ -610,23 +935,29 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateHeadlessService() {
-        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(getHeadlessServicePorts(), annotations);
+        return createHeadlessService(getHeadlessServicePorts());
     }
 
     /**
      * Generates a StatefulSet according to configured defaults
      * @param isOpenShift True iff this operator is operating within OpenShift.
-     * @return The generate StatefulSet
+     * @param imagePullPolicy  The image pull policy.
+     * @param imagePullSecrets The image pull secrets.
+     * @return The generated StatefulSet.
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        HashMap<String, String> annotations = new HashMap<>(2);
+        annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+
         return createStatefulSet(
-                singletonMap(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version()),
+                annotations,
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
+                imagePullSecrets,
                 isOpenShift);
     }
 
@@ -672,7 +1003,35 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
+     * @return The port of the plain listener.
+     */
+    public int getClientPort() {
+        return this.CLIENT_PORT;
+    }
+
+    /**
+     * @return The port of the tls listener
+     */
+    public int getClientTlsPort() {
+        return this.CLIENT_TLS_PORT;
+    }
+
+    /**
+     * @return The port of loadbalancer for the external listener.
+     */
+    public int getLoadbalancerPort() {
+        return this.EXTERNAL_PORT;
+    }
+
+    /**
+     * @return The port of route for the external listener.
+     */
+    public int getRoutePort() {
+        return this.ROUTE_PORT;
+    }
+
+    /**
+     * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
      * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
      *
      * @param storage the Storage instance from which building volumes, persistent volume claims and
@@ -694,7 +1053,7 @@ public class KafkaCluster extends AbstractModel {
                 }
                 return;
             } else {
-                throw new IllegalStateException("The declared storage is not supported");
+                throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
             }
 
             String name = ModelUtils.getVolumePrefix(id);
@@ -703,10 +1062,42 @@ public class KafkaCluster extends AbstractModel {
             if (storage instanceof EphemeralStorage) {
                 dataVolumes.add(createEmptyDirVolume(name));
             } else if (storage instanceof PersistentClaimStorage) {
-                dataPvcs.add(createPersistentVolumeClaim(name, (PersistentClaimStorage) storage));
+                dataPvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
             }
             dataVolumeMountPaths.add(createVolumeMount(name, mountPath));
         }
+    }
+
+    /**
+     * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
+     * storage is of {@link Storage#TYPE_JBOD} type.
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths.
+     * @return The PersistentVolumeClaims.
+     */
+    public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof PersistentClaimStorage) {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String pvcBaseName = ModelUtils.getVolumePrefix(id) + "-" + name;
+
+                for (int i = 0; i < replicas; i++)  {
+                    pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, (PersistentClaimStorage) storage));
+                }
+            } else if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(generatePersistentVolumeClaims(volume));
+                }
+            }
+        }
+
+        return pvcs;
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
@@ -720,6 +1111,7 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         return volumeList;
     }
@@ -738,6 +1130,7 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (rack != null || isExposedWithNodePort()) {
             volumeMountList.add(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -793,17 +1186,13 @@ public class KafkaCluster extends AbstractModel {
 
             if (isExposedWithNodePort()) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
-                KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
-                if (externalNodePort.getOverrides() != null && externalNodePort.getOverrides().getBrokers() != null
-                    && !externalNodePort.getOverrides().getBrokers().isEmpty()) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES,
-                        buildAdvertisedAddressesString(externalNodePort.getOverrides().getBrokers())));
-                }
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
             }
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
+                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(varList)
                     .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
@@ -814,15 +1203,6 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return initContainers;
-    }
-
-    private String buildAdvertisedAddressesString(List<KafkaExternalBrokerService> brokers) {
-        return brokers.stream()
-                .filter(broker -> broker != null && broker.getBroker() != null)
-                .map(broker -> broker.getBroker().toString() + "://" +
-                        (broker.getAdvertisedHost() != null ? broker.getAdvertisedHost() : "") + ":" +
-                        (broker.getAdvertisedPort() != null ? broker.getAdvertisedPort() : ""))
-                .collect(Collectors.joining(" "));
     }
 
     @Override
@@ -836,13 +1216,21 @@ public class KafkaCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withLivenessProbe(ModelUtils.newProbeBuilder(livenessProbeOptions)
+                    .withNewExec()
+                        .withCommand("/opt/kafka/kafka_liveness.sh")
+                    .endExec().build())
+                .withReadinessProbe(ModelUtils.newProbeBuilder(readinessProbeOptions)
+                    .withNewExec()
+                        // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
+                        .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
+                    .endExec().build())
+                .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withCommand("/opt/kafka/kafka_run.sh")
                 .build();
 
-        String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = getImage();
         if (tlsSidecar != null && tlsSidecar.getImage() != null) {
             tlsSidecarImage = tlsSidecar.getImage();
         }
@@ -850,14 +1238,18 @@ public class KafkaCluster extends AbstractModel {
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/kafka_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect),
                         ModelUtils.tlsSidecarLogEnvVar(tlsSidecar)))
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withLifecycle(new LifecycleBuilder().withNewPreStop()
+                            .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh",
+                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 
@@ -904,7 +1296,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getExternal() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses)));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TLS, Boolean.toString(isExposedWithTls())));
 
                 if (listeners.getExternal().getAuth() != null) {
@@ -951,19 +1343,10 @@ public class KafkaCluster extends AbstractModel {
         return "kafkaDefaultLoggingProperties";
     }
 
-    public ServiceAccount generateInitContainerServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(initContainerServiceAccountName(cluster))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                .endMetadata()
-            .build();
-    }
-
-
     /**
      * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
+     * @param kafkaResourceName The name of the Kafka resource.
+     * @return The name of the ServiceAccount.
      */
     public static String initContainerServiceAccountName(String kafkaResourceName) {
         return kafkaClusterName(kafkaResourceName);
@@ -971,6 +1354,9 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Get the name of the kafka init container role binding given the name of the {@code namespace} and {@code cluster}.
+     * @param namespace The namespace.
+     * @param cluster The cluster name.
+     * @return The name of the init container's cluster role binding.
      */
     public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
         return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
@@ -979,23 +1365,48 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
+     * @param assemblyNamespace The namespace.
+     * @return The cluster role binding.
      */
-    public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
+    public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null || isExposedWithNodePort()) {
-            return new ClusterRoleBindingOperator.ClusterRoleBinding(
-                    initContainerClusterRoleBindingName(namespace, cluster),
-                    "strimzi-kafka-broker",
-                    assemblyNamespace, initContainerServiceAccountName(cluster),
-                    createOwnerReference());
+            Subject ks = new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName(initContainerServiceAccountName(cluster))
+                    .withNamespace(assemblyNamespace)
+                    .build();
+
+            RoleRef roleRef = new RoleRefBuilder()
+                    .withName("strimzi-kafka-broker")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .build();
+
+            return new ClusterRoleBindingBuilder()
+                    .withNewMetadata()
+                        .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                        .withOwnerReferences(createOwnerReference())
+                        .withLabels(labels.toMap())
+                    .endMetadata()
+                    .withSubjects(ks)
+                    .withRoleRef(roleRef)
+                    .build();
         } else {
             return null;
         }
     }
 
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the network policy.
+     */
     public static String policyName(String cluster) {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
+    /**
+     * @return The network policy.
+     */
     public NetworkPolicy generateNetworkPolicy() {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
@@ -1093,45 +1504,52 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates the PodDisruptionBudget
+     * Generates the PodDisruptionBudget.
      *
-     * @return
+     * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
     }
 
     /**
-     * Sets the object with Kafka listeners configuration
+     * Sets the object with Kafka listeners configuration.
      *
-     * @param listeners
+     * @param listeners The listeners.
      */
     public void setListeners(KafkaListeners listeners) {
         this.listeners = listeners;
     }
 
     /**
-     * Sets the object with Kafka authorization configuration
+     * @return  The listener object from the CRD.
+     */
+    public KafkaListeners getListeners() {
+        return listeners;
+    }
+
+    /**
+     * Sets the object with Kafka authorization configuration.
      *
-     * @param authorization
+     * @param authorization The authorization.
      */
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
     }
 
     /**
-     * Sets the Map with Kafka pod's external addresses
+     * Sets the Map with Kafka pod's external addresses.
      *
-     * @param externalAddresses Map with external addresses
+     * @param externalAddresses Set with external addresses.
      */
-    public void setExternalAddresses(SortedMap<Integer, String> externalAddresses) {
+    public void setExternalAddresses(Set<String> externalAddresses) {
         this.externalAddresses = externalAddresses;
     }
 
     /**
-     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes
+     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes.
      *
-     * @return
+     * @return true when the Kafka cluster is exposed.
      */
     public boolean isExposed()  {
         return listeners != null && listeners.getExternal() != null;
@@ -1140,7 +1558,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside of OpenShift using OpenShift routes
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using OpenShift routes.
      */
     public boolean isExposedWithRoute()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute;
@@ -1149,7 +1567,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside using LoadBalancers
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using load balancer.
      */
     public boolean isExposedWithLoadBalancer()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer;
@@ -1158,49 +1576,178 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Returns true when the Kafka cluster is exposed to the outside using NodePort type services
      *
-     * @return
+     * @return true when the Kafka cluster is exposed to the outside using NodePort.
      */
     public boolean isExposedWithNodePort()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalNodePort;
     }
 
     /**
-     * Returns advertised address of external nodeport service
+     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using Ingress
      *
-     * @return
+     * @return true when the Kafka cluster is exposed using Kubernetes Ingress.
      */
-    public Optional<String> getExternalNodePortServiceAddressOverride(int podNumber) {
+    public boolean isExposedWithIngress()  {
+        return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalIngress;
+    }
+
+    /**
+     * Returns the list broker overrides for external listeners.
+     */
+    private List<ExternalListenerBrokerOverride> getExternalListenerBrokerOverride()  {
+        List<ExternalListenerBrokerOverride> brokerOverride = new ArrayList<>();
+
         if (isExposedWithNodePort()) {
-            KafkaExternalServiceOverrides externalServiceOverrides =
-                ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
-            if (externalServiceOverrides != null && externalServiceOverrides.getBrokers() != null) {
-                String advertisedHost = externalServiceOverrides.getBrokers().stream()
-                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
-                        && brokerService.getAdvertisedHost() != null)
-                    .map(KafkaExternalBrokerService::getAdvertisedHost)
-                    .findAny()
-                    .orElse(null);
-                if (advertisedHost != null && !advertisedHost.isEmpty()) {
-                    return Optional.of(advertisedHost);
-                }
+            NodePortListenerOverride overrides = ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+
+            if (overrides != null && overrides.getBrokers() != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithLoadBalancer()) {
+            LoadBalancerListenerOverride overrides = ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getOverrides();
+
+            if (overrides != null && overrides.getBrokers() != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithRoute()) {
+            RouteListenerOverride overrides = ((KafkaListenerExternalRoute) listeners.getExternal()).getOverrides();
+
+            if (overrides != null && overrides.getBrokers() != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithIngress()) {
+            IngressListenerConfiguration configuration = ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration();
+
+            if (configuration != null && configuration.getBrokers() != null) {
+                brokerOverride.addAll(configuration.getBrokers());
             }
         }
-        return Optional.empty();
+
+        return brokerOverride;
+    }
+
+    /**
+     * Returns the bootstrap override for external listeners
+     *
+     * @return The ExternalListenerBootstrapOverride.
+     */
+    public ExternalListenerBootstrapOverride getExternalListenerBootstrapOverride()  {
+        ExternalListenerBootstrapOverride bootstrapOverride = null;
+
+        if (isExposedWithNodePort()) {
+            NodePortListenerOverride overrides = ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithLoadBalancer()) {
+            LoadBalancerListenerOverride overrides = ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithRoute()) {
+            RouteListenerOverride overrides = ((KafkaListenerExternalRoute) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithIngress()) {
+            IngressListenerConfiguration configuration = ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration();
+
+            if (configuration != null) {
+                bootstrapOverride = configuration.getBootstrap();
+            }
+        }
+
+        return bootstrapOverride;
+    }
+
+    /**
+     * Returns the advertised address of external nodeport service.
+     *
+     * @param podNumber The pod number.
+     * @return The advertised address of the external nodeport service.
+     */
+    public String getExternalServiceAdvertisedHostOverride(int podNumber) {
+        String advertisedHost = null;
+        List<ExternalListenerBrokerOverride> brokerOverride = getExternalListenerBrokerOverride();
+
+        advertisedHost = brokerOverride.stream()
+            .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
+                && brokerService.getAdvertisedHost() != null)
+            .map(ExternalListenerBrokerOverride::getAdvertisedHost)
+            .findAny()
+            .orElse(null);
+
+        if (advertisedHost != null && advertisedHost.isEmpty()) {
+            advertisedHost = null;
+        }
+
+        return advertisedHost;
+    }
+
+    /**
+     * Returns advertised address of external nodeport service.
+     *
+     * @param podNumber The pod number.
+     * @return The advertised address of external nodeport service.
+     */
+    public Integer getExternalServiceAdvertisedPortOverride(int podNumber) {
+        Integer advertisedPort = null;
+        List<ExternalListenerBrokerOverride> brokerOverride = getExternalListenerBrokerOverride();
+
+        advertisedPort = brokerOverride.stream()
+                .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
+                        && brokerService.getAdvertisedPort() != null)
+                .map(ExternalListenerBrokerOverride::getAdvertisedPort)
+                .findAny()
+                .orElse(null);
+
+        if (advertisedPort != null && advertisedPort == 0) {
+            advertisedPort = null;
+        }
+
+        return advertisedPort;
+    }
+
+    /**
+     * Returns the advertised URL for given pod.
+     * It will take into account the overrides specified by the user.
+     * If some segment is not know - e.g. the hostname for the NodePort access, it should be left empty
+     *
+     * @param podNumber Pod index
+     * @param address   The advertised hostname
+     * @param port      The advertised port
+     * @return          The advertised URL in format podNumber://address:port (e.g. 1://my-broker-1:9094)
+     */
+    public String getExternalAdvertisedUrl(int podNumber, String address, String port)  {
+        String advertisedHost = getExternalServiceAdvertisedHostOverride(podNumber);
+        Integer advertisedPort = getExternalServiceAdvertisedPortOverride(podNumber);
+
+        String url = String.valueOf(podNumber)
+                + "://" + (advertisedHost != null ? advertisedHost : address)
+                + ":" + (advertisedPort != null ? advertisedPort : port);
+
+        return url;
     }
 
     /**
      * Returns true when the Kafka cluster is exposed to the outside of OpenShift with TLS enabled
      *
-     * @return
+     * @return True when the Kafka cluster is exposed to the outside of OpenShift with TLS enabled
      */
     public boolean isExposedWithTls() {
-        if (isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute) {
-            return true;
-        } else if (isExposed()) {
-            if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
-                return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
-            } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
-                return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+        if (isExposed()) {
+            if (listeners.getExternal() instanceof KafkaListenerExternalRoute
+                || listeners.getExternal() instanceof KafkaListenerExternalIngress) {
+                return true;
+            } else {
+                if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
+                    return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
+                } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
+                    return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+                }
             }
         }
 

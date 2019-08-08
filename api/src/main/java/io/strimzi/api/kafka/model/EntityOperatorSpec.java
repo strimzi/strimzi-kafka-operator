@@ -4,12 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -34,12 +33,10 @@ import java.util.Map;
         "topicOperator", "userOperator", "affinity",
         "tolerations", "tlsSidecar"})
 @EqualsAndHashCode
-public class EntityOperatorSpec implements Serializable {
+public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
 
@@ -71,24 +68,30 @@ public class EntityOperatorSpec implements Serializable {
         this.userOperator = userOperator;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
 
+    @Deprecated
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
+    @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;
     }
 
+    @Deprecated
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
     }
@@ -114,12 +117,12 @@ public class EntityOperatorSpec implements Serializable {
         this.template = template;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

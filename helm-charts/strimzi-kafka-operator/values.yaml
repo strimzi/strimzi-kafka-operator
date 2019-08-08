@@ -1,23 +1,26 @@
 # Default values for strimzi-kafka-operator.
 
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`), 
+# the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
 watchNamespaces: []
 
 image:
   repository: strimzi
-  name: cluster-operator
+  name: operator
   tag: latest
   imagePullPolicy: IfNotPresent
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
+kubernetesServiceDnsDomain: cluster.local
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
 # repository name with your registry URL.
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
 zookeeper:
   image:
     repository: strimzi
-    name: zookeeper
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 kafka:
   image:
     repository: strimzi
@@ -26,48 +29,53 @@ kafka:
 kafkaConnect:
   image:
     repository: strimzi
-    name: kafka-connect
+    name: kafka
     tagPrefix: latest
 kafkaConnects2i:
   image:
     repository: strimzi
-    name: kafka-connect-s2i
+    name: kafka
     tagPrefix: latest
 topicOperator:
   image:
     repository: strimzi
-    name: topic-operator
+    name: operator
     tag: latest
 userOperator:
   image:
     repository: strimzi
-    name: user-operator
+    name: operator
     tag: latest
 kafkaInit:
   image:
     repository: strimzi
-    name: kafka-init
+    name: operator
     tag: latest
 tlsSidecarZookeeper:
   image:
     repository: strimzi
-    name: zookeeper-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarKafka:
   image:
     repository: strimzi
-    name: kafka-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
-    name: entity-operator-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 kafkaMirrorMaker:
   image:
     repository: strimzi
-    name: kafka-mirror-maker
+    name: kafka
     tagPrefix: latest
+kafkaBridge:
+  image:
+    repository: strimzi
+    name: kafka-bridge
+    tag: latest
 resources:
   limits:
     memory: 256Mi
@@ -86,3 +94,4 @@ readinessProbe:
 # imageRepositoryOverride: foobar
 # Override the docker image tag used by all Strimzi images
 # imageTagOverride: latest
+createGlobalResources: true

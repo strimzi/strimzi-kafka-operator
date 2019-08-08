@@ -17,20 +17,29 @@ include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
+include::assembly-using-the-kafka-bridge.adoc[leveloffset=+1]
+
+include::assembly-metrics-setup.adoc[leveloffset=+1]
+
 include::assembly-security.adoc[leveloffset=+1]
 
 include::assembly-upgrade.adoc[leveloffset=+1]
 
+include::assembly-upgrade-resources.adoc[leveloffset=+1]
+
+include::proc-uninstalling.adoc[leveloffset=+1]
+
+include::proc-accessing-resource-status.adoc[leveloffset=+1]
+
+include::ref-kafka-logging.adoc[leveloffset=+1]
 [appendix]
 include::faq.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
-include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
-endif::InstallationAppendix[]
+include::appendix_deploying_kubernetes_cluster.adoc[]
 
-ifdef::MetricsAppendix[]
-include::appendix_metrics.adoc[]
-endif::MetricsAppendix[]
+include::appendix_deploying_openshift_cluster.adoc[]
+endif::InstallationAppendix[]
 
 [appendix]
 [id='api_reference-{context}']

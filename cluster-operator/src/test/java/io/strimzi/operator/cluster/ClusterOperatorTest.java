@@ -17,6 +17,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -46,6 +48,17 @@ import static org.mockito.Mockito.when;
 public class ClusterOperatorTest {
 
     private Vertx vertx;
+
+    private static Map<String, String> buildEnv(String namespaces) {
+        Map<String, String> env = new HashMap<>();
+        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
+        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        return env;
+    }
 
     @Before
     public void createClient(TestContext context) {
@@ -141,10 +154,8 @@ public class ClusterOperatorTest {
 
         Async async = context.async();
 
-        Map<String, String> env = new HashMap<>();
-        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Map<String, String> env = buildEnv(namespaces);
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
@@ -166,7 +177,7 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > (openShift ? 4 : 3) * namespaceList.size()) {
+        if (numWatchers.get() > (openShift ? 5 : 4) * namespaceList.size()) { // we do not have connectS2I on k8s
             context.fail("Looks like there were more watchers than namespaces");
         }
     }
@@ -219,10 +230,8 @@ public class ClusterOperatorTest {
 
         Async async = context.async();
 
-        Map<String, String> env = new HashMap<>();
-        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Map<String, String> env = buildEnv(namespaces);
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
@@ -244,8 +253,8 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > (openShift ? 4 : 3)) {
-            context.fail("Looks like there were more watchers than we should");
+        if (numWatchers.get() > (openShift ? 5 : 4)) { // we do not have connectS2I on k8s
+            context.fail("Looks like there were more watchers than should be");
         }
     }
 }

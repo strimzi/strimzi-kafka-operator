@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -96,7 +97,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     @Before
-    public void createClient() {
+    public void createClient() throws MalformedURLException {
         MockKube mockKube = new MockKube();
         init.accept(mockKube);
         client = mockKube.build();
@@ -252,6 +253,48 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
 
         // TODO Delete off a withLabels query, delete off a inNamespace
         // TODO inAnyNamespace()
+    }
+
+    @Test
+    public void watches() {
+        RT pod = pod();
+
+        MyWatcher all = new MyWatcher();
+        MyWatcher namedMyPod = new MyWatcher();
+        MyWatcher namedYourPod = new MyWatcher();
+        MyWatcher hasMyLabel = new MyWatcher();
+        MyWatcher hasYourLabel = new MyWatcher();
+        MyWatcher hasMyLabelFoo = new MyWatcher();
+        MyWatcher hasMyLabelBar = new MyWatcher();
+        MyWatcher hasBothMyLabels = new MyWatcher();
+        MyWatcher hasOnlyOneOfMyLabels = new MyWatcher();
+        mixedOp().watch(all);
+        mixedOp().withName(pod.getMetadata().getName()).watch(namedMyPod);
+        mixedOp().withName("your-pod").watch(namedYourPod);
+        mixedOp().withLabel("my-label").watch(hasMyLabel);
+        mixedOp().withLabel("your-label").watch(hasYourLabel);
+        mixedOp().withLabel("my-label", "foo").watch(hasMyLabelFoo);
+        mixedOp().withLabel("my-label", "bar").watch(hasMyLabelBar);
+        mixedOp().withLabels(map("my-label", "foo", "my-other-label", "bar")).watch(hasBothMyLabels);
+        mixedOp().withLabels(map("my-label", "foo", "your-label", "bar")).watch(hasOnlyOneOfMyLabels);
+
+        mixedOp().withName(pod.getMetadata().getName()).create(pod);
+
+        assertEquals(all.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(all.lastEvent().resource, pod);
+        assertEquals(namedMyPod.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(namedMyPod.lastEvent().resource, pod);
+        assertTrue(namedYourPod.events.isEmpty());
+        assertEquals(hasMyLabel.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasMyLabel.lastEvent().resource, pod);
+        assertTrue(hasYourLabel.events.isEmpty());
+        assertEquals(hasMyLabelFoo.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasMyLabelFoo.lastEvent().resource, pod);
+        assertTrue(hasMyLabelBar.events.isEmpty());
+        assertEquals(hasBothMyLabels.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasBothMyLabels.lastEvent().resource, pod);
+        assertTrue(hasOnlyOneOfMyLabels.events.isEmpty());
+
     }
 
     // TODO Test Deployment/StatefulSet creation causes ReplicaSet and Pod creation

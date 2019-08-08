@@ -5,138 +5,226 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.LogCollector;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.UPGRADE;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@ExtendWith(StrimziExtension.class)
-@Tag(REGRESSION)
+@Tag(UPGRADE)
 public class StrimziUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
+    private String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+    private String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+    private String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
 
-    private void copyModifyApply(File root) {
-        Arrays.stream(root.listFiles()).sorted().forEach(f -> {
-            if (f.getName().matches(".*RoleBinding.*")) {
-                KUBE_CLIENT.applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches("050-Deployment.*")) {
-                KUBE_CLIENT.applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
-            } else {
-                KUBE_CLIENT.apply(f);
-            }
-        });
-    }
+    private Map<String, String> zkPods;
+    private Map<String, String> kafkaPods;
+    private Map<String, String> eoPods;
 
-    @Test
-    public void upgrade_0_8_2_to_HEAD() throws IOException {
-        KUBE_CLIENT.namespace(NAMESPACE);
+    @ParameterizedTest(name = "upgradeStrimziVersionFrom-{0}-To-{1}")
+    @CsvFileSource(resources = "/StrimziUpgradeST.csv")
+    void upgradeStrimziVersion(String fromVersion, String toVersion, String fromExamples, String toExamples, String urlFrom, String urlTo, String images, String proceduresBefore, String proceduresAfter) throws IOException, InterruptedException {
+        LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", fromVersion, toVersion);
+        setNamespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
+
         try {
-            // Deploy a 0.8.2 cluster operator
-            // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip
-            String url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip";
+            String url = urlFrom;
             File dir = StUtils.downloadAndUnzip(url);
 
-            coDir = new File(dir, "strimzi-0.8.2/install/cluster-operator/");
+            coDir = new File(dir, fromExamples + "/install/cluster-operator/");
+
             // Modify + apply installation files
             copyModifyApply(coDir);
 
             LOGGER.info("Waiting for CO deployment");
-            KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
+            StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
 
-            // Deploy a 0.8.2. Kafka cluster
-            kafkaEphemeralYaml = new File(dir, "strimzi-0.8.2/examples/kafka/kafka-ephemeral.yaml");
-            KUBE_CLIENT.create(kafkaEphemeralYaml);
+            // Deploy a Kafka cluster
+            kafkaEphemeralYaml = new File(dir, fromExamples + "/examples/kafka/kafka-ephemeral.yaml");
+            cmdKubeClient().create(kafkaEphemeralYaml);
             // Wait for readiness
-            LOGGER.info("Waiting for Zookeeper StatefulSet");
-            KUBE_CLIENT.waitForStatefulSet("my-cluster-zookeeper", 3);
-            LOGGER.info("Waiting for Kafka StatefulSet");
-            KUBE_CLIENT.waitForStatefulSet("my-cluster-kafka", 3);
-            LOGGER.info("Waiting for EO Deployment");
-            KUBE_CLIENT.waitForDeployment("my-cluster-entity-operator", 1);
+            waitForClusterReadiness();
 
             // And a topic and a user
-            kafkaTopicYaml = new File(dir, "strimzi-0.8.2/examples/topic/kafka-topic.yaml");
-            KUBE_CLIENT.create(kafkaTopicYaml);
-            kafkaUserYaml = new File(dir, "strimzi-0.8.2/examples/user/kafka-user.yaml");
-            KUBE_CLIENT.create(kafkaUserYaml);
+            kafkaTopicYaml = new File(dir, fromExamples + "/examples/topic/kafka-topic.yaml");
+            cmdKubeClient().create(kafkaTopicYaml);
+            kafkaUserYaml = new File(dir, fromExamples + "/examples/user/kafka-user.yaml");
+            cmdKubeClient().create(kafkaUserYaml);
 
-            String zkSsName = KafkaResources.zookeeperStatefulSetName("my-cluster");
-            String kafkaSsName = KafkaResources.kafkaStatefulSetName("my-cluster");
-            String eoDepName = KafkaResources.entityOperatorDeploymentName("my-cluster");
-            Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkSsName);
-            Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
-            Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoDepName);
+            makeSnapshots();
+            logPodImages();
+            // Execution of required procedures before upgrading CO
+            changeKafkaAndLogFormatVersion(proceduresBefore);
 
-            List<Pod> pods = CLIENT.pods().inNamespace(NAMESPACE).withLabels(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels()).list().getItems();
-            for (Pod pod : pods) {
-                LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+            // Upgrade the CO
+            // Modify + apply installation files
+            if ("HEAD" .equals(toVersion)) {
+                LOGGER.info("Updating");
+                coDir = new File("../install/cluster-operator");
+                copyModifyApply(coDir);
+                LOGGER.info("Waiting for CO redeployment");
+                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+                waitForRollingUpdate(images);
+            } else {
+                url = urlTo;
+                dir = StUtils.downloadAndUnzip(url);
+                coDir = new File(dir, toExamples + "/install/cluster-operator/");
+                copyModifyApply(coDir);
+                LOGGER.info("Waiting for CO deployment");
+                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+                waitForRollingUpdate(images);
             }
 
-            // Upgrade the CO, to current HEAD,
-            LOGGER.info("Updating");
-            copyModifyApply(new File("../install/cluster-operator"));
-            LOGGER.info("Waiting for CO redeployment");
-            KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
-
-            LOGGER.info("Waiting for ZK SS roll");
-            StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
-            LOGGER.info("Checking ZK pods using new image");
-            waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/zookeeper:latest-kafka-2.0.0");
-            LOGGER.info("Waiting for Kafka SS roll");
-            StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
-            LOGGER.info("Checking Kafka pods using new image");
-            waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-2.1.0");
-            LOGGER.info("Waiting for EO Dep roll");
-            // Check the TO and UO also got upgraded
-            StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
-            LOGGER.info("Checking EO pod using new image");
-            waitTillAllContainersUseImage(
-                    CLIENT.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
-                    0,
-                    "strimzi/topic-operator:latest");
-            waitTillAllContainersUseImage(
-                    CLIENT.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
-                    1,
-                    "strimzi/user-operator:latest");
-
+            // Make snapshots of all pods
+            makeSnapshots();
+            logPodImages();
+            //  Upgrade kafka
+            changeKafkaAndLogFormatVersion(proceduresAfter);
+            logPodImages();
+            // Check errors in CO log
+            assertNoCoErrorsLogged(0);
 
             // Tidy up
         } catch (KubeClusterException e) {
             if (kafkaEphemeralYaml != null) {
-                KUBE_CLIENT.delete(kafkaEphemeralYaml);
+                cmdKubeClient().delete(kafkaEphemeralYaml);
             }
             if (coDir != null) {
-                KUBE_CLIENT.delete(coDir);
+                cmdKubeClient().delete(coDir);
             }
+            e.printStackTrace();
             throw e;
+        } finally {
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = TEST_LOG_DIR + testClass + currentDate;
+
+            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
+            logCollector.collectEvents();
+            logCollector.collectConfigMaps();
+            logCollector.collectLogsFromPods();
+
+            deleteInstalledYamls(coDir);
         }
+
+    }
+
+    private void copyModifyApply(File root) {
+        Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
+            if (f.getName().matches(".*RoleBinding.*")) {
+                cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+            } else if (f.getName().matches("050-Deployment.*")) {
+                cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
+            } else {
+                cmdKubeClient().apply(f);
+            }
+        });
+    }
+
+    private void deleteInstalledYamls(File root) {
+        if (root != null) {
+            Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
+                if (f.getName().matches(".*RoleBinding.*")) {
+                    cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+                } else {
+                    cmdKubeClient().delete(f);
+                }
+            });
+        }
+    }
+
+    private void waitForClusterReadiness() {
+        // Wait for readiness
+        LOGGER.info("Waiting for Zookeeper StatefulSet");
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper", 3);
+        LOGGER.info("Waiting for Kafka StatefulSet");
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
+        LOGGER.info("Waiting for EO Deployment");
+        StUtils.waitForDeploymentReady("my-cluster-entity-operator", 1);
+    }
+
+    private void waitForRollingUpdate(String images) {
+        if (images.isEmpty()) {
+            fail("There are no expected images");
+        }
+        String[] imagesArray = images.split("\\s*,\\s*");
+        String zkImage = imagesArray[0];
+        String kafkaImage = imagesArray[1];
+        String tOImage = imagesArray[2];
+        String uOImage = imagesArray[3];
+
+        LOGGER.info("Waiting for ZK SS roll");
+        StUtils.waitTillSsHasRolled(zkSsName, 3, zkPods);
+        LOGGER.info("Checking ZK pods using new image");
+        waitTillAllPodsUseImage(kubeClient().getStatefulSet(zkSsName).getSpec().getSelector().getMatchLabels(),
+                zkImage);
+
+        LOGGER.info("Waiting for Kafka SS roll");
+        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+        LOGGER.info("Checking Kafka pods using new image");
+        waitTillAllPodsUseImage(kubeClient().getStatefulSet(kafkaSsName).getSpec().getSelector().getMatchLabels(),
+                kafkaImage);
+        LOGGER.info("Waiting for EO Dep roll");
+        // Check the TO and UO also got upgraded
+        StUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
+        LOGGER.info("Checking EO pod using new image");
+        waitTillAllContainersUseImage(
+                kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(),
+                0,
+                tOImage);
+        waitTillAllContainersUseImage(
+                kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(),
+                1,
+                uOImage);
+    }
+
+    private void makeSnapshots() {
+        zkPods = StUtils.ssSnapshot(zkSsName);
+        kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        eoPods = StUtils.depSnapshot(eoDepName);
+    }
+
+    private Kafka getKafka(String resourceName) {
+        Resource<Kafka, DoneableKafka> namedResource = Crds.kafkaV1Alpha1Operation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(resourceName);
+        return namedResource.get();
+    }
+
+    private void replaceKafka(String resourceName, Consumer<Kafka> editor) {
+        Resource<Kafka, DoneableKafka> namedResource = Crds.kafkaV1Alpha1Operation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(resourceName);
+        Kafka kafka = getKafka(resourceName);
+        editor.accept(kafka);
+        namedResource.replace(kafka);
     }
 
     private void waitTillAllPodsUseImage(Map<String, String> matchLabels, String image) {
@@ -144,10 +232,11 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void waitTillAllContainersUseImage(Map<String, String> matchLabels, int container, String image) {
-        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
-            List<Pod> pods1 = CLIENT.pods().inNamespace(NAMESPACE).withLabels(matchLabels).list().getItems();
+        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            List<Pod> pods1 = kubeClient().listPods(matchLabels);
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
+                    LOGGER.debug("Expected image: {} \nCurrent image: {}", image, pod.getSpec().getContainers().get(container).getImage());
                     return false;
                 }
             }
@@ -155,29 +244,105 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
+    private void changeKafkaAndLogFormatVersion(String procedures) {
+        if (!procedures.isEmpty()) {
+            String[] proceduresArray = procedures.split("\\s*,\\s*");
+            for (String procedure : proceduresArray) {
+                switch (procedure) {
+                    case "set log message format version to 2.0": {
+                        LOGGER.info("Going to set log message format version to 2.0");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set log message format version to 2.1": {
+                        LOGGER.info("Going to set log message format version to 2.1");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.1"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set log message format version to 2.2": {
+                        LOGGER.info("Going to set log message format version to 2.2");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.2"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set Kafka version to 2.0.0": {
+                        LOGGER.info("Going to set Kafka version to 2.0.0");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.0.0"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set Kafka version to 2.1.0": {
+                        LOGGER.info("Going to set Kafka version to 2.1.0");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.0"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set Kafka version to 2.1.1": {
+                        LOGGER.info("Going to set Kafka version to 2.1.1");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.1"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                    case "set Kafka version to 2.2.1": {
+                        LOGGER.info("Going to set Kafka version to 2.2.1");
+                        replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.2.1"));
+                        LOGGER.info("Wait until kafka rolling update is finished");
+                        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                        makeSnapshots();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    void logPodImages() {
+        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkSsName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+        }
+        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaSsName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+        }
+        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(eoDepName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
+        }
+    }
+
     @BeforeEach
-    void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-    }
-
-    @BeforeAll
-    void createClusterOperator() {
-        LOGGER.info("Creating resources before the test class");
+    void setupEnvironment() {
         createNamespace(NAMESPACE);
     }
-    @AfterAll
-    void teardownEnvironment() {
+
+    @Override
+    protected void tearDownEnvironmentAfterEach() {
         deleteNamespaces();
     }
 
+    // There is no value of having teardown logic for class resources due to the fact that
+    // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
+    @Override
+    protected void tearDownEnvironmentAfterAll() {
+    }
 
     @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         deleteNamespaces();
         createNamespace(NAMESPACE);
     }

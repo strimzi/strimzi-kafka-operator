@@ -1,4 +1,17 @@
+RELEASE_VERSION ?= $(shell cat ../../release.version)
 PROJECT_NAME=kafka
+
+clean:
+	rm -rf tmp
+	rm -f .*.tmp
+
+.kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
+	test -d tmp || mkdir tmp
+	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent.jar
+	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/pom.xml
+	touch .kafka-agent.tmp
+
+docker_build: .kafka-agent.tmp
 
 include ../../Makefile.docker
 

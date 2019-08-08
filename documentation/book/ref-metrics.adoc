@@ -5,7 +5,7 @@
 [id='ref-metrics-{context}']
 = Metrics configuration
 
-Prometheus metrics can be enabled by configuring the `metrics` property in following resources:
+Prometheus metrics are enabled by configuring the `metrics` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`

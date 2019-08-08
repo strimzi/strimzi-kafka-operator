@@ -4,89 +4,31 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.vertx.core.Future;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
-/**
- * This class is a temporary work-around for the fact that Fabric8 doesn't
- * yet support an API for manipulating Kubernetes ClusterRoleBindings
- * @deprecated This can be removed once support for ClusterRoles and ClusterRoleBindings is in Fabric8.
- */
-@Deprecated
-public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOperator.RoleBinding> {
 
-    public static final String API_VERSION = "v1beta1";
-    public static final String GROUP = "rbac.authorization.k8s.io";
+public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, RoleBinding,
+        RoleBindingList, DoneableRoleBinding, Resource<RoleBinding,
+        DoneableRoleBinding>> {
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public RoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, GROUP, API_VERSION, "rolebindings");
+        super(vertx, client, "RoleBinding");
     }
 
-    public static class RoleBinding {
-        private final String serviceAccountName;
-        private final String serviceAccountNamespace;
-        private final String name;
-        private final String clusterRoleName;
-        private final OwnerReference ownerRef;
-
-        public RoleBinding(
-                String name,
-                String clusterRoleName,
-                String serviceAccountNamespace,
-                String serviceAccountName,
-                OwnerReference ownerRef) {
-            this.name = name;
-            this.clusterRoleName = clusterRoleName;
-            this.serviceAccountNamespace = serviceAccountNamespace;
-            this.serviceAccountName = serviceAccountName;
-            this.ownerRef = ownerRef;
-        }
-        public String toString() {
-            return "{\"apiVersion\": \"" + GROUP + "/" + API_VERSION + "\"," +
-                   "\"kind\": \"RoleBinding\"," +
-                   "\"metadata\":{" +
-                   "  \"name\": \"" + name + "\"," +
-                   "  \"labels\":{" +
-                   "    \"app\": \"strimzi\"" +
-                    "}," +
-                    "        \"ownerReferences\": [" +
-                    "            {" +
-                    "                \"apiVersion\": \"" + ownerRef.getApiVersion() + "\"," +
-                    "                \"blockOwnerDeletion\": " + ownerRef.getBlockOwnerDeletion() + "," +
-                    "                \"controller\": " + ownerRef.getController() + "," +
-                    "                \"kind\": \"" + ownerRef.getKind() + "\"," +
-                    "                \"name\": \"" + ownerRef.getName() + "\"," +
-                    "                \"uid\": \"" + ownerRef.getUid() + "\"" +
-                    "            }" +
-                    "        ]" +
-                    "}," +
-                   "\"subjects\":[" +
-                   "  { \"kind\": \"ServiceAccount\"," +
-                   "    \"name\": \"" + serviceAccountName + "\"," +
-                   "    \"namespace\": \"" + serviceAccountNamespace + "\"" +
-                    "}" +
-                    "]," +
-                   "\"roleRef\":{" +
-                   "  \"kind\": \"ClusterRole\"," +
-                   "  \"name\": \"" + clusterRoleName + "\"," +
-                   "  \"apiGroup\": \"rbac.authorization.k8s.io\"}" +
-                    "}";
-        }
+    @Override
+    protected MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+            Resource<RoleBinding, DoneableRoleBinding>> operation() {
+        return client.rbac().roleBindings();
     }
-
-
-    private String urlWithoutName(String namespace) {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/namespaces/" + namespace + "/" + plural;
-    }
-
-    private String urlWithName(String namespace, String name) {
-        return urlWithoutName(namespace) + "/" + name;
-    }
-
-    public Future<Void> reconcile(String namespace, String name, RoleBindingOperator.RoleBinding resource) {
-        return doReconcile(urlWithoutName(namespace), urlWithName(namespace, name), resource);
-    }
-
 }

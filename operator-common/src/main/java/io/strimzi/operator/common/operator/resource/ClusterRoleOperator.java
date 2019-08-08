@@ -4,59 +4,46 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.vertx.core.Future;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
-/**
- * This class is a temporary work-around for the fact that Fabric8 doesn't
- * yet support an API for manipulating Kubernetes ClusterRoles
- * @deprecated This can be removed once support for ClusterRoles and ClusterRoleBindings is in Fabric8.
- */
-@Deprecated
-public class ClusterRoleOperator extends WorkaroundRbacOperator<ClusterRoleOperator.ClusterRole> {
+import java.io.IOException;
 
-    public ClusterRoleOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "rbac.authorization.k8s.io", "v1beta1", "clusterroles");
+public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
+        ClusterRole, ClusterRoleList, DoneableClusterRole, Resource<ClusterRole,
+        DoneableClusterRole>> {
+
+    /**
+     * Constructor.
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout in milliseconds.
+     */
+
+    public ClusterRoleOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, "ClusterRole", operationTimeoutMs);
     }
 
-    public static class ClusterRole {
-        private final String resource;
+    @Override
+    protected MixedOperation<ClusterRole, ClusterRoleList, DoneableClusterRole,
+            Resource<ClusterRole, DoneableClusterRole>> operation() {
+        return client.rbac().clusterRoles();
+    }
 
-        public ClusterRole(String yaml) {
-            this.resource = convertYamlToJson(yaml);
-        }
-
-        private String convertYamlToJson(String yaml) {
-            try {
-                ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                Object obj = yamlReader.readValue(yaml, Object.class);
-                ObjectMapper jsonWriter = new ObjectMapper();
-                return jsonWriter.writeValueAsString(obj);
-            } catch (IOException e)   {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public String toString() {
-            return resource;
+    public static ClusterRole convertYamlToClusterRole(String yaml) {
+        try {
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
+            return cr;
+        } catch (IOException e)   {
+            throw new RuntimeException(e);
         }
     }
-
-    private String urlWithoutName() {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural;
-    }
-
-    private String urlWithName(String name) {
-        return urlWithoutName() + "/" + name;
-    }
-
-    public Future<Void> reconcile(String name, ClusterRole resource) {
-        return doReconcile(urlWithoutName(), urlWithName(name), resource);
-    }
-
 }

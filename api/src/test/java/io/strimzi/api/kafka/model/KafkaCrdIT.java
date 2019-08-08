@@ -5,12 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,13 +18,18 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@ExtendWith(StrimziExtension.class)
 public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
     @Test
-    void testKafka() {
-        createDelete(Kafka.class, "Kafka.yaml");
+    void testKafkaV1alpha1() {
+        assumeKube1_11Plus();
+        createDelete(Kafka.class, "KafkaV1alpha1.yaml");
+    }
+
+    @Test
+    void testKafkaV1Beta1() {
+        createDelete(Kafka.class, "KafkaV1beta1.yaml");
     }
 
     @Test

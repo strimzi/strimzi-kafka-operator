@@ -9,16 +9,23 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -44,6 +51,9 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+            .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
+            .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -63,13 +73,10 @@ public class EntityTopicOperator extends AbstractModel {
     protected EntityTopicOperator(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
-        this.image = EntityTopicOperatorSpec.DEFAULT_IMAGE;
         this.readinessPath = "/";
-        this.readinessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -159,6 +166,8 @@ public class EntityTopicOperator extends AbstractModel {
 
     /**
      * Get the name of the TO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The name of the role binding.
      */
     public static String roleBindingName(String cluster) {
         return "strimzi-" + cluster + "-entity-topic-operator";
@@ -195,7 +204,11 @@ public class EntityTopicOperator extends AbstractModel {
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
                 result.setOwnerReference(kafkaAssembly);
-                result.setImage(topicOperatorSpec.getImage());
+                String image = topicOperatorSpec.getImage();
+                if (image == null) {
+                    image = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
+                }
+                result.setImage(image);
                 result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
@@ -203,6 +216,12 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? true : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(topicOperatorSpec.getResources());
+                if (topicOperatorSpec.getReadinessProbe() != null) {
+                    result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
+                }
+                if (topicOperatorSpec.getLivenessProbe() != null) {
+                    result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
+                }
             }
         }
         return result;
@@ -211,14 +230,15 @@ public class EntityTopicOperator extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        return Collections.singletonList(new ContainerBuilder()
+        return singletonList(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/topic_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build());
@@ -240,7 +260,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -249,8 +269,30 @@ public class EntityTopicOperator extends AbstractModel {
             createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
-                namespace, EntityOperator.entityOperatorServiceAccountName(cluster), createOwnerReference());
+    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        RoleBinding rb = new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(roleBindingName(cluster))
+                    .withNamespace(watchedNamespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(singletonList(ks))
+                .build();
+
+        return rb;
     }
 }

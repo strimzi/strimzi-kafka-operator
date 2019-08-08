@@ -49,6 +49,7 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
      *
      * @param namespace The namespace.
      * @param name The resource name.
+     * @return Whether the resource in in the Ready state.
      */
     public boolean isReady(String namespace, String name) {
         R resourceOp = operation().inNamespace(namespace).withName(name);

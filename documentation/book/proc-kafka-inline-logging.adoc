@@ -3,37 +3,22 @@
 // assembly-logging.adoc
 
 [id='kafka-inline-logging-{context}']
-= Using inline logging setting
+= Specifying inline logging
 .Procedure
 
-. Edit the YAML file to specify the loggers and their level for the required components. For example:
+. Edit the YAML file to specify the loggers and logging level for the required components.
 +
-[source,yaml,subs=+quotes]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    # ...
-    logging:
-      type: inline
-      loggers:
-       _logger.name_: "INFO"
-    # ...
-----
+For example, the logging level here is set to INFO:
 +
-In the above example, the log level is set to INFO.
-You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information about the log levels, see link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
+include::snip-external-logging-{kind}.adoc[]
++
+You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
++
+For more information about the log levels, see the link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
 
-. Create or update the Kafka resource in {ProductPlatformName}.
+. Create or update the Kafka resource in Kubernetes.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
+

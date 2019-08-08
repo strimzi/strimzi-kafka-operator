@@ -8,8 +8,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public interface HelmClient {
-    static HelmClient findClient(KubeClient<?> kubeClient) {
-        HelmClient client = new Helm(kubeClient);
+    static HelmClient findClient(KubeCmdClient<?> kubeClient) {
+        HelmClient client = new Helm(kubeClient.namespace());
         if (!client.clientAvailable()) {
             throw new RuntimeException("No helm client found on $PATH. $PATH=" + System.getenv("PATH"));
         }
@@ -18,6 +18,9 @@ public interface HelmClient {
 
     /** Initialize the Helm Tiller server on the cluster */
     HelmClient init();
+
+    /** Sets namespace for client */
+    HelmClient namespace(String namespace);
 
     /** Install a chart given its local path, release name, and values to override */
     HelmClient install(Path chart, String releaseName, Map<String, String> valueOverrides);

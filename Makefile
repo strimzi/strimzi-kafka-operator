@@ -11,12 +11,12 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=docker-images helm-charts test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init install examples metrics
+SUBDIRS=kafka-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init test-client docker-images helm-charts install examples metrics
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): helm_install $(SUBDIRS)
+$(DOCKER_TARGETS): $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
@@ -32,14 +32,11 @@ release_prepare:
 
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
-	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
+	echo "Changing Docker image tags in install to :$(RELEASE_VERSION)"
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
-	# Zookeeper needs to have special handling, because it has strange tag bot no image map
-	# The firs line below handles the Zoo tag
-	# The one below it handles all tags whcih are not Zookeeper
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/}' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_(ZOOKEEPER)![a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/operator:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/operator:[a-zA-Z0-9_.-]\+/strimzi\/operator:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 
 release_maven:
@@ -85,15 +82,16 @@ helm_pkg:
 docu_versions:
 	documentation/snip-kafka-versions.sh kafka-versions > documentation/book/snip-kafka-versions.adoc
 	documentation/version-dependent-attrs.sh kafka-versions > documentation/book/common/version-dependent-attrs.adoc
+	documentation/snip-images.sh kafka-versions > documentation/book/snip-images.adoc
 
-docu_html: docu_htmlclean docu_check docu_versions
+docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/book/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
-docu_htmlnoheader: docu_htmlnoheaderclean docu_check docu_versions
+docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
@@ -102,7 +100,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_check docu_versions
 docu_check:
 	./.travis/check_docs.sh
 
-findbugs: $(SUBDIRS)
+spotbugs: $(SUBDIRS)
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
@@ -128,7 +126,9 @@ systemtests:
 
 helm_install: helm-charts
 
+crd_install: install
+
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions findbugs docu_check
+.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check

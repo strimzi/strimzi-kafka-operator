@@ -4,12 +4,12 @@
  */
 package io.strimzi.api.kafka.model.template;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,7 +26,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "statefulset", "pod", "bootstrapService", "brokersService"})
-public class KafkaClusterTemplate implements Serializable {
+@EqualsAndHashCode
+public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate statefulset;
@@ -37,6 +38,8 @@ public class KafkaClusterTemplate implements Serializable {
     private ResourceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
+    private ResourceTemplate externalBootstrapIngress;
+    private ResourceTemplate perPodIngress;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -100,6 +103,36 @@ public class KafkaClusterTemplate implements Serializable {
         this.perPodService = perPodService;
     }
 
+    @Description("Template for Kafka external bootstrap `Ingress`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getExternalBootstrapIngress() {
+        return externalBootstrapIngress;
+    }
+
+    public void setExternalBootstrapIngress(ResourceTemplate externalBootstrapIngress) {
+        this.externalBootstrapIngress = externalBootstrapIngress;
+    }
+
+    @Description("Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPerPodIngress() {
+        return perPodIngress;
+    }
+
+    public void setPerPodIngress(ResourceTemplate perPodIngress) {
+        this.perPodIngress = perPodIngress;
+    }
+
+    @Description("Template for Kafka `PodDisruptionBudget`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
+    }
+
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
+    }
+
     @Description("Template for Kafka external bootstrap `Route`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getExternalBootstrapRoute() {
@@ -120,22 +153,12 @@ public class KafkaClusterTemplate implements Serializable {
         this.perPodRoute = perPodRoute;
     }
 
-    @Description("Template for Kafka `PodDisruptionBudget`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
-        return podDisruptionBudget;
-    }
-
-    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
-        this.podDisruptionBudget = podDisruptionBudget;
-    }
-
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

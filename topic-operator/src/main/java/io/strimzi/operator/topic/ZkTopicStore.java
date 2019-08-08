@@ -8,7 +8,6 @@ import io.strimzi.operator.topic.zk.AclBuilder;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.apache.logging.log4j.LogManager;
@@ -61,7 +60,8 @@ public class ZkTopicStore implements TopicStore {
     }
 
     @Override
-    public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
+    public Future<Topic> read(TopicName topicName) {
+        Future<Topic> handler = Future.future();
         String topicPath = getTopicPath(topicName);
         zk.getData(topicPath, result -> {
             final AsyncResult<Topic> fut;
@@ -76,10 +76,12 @@ public class ZkTopicStore implements TopicStore {
             }
             handler.handle(fut);
         });
+        return handler;
     }
 
     @Override
-    public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> create(Topic topic) {
+        Future<Void> handler = Future.future();
         byte[] data = TopicSerialization.toJson(topic);
         String topicPath = getTopicPath(topic.getTopicName());
         LOGGER.debug("create znode {}", topicPath);
@@ -90,19 +92,23 @@ public class ZkTopicStore implements TopicStore {
                 handler.handle(result);
             }
         });
+        return handler;
     }
 
     @Override
-    public void update(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> update(Topic topic) {
+        Future<Void> handler = Future.future();
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topic.getTopicName());
         LOGGER.debug("update znode {}", topicPath);
         zk.setData(topicPath, data, -1, handler);
+        return handler;
     }
 
     @Override
-    public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> delete(TopicName topicName) {
+        Future<Void> handler = Future.future();
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topicName);
         LOGGER.debug("delete znode {}", topicPath);
@@ -113,5 +119,6 @@ public class ZkTopicStore implements TopicStore {
                 handler.handle(result);
             }
         });
+        return handler;
     }
 }

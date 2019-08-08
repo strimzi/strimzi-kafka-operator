@@ -60,34 +60,30 @@ public class Labels {
     private final Map<String, String> labels;
 
     /**
-     * Returns the value of the {@code strimzi.io/cluster} label of the given {@code resource}.
+     * @return The value of the {@code strimzi.io/cluster} label of the given {@code resource}.
+     * @param resource The resource.
      */
     public static String cluster(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
     }
 
     /**
-     * Returns the value of the {@code strimzi.io/name} label of the given {@code resource}.
+     * @return the value of the {@code strimzi.io/name} label of the given {@code resource}.
+     * @param resource The resource.
      */
     public static String name(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL);
     }
 
     /**
-     * Returns the value of the {@code strimzi.io/kind} label of the given {@code resource}.
+     * @return A {@code Labels} instance from the given map
+     * @param userLabels The labels
      */
-    @Deprecated
-    public static String kind(HasMetadata resource) {
-        return resource.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL);
-    }
-
     public static Labels userLabels(Map<String, String> userLabels) {
         if (userLabels != null) {
             for (String key : userLabels.keySet()) {
-                if (key.startsWith(STRIMZI_DOMAIN)
-                        && !key.equals(STRIMZI_KIND_LABEL)) {
-                    throw new IllegalArgumentException("User labels includes a Strimzi label that is not "
-                            + STRIMZI_KIND_LABEL + ": " + key);
+                if (key.startsWith(STRIMZI_DOMAIN)) {
+                    throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
                 }
             }
             return new Labels(userLabels);
@@ -96,6 +92,10 @@ public class Labels {
         return EMPTY;
     }
 
+    /**
+     * @param userLabels The labels to add.
+     * @return A new instances with the given {@code userLabels} added to the labels in this instance.
+     */
     public Labels withUserLabels(Map<String, String> userLabels) {
         Map<String, String> newLabels = new HashMap<>(labels.size());
         newLabels.putAll(labels);
@@ -105,14 +105,16 @@ public class Labels {
     }
 
     /**
-     * Returns the labels of the given {@code resource}.
+     * @param resource The resource to get the labels of
+     * @return the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
         return new Labels(resource.getMetadata().getLabels() != null ? resource.getMetadata().getLabels() : emptyMap());
     }
 
     /**
-     * Returns the labels from Map.
+     * @return A labels instance from Map.
+     * @param labels The map of labels.
      */
     public static Labels fromMap(Map<String, String> labels) {
         if (labels != null) {
@@ -127,7 +129,7 @@ public class Labels {
      *
      * @param stringLabels  String with labels
      * @return  Labels object with parsed labels
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException The string could not be parsed.
      */
     public static Labels fromString(String stringLabels) throws IllegalArgumentException {
         Map<String, String> labels = new HashMap<>();
@@ -148,7 +150,7 @@ public class Labels {
     }
 
     private Labels(Map<String, String> labels) {
-        this.labels = unmodifiableMap(new HashMap(labels));
+        this.labels = unmodifiableMap(new HashMap<>(labels));
     }
 
     private Labels with(String label, String value) {
@@ -158,29 +160,20 @@ public class Labels {
         return new Labels(newLabels);
     }
 
-    private Labels without(String label) {
-        Map<String, String> newLabels = new HashMap<>(labels);
-        newLabels.remove(label);
-        return new Labels(newLabels);
-    }
-
     /**
      * The same labels as this instance, but with the given {@code kind} for the {@code strimzi.io/kind} key.
+     * @param kind The kind to add.
+     * @return A new instance with the given kind added.
      */
     public Labels withKind(String kind) {
         return with(STRIMZI_KIND_LABEL, kind);
     }
 
-    /**
-     * The same labels as this instance, but without any {@code strimzi.io/kind} key.
-     */
-    @Deprecated
-    public Labels withoutKind() {
-        return without(STRIMZI_KIND_LABEL);
-    }
 
     /**
      * The same labels as this instance, but with the given {@code cluster} for the {@code strimzi.io/cluster} key.
+     * @param cluster The cluster to add.
+     * @return A new instance with the given cluster added.
      */
     public Labels withCluster(String cluster) {
         return with(STRIMZI_CLUSTER_LABEL, cluster);
@@ -188,39 +181,48 @@ public class Labels {
 
     /**
      * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/name} key.
+     * @param name The name to add
+     * @return A new instance with the given name added.
      */
     public Labels withName(String name) {
         return with(STRIMZI_NAME_LABEL, name);
     }
 
     /**
-     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/name} key.
+     * The same labels as this instance, but with the given {@code name} for the {@code statefulset.kubernetes.io/pod-name} key.
+     * @param name The pod name to add
+     * @return A new instance with the given pod name added.
      */
     public Labels withStatefulSetPod(String name) {
         return with(KUBERNETES_STATEFULSET_POD_LABEL, name);
     }
 
     /**
-     * An unmodifiable map of the labels.
+     * @return an unmodifiable map of the labels.
      */
     public Map<String, String> toMap() {
         return labels;
     }
 
     /**
-     * A singleton instance with the given {@code cluster} for the {@code strimzi.io/cluster} key.
+     * @param cluster The cluster.
+     * @return A singleton instance with the given {@code cluster} for the {@code strimzi.io/cluster} key.
      */
     public static Labels forCluster(String cluster) {
         return new Labels(singletonMap(STRIMZI_CLUSTER_LABEL, cluster));
     }
 
     /**
-     * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
+     * @param kind The kind.
+     * @return A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
     public static Labels forKind(String kind) {
         return new Labels(singletonMap(STRIMZI_KIND_LABEL, kind));
     }
 
+    /**
+     * @return An instances containing just the strimzi.io labels present in this instance.
+     */
     public Labels strimziLabels() {
         Map<String, String> newLabels = new HashMap<>(3);
 
@@ -232,7 +234,7 @@ public class Labels {
 
         return new Labels(newLabels);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -4,33 +4,32 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import io.sundr.builder.annotations.Inline;
+import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
-@JsonDeserialize(
-        using = JsonDeserializer.None.class
-)
+@JsonDeserialize
 @Crd(
         apiVersion = KafkaMirrorMaker.CRD_API_VERSION,
         spec = @Crd.Spec(
@@ -41,7 +40,44 @@ import static java.util.Collections.singletonList;
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
-                version = KafkaMirrorMaker.VERSION
+                version = KafkaMirrorMaker.V1BETA1,
+                versions = {
+                        @Crd.Spec.Version(
+                                name = KafkaMirrorMaker.V1BETA1,
+                                served = true,
+                                storage = true
+                        ),
+                        @Crd.Spec.Version(
+                                name = KafkaMirrorMaker.V1ALPHA1,
+                                served = true,
+                                storage = false
+                        )
+                },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                ),
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Desired replicas",
+                                description = "The desired number of Kafka Mirror Maker replicas",
+                                jsonPath = ".spec.replicas",
+                                type = "integer"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Consumer Bootstrap Servers",
+                                description = "The boostrap servers for the consumer",
+                                jsonPath = ".spec.consumer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Producer Bootstrap Servers",
+                                description = "The boostrap servers for the producer",
+                                jsonPath = ".spec.producer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
+                }
         )
 )
 @Buildable(
@@ -52,13 +88,16 @@ import static java.util.Collections.singletonList;
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-public class KafkaMirrorMaker extends CustomResource {
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
+@EqualsAndHashCode
+public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String VERSION = "v1alpha1";
+    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1BETA1 = "v1beta1";
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaMirrorMaker";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
@@ -72,6 +111,7 @@ public class KafkaMirrorMaker extends CustomResource {
     private String apiVersion;
     private ObjectMeta metadata;
     private KafkaMirrorMakerSpec spec;
+    private KafkaMirrorMakerStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -94,7 +134,7 @@ public class KafkaMirrorMaker extends CustomResource {
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the mirror maker.")
+    @Description("The specification of Kafka Mirror Maker.")
     public KafkaMirrorMakerSpec getSpec() {
         return spec;
     }
@@ -103,12 +143,21 @@ public class KafkaMirrorMaker extends CustomResource {
         this.spec = spec;
     }
 
-    @JsonAnyGetter
+    @Description("The status of Kafka Mirror Maker.")
+    public KafkaMirrorMakerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaMirrorMakerStatus status) {
+        this.status = status;
+    }
+
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

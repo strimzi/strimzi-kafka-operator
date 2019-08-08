@@ -4,19 +4,20 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -30,8 +31,10 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics", "template"})
-public class KafkaConnectSpec implements Serializable {
+        "livenessProbe", "readinessProbe", "jvmOptions",
+        "affinity", "tolerations", "logging", "metrics", "template"})
+@EqualsAndHashCode(doNotUseGetters = true)
+public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,7 +47,7 @@ public class KafkaConnectSpec implements Serializable {
 
     private String version;
     private String image;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -110,11 +113,11 @@ public class KafkaConnectSpec implements Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
@@ -159,24 +162,30 @@ public class KafkaConnectSpec implements Serializable {
         this.metrics = metrics;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
 
+    @Deprecated
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
+    @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;
     }
 
+    @Deprecated
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
     }
@@ -232,12 +241,12 @@ public class KafkaConnectSpec implements Serializable {
         this.externalConfiguration = externalConfiguration;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

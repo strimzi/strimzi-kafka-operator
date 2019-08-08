@@ -4,59 +4,37 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
-import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 
@@ -76,16 +54,18 @@ public class Main {
 
         maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
             if (crs.succeeded())    {
-                isOnOpenShift(vertx, client).setHandler(os -> {
-                    if (os.succeeded()) {
-                        run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
+                PlatformFeaturesAvailability.create(vertx, client).setHandler(pfa -> {
+                    if (pfa.succeeded()) {
+                        log.info("Environment facts gathered: {}", pfa.result());
+
+                        run(vertx, client, pfa.result(), config).setHandler(ar -> {
                             if (ar.failed()) {
                                 log.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
                             }
                         });
                     } else {
-                        log.error("Failed to distinguish between Kubernetes and OpenShift", os.cause());
+                        log.error("Failed to gather environment facts", pfa.cause());
                         System.exit(1);
                     }
                 });
@@ -96,40 +76,29 @@ public class Main {
         });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterOperatorConfig config) {
+    static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         printEnvInfo();
-        ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
-        ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
-        DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
-        SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect> kco =
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
-        CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> kmmo =
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
-        NetworkPolicyOperator networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
-        PodDisruptionBudgetOperator podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
+
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
-                config.getOperationTimeoutMs(), certManager,
-                new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()),
-                config.versions(), config.getImagePullPolicy());
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift,
-                certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
-                networkPolicyOperator, podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
+                certManager, resourceOperatorSupplier, config);
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
+                certManager, resourceOperatorSupplier, config);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        if (isOpenShift) {
-            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations,
-                    configMapOperations, secretOperations, certManager, config.versions(), config.getImagePullPolicy());
+        if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
+            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
         } else {
-            maybeLogS2iOnKubeWarning(vertx, client);
+            log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations,
-                        configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
-                        podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
+
+        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
+                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
@@ -141,7 +110,8 @@ public class Main {
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations,
-                    kafkaMirrorMakerAssemblyOperator);
+                    kafkaMirrorMakerAssemblyOperator,
+                    kafkaBridgeAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
@@ -150,81 +120,16 @@ public class Main {
                         log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
-                    fut.completer().handle(res);
+                    fut.handle(res);
                 });
         }
         return CompositeFuture.join(futures);
     }
 
-    private static void maybeLogS2iOnKubeWarning(Vertx vertx, KubernetesClient client) {
-        try {
-            // Check the KafkaConnectS2I isn't installed and whinge if it is
-            CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaConnectS2I.CRD_NAME).get();
-            if (crd != null) {
-                log.warn("The KafkaConnectS2I custom resource definition can only be installed on OpenShift, because plain Kubernetes doesn't support S2I. " +
-                        "Execute 'kubectl delete crd " + KafkaConnectS2I.CRD_NAME + "' to remove this warning.");
-            }
-        } catch (KubernetesClientException e) {
-
-        }
-    }
-
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
-        ImageStreamOperator imagesStreamOperations;
-        BuildConfigOperator buildConfigOperations;
-        DeploymentConfigOperator deploymentConfigOperations;
-        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I> kafkaConnectS2iCrdOperator;
-        NetworkPolicyOperator networkPolicyOperator;
-        PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-        KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations;
-        OpenShiftClient osClient = client.adapt(OpenShiftClient.class);
-        imagesStreamOperations = new ImageStreamOperator(vertx, osClient);
-        buildConfigOperations = new BuildConfigOperator(vertx, osClient);
-        deploymentConfigOperations = new DeploymentConfigOperator(vertx, osClient);
-        kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
-        networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
-        podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
-        kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
-                certManager,
-                kafkaConnectS2iCrdOperator,
-                 configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, versions, imagePullPolicy);
-        return kafkaConnectS2IClusterOperations;
-    }
-
-    static Future<Boolean> isOnOpenShift(Vertx vertx, KubernetesClient client)  {
-        if (client.isAdaptable(OkHttpClient.class)) {
-            OkHttpClient ok = client.adapt(OkHttpClient.class);
-            Future<Boolean> fut = Future.future();
-
-            vertx.executeBlocking(request -> {
-                try (Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "oapi").build()).execute()) {
-                    if (resp.code() == 200) {
-                        log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
-                        // We should be on OpenShift based on the /oapi result. We can now safely try isAdaptable() to be 100% sure.
-                        Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-                        request.complete(isOpenShift);
-                    } else {
-                        log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
-                        request.complete(Boolean.FALSE);
-                    }
-                } catch (IOException e) {
-                    log.error("OpenShift detection failed", e);
-                    request.fail(e);
-                }
-            }, fut.completer());
-
-            return fut;
-        } else {
-            log.error("Cannot adapt KubernetesClient to OkHttpClient");
-            return Future.failedFuture("Cannot adapt KubernetesClient to OkHttpClient");
-        }
-    }
-
-    private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
+    /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             List<Future> futures = new ArrayList<>();
-            ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
+            ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, config.getOperationTimeoutMs());
 
             Map<String, String> clusterRoles = new HashMap<String, String>() {
                 {
@@ -237,19 +142,23 @@ public class Main {
             };
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
-                log.info("Creating cluster role {}", clusterRole);
+                log.info("Creating cluster role {}", clusterRole.getKey());
 
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
+                                StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    Future fut = cro.reconcile(clusterRole.getKey(), new ClusterRoleOperator.ClusterRole(yaml));
+                    ClusterRole role = cro.convertYamlToClusterRole(yaml);
+                    Future fut = cro.reconcile(role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
                     log.error("Failed to create Cluster Roles.", e);
                     throw new RuntimeException(e);
                 }
+
             }
 
-            Future returnFuture = Future.future();
+            Future<Void> returnFuture = Future.future();
             CompositeFuture.all(futures).setHandler(res -> {
                 if (res.succeeded())    {
                     returnFuture.complete();

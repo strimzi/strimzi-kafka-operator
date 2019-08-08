@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-java_images="java-base"
-# Note dependency order of the following images
-stunnel_images="stunnel-base zookeeper-stunnel kafka-stunnel entity-operator-stunnel"
-kafka_images="kafka-base kafka kafka-connect kafka-mirror-maker zookeeper test-client kafka-connect kafka-connect/s2i"
+java_images="operator"
+kafka_images="kafka test-client"
 
 # Kafka versions
 function load_checksums {
@@ -31,9 +29,6 @@ function build {
     local java_version=${JAVA_VERSION:-1.8.0}
 
     # Images not depending on Kafka version
-    for image in $stunnel_images; do
-        DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS $(alternate_base $image)" make -C "$image" "$targets"
-    done
     for image in $java_images; do
         DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} $(alternate_base $image)" make -C "$image" "$targets"
     done
@@ -49,6 +44,9 @@ function build {
         done
     done
 }
+
+# Check for bash >= 4
+if [[ $(echo "${BASH_VERSION}" | cut -c 1) -lt 4 ]]; then echo -e "You need bash version >= 4 to build Strimzi.\nRefer to HACKING.md for more information"; fi
 
 load_checksums
 build $@

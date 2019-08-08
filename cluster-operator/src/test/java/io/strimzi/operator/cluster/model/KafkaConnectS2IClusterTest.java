@@ -14,12 +14,15 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -29,6 +32,7 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
@@ -51,6 +55,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaConnectS2IClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
@@ -117,7 +122,7 @@ public class KafkaConnectS2IClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(kc.kafkaConnectClusterName(cluster));
+        return expectedLabels(KafkaConnectS2IResources.deploymentName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -134,26 +139,26 @@ public class KafkaConnectS2IClusterTest {
     public void testDefaultValues() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster), VERSIONS);
 
-        assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals("strimzi/kafka-connect-s2i:latest-kafka-2.0.0", kc.sourceImageBaseName + ":" + kc.sourceImageTag);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(defaultConfiguration, kc.getConfiguration().asOrderedProperties());
         assertFalse(kc.isInsecureSourceRepository());
     }
 
     @Test
     public void testFromCrd() {
-        assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster) + ":latest", kc.image);
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
-        assertEquals(healthDelay, kc.readinessInitialDelay);
-        assertEquals(healthTimeout, kc.readinessTimeout);
-        assertEquals(healthDelay, kc.livenessInitialDelay);
-        assertEquals(healthTimeout, kc.livenessTimeout);
+        assertEquals(healthDelay, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(healthDelay, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(expectedConfiguration, kc.getConfiguration().asOrderedProperties());
         assertEquals(bootstrapServers, kc.bootstrapServers);
         assertFalse(kc.isInsecureSourceRepository());
@@ -169,7 +174,7 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(expectedLabels(kc.serviceName(cluster)), svc.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.serviceName(cluster)), svc.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
@@ -181,18 +186,18 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testGenerateDeploymentConfig()   {
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = expectedLabels(KafkaConnectS2IResources.deploymentName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), dep.getSpec().getSelector());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
@@ -207,12 +212,13 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("ImageChange", dep.getSpec().getTriggers().get(1).getType());
         assertEquals(true, dep.getSpec().getTriggers().get(1).getImageChangeParams().getAutomatic());
         assertEquals(1, dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().size());
-        assertEquals(kc.kafkaConnectClusterName(this.cluster), dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().get(0));
-        assertEquals(kc.kafkaConnectClusterName(this.cluster) + ":latest", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster), dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().get(0));
+        assertEquals(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
         assertEquals("ImageStreamTag", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getKind());
         assertEquals("Rolling", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal());
+        assertNull(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
         checkOwnerReference(kc.createOwnerReference(), dep);
     }
 
@@ -220,9 +226,9 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateBuildConfig() {
         BuildConfig bc = kc.generateBuildConfig();
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), bc.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.buildConfigName(cluster), bc.getMetadata().getName());
         assertEquals(namespace, bc.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.buildConfigName(cluster)), bc.getMetadata().getLabels());
         assertEquals("ImageStreamTag", bc.getSpec().getOutput().getTo().getKind());
         assertEquals(kc.image, bc.getSpec().getOutput().getTo().getName());
         assertEquals("Serial", bc.getSpec().getRunPolicy());
@@ -230,7 +236,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(new BinaryBuildSource(), bc.getSpec().getSource().getBinary());
         assertEquals("Source", bc.getSpec().getStrategy().getType());
         assertEquals("ImageStreamTag", bc.getSpec().getStrategy().getSourceStrategy().getFrom().getKind());
-        assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster) + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
         assertEquals(2, bc.getSpec().getTriggers().size());
         assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
         assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
@@ -242,9 +248,9 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateSourceImageStream() {
         ImageStream is = kc.generateSourceImageStream();
 
-        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.sourceImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -264,9 +270,9 @@ public class KafkaConnectS2IClusterTest {
 
         ImageStream is = kc.generateSourceImageStream();
 
-        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.sourceImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.sourceImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -280,23 +286,35 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateTargetImageStream() {
         ImageStream is = kc.generateTargetImageStream();
 
-        assertEquals(kc.kafkaConnectClusterName(cluster), is.getMetadata().getName());
+        assertEquals(KafkaConnectS2IResources.targetImageStreamName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(KafkaConnectS2IResources.targetImageStreamName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
         checkOwnerReference(kc.createOwnerReference(), is);
     }
 
     @Test
+    public void withOldAffinity() throws IOException {
+        resourceTester
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinity() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>(), true, null).getSpec().getTemplate().getSpec().getAffinity());
+                .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withOldTolerations() throws IOException {
+        resourceTester
+                .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
     public void withTolerations() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>(), true, null).getSpec().getTemplate().getSpec().getTolerations());
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
@@ -311,7 +329,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
         assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
         assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -325,6 +343,8 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
@@ -345,7 +365,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
         assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
 
@@ -358,6 +378,8 @@ public class KafkaConnectS2IClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT));
         assertEquals("user-secret/user.key",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
@@ -378,7 +400,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
@@ -401,7 +423,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
 
         assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 
@@ -449,6 +471,7 @@ public class KafkaConnectS2IClusterTest {
                                 .withLabels(podLabels)
                                 .withAnnotations(podAnots)
                             .endMetadata()
+                            .withNewPriorityClassName("top-priority")
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -468,9 +491,10 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
         assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
@@ -506,7 +530,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check DeploymentConfig
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
         assertEquals(1, selected.size());
@@ -533,7 +557,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check DeploymentConfig
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
         assertEquals(1, selected.size());
@@ -558,7 +582,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check DeploymentConfig
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertEquals(1, selected.size());
@@ -589,7 +613,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check DeploymentConfig
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertEquals(1, selected.size());
@@ -621,7 +645,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertEquals(0, selected.size());
@@ -647,7 +671,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertEquals(0, selected.size());
@@ -677,7 +701,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
         assertEquals(0, selected.size());
@@ -701,7 +725,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
         assertEquals(0, selected.size());
@@ -720,7 +744,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
@@ -729,7 +753,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
@@ -749,9 +773,48 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsCO() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(this.resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, secrets);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withImagePullSecrets(secret2)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
+        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 
@@ -760,7 +823,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
     }
 
@@ -770,14 +833,14 @@ public class KafkaConnectS2IClusterTest {
                 .editSpec()
                     .withNewTemplate()
                         .withNewPod()
-                            .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                            .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                         .endPod()
                     .endTemplate()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
         assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
@@ -789,7 +852,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 
@@ -823,10 +886,60 @@ public class KafkaConnectS2IClusterTest {
     public void testImagePullPolicy() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS, null);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
 
-        dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT);
+        dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT, null);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+    }
+
+    @Test
+    public void testResources() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        assertEquals(limits, cont.getResources().getLimits());
+        assertEquals(requests, cont.getResources().getRequests());
+    }
+
+    @Test
+    public void testJvmOptions() {
+        Map<String, String> xx = new HashMap<>(2);
+        xx.put("UseG1GC", "true");
+        xx.put("MaxGCPauseMillis", "20");
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewJvmOptions()
+                        .withNewXms("512m")
+                        .withNewXmx("1024m")
+                        .withNewServer(true)
+                        .withXx(xx)
+                    .endJvmOptions()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-server"));
+        assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-XX:+UseG1GC"));
+        assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-XX:MaxGCPauseMillis=20"));
+        assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xmx1024m"));
+        assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xms512m"));
     }
 }

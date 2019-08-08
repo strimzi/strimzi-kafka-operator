@@ -2,6 +2,9 @@
 //
 // assembly-deployment-configuration.adoc
 
+//attribute for use in snip-external-logging.adoc
+:kind: KafkaMirrorMaker
+
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
@@ -13,8 +16,8 @@
 :context: deployment-configuration-kafka-mirror-maker
 
 The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[].
-All labels that apply to the desired `KafkaMirrorMaker` resource will also be applied to the {ProductPlatformName} resources making up Mirror Maker.
-This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
+All labels that apply to the desired `KafkaMirrorMaker` resource will also be applied to the Kubernetes resources making up Mirror Maker.
+This provides a convenient mechanism for resources to be labeled as required.
 
 include::assembly-kafka-mirror-maker-replicas.adoc[leveloffset=+1]
 
@@ -25,6 +28,10 @@ include::assembly-kafka-mirror-maker-whitelist.adoc[leveloffset=+1]
 include::assembly-kafka-mirror-maker-groupid.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-numstreams.adoc[leveloffset=+1]
+
+include::assembly-kafka-mirror-maker-offset-commit-interval.adoc[leveloffset=+1]
+
+include::assembly-kafka-mirror-maker-abort-on-send-failure.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-tls.adoc[leveloffset=+1]
 

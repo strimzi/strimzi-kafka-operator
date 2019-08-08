@@ -4,14 +4,13 @@
  */
 package io.strimzi.operator.topic;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 
 /**
  * Represents a persistent data store where the operator can store its copy of the
  * topic state that won't be modified by either K8S or Kafka.
  */
-public interface TopicStore {
+interface TopicStore {
 
     public static class EntityExistsException extends Exception {
 
@@ -23,37 +22,42 @@ public interface TopicStore {
 
     /**
      * Asynchronously get the topic with the given name
-     * and run the given handler on the context with the resulting Topic.
-     * If no topic with the given name exists, the handler will be called with
+     * completing the returned future when done.
+     * If no topic with the given name exists, the future will complete with
      * a null result.
+     * @param name The name of the topic.
+     * @return A future which completes with the given topic.
      */
-    void read(TopicName name, Handler<AsyncResult<Topic>> handler);
+    Future<Topic> read(TopicName name);
 
     /**
      * Asynchronously persist the given topic in the store
-     * and run the given handler on the context when done.
-     * If a topic with the given name already exists, the handler will be called with
-     * a failed result whose {@code cause()} is
+     * completing the returned future when done.
+     * If a topic with the given name already exists, the future will complete with an
      * {@link EntityExistsException}.
+     * @param topic The topic.
+     * @return A future which completes when the given topic has been created.
      */
-    void create(Topic topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> create(Topic topic);
 
     /**
      * Asynchronously update the given topic in the store
-     * and run the given handler on the context when done.
-     * If no topic with the given name exists, the handler will be called with
-     * a failed result whose {@code cause()} is
+     * completing the returned future when done.
+     * If no topic with the given name exists, the future will complete with a
      * {@link NoSuchEntityExistsException}.
+     * @param topic The topic.
+     * @return A future which completes when the given topic has been updated.
      */
-    void update(Topic topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> update(Topic topic);
 
     /**
      * Asynchronously delete the given topic from the store
-     * and run the given handler on the context when done.
-     * If no topic with the given name exists, the handler wiil be called with
-     * a failed result whose {@code cause()} is
+     * completing the returned future when done.
+     * If no topic with the given name exists, the future will complete with a
      * {@link NoSuchEntityExistsException}.
+     * @param topic The topic.
+     * @return A future which completes when the given topic has been deleted.
      */
-    void delete(TopicName topic, Handler<AsyncResult<Void>> handler);
+    Future<Void> delete(TopicName topic);
 }
 

@@ -4,10 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -28,14 +27,13 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+        "livenessProbe", "readinessProbe",
         "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityUserOperatorSpec implements Serializable {
+public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest");
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
@@ -43,10 +41,12 @@ public class EntityUserOperatorSpec implements Serializable {
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
 
     private String watchedNamespace;
-    private String image = DEFAULT_IMAGE;
+    private String image;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
-    private Resources resources;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
+    private ResourceRequirements resources;
     private Logging logging;
     private EntityOperatorJvmOptions jvmOptions;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -90,13 +90,33 @@ public class EntityUserOperatorSpec implements Serializable {
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
     @Description("Resource constraints (limits and requests).")
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 
     @Description("Logging configuration")
@@ -109,12 +129,12 @@ public class EntityUserOperatorSpec implements Serializable {
         this.logging = logging;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

@@ -18,46 +18,57 @@ public class KafkaUpgrade {
         this.compare = from.compareTo(to);
     }
 
-    /** The version being upgraded from. */
+    /**
+     * The version being upgraded from.
+     * @return The version being upgraded from.
+     */
     public KafkaVersion from() {
         return from;
     }
 
-    /** The version being upgraded to. */
+    /**
+     * The version being upgraded to.
+     * @return The version being upgraded to.
+     */
     public KafkaVersion to() {
         return to;
     }
 
-    /** true if upgrading from {@link #from()} to {@code to} requires upgrading the inter broker protocol. */
+    /**
+     * true if upgrading from {@link #from()} to {@code to} requires upgrading the inter broker protocol.
+     * @return true if upgrading from {@link #from()} to {@code to} requires upgrading the inter broker protocol.
+     */
     public boolean requiresProtocolChange() {
         return !from.protocolVersion().equals(to.protocolVersion());
     }
 
-    /** true if upgrading from {@link #from()} to {@code to} requires upgrading the message format. */
+    /**
+     * true if upgrading from {@link #from()} to {@code to} requires upgrading the message format.
+     * @return true if upgrading from {@link #from()} to {@code to} requires upgrading the message format.
+     */
     public boolean requiresMessageFormatChange() {
         return !from.messageVersion().equals(to.messageVersion());
     }
 
+    /**
+     * @return true if this is an upgrade.
+     */
     public boolean isUpgrade() {
         return compare < 0;
     }
 
+    /**
+     * @return true if this is a downgrade.
+     */
     public boolean isDowngrade() {
         return compare > 0;
     }
 
+    /**
+     * @return true if there is no version change.
+     */
     public boolean isNoop() {
         return compare == 0;
-    }
-
-    public String description() {
-        if (isUpgrade()) {
-            return "upgrade";
-        } else if (isDowngrade()) {
-            return "downgrade";
-        } else {
-            return "no version change";
-        }
     }
 
     @Override

@@ -6,92 +6,91 @@ package io.strimzi.systemtest;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.api.model.batch.JobBuilder;
-import io.fabric8.kubernetes.api.model.batch.JobStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaBridgeList;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
+import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
-import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.ProcessResult;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Properties;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.extension.ExtensionContext;
-
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Calendar;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.test.TestUtils.changeOrgAndTag;
+import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
-import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
-import static io.strimzi.test.TestUtils.writeFile;
-import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static java.util.Arrays.asList;
-
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@ExtendWith(TestExecutionWatcher.class)
 public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     static {
@@ -105,45 +104,30 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
-    protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    protected static final String TEST_TOPIC_NAME = "test-topic";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
-    private static final long GET_BROKER_API_TIMEOUT = 60_000L;
-    private static final long GET_BROKER_API_INTERVAL = 5_000L;
-    static final long GLOBAL_TIMEOUT = 300000;
-    static final long GLOBAL_POLL_INTERVAL = 1000;
-    static final long TEARDOWN_GLOBAL_WAIT = 10000;
-    private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
-    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String STRIMZI_ORG = "strimzi";
-    public static final String STRIMZI_TAG = "latest";
-    public static final String IMAGE_PULL_POLICY = "Always";
     public static final String REQUESTS_MEMORY = "512Mi";
     public static final String REQUESTS_CPU = "200m";
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
-    public static final String OPERATOR_LOG_LEVEL = "INFO";
 
-    public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
+    public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
 
-    Resources resources;
-    static Resources testClassResources;
-    static String operationID;
+    protected Resources testMethodResources;
+    private static Resources testClassResources;
+    private static String operationID;
     Random rng = new Random();
 
-    protected static NamespacedKubernetesClient namespacedClient() {
-        return CLIENT.inNamespace(KUBE_CLIENT.namespace());
-    }
-
     protected HelmClient helmClient() {
-        return CLUSTER.helmClient();
+        return kubeCluster().helmClient().namespace(getNamespace());
     }
 
     static String kafkaClusterName(String clusterName) {
@@ -204,33 +188,45 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(CLIENT, crdClass, listClass, doneableClass).inNamespace(KUBE_CLIENT.namespace()).withName(resourceName);
+        Resource<T, D> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass, doneableClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);
     }
 
-    void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
-        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class, resourceName, editor);
+    protected void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
+        replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }
 
     void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
-        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class, resourceName, editor);
+        replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, resourceName, editor);
     }
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
         replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
     }
 
+    void replaceUserResource(String resourceName, Consumer<KafkaUser> editor) {
+        replaceCrdResource(KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, resourceName, editor);
+    }
+
     void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
         replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
     }
 
+    void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
+        replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
+    }
+
+    void replaceConnectS2IResource(String resourceName, Consumer<KafkaConnectS2I> editor) {
+        replaceCrdResource(KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, resourceName, editor);
+    }
+
     String getBrokerApiVersions(String podName) {
         AtomicReference<String> versions = new AtomicReference<>();
-        waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
+        waitFor("kafka-broker-api-versions.sh success", Constants.GET_BROKER_API_INTERVAL, Constants.GET_BROKER_API_TIMEOUT, () -> {
             try {
-                String output = KUBE_CLIENT.execInPod(podName,
+                String output = cmdKubeClient().execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
                 versions.set(output);
                 return true;
@@ -251,7 +247,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                 try {
-                    String output = KUBE_CLIENT.execInPod(zookeeperPod,
+                    String output = cmdKubeClient().execInPod(zookeeperPod,
                         "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                     if (pattern.matcher(output).find()) {
@@ -265,13 +261,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(KUBE_CLIENT.execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(cmdKubeClient().execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
-    }
-
-    static String getValueFromJson(String json, String jsonPath) {
-        return JsonPath.parse(json).read(jsonPath).toString();
     }
 
     /**
@@ -279,6 +271,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
      * @return THe map of key/values
      */
+    @SuppressWarnings("unchecked")
     static Map<String, String> loadProperties(String keyValuePairs) {
         try {
             Properties actual = new Properties();
@@ -309,40 +302,31 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    List<Event> getEvents(String resourceType, String resourceName) {
-        return CLIENT.events().inNamespace(KUBE_CLIENT.namespace()).list().getItems().stream()
-                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
-                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
+    List<Event> getEvents(String resourceUid) {
+        return kubeClient().listEvents().stream()
+                .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
+    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c", command);
+        cmdKubeClient().execInPod(podName, "/bin/bash", "-c", command);
     }
 
-    public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
-        LOGGER.info("Consuming messages");
-        String output = KUBE_CLIENT.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
-                "bin/kafka-verifiable-consumer.sh --broker-list " +
-                        KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
-                        + timeout + "; kill %1").out();
-        output = "[" + output.replaceAll("\n", ",") + "]";
-        LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
-        return output;
-
-    }
-
-    protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = CLIENT.pods().inNamespace(namespace).withName(podName).get();
+    protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
+        Pod po = kubeClient().getPod(podName);
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            CLIENT.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
-        Container container = po.getSpec().getContainers().get(0);
+                kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+
+        Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
+        assertTrue(optional.isPresent(), "Not found an expected container " + containerName);
+
+        Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
         assertEquals(cpuLimit, limits.get("cpu").getAmount());
@@ -351,8 +335,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         assertEquals(cpuRequest, requests.get("cpu").getAmount());
     }
 
-    protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
-        List<List<String>> cmdLines = commandLines(podName, "java");
+    protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
+        List<List<String>> cmdLines = commandLines(podName, containerName, "java");
         assertEquals(1, cmdLines.size(), "Expected exactly 1 java process to be running");
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
@@ -375,12 +359,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    private List<List<String>> commandLines(String podName, String cmd) {
+    private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        ProcessResult pr = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        String output = cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
-        );
-        for (String cmdLine : pr.out().split("\n")) {
+        ).out();
+        for (String cmdLine : output.split("\n")) {
             result.add(asList(cmdLine.split("\0")));
         }
         return result;
@@ -388,21 +372,21 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
@@ -410,27 +394,27 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : CLIENT.extensions().deployments().inNamespace(KUBE_CLIENT.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient().getDeployment("strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -439,39 +423,55 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     public String getContainerImageNameFromPod(String podName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
     }
 
     public String getContainerImageNameFromPod(String podName, String containerName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[?(@.name =='" + containerName + "')].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubeClient().getPod(podName).getSpec().getContainers().stream()
+                .filter(c -> c.getName().equals(containerName))
+                .findFirst().get().getImage();
     }
 
     public String  getInitContainerImageName(String podName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
+        return kubeClient().getPod(podName).getSpec().getInitContainers().stream()
+                .findFirst().get().getImage();
     }
 
-    protected void createResources() {
+    public  void createTestMethodResources() {
         LOGGER.info("Creating resources before the test");
-        resources = new Resources(namespacedClient());
+        testMethodResources = new Resources(kubeClient());
     }
 
-    protected static void createTestClassResources() {
+    public  static void createTestClassResources() {
         LOGGER.info("Creating test class resources");
-        testClassResources = new Resources(namespacedClient());
+        testClassResources = new Resources(kubeClient());
     }
 
-    protected void deleteResources() throws Exception {
-        collectLogs();
-        LOGGER.info("Deleting resources after the test");
-        resources.deleteResources();
-        resources = null;
+    public  void deleteTestMethodResources() {
+        if (testMethodResources != null) {
+            testMethodResources.deleteResources();
+            testMethodResources = null;
+        }
     }
 
-    Resources resources() {
-        return resources;
+    public Resources testMethodResources() {
+        return testMethodResources;
+    }
+
+    public static Resources testClassResources() {
+        return testClassResources;
+    }
+
+    public static String getOperationID() {
+        return operationID;
+    }
+
+    public static void setOperationID(String operationID) {
+        AbstractST.operationID = operationID;
+    }
+
+    public static void setTestClassResources(Resources testClassResources) {
+        AbstractST.testClassResources = testClassResources;
     }
 
     String startTimeMeasuring(Operation operation) {
@@ -479,633 +479,217 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return TimeMeasuringSystem.startOperation(operation);
     }
 
-    /** Get the log of the pod with the given name */
-    String podLog(String podName) {
-        return namespacedClient().pods().withName(podName).getLog();
-    }
-
-    String podLog(String podName, String containerId) {
-        return namespacedClient().pods().withName(podName).inContainer(containerId).getLog();
-    }
-
-    /** Get the name of the pod for a job */
-    String jobPodName(Job job) {
-        return podNameWithLabels(job.getSpec().getTemplate().getMetadata().getLabels());
-    }
-
-    String userOperatorPodName() {
-        return podNameWithLabels(Collections.singletonMap("strimzi.io/name", CLUSTER_NAME + "-entity-operator"));
-    }
-
-    String podNameWithLabels(Map<String, String> labels) {
-        List<Pod> pods = namespacedClient().pods().withLabels(labels).list().getItems();
-        if (pods.size() != 1) {
-            fail("There are " + pods.size() +  " pods with labels " + labels);
-        }
-        return pods.get(0).getMetadata().getName();
-    }
-
-    /**
-     * Greps logs from a pod which ran kafka-verifiable-producer.sh and
-     * kafka-verifiable-consumer.sh
-     */
-    void checkPings(int messagesCount, Job job) {
-        String podName = jobPodName(job);
-        String log = podLog(podName);
-        Matcher m = BRACE_PATTERN.matcher(log);
-        boolean producerSuccess = false;
-        boolean consumerSuccess = false;
-        while (m.find()) {
-            String json = m.group();
-            String name2 = getValueFromJson(json, "$.name");
-            if ("tool_data".equals(name2)) {
-                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.sent"));
-                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.acked"));
-                producerSuccess = true;
-            } else if ("records_consumed".equals(name2)) {
-                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
-                consumerSuccess = true;
-            }
-        }
-        if (!producerSuccess || !consumerSuccess) {
-            LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
-        }
-        assertTrue(producerSuccess, "The producer didn't send any messages (no tool_data message)");
-        assertTrue(consumerSuccess, "The consumer didn't consume any messages (no records_consumed message)");
-    }
-
-    /**
-     * Waits for a job to complete successfully, {@link org.junit.jupiter.api.Assertions#fail()}ing
-     * if it completes with any failed pods.
-     * @throws TimeoutException if the job doesn't complete quickly enough.
-     */
-    Job waitForJobSuccess(Job job) {
-        // Wait for the job to succeed
-        try {
-            LOGGER.debug("Waiting for Job completion: {}", job);
-            waitFor("Job completion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
-                Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
-                JobStatus status;
-                if (jobs == null || (status = jobs.getStatus()) == null) {
-                    LOGGER.debug("Poll job is null");
-                    return false;
-                } else {
-                    if (status.getFailed() != null && status.getFailed() > 0) {
-                        LOGGER.debug("Poll job failed");
-                        fail();
-                    } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
-                        LOGGER.debug("Poll job succeeded");
-                        return true;
-                    } else if (status.getActive() != null && status.getActive() > 0) {
-                        LOGGER.debug("Poll job has active");
-                        return false;
-                    }
-                }
-                LOGGER.debug("Poll job in indeterminate state");
-                return false;
-            });
-            return job;
-        } catch (TimeoutException e) {
-            LOGGER.info("Original Job: {}", job);
-            try {
-                LOGGER.info("Job: {}", indent(toYamlString(namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get())));
-            } catch (Exception | AssertionError t) {
-                LOGGER.info("Job not available: {}", t.getMessage());
-            }
-            try {
-                LOGGER.info("Pod: {}", indent(toYamlString(namespacedClient().pods().withName(jobPodName(job)).get())));
-            } catch (Exception | AssertionError t) {
-                LOGGER.info("Pod not available: {}", t.getMessage());
-            }
-            try {
-                LOGGER.info("Job timeout: Job Pod logs\n----\n{}\n----", indent(podLog(jobPodName(job))));
-            } catch (Exception | AssertionError t) {
-                LOGGER.info("Pod logs not available: {}", t.getMessage());
-            }
-            try {
-                LOGGER.info("Job timeout: User Operator Pod logs\n----\n{}\n----", indent(podLog(userOperatorPodName(), "user-operator")));
-            } catch (Exception | AssertionError t) {
-                LOGGER.info("Pod logs not available: {}", t.getMessage());
-            }
-            throw e;
-        }
-    }
-
-    String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = namespacedClient().secrets().withName(kafkaUser.getMetadata().getName()).get();
-
-        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
-        if (password == null) {
-            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
-            throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
-        }
-        return "sasl.mechanism=SCRAM-SHA-512\n" +
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
-                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
-                "password=\"" + password + "\";\n";
-    }
-
-    private PodSpecBuilder createPodSpecForProducer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener, String bootstrapServer) {
-        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
-                .withRestartPolicy("OnFailure");
-
-        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
-        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
-        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-
-        String producerConfiguration = "acks=all\n";
-        if (tlsListener) {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_SSL\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=SSL\n";
-            }
-            producerConfiguration +=
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
-        } else {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=PLAINTEXT\n";
-            }
-        }
-
-        if (tlsUser) {
-            producerConfiguration +=
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                            "ssl.keystore.type=pkcs12\n";
-            cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv();
-
-            String userSecretVolumeName = "tls-cert";
-            String userSecretMountPoint = "/opt/kafka/user-secret";
-            cb.addNewVolumeMount()
-                    .withName(userSecretVolumeName)
-                    .withMountPath(userSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(kafkaUserName)
-                    .endSecret()
-                    .endVolume();
-        }
-
-        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
-
-        if (kafkaUserName != null) {
-            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
-        }
-
-        if (tlsListener) {
-            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
-            String clusterCaSecretVolumeName = "ca-cert";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
-            cb.addNewVolumeMount()
-                .withName(clusterCaSecretVolumeName)
-                .withMountPath(caSecretMountPoint)
-                .endVolumeMount()
-                .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
-            if (tlsUser) {
-                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
-            }
-            podSpecBuilder
-                .addNewVolume()
-                    .withName(clusterCaSecretVolumeName)
-                        .withNewSecret()
-                            .withSecretName(clusterCaSecretName)
-                        .endSecret()
-                .endVolume();
-        }
-
-        return podSpecBuilder.withContainers(cb.build());
-    }
-
-    Job sendRecordsToClusterJob(String bootstrapServer, String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
-
-        String connect = tlsListener ? bootstrapServer + "-kafka-bootstrap:9093" : bootstrapServer + "-kafka-bootstrap:9092";
-
-        ContainerBuilder cb = new ContainerBuilder()
-                .withName("send-records")
-                .withImage(changeOrgAndTag("strimzi/test-client:latest"))
-                .addNewEnv().withName("PRODUCER_OPTS").withValue(
-                        "--broker-list " + connect + " " +
-                                "--topic " + topic + " " +
-                                "--max-messages " + messagesCount).endEnv()
-                .withCommand("/opt/kafka/producer.sh");
-
-        PodSpec producerPodSpec = createPodSpecForProducer(cb, kafkaUser, tlsListener, bootstrapServer).build();
-
-        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .addToLabels("job", name)
-                .endMetadata()
-                .withSpec(producerPodSpec)
-                .endTemplate()
-                .endSpec()
-                .build()));
-        LOGGER.info("Created Job {}", job);
-        return job;
-    }
-
-    private PodSpecBuilder createPodSpecForConsumer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener, String bootstrapServer) {
-
-        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
-                .withRestartPolicy("OnFailure");
-
-        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
-        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
-        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-
-        String consumerConfiguration = "auto.offset.reset=earliest\n";
-        if (tlsListener) {
-            if (scramShaUser) {
-                consumerConfiguration += "security.protocol=SASL_SSL\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                consumerConfiguration += "security.protocol=SSL\n";
-            }
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.truststore.type=pkcs12\n";
-        } else {
-            if (scramShaUser) {
-                consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                consumerConfiguration += "security.protocol=PLAINTEXT\n";
-            }
-        }
-
-        if (tlsUser) {
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                    "ssl.keystore.type=pkcs12\n";
-            cb.addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
-
-            String userSecretVolumeName = "tls-cert";
-            String userSecretMountPoint = "/opt/kafka/user-secret";
-            cb.addNewVolumeMount()
-                    .withName(userSecretVolumeName)
-                    .withMountPath(userSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(kafkaUserName)
-                    .endSecret()
-                    .endVolume();
-        }
-
-        cb.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
-
-        if (kafkaUserName != null) {
-            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
-        }
-
-        if (tlsListener) {
-            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
-            String clusterCaSecretVolumeName = "ca-cert";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
-            cb.addNewVolumeMount()
-                    .withName(clusterCaSecretVolumeName)
-                    .withMountPath(caSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                    .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
-            if (tlsUser) {
-                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
-            }
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(clusterCaSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(clusterCaSecretName)
-                    .endSecret()
-                    .endVolume();
-        }
-        return podSpecBuilder.withContainers(cb.build());
-    }
-
-    Job readMessagesFromClusterJob(String bootstrapServer, String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
-
-        String connect = tlsListener ? bootstrapServer + "-kafka-bootstrap:9093" : bootstrapServer + "-kafka-bootstrap:9092";
-        ContainerBuilder cb = new ContainerBuilder()
-                .withName("read-messages")
-                .withImage(changeOrgAndTag("strimzi/test-client:latest"))
-                .addNewEnv().withName("CONSUMER_OPTS").withValue(
-                        "--broker-list " + connect + " " +
-                                "--group-id " + name + "-" + "my-group" + " " +
-                                "--verbose " +
-                                "--topic " + topic + " " +
-                                "--max-messages " + messagesCount).endEnv()
-                .withCommand("/opt/kafka/consumer.sh");
-
-
-        PodSpec consumerPodSpec = createPodSpecForConsumer(cb, kafkaUser, tlsListener, bootstrapServer).build();
-
-        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
-            .withNewMetadata()
-                .withName(name)
-            .endMetadata()
-            .withNewSpec()
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withName(name)
-                            .addToLabels("job", name)
-                    .endMetadata()
-                    .withSpec(consumerPodSpec)
-                .endTemplate()
-            .endSpec()
-            .build()));
-        LOGGER.info("Created Job {}", job);
-        return job;
-    }
-
-    /**
-     * Greps logs from a pod which ran kafka-verifiable-consumer.sh
-     */
-    void checkRecordsForConsumer(int messagesCount, Job job) {
-        String podName = jobPodName(job);
-        String log = podLog(podName);
-        Matcher m = BRACE_PATTERN.matcher(log);
-        boolean consumerSuccess = false;
-        while (m.find()) {
-            String json = m.group();
-            String name = getValueFromJson(json, "$.name");
-            if ("records_consumed".equals(name)) {
-                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
-                consumerSuccess = true;
-            }
-        }
-        if (!consumerSuccess) {
-            LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
-        }
-        assertTrue(consumerSuccess, "The consumer didn't consume any messages (no records_consumed message)");
-    }
-
-    String clusterCaCertSecretName(String cluster) {
+    public String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
     }
 
-    /**
-     * Create a Job which which produce and then consume messages to a given topic.
-     * The job will be deleted from the kubernetes cluster at the end of the test.
-     * @param name The name of the {@code Job} and also the consumer group id.
-     *             The Job's pod will also use this in a {@code job=&lt;name&gt;} selector.
-     * @param topic The topic to send messages over
-     * @param messagesCount The number of messages to send and receive.
-     * @param kafkaUser The user to send and receive the messages as.
-     * @param tlsListener true if the clients should connect over the TLS listener,
-     *                    otherwise the plaintext listener will be used.
-     * @param messagesCount The number of messages to produce & consume
-     * @return The job
-     */
-    Job pingJob(String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
-
-        String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
-        ContainerBuilder cb = new ContainerBuilder()
-                .withName("ping")
-                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0"))
-                .addNewEnv().withName("PRODUCER_OPTS").withValue(
-                        "--broker-list " + connect + " " +
-                                "--topic " + topic + " " +
-                                "--max-messages " + messagesCount).endEnv()
-                .addNewEnv().withName("CONSUMER_OPTS").withValue(
-                        "--broker-list " + connect + " " +
-                                "--group-id " + name + "-" + rng.nextInt(Integer.MAX_VALUE) + " " +
-                                "--verbose " +
-                                "--topic " + topic + " " +
-                                "--max-messages " + messagesCount).endEnv()
-                .withCommand("/opt/kafka/ping.sh");
-
-        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
-                .withRestartPolicy("OnFailure");
-
-        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
-        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
-        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-        String producerConfiguration = "acks=all\n";
-        String consumerConfiguration = "auto.offset.reset=earliest\n";
-        if (tlsListener) {
-            if (scramShaUser) {
-                consumerConfiguration += "security.protocol=SASL_SSL\n";
-                producerConfiguration += "security.protocol=SASL_SSL\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                consumerConfiguration += "security.protocol=SSL\n";
-                producerConfiguration += "security.protocol=SSL\n";
-            }
-            producerConfiguration +=
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.truststore.type=pkcs12\n";
-        } else {
-            if (scramShaUser) {
-                consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                consumerConfiguration += "security.protocol=PLAINTEXT\n";
-                producerConfiguration += "security.protocol=PLAINTEXT\n";
-            }
-        }
-
-        if (tlsUser) {
-            producerConfiguration +=
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                            "ssl.keystore.type=pkcs12\n";
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                    "ssl.keystore.type=pkcs12\n";
-            cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
-
-            String userSecretVolumeName = "tls-cert";
-            String userSecretMountPoint = "/opt/kafka/user-secret";
-            cb.addNewVolumeMount()
-                    .withName(userSecretVolumeName)
-                    .withMountPath(userSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(kafkaUserName)
-                    .endSecret()
-                    .endVolume();
-        }
-
-        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv()
-                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
-
-        if (kafkaUserName != null) {
-            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
-        }
-
-        if (tlsListener) {
-            String clusterCaSecretName = clusterCaCertSecretName(CLUSTER_NAME);
-            String clusterCaSecretVolumeName = "ca-cert";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
-            cb.addNewVolumeMount()
-                    .withName(clusterCaSecretVolumeName)
-                    .withMountPath(caSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                    .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
-            if (tlsUser) {
-                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
-            }
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(clusterCaSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(clusterCaSecretName)
-                    .endSecret()
-                    .endVolume();
-        }
-
-        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .addToLabels("job", name)
-                .endMetadata()
-                .withSpec(podSpecBuilder.withContainers(cb.build()).build())
-                .endTemplate()
-                .endSpec()
-                .build()));
-        LOGGER.info("Created Job {}", job);
-        return job;
+    void verifyLabelsForKafkaCluster(String clusterName, String appName) {
+        verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
+        verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);
+        verifyLabelsOnCOPod();
+        verifyLabelsOnPods(clusterName, "entity-operator", appName, "Kafka");
+        verifyLabelsForCRDs();
+        verifyLabelsForKafkaAndZKServices(clusterName, appName);
+        verifyLabelsForSecrets(clusterName, appName);
+        verifyLabelsForConfigMaps(clusterName, appName, "");
+        verifyLabelsForRoleBindings(clusterName, appName);
+        verifyLabelsForServiceAccounts(clusterName, appName);
     }
 
-    void collectLogs() {
-        // Get current date to create a unique folder
-        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String logDir = !testName.isEmpty() ?
-                TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
-                : TEST_LOG_DIR + currentDate;
+    void verifyLabelsForKafkaOrZkPods(String clusterName, String podType, String appName) {
+        LOGGER.info("Verifying labels for {}", podType);
 
-        LogCollector logCollector = new LogCollector(CLIENT.inNamespace(KUBE_CLIENT.namespace()), new File(logDir));
-        logCollector.collectEvents();
-        logCollector.collectConfigMaps();
-        logCollector.collectLogsFromPods();
+        kubeClient().listPodsByPrefixInName(clusterName + "-" + podType).forEach(
+            pod -> {
+                String podName = pod.getMetadata().getName();
+                LOGGER.info("Verifying labels for pod {}", podName);
+                Map<String, String> labels = pod.getMetadata().getLabels();
+                assertEquals(appName, labels.get("app"));
+                assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"));
+                assertEquals(podName, labels.get("statefulset.kubernetes.io/pod-name"));
+                assertEquals(clusterName, labels.get("strimzi.io/cluster"));
+                assertEquals("Kafka", labels.get("strimzi.io/kind"));
+                assertEquals(clusterName.concat("-").concat(podType), labels.get("strimzi.io/name"));
+            }
+        );
     }
 
-    private class LogCollector {
-        NamespacedKubernetesClient client;
-        String namespace;
-        File logDir;
-        File configMapDir;
-        File eventsDir;
 
-        private LogCollector(NamespacedKubernetesClient client, File logDir) {
-            this.client = client;
-            this.namespace = client.getNamespace();
-            this.logDir = logDir;
-            this.eventsDir = new File(logDir + "/events");
-            this.configMapDir = new File(logDir + "/configMaps");
-            logDir.mkdirs();
+    void verifyLabelsOnCOPod() {
+        LOGGER.info("Verifying labels for cluster-operator pod");
 
-            if (!eventsDir.exists()) {
-                eventsDir.mkdirs();
-            }
-            if (!configMapDir.exists()) {
-                configMapDir.mkdirs();
-            }
-        }
+        Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
+        assertEquals("strimzi-cluster-operator", coLabels.get("name"));
+        assertTrue(coLabels.get("pod-template-hash").matches("\\d+"));
+        assertEquals("cluster-operator", coLabels.get("strimzi.io/kind"));
+    }
 
-        private void collectLogsFromPods() {
-            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
-
-            try {
-                client.pods().list().getItems().forEach(pod -> {
-                    String podName = pod.getMetadata().getName();
-                    pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
-                        // Write logs from containers to files
-                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
-                    });
-                });
-            } catch (Exception allExceptions) {
-                LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
-            }
-        }
-
-        private void collectEvents() {
-            LOGGER.info("Collecting events in namespace {}", namespace);
-            String events = KUBE_CLIENT.getEvents();
-            // Write events to file
-            writeFile(eventsDir + "/" + "events-in-namespace" + KUBE_CLIENT.namespace() + ".log", events);
-        }
-
-        private void collectConfigMaps() {
-            LOGGER.info("Collecting configmaps in namespace {}", namespace);
-            client.configMaps().inNamespace(namespace).list().getItems().forEach(configMap -> {
-                writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
+    protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
+        LOGGER.info("Verifying labels on pod type {}", podType);
+        kubeClient().listPods().stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
+            .forEach(pod -> {
+                LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
+                assertEquals(appName, pod.getMetadata().getLabels().get("app"));
+                assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
+                assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals(kind, pod.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(clusterName.concat("-" + podType), pod.getMetadata().getLabels().get("strimzi.io/name"));
             });
+    }
+
+    void verifyLabelsForCRDs() {
+        LOGGER.info("Verifying labels for CRDs");
+        kubeClient().listCustomResourceDefinition().stream()
+            .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
+            .forEach(crd -> {
+                LOGGER.info("Verifying labels for custom resource {]", crd.getMetadata().getName());
+                assertEquals("strimzi", crd.getMetadata().getLabels().get("app"));
+            });
+    }
+
+    void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Services");
+        List<String> servicesList = new ArrayList<>();
+        servicesList.add(clusterName + "-kafka-bootstrap");
+        servicesList.add(clusterName + "-kafka-brokers");
+        servicesList.add(clusterName + "-zookeeper-nodes");
+        servicesList.add(clusterName + "-zookeeper-client");
+
+        for (String serviceName : servicesList) {
+            kubeClient().listServices().stream()
+                .filter(service -> service.getMetadata().getName().equals(serviceName))
+                .forEach(service -> {
+                    LOGGER.info("Verifying labels for service {}", serviceName);
+                    assertEquals(appName, service.getMetadata().getLabels().get("app"));
+                    assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", service.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                });
         }
     }
 
-    void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> namespacedClient().secrets().withName(secretName).get() != null);
-        try {
-            Thread.sleep(60000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    protected void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
+        LOGGER.info("Verifying labels for Kafka Connect Services");
+
+        String serviceName = clusterName.concat("-").concat(serviceToTest);
+        kubeClient().listServices().stream()
+            .filter(service -> service.getMetadata().getName().equals(serviceName))
+            .forEach(service -> {
+                LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
+                assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals(kind, service.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+            }
+        );
     }
 
-    void waitForPodDeletion(String namespace, String podName) {
-        LOGGER.info("Waiting when Pod {} will be deleted", podName);
+    void verifyLabelsForSecrets(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for secrets");
+        kubeClient().listSecrets().stream()
+            .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
+            .forEach(p -> {
+                LOGGER.info("Verifying secret {}", p.getMetadata().getName());
+                assertEquals(appName, p.getMetadata().getLabels().get("app"));
+                assertEquals("Kafka", p.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertEquals(clusterName, p.getMetadata().getLabels().get("strimzi.io/cluster"));
+            }
+        );
+    }
 
-        TestUtils.waitFor("statefulset " + podName, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> CLIENT.pods().inNamespace(namespace).withName(podName).get() == null);
+    void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
+        LOGGER.info("Verifying labels for Config maps");
+
+        kubeClient().listConfigMaps()
+            .forEach(cm -> {
+                LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
+                if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
+                    assertNull(cm.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
+                    assertNull(cm.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaMirrorMaker", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else {
+                    assertEquals(appName, cm.getMetadata().getLabels().get("app"));
+                    assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertTrue(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
+                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName));
+                }
+            }
+        );
+    }
+
+    void verifyLabelsForServiceAccounts(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Service Accounts");
+
+        kubeClient().listServiceAccounts().stream()
+            .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
+            .forEach(sa -> {
+                LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
+                assertEquals("strimzi", sa.getMetadata().getLabels().get("app"));
+            }
+        );
+
+        kubeClient().listServiceAccounts().stream()
+            .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
+            .forEach(sa -> {
+                LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
+                if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
+                    assertNull(sa.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
+                    assertNull(sa.getMetadata().getLabels().get("app"));
+                    assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                } else {
+                    assertEquals(appName, sa.getMetadata().getLabels().get("app"));
+                    assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                }
+                assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+            }
+        );
+    }
+
+    void verifyLabelsForRoleBindings(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Cluster Role bindings");
+        kubeClient().listRoleBindings().stream()
+            .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
+            .forEach(rb -> {
+                LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
+                assertEquals("strimzi", rb.getMetadata().getLabels().get("app"));
+            });
+
+        kubeClient().listRoleBindings().stream()
+            .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
+            .forEach(rb -> {
+                LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
+                assertEquals(appName, rb.getMetadata().getLabels().get("app"));
+                assertEquals(clusterName, rb.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
+            }
+        );
     }
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
-     * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String namespace) throws Exception {
+    void waitForDeletion(long time) throws Exception {
+        List<Pod> pods = kubeClient().listPods().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
+        // Delete pods in case of kubernetes keep them up
+        pods.forEach(p -> kubeClient().deletePod(p));
+
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
-            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
+
+        // Collect pods again after proper removal
+        pods = kubeClient().listPods().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
+        long podCount = pods.size();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
@@ -1118,7 +702,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -1127,7 +711,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         createNamespaces(coNamespace, bindingsNamespaces);
         applyClusterOperatorInstallFiles();
 
-        testClassResources = new Resources(namespacedClient());
+        setTestClassResources(new Resources(kubeClient()));
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
@@ -1139,18 +723,18 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    private static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+    public  static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            testClassResources.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            testClassResources.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
@@ -1158,7 +742,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      */
-    static void applyRoleBindings(String namespace) {
+    public static void applyRoleBindings(String namespace) {
         applyRoleBindings(namespace, Collections.singletonList(namespace));
     }
 
@@ -1167,53 +751,223 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
+    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
         applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
     }
 
     /**
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
-    void deployClusterOperatorViaHelmChart() {
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+    public void deployClusterOperatorViaHelmChart() {
+        String dockerOrg = Environment.STRIMZI_ORG;
+        String dockerTag = Environment.STRIMZI_TAG;
 
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 entry("imageRepositoryOverride", dockerOrg),
                 entry("imageTagOverride", dockerTag),
-                entry("image.pullPolicy", IMAGE_PULL_POLICY),
+                entry("image.pullPolicy", Constants.IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),
                 entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevel", OPERATOR_LOG_LEVEL))
+                entry("logLevel", Environment.STRIMZI_LOG_LEVEL))
                 .collect(TestUtils.entriesToMap()));
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = KUBE_CLIENT.namespace("kube-system");
+        String oldNamespace = setNamespace("kube-system");
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-        KUBE_CLIENT.applyContent(helmServiceAccount);
+        cmdKubeClient().applyContent(helmServiceAccount);
         helmClient().init();
-        KUBE_CLIENT.namespace(oldNamespace);
+        setNamespace(oldNamespace);
         helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
     }
 
     /**
      * Delete CO deployed via helm chart.
      */
-    void deleteClusterOperatorViaHelmChart() {
+    public  void deleteClusterOperatorViaHelmChart() {
         LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
     }
 
+    /**
+     * Wait for cluster availability, check availability of external routes with TLS
+     * @param userName user name
+     * @param namespace cluster namespace
+     * @throws Exception
+     */
+    public void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
+        int messageCount = 50;
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @throws Exception
+     */
+    public void waitForClusterAvailability(String namespace) throws Exception {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        waitForClusterAvailability(namespace, topicName);
+    }
+
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @param topicName topic name
+     * @throws Exception
+     */
+    public void waitForClusterAvailability(String namespace, String topicName) throws Exception {
+        int messageCount = 50;
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void sendMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void sendMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void sendMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void receiveMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void receiveMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    public void receiveMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
+
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    protected void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+    }
+
+    protected void tearDownEnvironmentAfterAll() {
+        testClassResources.deleteResources();
+    }
+
     @AfterEach
-    void recreateEnvironmentAfterFailure(ExtensionContext context) {
-        if (context.getExecutionException().isPresent()) {
-            LOGGER.info("Test execution contains exception, going to recreate test environment");
-            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
-            LOGGER.info("Env recreated.");
+    void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        if (Environment.SKIP_TEARDOWN == null) {
+            if (context.getExecutionException().isPresent()) {
+                LOGGER.info("Test execution contains exception, going to recreate test environment");
+                context.getExecutionException().get().printStackTrace();
+                recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
+                LOGGER.info("Env recreated.");
+            }
+            tearDownEnvironmentAfterEach();
+        }
+    }
+
+    @AfterAll
+    void teardownEnvironmentClass() {
+        if (Environment.SKIP_TEARDOWN == null) {
+            tearDownEnvironmentAfterAll();
+            teardownEnvForOperator();
         }
     }
 }

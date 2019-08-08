@@ -10,17 +10,16 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.requests.CreateTopicsRequest;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,7 @@ import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
 
-    private final LabelPredicate resourcePredicate = new LabelPredicate(
+    private final Labels labels = new Labels(
             "app", "strimzi");
 
     @Test
@@ -48,7 +47,7 @@ public class TopicSerializationTest {
         metadata.setAnnotations(new HashMap<>());
         builder.withMetadata(metadata);
         Topic wroteTopic = builder.build();
-        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, resourcePredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
 
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
         assertEquals(1, kafkaTopic.getMetadata().getLabels().size());
@@ -86,7 +85,7 @@ public class TopicSerializationTest {
 
 
     @Test
-    public void testToNewTopic() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void testToNewTopic() {
         Topic topic = new Topic.Builder()
                 .withTopicName("test-topic")
                 .withConfigEntry("foo", "bar")
@@ -99,12 +98,7 @@ public class TopicSerializationTest {
         assertEquals(3, newTopic.numPartitions());
         assertEquals(2, newTopic.replicationFactor());
         assertEquals(null, newTopic.replicasAssignments());
-        // For some reason Kafka doesn't provide an accessor for the config
-        // and only provides a package-access method to convert to topic details
-        Method m = NewTopic.class.getDeclaredMethod("convertToTopicDetails");
-        m.setAccessible(true);
-        CreateTopicsRequest.TopicDetails details = (CreateTopicsRequest.TopicDetails) m.invoke(newTopic);
-        assertEquals(singletonMap("foo", "bar"), details.configs);
+        assertEquals(singletonMap("foo", "bar"), newTopic.configs());
     }
 
     @Test
@@ -116,15 +110,16 @@ public class TopicSerializationTest {
                 .withNumReplicas((short) 2)
                 .withMapName("gee")
                 .build();
-        Map<ConfigResource, Config> config = TopicSerialization.toTopicConfig(topic);
+        Map<ConfigResource, Collection<AlterConfigOp>> config = TopicSerialization.toTopicConfig(topic);
         assertEquals(1, config.size());
-        Map.Entry<ConfigResource, Config> c = config.entrySet().iterator().next();
+        Map.Entry<ConfigResource, Collection<AlterConfigOp>> c = config.entrySet().iterator().next();
         assertEquals(c.getKey().type(), ConfigResource.Type.TOPIC);
         assertEquals(c.getKey().name(), "test-topic");
-        assertEquals(1, c.getValue().entries().size());
-        assertEquals("foo", c.getValue().get("foo").name());
-        assertEquals("bar", c.getValue().get("foo").value());
-
+        assertEquals(1, c.getValue().size());
+        AlterConfigOp alterConfigOp = c.getValue().iterator().next();
+        assertEquals("foo", alterConfigOp.configEntry().name());
+        assertEquals("bar", alterConfigOp.configEntry().value());
+        assertEquals(AlterConfigOp.OpType.SET, alterConfigOp.opType());
     }
 
     @Test

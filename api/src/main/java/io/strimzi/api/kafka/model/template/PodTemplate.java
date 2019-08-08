@@ -4,17 +4,19 @@
  */
 package io.strimzi.api.kafka.model.template;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -32,16 +34,20 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds"})
-public class PodTemplate implements Serializable {
+@EqualsAndHashCode
+public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;
     private List<LocalObjectReference> imagePullSecrets;
     private PodSecurityContext securityContext;
     private int terminationGracePeriodSeconds = 30;
+    private Affinity affinity;
+    private List<Toleration> tolerations;
+    private String priorityClassName;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
@@ -89,12 +95,44 @@ public class PodTemplate implements Serializable {
         this.terminationGracePeriodSeconds = terminationGracePeriodSeconds;
     }
 
-    @JsonAnyGetter
+    @Description("The pod's affinity rules.")
+    @KubeLink(group = "core", version = "v1", kind = "affinity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Affinity getAffinity() {
+        return affinity;
+    }
+
+    public void setAffinity(Affinity affinity) {
+        this.affinity = affinity;
+    }
+
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<Toleration> getTolerations() {
+        return tolerations;
+    }
+
+    public void setTolerations(List<Toleration> tolerations) {
+        this.tolerations = tolerations;
+    }
+
+    @Description("The name of the Priority Class to which these pods will be assigned.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getPriorityClassName() {
+        return priorityClassName;
+    }
+
+    public void setPriorityClassName(String priorityClassName) {
+        this.priorityClassName = priorityClassName;
+    }
+
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

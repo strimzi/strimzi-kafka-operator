@@ -4,28 +4,31 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-import static java.lang.Integer.parseInt;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
-import java.util.regex.Pattern;
+import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class StatefulSetDiff {
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
+
+public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
-        + "|/spec/template/metadata/annotations"  // Actually it's only the statefulset-generation annotation we care about
+        + "|/spec/template/metadata/annotations/strimzi.io~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
+        + "|/spec/template/spec/containers/[0-9]+/resources"
         + "|/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/periodSeconds"
@@ -33,7 +36,6 @@ public class StatefulSetDiff {
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/failureThreshold"
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/periodSeconds"
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/successThreshold"
-        + "|/spec/template/spec/containers/[0-9]+/resources"
         + "|/spec/template/spec/containers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/containers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/dnsPolicy"
@@ -49,22 +51,29 @@ public class StatefulSetDiff {
         + "|/spec/template/spec/serviceAccount"
         + "|/status)$");
 
+    private static final Pattern RESOURCE_PATH = Pattern.compile("^/spec/template/spec/(?:initContainers|containers)/[0-9]+/resources/(?:limits|requests)/(memory|cpu)$");
+    private static final Pattern VOLUME_SIZE = Pattern.compile("^/spec/volumeClaimTemplates/[0-9]+/spec/resources/.*$");
+
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
                 || pathValue.startsWith(path + "/");
     }
 
     private final boolean changesVolumeClaimTemplate;
+    private final boolean changesVolumeSize;
     private final boolean isEmpty;
-    private final boolean changesSpecTemplateSpec;
+    private final boolean changesSpecTemplate;
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
     public StatefulSetDiff(StatefulSet current, StatefulSet desired) {
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
+        JsonNode source = patchMapper().valueToTree(current);
+        JsonNode target = patchMapper().valueToTree(desired);
+        JsonNode diff = JsonDiff.asJson(source, target);
         int num = 0;
         boolean changesVolumeClaimTemplate = false;
-        boolean changesSpecTemplateSpec = false;
+        boolean changesVolumeSize = false;
+        boolean changesSpecTemplate = false;
         boolean changesLabels = false;
         boolean changesSpecReplicas = false;
         for (JsonNode d : diff) {
@@ -74,69 +83,95 @@ public class StatefulSetDiff {
                 log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                 continue;
             }
+            Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
+            if (resourceMatchers.matches()) {
+                if ("replace".equals(d.path("op").asText())) {
+                    boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
+                    if (same) {
+                        ObjectMeta md = current.getMetadata();
+                        log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                        continue;
+                    }
+                }
+            }
             if (log.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
                 log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
-                log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
+                log.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                log.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;
-            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
+            // Any volume claim template changes apart from size change should trigger rolling update
+            // Size changes should not trigger rolling update. Therefore we need to separate these two in the diff.
+            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue) && !VOLUME_SIZE.matcher(pathValue).matches();
+            changesVolumeSize |= VOLUME_SIZE.matcher(pathValue).matches();
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
             // by k8s
-            changesSpecTemplateSpec |= equalsOrPrefix("/spec/template/spec", pathValue);
+            changesSpecTemplate |= equalsOrPrefix("/spec/template", pathValue);
             changesLabels |= equalsOrPrefix("/metadata/labels", pathValue);
             changesSpecReplicas |= equalsOrPrefix("/spec/replicas", pathValue);
         }
         this.isEmpty = num == 0;
         this.changesLabels = changesLabels;
         this.changesSpecReplicas = changesSpecReplicas;
-        this.changesSpecTemplateSpec = changesSpecTemplateSpec;
+        this.changesSpecTemplate = changesSpecTemplate;
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
+        this.changesVolumeSize = changesVolumeSize;
     }
 
-    private JsonNode getFromPath(StatefulSet current, String pathValue) {
-        JsonNode node1 = patchMapper().valueToTree(current);
-        for (String field : pathValue.replaceFirst("^/", "").split("/")) {
-            JsonNode node2 = node1.get(field);
-            if (node2 == null) {
-                try {
-                    int index = parseInt(field);
-                    node2 = node1.get(index);
-                } catch (NumberFormatException e) {
+    boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
+        JsonNode s = lookupPath(source, pathValue);
+        JsonNode t = lookupPath(target, pathValue);
+        String group = resourceMatchers.group(1);
+        if (!s.isMissingNode()
+            && !t.isMissingNode()) {
+            if ("cpu".equals(group)) {
+                // Ignore single millicpu differences as they could be due to rounding error
+                if (Math.abs(Quantities.parseCpuAsMilliCpus(s.asText()) - Quantities.parseCpuAsMilliCpus(t.asText())) < 1) {
+                    return true;
+                }
+            } else {
+                // Ignore single byte differences as they could be due to rounding error
+                if (Math.abs(Quantities.parseMemory(s.asText()) - Quantities.parseMemory(t.asText())) < 1) {
+                    return true;
                 }
             }
-            if (node2 == null) {
-                node1 = null;
-                break;
-            } else {
-                node1 = node2;
-            }
         }
-        return node1;
+        return false;
     }
 
+    /**
+     * Returns whether the Diff is empty or not
+     *
+     * @return true when the StatefulSets are identical
+     */
+    @Override
     public boolean isEmpty() {
         return isEmpty;
     }
 
-    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} */
+    /** @return True if there's a difference in {@code /spec/volumeClaimTemplates} but not to {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
     public boolean changesVolumeClaimTemplates() {
         return changesVolumeClaimTemplate;
     }
 
-    /** Returns true if there's a difference in {@code /spec/template/spec} */
-    public boolean changesSpecTemplateSpec() {
-        return changesSpecTemplateSpec;
+    /** @return True if there's a difference in {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
+    public boolean changesVolumeSize() {
+        return changesVolumeSize;
     }
 
-    /** Returns true if there's a difference in {@code /metadata/labels} */
+    /** @return True if there's a difference in {@code /spec/template/spec} */
+    public boolean changesSpecTemplate() {
+        return changesSpecTemplate;
+    }
+
+    /** @return True if there's a difference in {@code /metadata/labels} */
     public boolean changesLabels() {
         return changesLabels;
     }
 
-    /** Returns true if there's a difference in {@code /spec/replicas} */
+    /** @return True if there's a difference in {@code /spec/replicas} */
     public boolean changesSpecReplicas() {
         return changesSpecReplicas;
     }

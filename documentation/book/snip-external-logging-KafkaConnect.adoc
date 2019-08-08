@@ -1,0 +1,12 @@
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      _logger.name_: "INFO"
+  # ...
+----

@@ -4,18 +4,21 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -39,14 +42,10 @@ import java.util.Map;
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
         "metrics", "logging", "tlsSidecar", "template"})
-public class KafkaClusterSpec implements Serializable {
+@EqualsAndHashCode
+public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    public static final String DEFAULT_INIT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/kafka-init:latest");
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest");
 
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
@@ -67,7 +66,7 @@ public class KafkaClusterSpec implements Serializable {
     private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -173,11 +172,11 @@ public class KafkaClusterSpec implements Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
@@ -222,24 +221,30 @@ public class KafkaClusterSpec implements Serializable {
         this.metrics = metrics;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.affinity")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
 
+    @Deprecated
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.tolerations")
+    @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;
     }
 
+    @Deprecated
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
     }
@@ -275,12 +280,12 @@ public class KafkaClusterSpec implements Serializable {
         this.template = template;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

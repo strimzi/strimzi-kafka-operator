@@ -68,7 +68,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
     @Test
     public void waitUntilReadyExistenceCheckThrows(TestContext context) {
         T resource = resource();
-        RuntimeException ex = new RuntimeException();
+        RuntimeException ex = new RuntimeException("This is a test exception");
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenThrow(ex);
@@ -189,7 +189,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
             return;
         }
 
-        RuntimeException ex = new RuntimeException();
+        RuntimeException ex = new RuntimeException("This is a test exception");
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource());

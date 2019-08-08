@@ -10,11 +10,11 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,57 +23,70 @@ import java.util.List;
 
 public class K8sImpl implements K8s {
 
-    private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
+    private final static Logger LOGGER = LogManager.getLogger(K8sImpl.class);
 
-    private final LabelPredicate resourcePredicate;
+    private final Labels labels;
     private final String namespace;
 
-    private KubernetesClient client;
+    private final KubernetesClient client;
+    private final CrdOperator<KubernetesClient, KafkaTopic, KafkaTopicList, DoneableKafkaTopic> crdOperator;
 
-    private Vertx vertx;
+    private final Vertx vertx;
 
-    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate resourcePredicate, String namespace) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.resourcePredicate = resourcePredicate;
+        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        this.labels = labels;
         this.namespace = namespace;
     }
 
     @Override
-    public void createResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createResource(KafkaTopic topicResource) {
+        Future<Void> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).create(topicResource);
+                KafkaTopic kafkaTopic = operation().inNamespace(namespace).create(topicResource);
+                LOGGER.debug("KafkaTopic {} created with version {}", kafkaTopic.getMetadata().getName(),
+                        kafkaTopic.getMetadata().getResourceVersion());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
             }
         }, handler);
+        return handler;
     }
 
     @Override
-    public void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> updateResource(KafkaTopic topicResource) {
+        Future<Void> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
+                KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
+                LOGGER.debug("KafkaTopic {} updated with version {}", kafkaTopic.getMetadata().getName(),
+                        kafkaTopic.getMetadata().getResourceVersion());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
             }
         }, handler);
+        return handler;
     }
 
     @Override
-    public void deleteResource(ResourceName resourceName, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> deleteResource(ResourceName resourceName) {
+        Future<Void> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
                 operation().inNamespace(namespace).withName(resourceName.toString()).delete();
+                LOGGER.debug("KafkaTopic {} deleted", resourceName.toString());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
             }
         }, handler);
+        return handler;
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
@@ -81,33 +94,21 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void listMaps(Handler<AsyncResult<List<KafkaTopic>>> handler) {
-        vertx.executeBlocking(future -> {
-            try {
-                future.complete(operation().inNamespace(namespace).withLabels(resourcePredicate.labels()).list().getItems());
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
+    public Future<List<KafkaTopic>> listResources() {
+        return crdOperator.listAsync(namespace, io.strimzi.operator.common.model.Labels.fromMap(labels.labels()));
     }
 
     @Override
-    public void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler) {
-        vertx.executeBlocking(future -> {
-            try {
-                future.complete(operation().inNamespace(namespace).withName(resourceName.toString()).get());
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-
+    public Future<KafkaTopic> getFromName(ResourceName resourceName) {
+        return crdOperator.getAsync(namespace, resourceName.toString());
     }
 
     /**
      * Create the given k8s event
      */
     @Override
-    public void createEvent(Event event, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createEvent(Event event) {
+        Future<Void> handler = Future.future();
         vertx.executeBlocking(future -> {
             try {
                 try {
@@ -121,5 +122,6 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
+        return handler;
     }
 }

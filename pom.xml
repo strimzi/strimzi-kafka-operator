@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.11.0-SNAPSHOT</version>
+    <version>0.14.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -59,47 +59,46 @@
         <maven.failsafe.version>2.22.1</maven.failsafe.version>
         <maven.assembly.version>3.1.0</maven.assembly.version>
         <maven.shade.version>3.1.0</maven.shade.version>
-        <maven.javadoc.version>3.0.1</maven.javadoc.version>
+        <maven.javadoc.version>3.1.0</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
         <maven.checkstyle.version>3.0.0</maven.checkstyle.version>
-        <findbugs.version>3.0.5</findbugs.version>
+        <spotbugs.version>3.1.12</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-        <sundrio.version>0.15.1</sundrio.version>
+        <sundrio.version>0.19.0</sundrio.version>
 
-        <fabric8.kubernetes-client.version>4.1.1</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>4.1.1</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>4.1.1</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>4.3.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>4.3.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>4.3.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <okhttp.version>3.9.1</okhttp.version>
-        <vertx.version>3.5.4</vertx.version>
+        <okhttp.version>3.12.0</okhttp.version>
+        <vertx.version>3.7.1</vertx.version>
         <log4j.version>2.11.1</log4j.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
-        <fasterxml.jackson.version>2.9.8</fasterxml.jackson.version>
+        <fasterxml.jackson-core.version>2.9.9</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.9.9.2</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.9.9</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.9.8</fasterxml.jackson-annotations.version>
-        <kafka.version>2.1.0</kafka.version>
+        <kafka.version>2.3.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.12.7</scala-library.version>
-        <zookeeper.version>3.4.13</zookeeper.version>
+        <scala-library.version>2.12.8</scala-library.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.2.1</quartz.version>
-        <debezium.version>0.9.0.Final</debezium.version>
+        <debezium.version>0.9.5.Final</debezium.version>
 
-        <jupiter.version>5.4.0</jupiter.version>
+        <jupiter.version>5.5.0-RC1</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>
         <gson.version>2.8.2</gson.version>
-
-        <skipTests>false</skipTests>
-        <skipITs>${skipTests}</skipITs>
-        <skipUTs>${skipTests}</skipUTs>
+        <vertx.kafka.client>3.7.1</vertx.kafka.client>
     </properties>
 
     <distributionManagement>
@@ -114,7 +113,10 @@
     </distributionManagement>
 
     <modules>
+        <module>kafka-agent</module>
         <module>test</module>
+        <module>test-client</module>
+        <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
         <module>mockkube</module>
@@ -129,6 +131,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>crd-annotations</artifactId>
+                <version>${project.version}</version>
+                <scope>compile</scope>
+            </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>test</artifactId>
@@ -275,7 +283,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>${fasterxml.jackson.version}</version>
+                <version>${fasterxml.jackson-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -285,12 +293,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${fasterxml.jackson.version}</version>
+                <version>${fasterxml.jackson-databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${fasterxml.jackson.version}</version>
+                <version>${fasterxml.jackson-dataformat.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
@@ -372,6 +380,11 @@
                 <version>${gson.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>${spotbugs.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -380,15 +393,83 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>default-compile</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                            <configuration>
+                                <compilerArgs>
+                                    <arg>-Xlint:unchecked,deprecation</arg>
+                                    <arg>-Werror</arg>
+                                </compilerArgs>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven.dependency.version}</version>
-                    <dependencies>
-                         <dependency>
-                            <groupId>org.apache.maven.shared</groupId>
-                            <artifactId>maven-dependency-analyzer</artifactId>
-                            <version>1.11.1</version>
-                        </dependency>
-                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <includeScope>runtime</includeScope>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                <prependGroupId>true</prependGroupId>
+                                <overWriteReleases>false</overWriteReleases>
+                                <overWriteSnapshots>false</overWriteSnapshots>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>set-classpath</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>build-classpath</goal>
+                            </goals>
+                            <configuration>
+                                <includeScope>runtime</includeScope>
+                                <outputProperty>project.dist.classpath</outputProperty>
+                                <attach>false</attach>
+                                <prefix>lib</prefix>
+                                <prependGroupId>true</prependGroupId>
+                                <overWriteReleases>false</overWriteReleases>
+                                <overWriteSnapshots>false</overWriteSnapshots>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <executions>
+                        <execution>
+                            <id>make-dist-assembly</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                            <configuration>
+                                <descriptors>
+                                    <descriptor>../dist.xml</descriptor>
+                                </descriptors>
+                                <delimiters>
+                                    <delimiter>@</delimiter>
+                                </delimiters>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -402,7 +483,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.8</version>
+                        <version>8.18</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -512,24 +593,25 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.1.12</version><dependencies>
+                <!-- overwrite dependency on spotbugs if you want to specify the version of˓→spotbugs -->
+                <dependency>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs</artifactId>
+                    <version>${spotbugs.version}</version>
+                </dependency></dependencies>
                 <configuration>
-                    <!--
-                        Enables analysis which takes more memory but finds more bugs.
-                        If you run out of memory, changes the value of the effort element
-                        to 'Low'.
-                    -->
                     <effort>Max</effort>
                     <!-- Reports all bugs (other values are medium and max) -->
                     <threshold>Low</threshold>
                     <!-- Produces XML report -->
                     <xmlOutput>true</xmlOutput>
                     <!-- Configures the directory in which the XML report is created -->
-                    <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                    <spotbugsXmlOutputDirectory>${project.build.directory}/spotbugs</spotbugsXmlOutputDirectory>
                     <!-- Configures the file for excluding warnings -->
-                    <excludeFilterFile>${project.basedir}/../.findbugs/findbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${project.basedir}/../.spotbugs/spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
             </plugin>
             <plugin>
@@ -585,6 +667,9 @@
                         </goals>
                         <configuration>
                             <sourcepath>${project.build.sourceDirectory}:${project.build.directory}/generated-sources/annotations</sourcepath>
+                            <show>public</show>
+                            <failOnError>true</failOnError>
+                            <failOnWarnings>true</failOnWarnings>
                         </configuration>
                     </execution>
                 </executions>

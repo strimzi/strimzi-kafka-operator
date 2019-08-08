@@ -4,18 +4,19 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -33,7 +34,8 @@ import java.util.Map;
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
         "logging", "metrics", "template"})
-public class KafkaMirrorMakerSpec implements Serializable {
+@EqualsAndHashCode
+public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -43,7 +45,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     private String whitelist;
     private KafkaMirrorMakerConsumerSpec consumer;
     private KafkaMirrorMakerProducerSpec producer;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private JvmOptions jvmOptions;
@@ -146,35 +148,41 @@ public class KafkaMirrorMakerSpec implements Serializable {
         this.jvmOptions = jvmOptions;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
 
+    @Deprecated
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @Description("The pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
+    @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;
     }
 
+    @Deprecated
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
@@ -189,12 +197,12 @@ public class KafkaMirrorMakerSpec implements Serializable {
         this.template = template;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

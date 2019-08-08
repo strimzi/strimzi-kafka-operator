@@ -12,9 +12,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
@@ -129,7 +132,9 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null);
+        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null, null);
+
+        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
 
         List<StatefulSet> states = new ArrayList<>(2);
         when(kso.reconcile(anyString(), anyString(), any(StatefulSet.class))).thenAnswer(invocation -> {
@@ -146,20 +151,20 @@ public class KafkaUpdateTest {
             return Future.succeededFuture();
         });
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
-                        kso, null, null, null, null,
-                        null, null, null, null, null, null),
-                lookup, null);
+                        kso, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null, null, null),
+                ResourceUtils.dummyClusterOperatorConfig(lookup, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();
         Future<KafkaAssemblyOperator.ReconciliationState> future = op
                 .new ReconciliationState(reconciliation, updatedKafka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
-                        return Future.succeededFuture(kafkaSs);
+                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                        return Future.succeededFuture();
                     }
                 }
                 .kafkaUpgrade();

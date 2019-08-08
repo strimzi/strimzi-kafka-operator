@@ -4,16 +4,19 @@
 
 [id='assembly-upgrade-{context}']
 = {ProductName} and Kafka upgrades
-
-Each version of {ProductName} supports a range of versions of Apache Kafka.
-You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
+{ProductName} can be upgraded with no cluster downtime. Each version of {ProductName} supports one or more versions of Apache Kafka: you can upgrade to a higher Kafka version as long as it is supported by your version of {ProductName}.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
-When a newer version of {ProductName} is available, it may provide support for newer versions of Kafka. 
-Therefore, you will need to upgrade to the new version of {ProductName} before you can upgrade to a higher supported Kafka version.
-Upgrading the version of {ProductName} is done by upgrading the Cluster Operator deployment to the new version.
+Newer versions of {ProductName} may support newer versions of Kafka, but you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
 
-include::proc-upgrading-the-cluster-operator.adoc[leveloffset=+1]
+IMPORTANT: xref:assembly-upgrade-resources-{context}[Resource upgrades] _must_ be performed after upgrading {ProductName} and Kafka.
+
+include::con-upgrade-intro.adoc[leveloffset=+1]
+
+include::ref-kafka-versions.adoc[leveloffset=+1]
+
+include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrading-kafka-versions.adoc[leveloffset=+1]
 
+include::assembly-downgrading-kafka-versions.adoc[leveloffset=+1]

@@ -9,7 +9,7 @@ You can configure a maintenance time window for rolling updates triggered by sup
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster.
+* A Kubernetes cluster.
 * The Cluster Operator is running.
 
 .Procedure
@@ -35,16 +35,9 @@ spec:
 +
 . Create or update the resource.
 +
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-+
-endif::Kubernetes[]
-On {OpenShiftName}, use `oc apply`:
-+
-[source,shell,subs=+quotes]
-oc apply -f _your-file_
 
 .Additional resources
 

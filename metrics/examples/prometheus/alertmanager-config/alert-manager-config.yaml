@@ -1,0 +1,12 @@
+# oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml=alert-manager-config.yaml
+global:
+  slack_api_url: https://hooks.slack.com/services/change/me/please
+route:
+  receiver: slack
+receivers:
+- name: slack
+  slack_configs:
+  - channel: "#strimzi-alerts"
+    title: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+    send_resolved: true

@@ -43,11 +43,11 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
     protected ServiceAccount resource() {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(singletonMap("foo", "bar"))
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
-                .build();
+            .build();
     }
 
     @Override

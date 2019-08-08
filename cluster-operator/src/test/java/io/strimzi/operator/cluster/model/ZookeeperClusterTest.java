@@ -8,23 +8,32 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
-import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -33,25 +42,34 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
+                    "2.1.0         2.1 2.0 1234567890abcdef"),
+            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
+                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -151,9 +169,26 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         checkStatefulSet(ss);
         checkOwnerReference(zc.createOwnerReference(), ss);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testInvalidVersion() {
+        Kafka ka = new KafkaBuilder(this.ka)
+                .editSpec()
+                    .editKafka()
+                        .withImage(null)
+                        .withVersion("10000.0.0")
+                    .endKafka()
+                    .editZookeeper()
+                        .withImage(null)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster.fromCrd(ka, VERSIONS);
     }
 
     private void checkStatefulSet(StatefulSet ss) {
@@ -173,11 +208,17 @@ public class ZookeeperClusterTest {
         assertEquals(image + "-zk", containers.get(0).getImage());
         assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getLivenessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getLivenessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getLivenessProbe().getPeriodSeconds());
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getReadinessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getReadinessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getReadinessProbe().getPeriodSeconds());
         OrderedProperties expectedConfig = new OrderedProperties()
-                .addPair("timeTick", "2000")
                 .addPair("autopurge.purgeInterval", "1")
+                .addPair("tickTime", "2000")
                 .addPair("syncLimit", "2")
                 .addPair("initLimit", "5")
                 .addPair("foo", "bar");
@@ -187,7 +228,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
-        assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(image, tlsSidecarContainer.getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, tlsSidecarContainer.getPorts().get(0).getName());
@@ -236,8 +277,13 @@ public class ZookeeperClusterTest {
     }
 
     @Test
+    public void withOldAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinity() throws IOException {
-        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -248,7 +294,7 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
         Secret secret = zc.generateNodesSecret(clusterCa, ka);
         assertEquals(set(
@@ -301,6 +347,7 @@ public class ZookeeperClusterTest {
                                     .withLabels(podLabels)
                                     .withAnnotations(podAnots)
                                 .endMetadata()
+                                .withNewPriorityClassName("top-priority")
                             .endPod()
                             .withNewClientService()
                                 .withNewMetadata()
@@ -327,9 +374,10 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+        assertEquals("top-priority", ss.getSpec().getTemplate().getSpec().getPriorityClassName());
 
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
@@ -367,11 +415,12 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -381,11 +430,12 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("30"));
     }
 
     @Test
@@ -407,9 +457,53 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromCO() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true, null, secrets);
+        assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withImagePullSecrets(secret2)
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true, null, singletonList(secret1));
+        assertEquals(1, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 
@@ -420,8 +514,81 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    /**
+     * Verify the lookup order is:<ul>
+     * <li>Kafka.spec.zookeeper.tlsSidecar.image</li>
+     * <li>Kafka.spec.kafka.image</li>
+     * <li>image for default version of Kafka</li></ul>
+     */
+    @Test
+    public void testStunnelImage() {
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+
+        Kafka kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .editOrNewTlsSidecar()
+                            .withImage("foo1")
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("foo1", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("foo2", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withVersion("2.0.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withVersion("2.1.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
     }
 
     @Test
@@ -432,7 +599,7 @@ public class ZookeeperClusterTest {
                     .editZookeeper()
                         .withNewTemplate()
                             .withNewPod()
-                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                             .endPod()
                         .endTemplate()
                     .endZookeeper()
@@ -440,7 +607,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
         assertEquals(Long.valueOf(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
@@ -454,7 +621,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 
@@ -496,12 +663,263 @@ public class ZookeeperClusterTest {
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         ZookeeperCluster kc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS);
+        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
 
-        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT);
+        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+    }
+
+    @Test
+    public void testNetworkPolicyOldKubernetesVersions() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        NetworkPolicy np = zc.generateNetworkPolicy(false);
+
+        LabelSelector podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(podSelector, np.getSpec().getPodSelector());
+
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
+        assertEquals(3, rules.size());
+
+        // Ports 2888 and 3888
+        NetworkPolicyIngressRule zooRule = rules.get(0);
+        assertEquals(2, zooRule.getPorts().size());
+        assertEquals(new IntOrString(2888), zooRule.getPorts().get(0).getPort());
+        assertEquals(new IntOrString(3888), zooRule.getPorts().get(1).getPort());
+
+        assertEquals(1, zooRule.getFrom().size());
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(0));
+
+        // Port 2181
+        NetworkPolicyIngressRule clientsRule = rules.get(1);
+        assertEquals(1, clientsRule.getPorts().size());
+        assertEquals(new IntOrString(2181), clientsRule.getPorts().get(0).getPort());
+        assertEquals(0, clientsRule.getFrom().size());
+
+        // Port 9404
+        NetworkPolicyIngressRule metricsRule = rules.get(2);
+        assertEquals(1, metricsRule.getPorts().size());
+        assertEquals(new IntOrString(9404), metricsRule.getPorts().get(0).getPort());
+        assertEquals(0, metricsRule.getFrom().size());
+    }
+
+    @Test
+    public void testNetworkPolicyNewKubernetesVersions() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = zc.generateNetworkPolicy(true);
+
+        LabelSelector podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(podSelector, np.getSpec().getPodSelector());
+
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
+        assertEquals(3, rules.size());
+
+        // Ports 2888 and 3888
+        NetworkPolicyIngressRule zooRule = rules.get(0);
+        assertEquals(2, zooRule.getPorts().size());
+        assertEquals(new IntOrString(2888), zooRule.getPorts().get(0).getPort());
+        assertEquals(new IntOrString(3888), zooRule.getPorts().get(1).getPort());
+
+        assertEquals(1, zooRule.getFrom().size());
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(0));
+
+        // Port 2181
+        NetworkPolicyIngressRule clientsRule = rules.get(1);
+        assertEquals(1, clientsRule.getPorts().size());
+        assertEquals(new IntOrString(2181), clientsRule.getPorts().get(0).getPort());
+
+        assertEquals(4, clientsRule.getFrom().size());
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), clientsRule.getFrom().get(0));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), clientsRule.getFrom().get(1));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), clientsRule.getFrom().get(2));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build(), clientsRule.getFrom().get(3));
+
+        // Port 9404
+        NetworkPolicyIngressRule metricsRule = rules.get(2);
+        assertEquals(1, metricsRule.getPorts().size());
+        assertEquals(new IntOrString(9404), metricsRule.getPorts().get(0).getPort());
+        assertEquals(0, metricsRule.getFrom().size());
+    }
+
+    @Test
+    public void testNetworkPolicyWithoutNamespaceAndPodSelectors() {
+
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsParsistentWithClaimDeletion() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+            assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+            assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage()
+                    .withStorageClass("gp2-ssd")
+                    .withDeleteClaim(false)
+                    .withSize("100Gi")
+                    .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                            .withBroker(1)
+                            .withStorageClass("gp2-ssd-az1")
+                            .build())
+                .endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+
+            if (i != 1) {
+                assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            } else {
+                assertEquals("gp2-ssd-az1", pvc.getSpec().getStorageClassName());
+            }
+
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsephemeral()    {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewEphemeralStorage().endEphemeralStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(0, pvcs.size());
+    }
+
+    @Test
+    public void testStorageReverting() {
+        SingleVolumeStorage ephemeral = new EphemeralStorageBuilder().build();
+        SingleVolumeStorage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
+
+        // Test Storage changes and how the are reverted
+
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withStorage(ephemeral)
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS, persistent);
+        assertEquals(persistent, zc.getStorage());
+
+        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withStorage(persistent)
+                .endZookeeper()
+                .endSpec()
+                .build();
+        zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral);
+        assertEquals(ephemeral, zc.getStorage());
     }
 }

@@ -10,10 +10,8 @@
 
 = Kafka broker configuration
 
-{ProductName} allows you to customize the configuration of Apache Kafka brokers.
-You can specify and configure most of the options listed in {ApacheKafkaBrokerConfig}.
-
-The only options which cannot be configured are those related to the following areas:
+{ProductName} allows you to customize the configuration of the Kafka brokers in your Kafka cluster.
+You can specify and configure most of the options listed in the "Broker Configs" section of the {ApacheKafkaBrokerConfig}. You cannot configure options that are related to the following areas:
 
 * Security (Encryption, Authentication, and Authorization)
 * Listener configuration

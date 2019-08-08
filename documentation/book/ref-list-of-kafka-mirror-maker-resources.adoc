@@ -5,7 +5,7 @@
 [id='ref-list-of-kafka-mirror-maker-resources-{context}']
 = List of resources created as part of Kafka Mirror Maker
 
-The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
+The following resources will created by the Cluster Operator in the Kubernetes cluster:
 
 _<mirror-maker-name>_-mirror-maker:: Deployment which is in charge to create the Kafka Mirror Maker pods.
 _<mirror-maker-name>_-config:: ConfigMap which contains the Kafka Mirror Maker ancillary configuration and is mounted as a volume by the Kafka broker pods.

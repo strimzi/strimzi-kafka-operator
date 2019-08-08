@@ -76,7 +76,7 @@ spec:
 ----
 
 When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
-The secret will contain the generated password in the `password` key.
+The secret contains the generated password in the `password` key, which is encoded with base64. In order to use the password it must be decoded.
 
 .An example of the `Secret` with user credentials
 [source,yaml,subs="attributes+"]
@@ -90,7 +90,12 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  password: # Generated password
+  password: Z2VuZXJhdGVkcGFzc3dvcmQ= # Generated password
+----
+
+For decode the generated password:
+----
+echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
 ----
 
 == Authorization
@@ -104,7 +109,7 @@ When no authorization is specified, the User Operator will not provision any acc
 === Simple Authorization
 
 To use Simple Authorization, set the `type` property to `simple`.
-Simple authorization is using the `SimpleAclAuthorizer` plugin.
+Simple authorization uses the `SimpleAclAuthorizer` plugin.
 `SimpleAclAuthorizer` is the default authorization plugin which is part of Apache Kafka.
 Simple Authorization allows you to specify list of ACL rules in the `acls` property.
 

@@ -9,7 +9,7 @@
 [id='kafka-cluster-{context}']
 = Kafka cluster
 
-You can use {ProductName} to deploy an ephemeral or persistent Kafka cluster to {ProductPlatformName}. When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
+You can use {ProductName} to deploy an ephemeral or persistent Kafka cluster to Kubernetes. When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
 
 Ephemeral cluster:: In general, an ephemeral (that is, temporary) Kafka cluster is suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (for Zookeeper) and topics or partitions (for Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
 
@@ -25,17 +25,14 @@ Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML fil
 
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed. To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the resource in the relevant YAML file.
 
-[source,yaml,subs=+quotes]
+[source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
 # ...
 ----
 
-ifdef::Kubernetes[]
-include::proc-deploying-kafka-cluster-kubernetes.adoc[leveloffset=+1]
-endif::Kubernetes[]
+include::proc-deploying-kafka-cluster.adoc[leveloffset=+1]
 
-include::proc-deploying-kafka-cluster-openshift.adoc[leveloffset=+1]

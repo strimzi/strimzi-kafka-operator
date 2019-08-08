@@ -27,7 +27,7 @@ All other options will be passed to Kafka Mirror Maker.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When an invalid configuration is provided, the Kafka Mirror Maker might not start or might become unstable.
-In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` or `KafkaMirrorMaker.spec.producer.config` object should be fixed and the cluster operator will roll out the new configuration for Kafka Mirror Maker.
+In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` or `KafkaMirrorMaker.spec.producer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka Mirror Maker.
 
 .An example showing Kafka Mirror Maker configuration
 [source,yaml,subs=attributes+]

@@ -11,9 +11,9 @@
 = Zookeeper configuration
 
 {ProductName} allows you to customize the configuration of Apache Zookeeper nodes.
-You can specify and configure most of the options listed in {ApacheZookeeperConfig}.
+You can specify and configure most of the options listed in the {ApacheZookeeperConfig}.
 
-The only options which cannot be configured are those related to the following areas:
+Options which cannot be configured are those related to the following areas:
 
 * Security (Encryption, Authentication, and Authorization)
 * Listener configuration

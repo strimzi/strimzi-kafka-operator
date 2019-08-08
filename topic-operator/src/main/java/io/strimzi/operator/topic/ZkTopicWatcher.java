@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
-import io.vertx.core.Handler;
-
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link TopicOperator#onTopicPartitionsChanged(TopicName, Handler)}
+ * calling {@link TopicOperator#onTopicPartitionsChanged(LogContext, TopicName)}
  * for changed children.
  */
 public class ZkTopicWatcher extends ZkWatcher {
@@ -21,9 +19,11 @@ public class ZkTopicWatcher extends ZkWatcher {
 
     @Override
     protected void notifyOperator(String child) {
-        log.debug("Partitions change for topic {}", child);
-        topicOperator.onTopicPartitionsChanged(new TopicName(child), ar -> {
-            log.info("Reconciliation result due to topic partitions change: {}", ar);
-        });
+        LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child);
+        log.info("{}: Partitions change", logContext);
+        topicOperator.onTopicPartitionsChanged(logContext,
+            new TopicName(child)).setHandler(ar -> {
+                log.info("{}: Reconciliation result due to topic partitions change on topic {}: {}", logContext, child, ar);
+            });
     }
 }

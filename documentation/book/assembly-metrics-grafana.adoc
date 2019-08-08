@@ -1,0 +1,16 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-metrics-setup.adoc
+[id='assembly-configuring-grafana-{context}']
+
+= Grafana
+
+Grafana provides visualizations of Prometheus metrics.
+
+You can deploy and enable the example Grafana dashboards provided with {ProductName}.
+
+include::con-metrics-grafana-options.adoc[leveloffset=+1]
+
+include::proc-metrics-deploying-grafana.adoc[leveloffset=+1]
+
+include::proc-metrics-grafana-dashboard.adoc[leveloffset=+1]

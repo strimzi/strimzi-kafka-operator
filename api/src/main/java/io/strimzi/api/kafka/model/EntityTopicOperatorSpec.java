@@ -4,10 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -28,14 +27,13 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+        "livenessProbe", "readinessProbe",
         "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityTopicOperatorSpec implements Serializable {
+public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -46,11 +44,13 @@ public class EntityTopicOperatorSpec implements Serializable {
     public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     protected String watchedNamespace;
-    protected String image = DEFAULT_IMAGE;
+    protected String image;
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
-    protected Resources resources;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
+    protected ResourceRequirements resources;
     protected Logging logging;
     private EntityOperatorJvmOptions jvmOptions;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -104,14 +104,35 @@ public class EntityTopicOperatorSpec implements Serializable {
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
     @Description("Resource constraints (limits and requests).")
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
+    }
+
 
     @Description("Logging configuration")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -123,12 +144,12 @@ public class EntityTopicOperatorSpec implements Serializable {
         this.logging = logging;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

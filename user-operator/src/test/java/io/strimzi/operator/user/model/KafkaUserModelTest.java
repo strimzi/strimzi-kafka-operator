@@ -4,12 +4,16 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.ResourceUtils;
@@ -29,7 +33,12 @@ public class KafkaUserModelTest {
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
     private final CertManager mockCertManager = new MockCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a");
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
 
     @Test
     public void testFromCrd()   {
@@ -55,6 +64,9 @@ public class KafkaUserModelTest {
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -65,6 +77,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -81,6 +96,9 @@ public class KafkaUserModelTest {
         assertEquals("different-clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -92,6 +110,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("expected-crt", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("expected-key", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -103,6 +124,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -116,6 +140,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -131,6 +158,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals(existing, generated.getData().get(KafkaUserModel.KEY_PASSWORD));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -145,6 +175,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton("password"), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -178,5 +211,41 @@ public class KafkaUserModelTest {
     public void testGetUsername()    {
         assertEquals("CN=my-user", KafkaUserModel.getTlsUserName("my-user"));
         assertEquals("my-user", KafkaUserModel.getScramUserName("my-user"));
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void test65CharTlsUsername()    {
+        // 65 characters => Should throw exception with TLS
+        KafkaUser tooLong = new KafkaUserBuilder(tlsUser)
+                .editMetadata()
+                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
+    }
+
+    @Test
+    public void test64CharTlsUsername()    {
+        // 64 characters => Should be still OK
+        KafkaUser notTooLong = new KafkaUserBuilder(tlsUser)
+                .editMetadata()
+                    .withName("User123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, notTooLong, clientsCaCert, clientsCaKey, null);
+    }
+
+    @Test
+    public void test65CharSaslUsername()    {
+        // 65 characters => should work with SCRAM-SHA-512
+        KafkaUser tooLong = new KafkaUserBuilder(scramShaUser)
+                .editMetadata()
+                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .build();
+
+        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
     }
 }

@@ -19,5 +19,5 @@ docker_push:
 
 all: docker_build docker_push
 
-.PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS) findbugs
+.PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS) spotbugs
 
