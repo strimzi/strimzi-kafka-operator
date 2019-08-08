@@ -55,3 +55,5 @@ Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 [kafka]: https://kafka.apache.org "Apache Kafka"
 [k8s]: https://kubernetes.io/ "Kubernetes"
 [os]: https://www.openshift.com/ "OpenShift"
+
+dummy change
