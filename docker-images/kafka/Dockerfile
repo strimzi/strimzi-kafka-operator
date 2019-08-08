@@ -32,7 +32,7 @@ RUN curl -O https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA
     && tar xvfz kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C $KAFKA_HOME --strip-components=1 \
     && rm -f kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz*
 
-COPY ./tmp/kafka-agent-${strimzi_version}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/kafka-agent.jar ${KAFKA_HOME}/libs/
 
 COPY kafka-thirdparty-libs/target/dependency/ ${KAFKA_HOME}/libs/
 
