@@ -5,11 +5,15 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -1669,6 +1673,157 @@ class KafkaST extends MessagingBaseST {
         assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"), secretsWithExt.getData().get("my-cluster-kafka-1.key"));
         assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"), secretsWithExt.getData().get("my-cluster-kafka-2.crt"));
         assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"), secretsWithExt.getData().get("my-cluster-kafka-2.key"));
+    }
+
+    @Test
+    void testLabelModificationDoesNotBreakCluster() throws Exception {
+        Map<String, String> labels = new HashMap<>();
+        String[] labelKeys = {"label-name-1", "label-name-2", ""};
+        String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
+        String brokerServiceName = "my-cluster-kafka-brokers";
+        String configMapName = "my-cluster-kafka-config";
+
+        labels.put(labelKeys[0], labelValues[0]);
+        labels.put(labelKeys[1], labelValues[1]);
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .editMetadata()
+                    .withLabels(labels)
+                .endMetadata()
+                .done();
+
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForKafkaStatefulSetLabelsChange(kafkaClusterName(CLUSTER_NAME), labels);
+
+        LOGGER.info("Getting labels from stateful set resource");
+        StatefulSet statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
+        LOGGER.info("Verifying default labels in the Kafka CR");
+
+        assertThat("Label exists in stateful set with concrete value",
+                labelValues[0].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[0])));
+        assertThat("Label exists in stateful set with concrete value",
+                labelValues[1].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[1])));
+
+        labelValues[0] = "new-name-of-the-label-1";
+        labelValues[1] = "new-name-of-the-label-2";
+        labelKeys[2] = "label-name-3";
+        labelValues[2] = "name-of-the-label-3";
+        LOGGER.info("Setting new values of labels from {} to {} | from {} to {} and adding one {} with value {}",
+                "name-of-the-label-1", labelValues[0], "name-of-the-label-2", labelValues[1], labelKeys[2], labelValues[2]);
+
+        LOGGER.info("Edit kafka labels in Kafka CR");
+        replaceKafkaResource(CLUSTER_NAME, resource -> {
+            resource.getMetadata().getLabels().put(labelKeys[0], labelValues[0]);
+            resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
+            resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
+        });
+
+
+        labels.put(labelKeys[0], labelValues[0]);
+        labels.put(labelKeys[1], labelValues[1]);
+        labels.put(labelKeys[2], labelValues[2]);
+
+        LOGGER.info("Waiting for kafka service labels changed {}", labels);
+        StUtils.waitForKafkaServiceLabelsChange(brokerServiceName, labels);
+
+        LOGGER.info("Verifying kafka labels via services");
+        Service service = kubeClient().getService(brokerServiceName);
+
+        verifyPresentLabels(labels, service);
+
+        LOGGER.info("Waiting for kafka config map labels changed {}", labels);
+        StUtils.waitForKafkaConfigMapLabelsChange(configMapName, labels);
+
+        LOGGER.info("Verifying kafka labels via config maps");
+        ConfigMap configMap = kubeClient().getConfigMap(configMapName);
+
+        verifyPresentLabels(labels, configMap);
+
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForKafkaStatefulSetLabelsChange(kafkaClusterName(CLUSTER_NAME), labels);
+
+        LOGGER.info("Verifying kafka labels via stateful set");
+        statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
+
+        verifyPresentLabels(labels, statefulSet);
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        LOGGER.info("Verifying via kafka pods");
+        labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
+
+        assertThat("Label exists in kafka pods", labelValues[0].equals(labels.get(labelKeys[0])));
+        assertThat("Label exists in kafka pods", labelValues[1].equals(labels.get(labelKeys[1])));
+        assertThat("Label exists in kafka pods", labelValues[2].equals(labels.get(labelKeys[2])));
+
+        LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
+                labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
+        replaceKafkaResource(CLUSTER_NAME, resource -> {
+            resource.getMetadata().getLabels().remove(labelKeys[0]);
+            resource.getMetadata().getLabels().remove(labelKeys[1]);
+            resource.getMetadata().getLabels().remove(labelKeys[2]);
+        });
+
+        labels.remove(labelKeys[0]);
+        labels.remove(labelKeys[1]);
+        labels.remove(labelKeys[2]);
+
+        LOGGER.info("Waiting for kafka service labels deletion {}", labels);
+        StUtils.waitForKafkaServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
+
+        LOGGER.info("Verifying kafka labels via services");
+        service = kubeClient().getService(brokerServiceName);
+
+        verifyNullLabels(labelKeys, service);
+
+        LOGGER.info("Verifying kafka labels via config maps");
+        configMap = kubeClient().getConfigMap(configMapName);
+
+        verifyNullLabels(labelKeys, configMap);
+
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+
+        LOGGER.info("Verifying kafka labels via stateful set");
+        statefulSet = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME));
+
+        verifyNullLabels(labelKeys, statefulSet);
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        LOGGER.info("Verifying via kafka pods");
+        labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
+
+        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[0]) == null);
+        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[1]) == null);
+        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[2]) == null);
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
+        for (Map.Entry<String, String> label : labels.entrySet()) {
+            assertThat("Label exists with concrete value in HasMetadata(Services, CM, SS) resources",
+                    label.getValue().equals(resources.getMetadata().getLabels().get(label.getKey())));
+        }
+    }
+
+    void verifyNullLabels(String[] labelKeys, HasMetadata resources) {
+        for (String labelKey : labelKeys) {
+            assertThat("Label doesn't exist in HasMetadata(Services, CM, SS) resources",
+                    resources.getMetadata().getLabels().get(labelKey) == null);
+        }
     }
 
     @BeforeEach
