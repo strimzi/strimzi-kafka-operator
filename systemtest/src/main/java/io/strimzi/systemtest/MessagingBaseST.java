@@ -86,6 +86,45 @@ public class MessagingBaseST extends AbstractST {
      * @param clusterName cluster name
      * @param tlsListener option for tls listener inside kafka cluster
      * @param topicName topic name
+     * @return count of send and acknowledged messages
+     */
+    int sendMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName) throws Exception {
+        String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
+        ClientArgumentMap producerArguments = new ClientArgumentMap();
+        producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
+        producerArguments.put(ClientArgument.TOPIC, topicName);
+        producerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
+
+        VerifiableClient producer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_PRODUCER);
+
+        producer.setArguments(producerArguments);
+
+        LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
+        response = cliApiClient.sendAndGetStatus(producer);
+
+        waitTillProcessFinish(getClientUUID(response), "producer", timeout);
+
+        assertThat(String.format("Return code of sender is not 0: %s", response),
+                response.getInteger("ecode"), is(0));
+
+        sent = getSentMessagesCount(response, messageCount);
+
+        assertThat(String.format("Sent (%s) and expected (%s) message count is not equal", sent, messageCount),
+                sent == messageCount);
+
+        LOGGER.info("Sent {} messages", sent);
+        return sent;
+    }
+
+
+
+    /**
+     * Method for send messages to specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param messageCount messages count
+     * @param timeout timeout for producer to be finished
+     * @param clusterName cluster name
+     * @param tlsListener option for tls listener inside kafka cluster
+     * @param topicName topic name
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
@@ -148,6 +187,48 @@ public class MessagingBaseST extends AbstractST {
         if (user != null) {
             consumerArguments.put(ClientArgument.USER, user.getMetadata().getName().replace("-", "_"));
         }
+
+        consumer.setArguments(consumerArguments);
+
+        LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, bootstrapServer, topicName);
+        response = cliApiClient.sendAndGetStatus(consumer);
+
+        waitTillProcessFinish(getClientUUID(response), "consumer", timeout);
+
+        assertThat(String.format("Return code of receiver is not 0: %s", response),
+                response.getInteger("ecode"), is(0));
+
+        received = getReceivedMessagesCount(response);
+
+        assertThat(String.format("Received (%s) and expected (%s) message count is not equal", received, messageCount),
+                received == messageCount);
+
+        LOGGER.info("Received {} messages", received);
+        return received;
+    }
+
+    /**
+     * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
+     * @param messageCount message count
+     * @param timeout timeout for consumer to be finished
+     * @param clusterName cluster name
+     * @param tlsListener option for tls listener inside kafka cluster
+     * @param topicName topic name
+     * @return count of received messages
+     */
+    int receiveMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName) throws Exception {
+        String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
+        ClientArgumentMap consumerArguments = new ClientArgumentMap();
+        consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
+        consumerArguments.put(ClientArgument.GROUP_ID, "my-group" + rng.nextInt(Integer.MAX_VALUE));
+        if (allowParameter("2.3.0")) {
+            consumerArguments.put(ClientArgument.GROUP_INSTANCE_ID, "instance" + rng.nextInt(Integer.MAX_VALUE));
+        }
+        consumerArguments.put(ClientArgument.VERBOSE, "");
+        consumerArguments.put(ClientArgument.TOPIC, topicName);
+        consumerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
+
+        VerifiableClient consumer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_CONSUMER);
 
         consumer.setArguments(consumerArguments);
 
