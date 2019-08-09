@@ -23,8 +23,6 @@ NOTE: The Cluster Operator can deploy the Topic Operator and User Operator (as p
 
 image:operators.png[Operators]
 
-This guide describes how to install and use {ProductLongName}.
-
 include::ref-key-features.adoc[leveloffset=+1]
 
 include::ref-document-conventions.adoc[leveloffset=+1]
