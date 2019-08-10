@@ -78,6 +78,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG = "KAFKA_BRIDGE_PRODUCER_CONFIG";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_ID = "KAFKA_BRIDGE_ID";
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED = "KAFKA_BRIDGE_AMQP_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_FLOW_CREDIT = "KAFKA_BRIDGE_AMQP_FLOW_CREDIT";
@@ -360,6 +361,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_ID, cluster));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
