@@ -520,6 +520,13 @@ public class StUtils {
             () -> !kubeClient().getNamespaceStatus(name));
     }
 
+    public static void waitForKafkaTopicCreation(String topicName) {
+        LOGGER.info("Waiting for Kafka topic creation {}", topicName);
+        TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() != null
+        );
+    }
+
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
         TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
