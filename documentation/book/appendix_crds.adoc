@@ -714,6 +714,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
@@ -783,6 +785,34 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|====
+
+[id='type-ContainerTemplate-{context}']
+### `ContainerTemplate` schema reference
+
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property    |Description
+|env  1.2+<.<|Environment variables which should be applied to the container.
+|xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
+|====
+
+[id='type-ContainerEnvVar-{context}']
+### `ContainerEnvVar` schema reference
+
+Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+
+
+[options="header"]
+|====
+|Property      |Description
+|name   1.2+<.<|The environment variable key.
+|string
+|value  1.2+<.<|The environment variable value.
+|string
 |====
 
 [id='type-PodDisruptionBudgetTemplate-{context}']

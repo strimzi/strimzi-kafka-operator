@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
@@ -188,6 +189,7 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
+    protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -464,6 +466,10 @@ public class KafkaCluster extends AbstractModel {
             if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null)  {
                 result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
+            }
+
+            if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
+                result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -1318,6 +1324,24 @@ public class KafkaCluster extends AbstractModel {
         String logDirs = dataVolumeMountPaths.stream()
                 .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
+
+        // Add user defined environment variables to the Kafka broker containers
+        if (templateKafkaContainerEnvVars != null) {
+            // Create set of env var names to test if any user defined template env vars will conflict with those set above
+            Set<String> predefinedEnvs = new HashSet<String>();
+            for (EnvVar envVar : varList) {
+                predefinedEnvs.add(envVar.getName());
+            }
+
+            // Set custom env vars from the user defined template
+            for (ContainerEnvVar templateEnvVar : templateKafkaContainerEnvVars) {
+                if (predefinedEnvs.contains(templateEnvVar.getName())) {
+                    log.warn("User defined container template environment variable " + templateEnvVar.getName() + " is already in use and will be ignored");
+                } else {
+                    varList.add(buildEnvVar(templateEnvVar.getName(), templateEnvVar.getValue()));
+                }
+            }
+        }
 
         return varList;
     }

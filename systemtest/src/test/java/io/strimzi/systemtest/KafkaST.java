@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -33,6 +34,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -278,16 +280,51 @@ class KafkaST extends MessagingBaseST {
     @Test
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues() {
+
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
         kafkaConfig.put("transaction.state.log.replication.factor", "1");
         kafkaConfig.put("default.replication.factor", "1");
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaContainer = new ContainerTemplate();
+        kafkaContainer.setEnv(testEnvs);
 
         Map<String, Object> zookeeperConfig = new HashMap<>();
         zookeeperConfig.put("tickTime", "2000");
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
         zookeeperConfig.put("autopurge.purgeInterval", "1");
+
+        ContainerEnvVar updatedEnvVar2 = new ContainerEnvVar();
+        String updatedTestEnvTwoValue = "updated.test.env.two";
+        updatedEnvVar2.setName(testEnvTwoKey);
+        updatedEnvVar2.setValue(updatedTestEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = "TEST_ENV_3";
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvTwoKey);
+        envVar3.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> updatedTestEnvs = new ArrayList<>();
+        updatedTestEnvs.add(updatedEnvVar2);
+        updatedTestEnvs.add(envVar3);
+
         int initialDelaySeconds = 30;
         int timeoutSeconds = 10;
         int updatedInitialDelaySeconds = 31;
@@ -326,6 +363,9 @@ class KafkaST extends MessagingBaseST {
                         .withFailureThreshold(failureThreshold)
                     .endLivenessProbe()
                     .withConfig(kafkaConfig)
+                    .withNewTemplate()
+                        .withKafkaContainer(kafkaContainer)
+                    .endTemplate()
                 .endKafka()
                 .editZookeeper()
                     .withNewTlsSidecar()
@@ -417,6 +457,8 @@ class KafkaST extends MessagingBaseST {
                 periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n");
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvOneKey, testEnvOneValue);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvTwoKey, testEnvTwoValue);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
 
@@ -456,6 +498,7 @@ class KafkaST extends MessagingBaseST {
             kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            kafkaClusterSpec.getTemplate().getKafkaContainer().setEnv(updatedTestEnvs);
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
             zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
@@ -511,6 +554,8 @@ class KafkaST extends MessagingBaseST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n");
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvTwoKey, updatedTestEnvTwoValue);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvThreeKey, testEnvThreeValue);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
 
