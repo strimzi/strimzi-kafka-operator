@@ -22,4 +22,4 @@ include::proc-kafka-inline-logging.adoc[leveloffset=+1]
 
 include::proc-kafka-external-logging.adoc[leveloffset=+1]
 
-Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-{context}[]
+Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-deployment-configuration-kafka[]
