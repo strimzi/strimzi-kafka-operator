@@ -53,6 +53,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
     public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     protected static final boolean DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED = false;
 
@@ -83,6 +84,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS = "KAFKA_MIRRORMAKER_NUMSTREAMS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL = "KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE = "KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE";
+
+    protected static final String ENV_VAR_STRIMZI_READINESS_PERIOD = "STRIMZI_READINESS_PERIOD";
+    protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
 
     protected String whitelist;
 
@@ -173,6 +177,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         if (spec != null) {
             kafkaMirrorMakerCluster.setResources(spec.getResources());
+
+            if (spec.getReadinessProbe() != null) {
+                kafkaMirrorMakerCluster.setReadinessProbe(spec.getReadinessProbe());
+            }
+
+            if (spec.getLivenessProbe() != null) {
+                kafkaMirrorMakerCluster.setLivenessProbe(spec.getLivenessProbe());
+            }
 
             kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
@@ -369,6 +381,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
+                .withLivenessProbe(ModelUtils.newProbeBuilder(livenessProbeOptions)
+                        .withNewExec()
+                        .withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh")
+                        .endExec().build())
+                .withReadinessProbe(ModelUtils.newProbeBuilder(readinessProbeOptions)
+                        .withNewExec()
+                        // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
+                        .withCommand("test", "-f", "/tmp/mirror-maker-ready")
+                        .endExec().build())
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -406,6 +427,25 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
 
         /** consumer */
+        setConsumerEnvVars(varList);
+
+        /** producer */
+        setProducerEnvVars(varList);
+
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_LIVENESS_PERIOD,
+                String.valueOf(livenessProbeOptions.getPeriodSeconds() != null ? livenessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_READINESS_PERIOD,
+                String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
+
+        return varList;
+    }
+
+    /**
+     * Sets the consumer related environment variables in the provided List.
+     *
+     * @param varList   List with environment variables
+     */
+    private void setConsumerEnvVars(List<EnvVar> varList) {
         if (consumer.getTls() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_TLS_CONSUMER, "true"));
 
@@ -434,8 +474,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER,
                     String.format("%s/%s", consumerPasswordSecret.getSecretName(), consumerPasswordSecret.getPassword())));
         }
+    }
 
-        /** producer */
+    /**
+     * Sets the producer related environment variables in the provided List.
+     *
+     * @param varList   List with environment variables
+     */
+    private void setProducerEnvVars(List<EnvVar> varList) {
         if (producer.getTls() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_TLS_PRODUCER, "true"));
 
@@ -464,8 +510,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER,
                     String.format("%s/%s", producerPasswordSecret.getSecretName(), producerPasswordSecret.getPassword())));
         }
-
-        return varList;
     }
 
     /**
