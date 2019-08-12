@@ -28,5 +28,4 @@ template:
 The `labels` and `annotations` fields can contain any labels or annotations that do not contain the reserved string `strimzi.io`.
 Labels and annotations containing `strimzi.io` are used internally by {ProductName} and cannot be configured.
 
-It should be noted that the `metadata` property is not applicable to container templates such as the `kafkaContainer`.
-
+NOTE: The `metadata` property is not applicable to container templates, such as the `kafkaContainer`.
