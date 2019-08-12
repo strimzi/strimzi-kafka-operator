@@ -5,10 +5,10 @@
 [id='con-customizing-containers-{context}']
 = Customizing Containers
 
-Using the `kafkaContainer` template property, you can set environment variables for Kafka broker containers.
+You can set custom environment variables for Kafka broker containers by using the `kafkaContainer` template property in `Kafka.spec.kafka`.
 
-Environment variables are supplied under the `env` field as a list of objects with `name` and `value` fields. 
-The following example shows two custom environment variables being set for the Kafka broker:
+These environment variables are defined under the `env` field as a list of objects with `name` and `value` fields.
+The following example shows two custom environment variables set for a Kafka broker:
 
 [source,yaml,subs=attributes+]
 ----
@@ -25,8 +25,8 @@ spec:
 # ...
 ----
 
-Environment variables used internally by Strimzi typically (although not always) begin with the `KAFKA_` prefix and should be avoided. 
-If an environment variable is set that is already in use by Strimzi, it is ignored. A warning is posted in the log output.
+Environment variables prefixed with `KAFKA_` are internal to {ProductName} and should be avoided.
+If you set a custom environment variable that is already in use by {ProductName}, it is ignored and a warning is recorded in the log.
 
 .Additional resources
 
