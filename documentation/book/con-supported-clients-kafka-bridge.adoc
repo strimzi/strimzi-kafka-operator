@@ -18,7 +18,7 @@ image:kafka-bridge.png[Kafka Bridge]
 
 Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource.
 
-External clients can access the Kafka Bridge through an OpenShift Route, a loadbalancer service, or using Ingress.
+External clients can access the Kafka Bridge through an OpenShift Route, a loadbalancer service, or using an Ingress.
 
 .Additional resources
 
