@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.JMException;
-import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import java.io.File;
@@ -65,8 +64,6 @@ public class MirrorMakerAgent {
      */
     private Runnable livenessPoller() {
         return new Runnable() {
-            int i = 0;
-
             @Override
             public void run() {
                 while (true) {
@@ -99,12 +96,10 @@ public class MirrorMakerAgent {
      */
     private Runnable readinessPoller() {
         return new Runnable() {
-            private MBeanServerConnection beanConn;
+            private MBeanServerConnection beanConn = ManagementFactory.getPlatformMBeanServer();
 
             @Override
             public void run() {
-                beanConn = ManagementFactory.getPlatformMBeanServer();
-
                 while (true) {
                     if (handleProducerConnected() && handleConsumerConnected()) {
                         try {
@@ -142,7 +137,6 @@ public class MirrorMakerAgent {
                     Set<ObjectName> mbeans = beanConn.queryNames(new ObjectName("kafka.producer:type=producer-metrics,client-id=*"), null);
 
                     for (ObjectName oName : mbeans) {
-                        MBeanInfo info = beanConn.getMBeanInfo(oName);
                         Double attr = (Double) beanConn.getAttribute(oName, "connection-count");
                         connectionCount += attr;
                         LOGGER.trace("Found connection metric with name {} and value: {}", oName, attr);
@@ -168,7 +162,6 @@ public class MirrorMakerAgent {
                     Set<ObjectName> mbeans = beanConn.queryNames(new ObjectName("kafka.consumer:type=consumer-metrics,client-id=*"), null);
 
                     for (ObjectName oName : mbeans) {
-                        MBeanInfo info = beanConn.getMBeanInfo(oName);
                         Double attr = (Double) beanConn.getAttribute(oName, "connection-count");
                         connectionCount += attr;
                         LOGGER.trace("Found connection metric with name {} and value: {}", oName, attr);
