@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -144,6 +145,9 @@ public class KafkaMirrorMakerClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE).withValue(Boolean.toString(abortOnSendFailure)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(KafkaMirrorMakerCluster.DEFAULT_KAFKA_GC_LOG_ENABLED).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_LIVENESS_PERIOD).withValue("10").build());
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_READINESS_PERIOD).withValue("10").build());
+
         return expected;
     }
 
@@ -736,5 +740,69 @@ public class KafkaMirrorMakerClusterTest {
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-XX:MaxGCPauseMillis=20"));
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xmx1024m"));
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xms512m"));
+    }
+
+    @Test
+    public void testDefaultProbes() {
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(this.resource, VERSIONS);
+
+        Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Probe livenessProbe = cont.getLivenessProbe();
+        Probe readinessProbe = cont.getReadinessProbe();
+
+        assertEquals("/opt/kafka/kafka_mirror_maker_liveness.sh", livenessProbe.getExec().getCommand().get(0));
+        assertEquals(new Integer(60), livenessProbe.getInitialDelaySeconds());
+        assertEquals(new Integer(5), livenessProbe.getTimeoutSeconds());
+
+        assertEquals(3, readinessProbe.getExec().getCommand().size());
+        assertEquals("test", readinessProbe.getExec().getCommand().get(0));
+        assertEquals("-f", readinessProbe.getExec().getCommand().get(1));
+        assertEquals("/tmp/mirror-maker-ready", readinessProbe.getExec().getCommand().get(2));
+        assertEquals(new Integer(60), readinessProbe.getInitialDelaySeconds());
+        assertEquals(new Integer(5), readinessProbe.getTimeoutSeconds());
+
+        assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"));
+        assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"));
+    }
+
+    @Test
+    public void testConfiguredProbes() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(120)
+                        .withTimeoutSeconds(10)
+                        .withPeriodSeconds(60)
+                    .endLivenessProbe()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(121)
+                        .withTimeoutSeconds(11)
+                        .withPeriodSeconds(61)
+                    .endReadinessProbe()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Probe livenessProbe = cont.getLivenessProbe();
+        Probe readinessProbe = cont.getReadinessProbe();
+
+        assertEquals("/opt/kafka/kafka_mirror_maker_liveness.sh", livenessProbe.getExec().getCommand().get(0));
+        assertEquals(new Integer(120), livenessProbe.getInitialDelaySeconds());
+        assertEquals(new Integer(10), livenessProbe.getTimeoutSeconds());
+        assertEquals(new Integer(60), livenessProbe.getPeriodSeconds());
+
+        assertEquals(3, readinessProbe.getExec().getCommand().size());
+        assertEquals("test", readinessProbe.getExec().getCommand().get(0));
+        assertEquals("-f", readinessProbe.getExec().getCommand().get(1));
+        assertEquals("/tmp/mirror-maker-ready", readinessProbe.getExec().getCommand().get(2));
+        assertEquals(new Integer(121), readinessProbe.getInitialDelaySeconds());
+        assertEquals(new Integer(11), readinessProbe.getTimeoutSeconds());
+        assertEquals(new Integer(61), readinessProbe.getPeriodSeconds());
+
+        assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("61"));
+        assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("60"));
     }
 }

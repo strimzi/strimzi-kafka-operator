@@ -47,9 +47,13 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
+# Enabling the Mirror Maker agent which monitors readiness / liveness
+rm /tmp/mirror-maker-ready /tmp/mirror-maker-alive 2> /dev/null
+export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/mirror-maker-agent.jar=/tmp/mirror-maker-ready:/tmp/mirror-maker-alive:${STRIMZI_READINESS_PERIOD:-10}:${STRIMZI_LIVENESS_PERIOD:-10}"
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

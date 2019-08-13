@@ -16,6 +16,7 @@ Liveness and readiness probes can be configured using the `livenessProbe` and `r
 * `Kafka.spec.entityOperator.userOperator`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
+* `KafkaMirrorMaker.spec`
 * `KafkaBridge.spec`
 
 Both `livenessProbe` and `readinessProbe` support the following options:

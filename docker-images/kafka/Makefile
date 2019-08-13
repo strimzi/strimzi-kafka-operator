@@ -8,6 +8,7 @@ clean:
 .kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
 	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent.jar
+	cp ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar tmp/mirror-maker-agent.jar
 	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/pom.xml
 	touch .kafka-agent.tmp
 

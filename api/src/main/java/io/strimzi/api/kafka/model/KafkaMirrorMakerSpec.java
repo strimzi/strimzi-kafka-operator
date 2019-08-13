@@ -46,6 +46,8 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private KafkaMirrorMakerConsumerSpec consumer;
     private KafkaMirrorMakerProducerSpec producer;
     private ResourceRequirements resources;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private JvmOptions jvmOptions;
@@ -184,6 +186,26 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
 
     public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 
     @Description("Template for Kafka Mirror Maker resources. " +

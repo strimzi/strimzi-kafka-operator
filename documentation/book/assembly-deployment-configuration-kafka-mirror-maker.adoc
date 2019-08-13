@@ -43,6 +43,8 @@ include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
 include::assembly-logging.adoc[leveloffset=+1]
 
+include::assembly-healthchecks.adoc[leveloffset=+1]
+
 include::assembly-metrics.adoc[leveloffset=+1]
 
 include::assembly-jvm-options.adoc[leveloffset=+1]

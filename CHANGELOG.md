@@ -4,6 +4,7 @@
 
 * Add support for configuring Ingress class (#1716)
 * Add support for setting custom environment variables in the Kafka broker containers
+* Add liveness and readiness checks to Mirror Maker
 
 ## 0.13.0
 
