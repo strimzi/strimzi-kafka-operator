@@ -90,4 +90,8 @@ public interface Constants {
      * Tag for scalability tests
      */
     String SCALABILITY = "scalability";
+    /**
+     * Tag for OLM tests
+     */
+    String OLM = "olm";
 }

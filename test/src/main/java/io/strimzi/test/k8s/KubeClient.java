@@ -89,6 +89,11 @@ public class KubeClient {
         client.namespaces().withName(name).delete();
     }
 
+    public boolean namespaceExists(String namespace) {
+        return client.namespaces().list().getItems().stream().map(n -> n.getMetadata().getName())
+                .collect(Collectors.toList()).contains(namespace);
+    }
+
     /**
      * Gets namespace status
      */
@@ -116,6 +121,15 @@ public class KubeClient {
 
     public boolean getConfigMapStatus(String configMapName) {
         return client.configMaps().inNamespace(getNamespace()).withName(configMapName).isReady();
+    }
+
+    /**
+     * Create ConfigMap from resource
+     *
+     * @param resources configmap resources
+     */
+    public void createConfigMap(ConfigMap resources) {
+        client.configMaps().inNamespace(namespace).create(resources);
     }
 
     public List<ConfigMap> listConfigMaps() {
@@ -149,8 +163,12 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withLabelSelector(selector).list().getItems();
     }
 
+    public List<Pod> listPods(Map<String, String> labelSelector, String namespace) {
+        return client.pods().inNamespace(namespace).withLabels(labelSelector).list().getItems();
+    }
+
     public List<Pod> listPods(Map<String, String> labelSelector) {
-        return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
+        return listPods(labelSelector, getNamespace());
     }
 
     public List<Pod> listPods(String key, String value) {
@@ -168,8 +186,12 @@ public class KubeClient {
         return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }
 
+    public List<Pod> listPods(String namespace) {
+        return client.pods().inNamespace(namespace).list().getItems();
+    }
+
     public List<Pod> listPods() {
-        return client.pods().inNamespace(getNamespace()).list().getItems();
+        return listPods(getNamespace());
     }
 
     /**
@@ -207,8 +229,15 @@ public class KubeClient {
     /**
      * Deletes pod
      */
+    public Boolean deletePod(Pod pod, String namespace) {
+        return client.pods().inNamespace(namespace).delete(pod);
+    }
+
+    /**
+     * Deletes pod
+     */
     public Boolean deletePod(Pod pod) {
-        return client.pods().inNamespace(getNamespace()).delete(pod);
+        return deletePod(pod, getNamespace());
     }
 
     public Date getCreationTimestampForPod(String podName) {
@@ -352,8 +381,20 @@ public class KubeClient {
         return client.extensions().ingresses().inNamespace(getNamespace()).create(ingress);
     }
 
+    public Boolean deleteIngress(String ingressName) {
+        return client.extensions().ingresses().inNamespace(getNamespace()).withName(ingressName).delete();
+    }
+
     public Boolean deleteIngress(Ingress ingress) {
         return client.extensions().ingresses().inNamespace(getNamespace()).delete(ingress);
+    }
+
+    public String getIngressHost(String ingressName) {
+        return client.extensions().ingresses().inNamespace(getNamespace()).withName(ingressName).get().getSpec().getRules().get(0).getHost();
+    }
+
+    public String getIngressHost(String ingressName, String namespace) {
+        return client.extensions().ingresses().inNamespace(namespace).withName(ingressName).get().getSpec().getRules().get(0).getHost();
     }
 
     public List<Node> listNodes() {

@@ -950,6 +950,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         testClassResources.deleteResources();
     }
 
+    protected String getOCConsoleRoute() {
+        return String.format("https://console-openshift-console.%s", Environment.KUBERNETES_DOMAIN);
+    }
+
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
         if (Environment.SKIP_TEARDOWN == null) {

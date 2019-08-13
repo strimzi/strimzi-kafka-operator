@@ -73,7 +73,7 @@ public class MessagingBaseST extends AbstractST {
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      */
-    void availabilityTest(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    protected void availabilityTest(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         sendMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
         receiveMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
         assertSentAndReceivedMessages(sent, received);

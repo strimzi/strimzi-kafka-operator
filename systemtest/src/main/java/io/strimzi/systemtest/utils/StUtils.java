@@ -15,21 +15,29 @@ import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Resources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -305,10 +313,14 @@ public class StUtils {
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
+        waitForPodsReady(selector, expectPods, containers, kubeClient().getNamespace());
+    }
+
+    public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers, String namespace) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = kubeClient().listPods(selector);
+            List<Pod> pods = kubeClient(namespace).listPods(selector);
             if (pods.isEmpty()) {
-                LOGGER.debug("Not ready (no pods matching {})", selector);
+                LOGGER.debug("Not ready (no pods matching {}) in namespace: {}", selector, namespace);
                 return false;
             }
             if (pods.size() != expectPods) {
@@ -381,11 +393,11 @@ public class StUtils {
      * @param expectPods The expected number of pods.
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
-        LOGGER.debug("Waiting for Deployment {}", name);
+        LOGGER.info("Waiting for Deployment {} in {}", name, kubeClient().getNamespace());
         TestUtils.waitFor("deployment " + name + " pods to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));
-        LOGGER.debug("Deployment {} is ready", name);
-        LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
+        LOGGER.info("Deployment {} is ready", name);
+        LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
         waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true);
     }
 
@@ -696,5 +708,44 @@ public class StUtils {
             }
         }
         return currentTag;
+    }
+
+    public static RemoteWebDriver getFirefoxDriver() throws Exception {
+        return getRemoteDriver(kubeClient().getIngressHost(Resources.SELENIUM_FIREFOX, Resources.SELENIUM_PROJECT), 80, new FirefoxOptions());
+    }
+
+    private static RemoteWebDriver getRemoteDriver(String host, int port, Capabilities options) throws Exception {
+        int attempts = 60;
+        URL hubUrl = new URL(String.format("http://%s:%s/wd/hub", host, port));
+        for (int i = 0; i < attempts; i++) {
+            if (isReachable(hubUrl)) {
+                return new RemoteWebDriver(hubUrl, options);
+            }
+            Thread.sleep(2000);
+        }
+        throw new IllegalStateException("Selenium webdriver cannot connect to selenium container");
+    }
+
+    public static boolean isReachable(URL url) {
+        LOGGER.info("Trying to connect to {}", url.toString());
+        try {
+            url.openConnection();
+            url.getContent();
+            LOGGER.info("Client is able to connect to the selenium hub");
+            return true;
+        } catch (Exception ex) {
+            LOGGER.warn("Cannot connect to hub: {}", ex.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get current time in human readable format for logging.
+     * @return current time
+     */
+    public static String getCurrentTime() {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return simpleDateFormat.format(Calendar.getInstance().getTime());
     }
 }

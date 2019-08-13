@@ -54,7 +54,17 @@ public class Environment {
      * CO reconciliation interval.
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-
+    /**
+     * App Name for OLM tests.
+     */
+    private static final String APP_NAME_ENV = "APP_NAME";
+    /**
+     * Operator Name for OLM tests.
+     */
+    private static final String OPERATOR_NAME_ENV = "OPERATOR_NAME";
+    /**
+     * Variable for skip teardown phase in tests.
+     */
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.3.0";
@@ -66,22 +76,26 @@ public class Environment {
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
+    private static final String APP_NAME_DEFAULT = "strimzi";
+    private static final String OPERATOR_NAME_DEFAULT = "Strimzi Apache Kafka Operator";
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = System.getenv().getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
-    static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
-    static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
-    static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
-    static final String KUBERNETES_DOMAIN = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
-    static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
-    static final String SKIP_TEARDOWN = System.getenv(SKIP_TEARDOWN_ENV);
+    public static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
+    public static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
+    public static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
+    public static final String KUBERNETES_DOMAIN = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
+    public static final String SKIP_TEARDOWN = System.getenv(SKIP_TEARDOWN_ENV);
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = System.getenv().getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
     // variables for kafka bridge image
     private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
+    public static final String APP_NAME = System.getenv().getOrDefault(APP_NAME_ENV, APP_NAME_DEFAULT);
+    public static final String OPERATOR_NAME = System.getenv().getOrDefault(OPERATOR_NAME_ENV, OPERATOR_NAME_DEFAULT);
 
     private Environment() {
     }
@@ -98,5 +112,11 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
+        LOGGER.info(debugFormat, APP_NAME_ENV, APP_NAME);
+        LOGGER.info(debugFormat, OPERATOR_NAME_ENV, OPERATOR_NAME);
+    }
+
+    public static boolean storeScreenshots() {
+        return true;
     }
 }
