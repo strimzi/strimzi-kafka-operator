@@ -68,7 +68,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. " +
-            "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
+            "Consult the documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
     }
@@ -88,8 +88,8 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. " +
-            "Mirroring two topics named A and B can be achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. " +
-            "Multiple regular expressions separated by commas can be specified as well.")
+            "Mirroring two topics named A and B is achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. " +
+            "You can also specify multiple regular expressions separated by commas.")
     @JsonProperty(required = true)
     public String getWhitelist() {
         return whitelist;
@@ -208,8 +208,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.readinessProbe = readinessProbe;
     }
 
-    @Description("Template for Kafka Mirror Maker resources. " +
-            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+    @Description("Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaMirrorMakerTemplate getTemplate() {
         return template;

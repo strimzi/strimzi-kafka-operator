@@ -168,7 +168,7 @@ public class DocGenerator {
             KubeLink kubeLink = property.getAnnotation(KubeLink.class);
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
             if (externalUrl != null) {
-                out.append("See external documentation of ").append(externalUrl)
+                out.append(" See external documentation of ").append(externalUrl)
                         .append("[").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("].").append(NL).append(NL);
             } else if (isPolymorphic(propertyClass)) {
                 out.append(" The type depends on the value of the `").append(propertyName).append(".").append(discriminator(propertyClass))
