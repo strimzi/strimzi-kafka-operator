@@ -18,7 +18,7 @@ Liveness and readiness probes can be configured using the `livenessProbe` and `r
 * `KafkaConnectS2I.spec`
 * `KafkaBridge.spec`
 
-Both `livenessProbe` and `readinessProbe` support following options:
+Both `livenessProbe` and `readinessProbe` support the following options:
 
 * `initialDelaySeconds`
 * `timeoutSeconds`
