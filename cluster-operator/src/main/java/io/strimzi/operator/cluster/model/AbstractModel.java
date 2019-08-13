@@ -755,6 +755,10 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
+        return createService(name, type, ports, labels, selector, annotations, null);
+    }
+
+    protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations, String loadBalancerIP) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -767,6 +771,7 @@ public abstract class AbstractModel {
                     .withType(type)
                     .withSelector(selector)
                     .withPorts(ports)
+                    .withLoadBalancerIP(loadBalancerIP)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);

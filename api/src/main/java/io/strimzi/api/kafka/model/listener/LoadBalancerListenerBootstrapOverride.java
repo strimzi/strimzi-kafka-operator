@@ -26,6 +26,7 @@ public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBoots
     private static final long serialVersionUID = 1L;
 
     private Map<String, String> dnsAnnotations = new HashMap<>(0);
+    private String loadBalancerIP;
 
     @Description("Annotations that will be added to the `Service` resource. " +
             "You can use this field to configure DNS providers such as External DNS.")
@@ -36,5 +37,17 @@ public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBoots
 
     public void setDnsAnnotations(Map<String, String> dnsAnnotations) {
         this.dnsAnnotations = dnsAnnotations;
+    }
+
+    @Description("The LoadBalancer will be requested with the IP address specified in this field. " +
+            "This feature depends on whether the underlying cloud-provider supports specifying the loadBalancerIP when a load balancer is created. " +
+            "This field will be ignored if the cloud-provider does not support the feature.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getLoadBalancerIP() {
+        return loadBalancerIP;
+    }
+
+    public void setLoadBalancerIP(String loadBalancerIP) {
+        this.loadBalancerIP = loadBalancerIP;
     }
 }

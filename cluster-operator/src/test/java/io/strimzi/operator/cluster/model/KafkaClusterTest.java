@@ -617,6 +617,7 @@ public class KafkaClusterTest {
         assertEquals("LoadBalancer", ext.getSpec().getType());
         assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
         assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+        assertNull(ext.getSpec().getLoadBalancerIP());
         checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
@@ -626,6 +627,7 @@ public class KafkaClusterTest {
             assertEquals("LoadBalancer", srv.getSpec().getType());
             assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+            assertNull(srv.getSpec().getLoadBalancerIP());
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
     }
@@ -699,6 +701,46 @@ public class KafkaClusterTest {
         assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."), kc.generateExternalService(0).getMetadata().getAnnotations());
         assertTrue(kc.generateExternalService(1).getMetadata().getAnnotations().isEmpty());
         assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."), kc.generateExternalService(2).getMetadata().getAnnotations());
+    }
+
+    @Test
+    public void testExternalLoadBalancersWithLoadBalancerIPOverride() {
+        LoadBalancerListenerBootstrapOverride bootstrapOverride = new LoadBalancerListenerBootstrapOverrideBuilder()
+                .withLoadBalancerIP("10.0.0.1")
+                .build();
+
+        LoadBalancerListenerBrokerOverride brokerOverride0 = new LoadBalancerListenerBrokerOverrideBuilder()
+                .withBroker(0)
+                .withLoadBalancerIP("10.0.0.2")
+                .build();
+
+        LoadBalancerListenerBrokerOverride brokerOverride2 = new LoadBalancerListenerBrokerOverrideBuilder()
+                .withBroker(2)
+                .withLoadBalancerIP("10.0.0.3")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                                .withNewOverrides()
+                                    .withBootstrap(bootstrapOverride)
+                                    .withBrokers(brokerOverride0, brokerOverride2)
+                                .endOverrides()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check annotations
+        assertEquals("10.0.0.1", kc.generateExternalBootstrapService().getSpec().getLoadBalancerIP());
+        assertEquals("10.0.0.2", kc.generateExternalService(0).getSpec().getLoadBalancerIP());
+        assertNull(kc.generateExternalService(1).getSpec().getLoadBalancerIP());
+        assertEquals("10.0.0.3", kc.generateExternalService(2).getSpec().getLoadBalancerIP());
     }
 
     @Test
