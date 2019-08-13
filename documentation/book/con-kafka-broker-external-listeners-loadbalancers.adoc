@@ -62,13 +62,13 @@ listeners:
 # ...
 ----
 
-= Customizing the load balancer IP addresses
+= Customizing the loadbalancer IP addresses
 
-On `loadbalancer` listeners, you can use the `loadBalancerIP` property to request a specific IP address for the load balancer which will be created.
-This could be useful for example when you need to use a load balancer with a specific IP address.
-The `loadBalancerIP` field will be ignored if the cloud-provider does not support the feature.
+On `loadbalancer` listeners, you can use the `loadBalancerIP` property to request a specific IP address when creating a loadbalancer.
+Use this property when you need to use a loadbalancer with a specific IP address.
+The `loadBalancerIP` field is ignored if the cloud provider does not support the feature.
 
-.Example of an external listener of type `loadbalancer` with specific load balancer IP address requests
+.Example of an external listener of type `loadbalancer` with specific loadbalancer IP address requests
 [source,yaml,subs="attributes+"]
 ----
 # ...

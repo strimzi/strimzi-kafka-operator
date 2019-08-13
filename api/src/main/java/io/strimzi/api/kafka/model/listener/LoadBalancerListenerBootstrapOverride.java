@@ -39,9 +39,9 @@ public class LoadBalancerListenerBootstrapOverride extends ExternalListenerBoots
         this.dnsAnnotations = dnsAnnotations;
     }
 
-    @Description("The LoadBalancer will be requested with the IP address specified in this field. " +
-            "This feature depends on whether the underlying cloud-provider supports specifying the loadBalancerIP when a load balancer is created. " +
-            "This field will be ignored if the cloud-provider does not support the feature.")
+    @Description("The loadbalancer is requested with the IP address specified in this field. " +
+            "This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. " +
+            "This field is ignored if the cloud provider does not support the feature.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getLoadBalancerIP() {
         return loadBalancerIP;
