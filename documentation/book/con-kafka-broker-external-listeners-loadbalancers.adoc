@@ -61,3 +61,31 @@ listeners:
           external-dns.alpha.kubernetes.io/ttl: "60"
 # ...
 ----
+
+= Customizing the loadbalancer IP addresses
+
+On `loadbalancer` listeners, you can use the `loadBalancerIP` property to request a specific IP address when creating a loadbalancer.
+Use this property when you need to use a loadbalancer with a specific IP address.
+The `loadBalancerIP` field is ignored if the cloud provider does not support the feature.
+
+.Example of an external listener of type `loadbalancer` with specific loadbalancer IP address requests
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        loadBalancerIP: 172.29.3.10
+      brokers:
+      - broker: 0
+        loadBalancerIP: 172.29.3.1
+      - broker: 1
+        loadBalancerIP: 172.29.3.2
+      - broker: 2
+        loadBalancerIP: 172.29.3.3
+# ...
+----

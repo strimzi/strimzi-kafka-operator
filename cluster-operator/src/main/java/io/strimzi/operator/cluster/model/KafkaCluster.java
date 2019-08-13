@@ -619,11 +619,14 @@ public class KafkaCluster extends AbstractModel {
                 nodePort, "TCP"));
 
             Map<String, String> dnsAnnotations = Collections.emptyMap();
+            String loadBalancerIP = null;
+
             if (isExposedWithLoadBalancer())    {
                 KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
 
                 if (externalLb.getOverrides() != null && externalLb.getOverrides().getBootstrap() != null) {
                     dnsAnnotations = externalLb.getOverrides().getBootstrap().getDnsAnnotations();
+                    loadBalancerIP = externalLb.getOverrides().getBootstrap().getLoadBalancerIP();
                 }
             } else if (isExposedWithNodePort())    {
                 KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
@@ -636,7 +639,7 @@ public class KafkaCluster extends AbstractModel {
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
                 getSelectorLabels(),
-                mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations), loadBalancerIP);
         }
 
         return null;
@@ -666,6 +669,8 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
 
             Map<String, String> dnsAnnotations = Collections.emptyMap();
+            String loadBalancerIP = null;
+
             if (isExposedWithLoadBalancer())    {
                 KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
 
@@ -675,6 +680,17 @@ public class KafkaCluster extends AbstractModel {
                             .map(LoadBalancerListenerBrokerOverride::getDnsAnnotations)
                             .findAny()
                             .orElse(Collections.emptyMap());
+
+                    loadBalancerIP = externalLb.getOverrides().getBrokers().stream()
+                            .filter(brokerService -> brokerService != null && brokerService.getBroker() == pod
+                                    && brokerService.getLoadBalancerIP() != null)
+                            .map(LoadBalancerListenerBrokerOverride::getLoadBalancerIP)
+                            .findAny()
+                            .orElse(null);
+
+                    if (loadBalancerIP != null && loadBalancerIP.isEmpty()) {
+                        loadBalancerIP = null;
+                    }
                 }
             } else if (isExposedWithNodePort())    {
                 KafkaListenerExternalNodePort externalNp = (KafkaListenerExternalNodePort) listeners.getExternal();
@@ -692,7 +708,7 @@ public class KafkaCluster extends AbstractModel {
 
             return createService(perPodServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
-                mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations));
+                mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations), loadBalancerIP);
         }
 
         return null;
@@ -1688,10 +1704,10 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns the advertised address of external nodeport service.
+     * Returns the advertised address of external service.
      *
      * @param podNumber The pod number.
-     * @return The advertised address of the external nodeport service.
+     * @return The advertised address of the external service.
      */
     public String getExternalServiceAdvertisedHostOverride(int podNumber) {
         String advertisedHost = null;

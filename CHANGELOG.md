@@ -5,7 +5,8 @@
 * Add support for configuring Ingress class (#1716)
 * Add support for setting custom environment variables in the Kafka broker containers
 * Add liveness and readiness checks to Mirror Maker
-
+* Allow configuring loadBalancerIP for LoadBalancer type services
+git 
 ## 0.13.0
 
 * Allow users to manually configure ACL rules (for example, using `kafka-acls.sh`) for special Kafka users `*` and `ANONYMOUS` without them being deleted by the User Operator
