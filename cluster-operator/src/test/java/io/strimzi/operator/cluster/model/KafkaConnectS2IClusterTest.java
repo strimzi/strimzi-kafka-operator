@@ -241,6 +241,8 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
         assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
         assertEquals(new ImageChangeTrigger(), bc.getSpec().getTriggers().get(1).getImageChange());
+        assertEquals(new Integer(5), bc.getSpec().getSuccessfulBuildsHistoryLimit());
+        assertEquals(new Integer(5), bc.getSpec().getFailedBuildsHistoryLimit());
         checkOwnerReference(kc.createOwnerReference(), bc);
     }
 
@@ -257,7 +259,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("DockerImage", is.getSpec().getTags().get(0).getFrom().getKind());
         assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
         assertNull(is.getSpec().getTags().get(0).getImportPolicy());
-        assertNull(is.getSpec().getTags().get(0).getReferencePolicy());
+        assertEquals("Local", is.getSpec().getTags().get(0).getReferencePolicy().getType());
         checkOwnerReference(kc.createOwnerReference(), is);
     }
 
