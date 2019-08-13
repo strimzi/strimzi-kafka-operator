@@ -49,6 +49,7 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `externalBootstrapRoute`:: Configures the bootstrap route used by clients connecting to the Kafka brokers from outside of OpenShift using OpenShift `Routes`.
 `perPodRoute`:: Configures the per-Pod routes used by clients connecting to the Kafka broker from outside OpenShift to access individual brokers using OpenShift `Routes`.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka broker `StatefulSet`.
+`kafkaContainer`:: Configures the container used to run the Kafka broker, including custom environment variables. 
 
 .Supported resources in Zookeeper cluster
 
