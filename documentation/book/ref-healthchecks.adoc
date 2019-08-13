@@ -18,16 +18,15 @@ Liveness and readiness probes can be configured using the `livenessProbe` and `r
 * `KafkaConnectS2I.spec`
 * `KafkaBridge.spec`
 
-Both `livenessProbe` and `readinessProbe` support two additional options:
+Both `livenessProbe` and `readinessProbe` support following options:
 
 * `initialDelaySeconds`
 * `timeoutSeconds`
+* `periodSeconds`
+* `successThreshold`
+* `failureThreshold`
 
-The `initialDelaySeconds` property defines the initial delay before the probe is tried for the first time.
-Default is 15 seconds.
-
-The `timeoutSeconds` property defines timeout of the probe.
-Default is 5 seconds.
+For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[].
 
 .An example of liveness and readiness probe configuration
 [source,yaml,subs="attributes+"]
