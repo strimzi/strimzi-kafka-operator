@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TimeoutException;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
@@ -38,6 +40,8 @@ public class MirrorMakerST extends MessagingBaseST {
     public static final String NAMESPACE = "mm-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
     private final int messagesCount = 200;
+    private String kafkaClusterSourceName = CLUSTER_NAME + "-source";
+    private String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
     @Test
     void testMirrorMaker() throws Exception {
@@ -45,24 +49,22 @@ public class MirrorMakerST extends MessagingBaseST {
         jvmOptionsXX.put("UseG1GC", "true");
         setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
 
         // Deploy source kafka
-        testMethodResources().kafkaEphemeral(kafkaSourceName, 1, 1).done();
+        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
         // Deploy target kafka
-        testMethodResources().kafkaEphemeral(kafkaTargetName, 1, 1).done();
+        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Deploy Topic
-        testMethodResources().topic(kafkaSourceName, topicSourceName).done();
+        testMethodResources().topic(kafkaClusterSourceName, topicSourceName).done();
 
         testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName);
 
         // Deploy Mirror Maker
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
+        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
                 editSpec()
                 .withResources(new ResourceRequirementsBuilder()
                         .addToLimits("memory", new Quantity("400M"))
@@ -81,8 +83,8 @@ public class MirrorMakerST extends MessagingBaseST {
         verifyLabelsOnPods(CLUSTER_NAME, "mirror-maker", null, "KafkaMirrorMaker");
         verifyLabelsForService(CLUSTER_NAME, "mirror-maker", "KafkaMirrorMaker");
 
-        verifyLabelsForConfigMaps(kafkaSourceName, null, kafkaTargetName);
-        verifyLabelsForServiceAccounts(kafkaSourceName, null);
+        verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
+        verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
 
         String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
@@ -92,9 +94,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
-        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
-        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaTargetName, false, topicSourceName, null);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicSourceName, null);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -110,8 +112,6 @@ public class MirrorMakerST extends MessagingBaseST {
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
         String kafkaUserTargetName = "my-user-target";
-        String kafkaClusterSourceName = CLUSTER_NAME + "-source";
-        String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();
@@ -201,12 +201,10 @@ public class MirrorMakerST extends MessagingBaseST {
         setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaSourceName, 1, 1)
+        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterSourceName, 1, 1)
                 .editSpec()
                 .editKafka()
                 .withNewListeners()
@@ -216,7 +214,7 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaTargetName, 1, 1)
+        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterTargetName, 1, 1)
                 .editSpec()
                 .editKafka()
                 .withNewListeners()
@@ -226,11 +224,11 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = testMethodResources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
+        KafkaUser userSource = testMethodResources().scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
         StUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = testMethodResources().scramShaUser(kafkaTargetName, kafkaUserTarget).done();
+        KafkaUser userTarget = testMethodResources().scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
         StUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
@@ -246,22 +244,22 @@ public class MirrorMakerST extends MessagingBaseST {
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaClusterSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
 
         // Deploy client
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with TLS and ScramSha512
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
                 .editSpec()
                 .editConsumer()
                 .withNewKafkaMirrorMakerAuthenticationScramSha512()
@@ -284,16 +282,59 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec().done();
 
         // Deploy topic
-        testMethodResources().topic(kafkaSourceName, topicName).done();
+        testMethodResources().topic(kafkaClusterSourceName, topicName).done();
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaTargetName, true, topicName, userTarget);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, true, topicName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
+    }
+
+    @Test
+    void testWhiteList() throws Exception {
+        String topicName = "topic-example-1";
+        String topicNotInWhitelist = "topic-example-2";
+
+        LOGGER.info("Creating kafka source cluster {}", kafkaClusterSourceName);
+        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+
+        LOGGER.info("Creating kafka target cluster {}", kafkaClusterTargetName);
+        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        testMethodResources().topic(kafkaClusterSourceName, topicName).done();
+        testMethodResources().topic(kafkaClusterSourceName, topicNotInWhitelist).done();
+
+        StUtils.waitForKafkaTopicCreation(topicName);
+        StUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
+
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
+
+        // Check brokers availability
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName);
+
+        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
+                .editSpec()
+                    .withNewWhitelist(topicName)
+                .endSpec()
+                .done();
+
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicName, null);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicName, null);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicName, null);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
+
+        sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist, null);
+        receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist, null);
+
+        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicNotInWhitelist, null));
+        assertSentAndReceivedMessages(sent, receivedSource);
     }
 
     @BeforeEach

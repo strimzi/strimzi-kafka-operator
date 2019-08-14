@@ -58,7 +58,6 @@ class ConnectST extends AbstractST {
             "offset.storage.topic=connect-cluster-offsets\n");
 
     @Test
-    @Tag(REGRESSION)
     void testDeployUndeploy() {
         String appName = "strimzi-ephemeral";
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
@@ -76,6 +75,22 @@ class ConnectST extends AbstractST {
         verifyLabelsForService(KAFKA_CLUSTER_NAME, "connect-api", "KafkaConnect");
         verifyLabelsForConfigMaps(KAFKA_CLUSTER_NAME, null, "");
         verifyLabelsForServiceAccounts(KAFKA_CLUSTER_NAME, null);
+    }
+
+    private void testDockerImagesForKafkaConnect() {
+        LOGGER.info("Verifying docker image names");
+        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+        //Verifying docker image for kafka connect
+        String connectImageName = getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
+                get(0).getMetadata().getName());
+
+        String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
+        if (connectVersion == null) {
+            connectVersion = Environment.ST_KAFKA_VERSION;
+        }
+
+        assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
+        LOGGER.info("Docker images verified");
     }
 
     @Test
@@ -104,7 +119,6 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -136,7 +150,6 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
@@ -176,7 +189,6 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testForUpdateValuesInConnectCM() {
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editSpec()
@@ -226,24 +238,6 @@ class ConnectST extends AbstractST {
         }
     }
 
-    private void testDockerImagesForKafkaConnect() {
-        LOGGER.info("Verifying docker image names");
-        //Verifying docker image for cluster-operator
-
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
-        //Verifying docker image for kafka connect
-        String connectImageName = getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
-                get(0).getMetadata().getName());
-
-        String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
-        if (connectVersion == null) {
-            connectVersion = Environment.ST_KAFKA_VERSION;
-        }
-
-        assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
-        LOGGER.info("Docker images verified");
-    }
-
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -272,7 +266,8 @@ class ConnectST extends AbstractST {
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .done();
     }
 
     @Override
