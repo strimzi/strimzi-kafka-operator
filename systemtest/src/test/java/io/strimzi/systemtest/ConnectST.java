@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
@@ -80,8 +79,6 @@ class ConnectST extends AbstractST {
 
     void testDockerImagesForKafkaConnect() {
         LOGGER.info("Verifying docker image names");
-        //Verifying docker image for cluster-operator
-
         Map<String, String> imgFromDeplConf = getImagesFromConfig();
         //Verifying docker image for kafka connect
         String connectImageName = getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
@@ -241,34 +238,6 @@ class ConnectST extends AbstractST {
         }
     }
 
-    @Test
-    void testSecretsWithKafkaConnectWithTlsAuthentication() {
-        Secret kafkaClusterCERT = kubeClient().getSecret("connect-tests-cluster-ca-cert");
-        Secret kafkaClusterKEY = kubeClient().getSecret("connect-tests-cluster-ca");
-
-        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
-                .editSpec()
-                    .withNewTls()
-                        .addNewTrustedCertificate()
-                            .withSecretName(kafkaClusterCERT.getMetadata().getName())
-                            .withCertificate("ca.crt")
-                        .endTrustedCertificate()
-                    .endTls()
-                    .withBootstrapServers(KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9093")
-                    .withNewKafkaConnectAuthenticationTls()
-                        .withNewCertificateAndKey()
-                            .withSecretName(kafkaClusterKEY.getMetadata().getName())
-                            .withCertificate("ca.crt")
-                            .withKey("ca.key")
-                        .endCertificateAndKey()
-                    .endKafkaConnectAuthenticationTls()
-                .endSpec()
-                .done();
-
-        // verify that no logs in kafka connect
-        System.out.println("sad");
-    }
-
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -295,12 +264,6 @@ class ConnectST extends AbstractST {
         testClassResources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                        .endTls()
-                    .endListeners()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()

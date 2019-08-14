@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -12,7 +13,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -1824,6 +1824,34 @@ class KafkaST extends MessagingBaseST {
             assertThat("Label doesn't exist in HasMetadata(Services, CM, SS) resources",
                     resources.getMetadata().getLabels().get(labelKey) == null);
         }
+    }
+
+    @Test
+    void testUOListeningOnlyUsersInSameCluster() {
+        final String firstClusterName = "my-cluster-1";
+        final String secondClusterName = "my-cluster-2";
+        final String userName = "user-example";
+
+        testMethodResources().kafkaEphemeral(firstClusterName, 3, 1).done();
+
+        testMethodResources().kafkaEphemeral(secondClusterName, 3, 1).done();
+
+        testMethodResources().tlsUser(firstClusterName, userName).done();
+        StUtils.waitForSecretReady(userName);
+
+        LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
+        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
+        String uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
+        assertThat(uOLogs, containsString("KafkaUser " + userName + " in namespace " + NAMESPACE + " was ADDED"));
+
+        LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
+        entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
+        uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
+        assertThat(uOLogs, not(containsString("KafkaUser " + userName + " in namespace " + NAMESPACE + " was ADDED")));
+
+        LOGGER.info("Verifying that user belongs to {} cluster", firstClusterName);
+        String kafkaUserResource = cmdKubeClient().getResourceAsYaml("kafkauser", userName);
+        assertThat(kafkaUserResource, containsString("strimzi.io/cluster: " + firstClusterName));
     }
 
     @BeforeEach

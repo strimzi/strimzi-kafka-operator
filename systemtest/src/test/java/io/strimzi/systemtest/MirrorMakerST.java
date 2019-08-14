@@ -323,17 +323,17 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicName);
-        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicName);
-        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicName);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicName, null);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicName, null);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicName, null);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
 
-        sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist);
-        receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist);
+        sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist, null);
+        receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, false, topicNotInWhitelist, null);
 
-        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicNotInWhitelist));
+        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, false, topicNotInWhitelist, null));
         assertSentAndReceivedMessages(sent, receivedSource);
     }
 
