@@ -793,7 +793,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Wait for cluster availability with specific cluster name, check availability of external routes with TLS
+     * Wait for cluster availability, check availability of external routes with TLS
      * @param userName user name
      * @param namespace cluster namespace
      * @param clusterName cluster name
