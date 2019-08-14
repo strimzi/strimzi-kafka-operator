@@ -161,10 +161,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         TagReference sourceTag = new TagReference();
         sourceTag.setName(sourceImageTag);
         sourceTag.setFrom(image);
+        sourceTag.setReferencePolicy(new TagReferencePolicyBuilder().withType("Local").build());
 
         if (insecureSourceRepository)   {
             sourceTag.setImportPolicy(new TagImportPolicyBuilder().withInsecure(true).build());
-            sourceTag.setReferencePolicy(new TagReferencePolicyBuilder().withType("Local").build());
         }
 
         ImageStream imageStream = new ImageStreamBuilder()
@@ -248,6 +248,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .endSourceStrategy()
                     .endStrategy()
                     .withTriggers(triggerConfigChange, triggerImageChange)
+                    .withSuccessfulBuildsHistoryLimit(5)
+                    .withFailedBuildsHistoryLimit(5)
                 .endSpec()
                 .build();
 
