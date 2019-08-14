@@ -77,7 +77,7 @@ class ConnectST extends AbstractST {
         verifyLabelsForServiceAccounts(KAFKA_CLUSTER_NAME, null);
     }
 
-    void testDockerImagesForKafkaConnect() {
+    private void testDockerImagesForKafkaConnect() {
         LOGGER.info("Verifying docker image names");
         Map<String, String> imgFromDeplConf = getImagesFromConfig();
         //Verifying docker image for kafka connect
