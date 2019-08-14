@@ -453,6 +453,7 @@ public class StUtils {
     }
 
     public static void waitForSecretReady(String secretName) {
+        LOGGER.info("Waiting for secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getSecret(secretName) != null);
     }
