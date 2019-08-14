@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,11 +19,13 @@ import java.util.Map;
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
+    private final Future<Void> initReconcileFuture;
 
     private TopicOperator topicOperator;
 
-    public K8sTopicWatcher(TopicOperator topicOperator) {
+    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture) {
         this.topicOperator = topicOperator;
+        this.initReconcileFuture = initReconcileFuture;
     }
 
     @Override
@@ -33,7 +36,12 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
-            LOGGER.info("{}: event {} on resource {} with labels {}", logContext, action, name, labels);
+            if (action == Action.ADDED && !initReconcileFuture.isComplete()) {
+                LOGGER.debug("Ignoring initial added event for {} {} during initial reconcile", kind, name);
+                return;
+            }
+            LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
+                    metadata.getGeneration(), labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
                     LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
@@ -50,18 +58,10 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                     topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
                 }
             };
-            switch (action) {
-                case ADDED:
-                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, false).setHandler(resultHandler);
-                    break;
-                case MODIFIED:
-                    topicOperator.onResourceAddedOrModified(logContext, kafkaTopic, true).setHandler(resultHandler);
-                    break;
-                case DELETED:
-                    topicOperator.onResourceDeleted(logContext, kafkaTopic).setHandler(resultHandler);
-                    break;
-                case ERROR:
-                    LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
+            if (!action.equals(Action.ERROR)) {
+                topicOperator.onResourceEvent(logContext, kafkaTopic, action).setHandler(resultHandler);
+            } else {
+                LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
             }
         }
     }

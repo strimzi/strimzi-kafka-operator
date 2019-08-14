@@ -152,10 +152,10 @@ class TopicSerialization {
                 .withMetadata(om)
                 // TODO .withUid()
                 .withNewSpec()
-                .withTopicName(topic.getTopicName().toString())
-                .withPartitions(topic.getNumPartitions())
-                .withReplicas((int) topic.getNumReplicas())
-                .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                    .withTopicName(topic.getTopicName().toString())
+                    .withPartitions(topic.getNumPartitions())
+                    .withReplicas((int) topic.getNumReplicas())
+                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
                 .endSpec()
                 .build();
         // for some reason when the `topic.getMetadata().getAnnotations()` is null

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.Future;
 
@@ -113,14 +114,10 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public Future<Void> onResourceAddedOrModified(LogContext logContext, KafkaTopic resource, boolean modified) {
-        mockOperatorEvents.add(new MockOperatorEvent(modified ? MockOperatorEvent.Type.MODIFY : MockOperatorEvent.Type.CREATE, resource));
+    public Future<Void> onResourceEvent(LogContext logContext, KafkaTopic resource, Watcher.Action action) {
+        mockOperatorEvents.add(new MockOperatorEvent(action == Watcher.Action.MODIFIED ? MockOperatorEvent.Type.MODIFY :
+                action == Watcher.Action.ADDED ? MockOperatorEvent.Type.CREATE :
+                MockOperatorEvent.Type.DELETE, resource));
         return resourceAddedResult;
-    }
-
-    @Override
-    public Future<Void> onResourceDeleted(LogContext logContext, KafkaTopic resource) {
-        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, resource));
-        return resourceDeletedResult;
     }
 }

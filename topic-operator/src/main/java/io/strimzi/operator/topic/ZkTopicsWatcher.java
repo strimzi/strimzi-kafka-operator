@@ -117,6 +117,11 @@ class ZkTopicsWatcher {
                 List<String> result = childResult.result();
                 LOGGER.debug("Setting initial children {}", result);
                 this.children = result;
+                // Start watching existing children for config and partition changes
+                for (String child : result) {
+                    tcw.addChild(child);
+                    tw.addChild(child);
+                }
                 this.state = 1;
             });
             return Future.succeededFuture();

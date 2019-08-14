@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -13,12 +14,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -27,6 +30,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+
+@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
+        justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>,
@@ -64,6 +73,8 @@ public class CrdOperator<C extends KubernetesClient,
             this.plural = KafkaBridge.RESOURCE_PLURAL;
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             this.plural = KafkaMirrorMaker.RESOURCE_PLURAL;
+        } else if (cls.equals(KafkaTopic.class)) {
+            this.plural = KafkaTopic.RESOURCE_PLURAL;
         } else {
             this.plural = null;
         }
@@ -74,8 +85,8 @@ public class CrdOperator<C extends KubernetesClient,
         return Crds.operation(client, cls, listCls, doneableCls);
     }
 
-    public Future<Void> updateStatusAsync(T resource) {
-        Future<Void> blockingFuture = Future.future();
+    public Future<T> updateStatusAsync(T resource) {
+        Future<T> blockingFuture = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             try {
@@ -89,7 +100,7 @@ public class CrdOperator<C extends KubernetesClient,
 
                 String method = request.method();
                 Response response = client.newCall(request).execute();
-
+                T returnedResource = null;
                 try {
                     final int code = response.code();
 
@@ -111,18 +122,22 @@ public class CrdOperator<C extends KubernetesClient,
                         Status status = OperationSupport.createStatus(response);
                         log.debug("Got unexpected {} status code {}: {}", method, code, status);
                         throw OperationSupport.requestFailure(request, status);
+                    } else {
+                        // Success!
+                        if (response.body() != null) {
+                            try (InputStream bodyInputStream = response.body().byteStream()) {
+                                returnedResource = Serialization.unmarshal(bodyInputStream, cls, Collections.emptyMap());
+                            }
+                        }
                     }
-                } catch (Exception e) {
-                    throw e;
                 } finally {
                     // Only messages with body should be closed
                     if (response.body() != null) {
                         response.close();
                     }
                 }
-
-                future.complete();
-            } catch (Exception e) {
+                future.complete(returnedResource);
+            } catch (IOException | RuntimeException e) {
                 log.debug("Updating status failed", e);
                 future.fail(e);
             }

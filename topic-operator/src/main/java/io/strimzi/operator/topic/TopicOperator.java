@@ -6,9 +6,15 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
+import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -33,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
@@ -61,13 +67,6 @@ class TopicOperator {
         private final String message;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
-
-        public Event(OperatorException exception, Handler<AsyncResult<Void>> handler) {
-            this.involvedObject = exception.getInvolvedObject();
-            this.message = exception.getMessage();
-            this.handler = handler;
-            this.eventType = EventType.WARNING;
-        }
 
         public Event(HasMetadata involvedObject, String message, EventType eventType, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = involvedObject;
@@ -114,13 +113,19 @@ class TopicOperator {
         }
     }
 
+    private Future<KafkaTopic> createResource(LogContext logContext, Topic topic) {
+        Future<KafkaTopic> result = Future.future();
+        enqueue(new CreateResource(logContext, topic, result));
+        return result;
+    }
+
     /** Topic created in ZK */
     class CreateResource implements Handler<Void> {
         private final Topic topic;
-        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
+        private final Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler;
         private final LogContext logContext;
 
-        public CreateResource(LogContext logContext, Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+        public CreateResource(LogContext logContext, Topic topic, Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler) {
             this.logContext = logContext;
             this.topic = topic;
             this.handler = handler;
@@ -136,6 +141,12 @@ class TopicOperator {
         public String toString() {
             return "CreateResource(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
+    }
+
+    private Future<Void> deleteResource(LogContext logContext, ResourceName resourceName) {
+        Future<Void> result = Future.future();
+        enqueue(new DeleteResource(logContext, resourceName, result));
+        return result;
     }
 
     /** Topic deleted in ZK */
@@ -154,6 +165,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) {
             k8s.deleteResource(resourceName).setHandler(handler);
+            statusUpdateGeneration.remove(resourceName.toString());
         }
 
         @Override
@@ -162,14 +174,20 @@ class TopicOperator {
         }
     }
 
+    private Future<KafkaTopic> updateResource(LogContext logContext, Topic topic) {
+        Future<KafkaTopic> result = Future.future();
+        enqueue(new UpdateResource(logContext, topic, result));
+        return result;
+    }
+
     /** Topic config modified in ZK */
     class UpdateResource implements Handler<Void> {
 
         private final Topic topic;
-        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
+        private final Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler;
         private final LogContext logContext;
 
-        public UpdateResource(LogContext logContext, Topic topic, Handler<AsyncResult<Void>> handler) {
+        public UpdateResource(LogContext logContext, Topic topic, Handler<AsyncResult<KafkaTopic>> handler) {
             this.logContext = logContext;
             this.topic = topic;
             this.handler = handler;
@@ -187,8 +205,15 @@ class TopicOperator {
         }
     }
 
+    private Future<Void> createKafkaTopic(LogContext logContext, Topic topic,
+                                          HasMetadata involvedObject) {
+        Future<Void> result = Future.future();
+        enqueue(new CreateKafkaTopic(logContext, topic, involvedObject, result));
+        return result;
+    }
+
     /** Resource created in k8s */
-    class CreateKafkaTopic implements Handler<Void> {
+    private class CreateKafkaTopic implements Handler<Void> {
 
         private final Topic topic;
         private final HasMetadata involvedObject;
@@ -207,7 +232,8 @@ class TopicOperator {
         public void handle(Void v) throws OperatorException {
             kafka.createTopic(topic).setHandler(ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("{}: Created topic '{}' for KafkaTopic '{}'", logContext, topic.getTopicName(), topic.getResourceName());
+                    LOGGER.debug("{}: Created topic '{}' for KafkaTopic '{}'",
+                            logContext, topic.getTopicName(), topic.getResourceName());
                     handler.handle(ar);
                 } else {
                     handler.handle(ar);
@@ -325,6 +351,12 @@ class TopicOperator {
         }
     }
 
+    private Future<Void> deleteKafkaTopic(LogContext logContext, TopicName topicName) {
+        Future<Void> result = Future.future();
+        enqueue(new DeleteKafkaTopic(logContext, topicName, result));
+        return result;
+    }
+
     /** KafkaTopic deleted in k8s */
     class DeleteKafkaTopic implements Handler<Void> {
 
@@ -365,6 +397,7 @@ class TopicOperator {
         this.config = config;
     }
 
+
     /**
      * Run the given {@code action} on the context thread,
      * immediately if there are currently no other actions with the given {@code key},
@@ -403,19 +436,25 @@ class TopicOperator {
         vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
             if (ar.succeeded()) {
                 LOGGER.debug("{}: Lock acquired", logContext);
-                Future<Void> f = Future.future();
-                f.setHandler(ar2 -> {
-                    LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
-                    try {
-                        result.handle(ar2);
-                    } finally {
-                        ar.result().release();
-                        LOGGER.debug("{}: Lock released", logContext);
-                        inflight.compute(key, decrement);
-                    }
-                });
                 LOGGER.debug("{}: Executing action {} on topic {}", logContext, action, lockName);
-                action.handle(f);
+                action.execute().setHandler(ar2 -> {
+                    LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
+                    action.result = ar2;
+                    // Update status with lock held so that event is ignored via statusUpdateGeneration
+                    action.updateStatus(logContext).setHandler(ar3 -> {
+                        if (ar3.failed()) {
+                            LOGGER.error("{}: Error updating KafkaTopic.status for action {}", logContext, action,
+                                    ar3.cause());
+                        }
+                        try {
+                            result.handle(ar2);
+                        } finally {
+                            ar.result().release();
+                            LOGGER.debug("{}: Lock released", logContext);
+                            inflight.compute(key, decrement);
+                        }
+                    });
+                });
             } else {
                 LOGGER.warn("{}: Lock not acquired within {}ms: action {} will not be run", logContext, timeoutMs, action);
                 try {
@@ -451,10 +490,9 @@ class TopicOperator {
      * Topic identification should be by uid/cxid, not by name.
      * Topic identification should be by uid/cxid, not by name.
      */
-    void reconcile(final LogContext logContext, final HasMetadata involvedObject,
-                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic,
-                   final Handler<AsyncResult<Void>> reconciliationResultHandler) {
-
+    Future<Void> reconcile(Reconciliation reconciliation, final LogContext logContext, final HasMetadata involvedObject,
+                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic) {
+        final Future<Void> reconciliationResultHandler;
         {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
             LOGGER.info("{}: Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", logContext, topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
@@ -464,76 +502,67 @@ class TopicOperator {
                 if (kafkaTopic == null) {
                     // All three null: This happens reentrantly when a topic or KafkaTopic is deleted
                     LOGGER.debug("{}: All three topics null during reconciliation.", logContext);
-                    reconciliationResultHandler.handle(Future.succeededFuture());
+                    reconciliationResultHandler = Future.succeededFuture();
                 } else {
                     // it's been created in Kafka => create in k8s and privateState
                     LOGGER.debug("{}: topic created in kafka, will create KafkaTopic in k8s and topicStore", logContext);
-                    enqueue(new CreateResource(logContext, kafkaTopic, ar -> {
-                        // In all cases, create in privateState
-                        if (ar.succeeded()) {
-                            enqueue(new CreateInTopicStore(logContext, kafkaTopic, involvedObject, reconciliationResultHandler));
-                        } else {
-                            reconciliationResultHandler.handle(ar);
-                        }
-                    }));
+                    reconciliationResultHandler = createResource(logContext, kafkaTopic)
+                            .compose(createdKt -> {
+                                reconciliation.observedTopicFuture(createdKt);
+                                return createInTopicStore(logContext, kafkaTopic, involvedObject);
+                            });
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
                 LOGGER.debug("{}: KafkaTopic created in k8s, will create topic in kafka and topicStore", logContext);
-                enqueue(new CreateKafkaTopic(logContext, k8sTopic, involvedObject, ar -> {
-                    // In all cases, create in privateState
-                    if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(logContext, k8sTopic, involvedObject, reconciliationResultHandler));
-                    } else {
-                        reconciliationResultHandler.handle(ar);
-                    }
-                }));
+                reconciliationResultHandler = createKafkaTopic(logContext, k8sTopic, involvedObject)
+                    .compose(ignore -> createInTopicStore(logContext, k8sTopic, involvedObject))
+                    // Kafka will set the message.format.version, so we need to update the KafkaTopic to reflect
+                    // that to avoid triggering another reconciliation
+                    .compose(ignored -> getFromKafka(k8sTopic.getTopicName()))
+                    .compose(kafkaTopic2 -> {
+                        LOGGER.debug("Post-create kafka {}", kafkaTopic2);
+                        return update3Way(reconciliation, logContext, involvedObject, k8sTopic, kafkaTopic2, k8sTopic);
+                    });
+                    //.compose(createdKafkaTopic -> update3Way(logContext, involvedObject, k8sTopic, createdKafkaTopic, k8sTopic));
             } else {
-                update2Way(logContext, involvedObject, k8sTopic, kafkaTopic, reconciliationResultHandler);
+                reconciliationResultHandler = update2Way(reconciliation, logContext, involvedObject, k8sTopic, kafkaTopic);
             }
         } else {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
                     LOGGER.debug("{}: KafkaTopic deleted in k8s and topic deleted in kafka => delete from topicStore", logContext);
-                    enqueue(new DeleteFromTopicStore(logContext, privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                    reconciliationResultHandler = deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName());
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
                     LOGGER.debug("{}: KafkaTopic deleted in k8s => delete topic from kafka and from topicStore", logContext);
-                    enqueue(new DeleteKafkaTopic(logContext, kafkaTopic.getTopicName(), ar -> {
-                        if (ar.succeeded()) {
-                            enqueue(new DeleteFromTopicStore(logContext, privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
-                        } else {
-                            reconciliationResultHandler.handle(ar);
-                        }
-                    }));
-
+                    reconciliationResultHandler = deleteKafkaTopic(logContext, kafkaTopic.getTopicName())
+                        .compose(ignored -> deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName()));
                 }
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
                 LOGGER.debug("{}: topic deleted in kafkas => delete KafkaTopic from k8s and from topicStore", logContext);
-                enqueue(new DeleteResource(logContext, privateTopic.getOrAsKubeName(), ar -> {
-                    if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(logContext, privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
-                    } else {
-                        reconciliationResultHandler.handle(ar);
-                    }
-                }));
+                reconciliationResultHandler = deleteResource(logContext, privateTopic.getOrAsKubeName())
+                        .compose(ignore -> deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName()));
             } else {
                 // all three exist
                 LOGGER.debug("{}: 3 way diff", logContext);
-                update3Way(logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
+                reconciliationResultHandler = update3Way(reconciliation, logContext, involvedObject,
+                        k8sTopic, kafkaTopic, privateTopic);
             }
         }
+        return reconciliationResultHandler;
     }
 
-    private void update2Way(LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
+    private Future<Void> update2Way(Reconciliation reconciliation, LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic) {
+        final Future<Void> reconciliationResultHandler;
         TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
         if (diff.isEmpty()) {
             // they're the same => do nothing, but still create the private copy
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, but they're identical => just creating in topicStore", logContext);
             LOGGER.debug("{}: k8s and kafka versions of topic '{}' are the same", logContext, kafkaTopic.getTopicName());
-            enqueue(new CreateInTopicStore(logContext, kafkaTopic, involvedObject, reconciliationResultHandler));
+            reconciliationResultHandler = createInTopicStore(logContext, kafkaTopic, involvedObject);
         } else if (!diff.changesReplicationFactor()
                 && !diff.changesNumPartitions()
                 && diff.changesConfig()
@@ -542,45 +571,35 @@ class TopicOperator {
             Map<String, String> mergedConfigs = new HashMap<>(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
             Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
-            enqueue(new UpdateResource(logContext, mergedTopic, ar -> {
-                if (ar.succeeded()) {
-                    enqueue(new UpdateKafkaConfig(logContext, mergedTopic, involvedObject, ar2 -> {
-                        if (ar2.succeeded()) {
-                            enqueue(new CreateInTopicStore(logContext, mergedTopic, involvedObject, reconciliationResultHandler));
-                        } else {
-                            reconciliationResultHandler.handle(ar2);
-                        }
-                    }));
-                } else {
-                    reconciliationResultHandler.handle(ar);
-                }
-            }));
+            reconciliationResultHandler = updateResource(logContext, mergedTopic)
+                    .compose(updatedResource -> {
+                        reconciliation.observedTopicFuture(updatedResource);
+                        Future<Void> x = Future.future();
+                        enqueue(new UpdateKafkaConfig(logContext, mergedTopic, involvedObject, x));
+                        return x.compose(ignore -> createInTopicStore(logContext, mergedTopic, involvedObject));
+                    });
         } else {
             // Just use kafka version, but also create a warning event
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins", logContext);
+            Future<Void> eventFuture = Future.future();
             enqueue(new Event(involvedObject, "KafkaTopic is incompatible with the topic metadata. " +
-                    "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
-                if (ar.succeeded()) {
-                    enqueue(new UpdateResource(logContext, kafkaTopic, ar2 -> {
-                        if (ar2.succeeded()) {
-                            enqueue(new CreateInTopicStore(logContext, kafkaTopic, involvedObject, reconciliationResultHandler));
-                        } else {
-                            reconciliationResultHandler.handle(ar2);
-                        }
-                    }));
-                } else {
-                    reconciliationResultHandler.handle(ar);
-                }
-            }));
+                    "The topic metadata will be treated as canonical.", EventType.INFO, eventFuture));
+            reconciliationResultHandler = eventFuture
+                .compose(ignored ->
+                    updateResource(logContext, kafkaTopic))
+                .compose(updatedResource -> {
+                    reconciliation.observedTopicFuture(updatedResource);
+                    return createInTopicStore(logContext, kafkaTopic, involvedObject);
+                });
         }
+        return reconciliationResultHandler;
     }
 
-    private void update3Way(LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic,
-                            Handler<AsyncResult<Void>> reconciliationResultHandler) {
+    private Future<Void> update3Way(Reconciliation reconciliation, LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic) {
+        final Future<Void> reconciliationResultHandler;
         if (!privateTopic.getResourceName().equals(k8sTopic.getResourceName())) {
-            reconciliationResultHandler.handle(Future.failedFuture(new OperatorException(involvedObject,
-                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via KafkaTopic '" + privateTopic.getResourceName() + "' it cannot also be managed via the KafkaTopic '" + k8sTopic.getResourceName() + "'")));
-            return;
+            return Future.failedFuture(new OperatorException(involvedObject,
+                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via KafkaTopic '" + privateTopic.getResourceName() + "' it cannot also be managed via the KafkaTopic '" + k8sTopic.getResourceName() + "'"));
         }
         TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
         LOGGER.debug("{}: topicStore->kafkaTopic: {}", logContext, oursKafka);
@@ -591,13 +610,13 @@ class TopicOperator {
             final String message = "KafkaTopic resource and Kafka topic both changed in a conflicting way: " + conflict;
             LOGGER.error("{}: {}", logContext, message);
             enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> { }));
-            reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+            reconciliationResultHandler = Future.failedFuture(new Exception(message));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
             LOGGER.debug("{}: Diffs do not conflict, merged diff: {}", logContext, merged);
             if (merged.isEmpty()) {
                 LOGGER.info("{}: All three topics are identical", logContext);
-                reconciliationResultHandler.handle(Future.succeededFuture());
+                reconciliationResultHandler = Future.succeededFuture();
             } else {
                 Topic result = merged.apply(privateTopic);
                 int partitionsDelta = merged.numPartitionsDelta();
@@ -606,7 +625,7 @@ class TopicOperator {
                     LOGGER.error("{}: {}", logContext, message);
                     enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
                     }));
-                    reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+                    reconciliationResultHandler = Future.failedFuture(new Exception(message));
                 } else {
                     if (merged.changesReplicationFactor()) {
                         LOGGER.error("{}: Changes replication factor", logContext);
@@ -618,40 +637,52 @@ class TopicOperator {
                     // we could decrease, so order of tasks in the queue will need to change
                     // depending on what the diffs are.
                     LOGGER.debug("{}: Updating KafkaTopic, kafka topic and topicStore", logContext);
-                    // TODO replace this with compose
-                    TopicDiff diff = TopicDiff.diff(k8sTopic, result);
-                    if (diff.isEmpty()) {
-                        LOGGER.debug("{}: No need to update KafkaTopic with {}", logContext, diff);
-                        enqueue(updateTopicStoreAndKafka(logContext, involvedObject, reconciliationResultHandler, merged, result, partitionsDelta));
-                    } else {
-                        LOGGER.debug("{}: Updating KafkaTopic with {}", logContext, diff);
-                        UpdateResource event = new UpdateResource(logContext, result, ar -> {
-                            enqueue(updateTopicStoreAndKafka(logContext, involvedObject, reconciliationResultHandler, merged, result, partitionsDelta));
+                    TopicDiff kubeDiff = TopicDiff.diff(k8sTopic, result);
+                    Future<KafkaTopic> resourceFuture;
+                    if (!kubeDiff.isEmpty()) {
+                        LOGGER.debug("{}: Updating KafkaTopic with {}", logContext, kubeDiff);
+                        resourceFuture = updateResource(logContext, result).map(updatedKafkaTopic -> {
+                            reconciliation.observedTopicFuture(updatedKafkaTopic);
+                            return updatedKafkaTopic;
                         });
-                        enqueue(event);
+                    } else {
+                        LOGGER.debug("{}: No need to update KafkaTopic {}", logContext, kubeDiff);
+                        resourceFuture = Future.succeededFuture();
                     }
+                    reconciliationResultHandler = resourceFuture
+                        .compose(updatedKafkaTopic -> {
+                            Future<Void> configFuture;
+                            TopicDiff kafkaDiff = TopicDiff.diff(kafkaTopic, result);
+                            if (merged.changesConfig()
+                                    && !kafkaDiff.isEmpty()) {
+                                configFuture = Future.future();
+                                LOGGER.debug("{}: Updating kafka config with {}", logContext, kafkaDiff);
+                                enqueue(new UpdateKafkaConfig(logContext, result, involvedObject, configFuture));
+                            } else {
+                                LOGGER.debug("{}: No need to update kafka topic with {}", logContext, kafkaDiff);
+                                configFuture = Future.succeededFuture();
+                            }
+                            return configFuture;
+                        })
+                        .compose(ignored -> {
+                            if (partitionsDelta > 0
+                                    // Kafka throws an error if we attempt a noop change #partitions
+                                    && result.getNumPartitions() > kafkaTopic.getNumPartitions()) {
+                                Future<Void> partitionsFuture = Future.future();
+                                enqueue(new IncreaseKafkaPartitions(logContext, result, involvedObject, partitionsFuture));
+                                return partitionsFuture;
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        }).compose(ignored -> {
+                            Future<Void> topicStoreFuture = Future.future();
+                            enqueue(new UpdateInTopicStore(logContext, result, involvedObject, topicStoreFuture));
+                            return topicStoreFuture;
+                        });
                 }
             }
         }
-    }
-
-    private Handler<Void> updateTopicStoreAndKafka(LogContext logContext, HasMetadata involvedObject, Handler<AsyncResult<Void>> reconciliationResultHandler, TopicDiff merged, Topic topic, int partitionsDelta) {
-        Handler<Void> topicStoreHandler =
-            ignored -> enqueue(new UpdateInTopicStore(logContext, topic, involvedObject, reconciliationResultHandler));
-        Handler<Void> partitionsHandler;
-        if (partitionsDelta > 0) {
-            partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(logContext, topic, involvedObject, ar2 -> topicStoreHandler.handle(null)));
-        } else {
-            partitionsHandler = topicStoreHandler;
-        }
-
-        Handler<Void> result;
-        if (merged.changesConfig()) {
-            result = new UpdateKafkaConfig(logContext, topic, involvedObject, ar2 -> partitionsHandler.handle(null));
-        } else {
-            result = partitionsHandler;
-        }
-        return result;
+        return reconciliationResultHandler;
     }
 
     void enqueue(Handler<Void> event) {
@@ -659,36 +690,35 @@ class TopicOperator {
         vertx.runOnContext(event);
     }
 
+
     /** Called when a topic znode is deleted in ZK */
     Future<Void> onTopicDeleted(LogContext logContext, TopicName topicName) {
-        Reconciliation action = new Reconciliation("onTopicDeleted") {
-            @Override
-            public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnTopicChange(logContext, topicName, null, fut);
-            }
-        };
-        return executeWithTopicLockHeld(logContext, topicName, action);
-
+        return executeWithTopicLockHeld(logContext, topicName,
+            new Reconciliation("onTopicDeleted") {
+                @Override
+                public Future<Void> execute() {
+                    return reconcileOnTopicChange(logContext, topicName, null, this);
+                }
+            });
     }
+
+    private Map<String, Long> statusUpdateGeneration = new HashMap<>();
 
     /**
      * Called when ZK watch notifies of change to topic's config
      */
     Future<Void> onTopicConfigChanged(LogContext logContext, TopicName topicName) {
-        Reconciliation action = new Reconciliation("onTopicConfigChanged") {
-            @Override
-            public void handle(Future<Void> fut) {
-                kafka.topicMetadata(topicName).setHandler(metadataResult -> {
-                    if (metadataResult.succeeded()) {
-                        Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, topic, fut);
-                    } else {
-                        fut.fail(metadataResult.cause());
+        return executeWithTopicLockHeld(logContext, topicName,
+                new Reconciliation("onTopicConfigChanged") {
+                    @Override
+                    public Future<Void> execute() {
+                        return kafka.topicMetadata(topicName)
+                                .compose(metadata -> {
+                                    Topic topic = TopicSerialization.fromTopicMetadata(metadata);
+                                    return reconcileOnTopicChange(logContext, topicName, topic, this);
+                                });
                     }
                 });
-            }
-        };
-        return executeWithTopicLockHeld(logContext, topicName, action);
     }
 
     /**
@@ -697,8 +727,9 @@ class TopicOperator {
     Future<Void> onTopicPartitionsChanged(LogContext logContext, TopicName topicName) {
         Reconciliation action = new Reconciliation("onTopicPartitionsChanged") {
             @Override
-            public void handle(Future<Void> fut) {
-
+            public Future<Void> execute() {
+                Reconciliation self = this;
+                Future<Void> fut = Future.future();
                 // getting topic information from the private store
                 topicStore.read(topicName).setHandler(topicResult -> {
 
@@ -715,7 +746,8 @@ class TopicOperator {
                                         retry();
                                     } else {
                                         LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                        TopicOperator.this.reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut);
+                                        reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
+                                            .setHandler(fut);
                                     }
 
                                 } else {
@@ -736,6 +768,7 @@ class TopicOperator {
                     };
                     kafka.topicMetadata(topicName).setHandler(handler);
                 });
+                return fut;
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -744,32 +777,18 @@ class TopicOperator {
     /**
      * Called when one of the ZK watches notifies of a change to the topic
      */
-    private void reconcileOnTopicChange(LogContext logContext, TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
-        // TODO Here I need to lookup the name of the kafkatopic from the name of the topic.
-        // I can either do that from the topicStore, or maintain an in-memory map
-        // I can then look up the KafkaTopic from k8s
-        topicStore.read(topicName).setHandler(storeResult -> {
-            if (storeResult.succeeded()) {
-                Topic storeTopic = storeResult.result();
-                ResourceName resourceName = null;
-                if (storeTopic != null) {
-                    resourceName = storeTopic.getResourceName();
-                } else {
-                    resourceName = topicName.asKubeName();
-                }
-                k8s.getFromName(resourceName).setHandler(kubeResult -> {
-                    if (kubeResult.succeeded()) {
-                        KafkaTopic topic = kubeResult.result();
-                        Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
-                        reconcile(logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic, resultHandler);
-                    } else {
-                        resultHandler.handle(kubeResult.map((Void) null));
-                    }
+    private Future<Void> reconcileOnTopicChange(LogContext logContext, TopicName topicName, Topic kafkaTopic,
+                                                Reconciliation reconciliation) {
+        // Look up the private topic to discover the name of kube KafkaTopic
+        return topicStore.read(topicName)
+            .compose(storeTopic -> {
+                ResourceName resourceName = storeTopic != null ? storeTopic.getResourceName() : topicName.asKubeName();
+                return k8s.getFromName(resourceName).compose(topic -> {
+                    reconciliation.observedTopicFuture(kafkaTopic != null ? topic : null);
+                    Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
+                    return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                 });
-            } else {
-                resultHandler.handle(storeResult.map((Void) null));
-            }
-        });
+            });
     }
 
     /** Called when a topic znode is created in ZK */
@@ -778,8 +797,9 @@ class TopicOperator {
         // is it better to put this check in the topic deleted event?
         Reconciliation action = new Reconciliation("onTopicCreated") {
             @Override
-            public void handle(Future<Void> fut) {
-
+            public Future<Void> execute() {
+                Reconciliation self = this;
+                Future<Void> fut = Future.future();
                 TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
 
                     @Override
@@ -795,10 +815,11 @@ class TopicOperator {
                                 // We now have the metadata we need to create the
                                 // resource...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                                reconcileOnTopicChange(logContext, topicName, kafkaTopic, fut);
+                                reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
+                                        .setHandler(fut);
                             }
                         } else {
-                            fut.handle(metadataResult.map((Void) null));
+                            fut.fail(metadataResult.cause());
                         }
                     }
 
@@ -808,13 +829,16 @@ class TopicOperator {
                     }
                 };
                 kafka.topicMetadata(topicName).setHandler(handler);
+                return fut;
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
     }
 
-    abstract class Reconciliation implements Handler<Future<Void>> {
+    abstract class Reconciliation {
         private final String name;
+        public AsyncResult<Void> result;
+        public volatile KafkaTopic topic;
 
         public Reconciliation(String name) {
             this.name = name;
@@ -824,54 +848,136 @@ class TopicOperator {
         public String toString() {
             return name;
         }
-    }
 
-    /** Called when a resource is modified in k8s */
-    Future<Void> onResourceAddedOrModified(LogContext logContext, KafkaTopic modifiedTopic, boolean modified) {
-        final Topic k8sTopic;
-        try {
-            k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
-        } catch (InvalidTopicException e) {
-            return Future.failedFuture(e);
+        public abstract Future<Void> execute();
+
+        protected void observedTopicFuture(KafkaTopic observedTopic) {
+            topic = observedTopic;
         }
-        Reconciliation action = new Reconciliation("onResourceModified") {
-            @Override
-            public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, modifiedTopic, k8sTopic, modified, fut);
+
+        private Future<Void> updateStatus(LogContext logContext) {
+            try {
+                KafkaTopic topic = this.topic;
+                Future<Void> statusFuture;
+                if (topic != null) {
+                    // Get the existing status and if it's og == g and is has same status then don't update
+                    LOGGER.debug("{}: There is a KafkaTopic to set status on, rv={}, generation={}",
+                            logContext,
+                            topic.getMetadata().getResourceVersion(),
+                            topic.getMetadata().getGeneration());
+                    KafkaTopicStatus kts = new KafkaTopicStatus();
+                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
+
+                    StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
+                    if (!ksDiff.isEmpty()) {
+                        statusFuture = Future.future();
+                        k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).setHandler(ar -> {
+                            if (ar.succeeded() && ar.result() != null) {
+                                ObjectMeta metadata = ar.result().getMetadata();
+                                LOGGER.debug("{}: status was set rv={}, generation={}, observedGeneration={}",
+                                        logContext,
+                                        metadata.getResourceVersion(),
+                                        metadata.getGeneration(),
+                                        ar.result().getStatus().getObservedGeneration());
+                                statusUpdateGeneration.put(
+                                        metadata.getName(),
+                                        metadata.getGeneration());
+                            } else {
+                                LOGGER.error("{}: Error setting resource status", logContext, ar.cause());
+                            }
+                            statusFuture.handle(ar.map((Void) null));
+                        });
+                    } else {
+                        statusFuture = Future.succeededFuture();
+                    }
+                } else {
+                    LOGGER.debug("{}: No KafkaTopic to set status", logContext);
+                    statusFuture = Future.succeededFuture();
+                }
+                return result.failed() ? Future.failedFuture(result.cause()) : statusFuture;
+            } catch (Throwable t) {
+                LOGGER.error("{}", logContext, t);
+                return Future.failedFuture(t);
             }
-        };
-        return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic), action);
+        }
     }
 
-    private void reconcileOnResourceChange(LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
-                                           boolean isModify, Handler<AsyncResult<Void>> handler) {
+    /** Called when a resource is isModify in k8s */
+    Future<Void> onResourceEvent(LogContext logContext, KafkaTopic modifiedTopic, Watcher.Action action) {
+        return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic),
+                new Reconciliation("onResourceEvent") {
+                    @Override
+                    public Future<Void> execute() {
+                        return k8s.getFromName(new ResourceName(modifiedTopic))
+                            .compose(mt ->  {
+                                final Topic k8sTopic;
+                                if (mt != null) {
+                                    observedTopicFuture(mt);
+                                    Long generation = statusUpdateGeneration.get(mt.getMetadata().getName());
+                                    LOGGER.debug("{}: last updated generation={}", logContext, generation);
+                                    if (mt.getMetadata() != null
+                                            && mt.getMetadata().getGeneration() != null) {
+                                        if (mt.getMetadata().getGeneration().equals(generation)) {
+                                            // TODO we might also need some way to avoid statusUpdateGeneration getting too big
+                                            // e.g. remove after 10 seconds, for example
+                                            // Or do we not care and maintain this map to avoid unnecessary work always
+                                            // It doesn't scale to many topics so well, but maybe that's not such a huge problem.
+                                            LOGGER.debug("{}: Ignoring modification event caused by my own status update on {}",
+                                                    logContext,
+                                                    mt.getMetadata().getName());
+                                            return Future.succeededFuture();
+                                        } else {
+                                            LOGGER.debug("{}: modifiedTopic.getMetadata().getGeneration()={}",
+                                                    logContext, mt.getMetadata().getGeneration());
+                                        }
+                                    } else {
+                                        LOGGER.debug("{}: modifiedTopic.getMetadata().getGeneration()=null", logContext);
+                                    }
+
+                                    try {
+                                        k8sTopic = TopicSerialization.fromTopicResource(mt);
+                                    } catch (InvalidTopicException e) {
+                                        return Future.failedFuture(e);
+                                    }
+                                } else {
+                                    observedTopicFuture(null);
+                                    k8sTopic = null;
+                                }
+                                return reconcileOnResourceChange(this, logContext, mt != null ? mt : modifiedTopic, k8sTopic, action == Watcher.Action.MODIFIED);
+                            });
+                    }
+                });
+    }
+
+    private Future<Void> reconcileOnResourceChange(Reconciliation reconciliation, LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
+                                           boolean isModify) {
         TopicName topicName = new TopicName(topicResource);
-        CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName)).setHandler(ar -> {
-            if (ar.succeeded()) {
-                Topic kafkaTopic = ar.result().resultAt(0);
-                Topic privateTopic = ar.result().resultAt(1);
-                if (privateTopic == null && isModify) {
+        return CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName))
+            .compose(compositeResult -> {
+                Topic kafkaTopic = compositeResult.resultAt(0);
+                Topic privateTopic = compositeResult.resultAt(1);
+                Future<Void> result;
+                if (kafkaTopic == null
+                    && privateTopic == null
+                    && isModify
+                    && topicResource.getMetadata().getDeletionTimestamp() != null) {
+                    // When processing a Kafka-side deletion then when we delete the KT
+                    // We first receive a modify event (setting deletionTimestamp etc)
+                    // then the deleted event. We need to ignore the modify event.
+                    LOGGER.debug("Ignoring pre-delete modify event");
+                    reconciliation.observedTopicFuture(null);
+                    result = Future.succeededFuture();
+                } else if (privateTopic == null
+                        && isModify) {
+                    result = Future.future();
                     enqueue(new Event(topicResource,
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
-                            EventType.WARNING, handler));
+                            EventType.WARNING, result));
                 } else {
-                    reconcile(logContext, topicResource, k8sTopic, kafkaTopic, privateTopic, handler);
+                    result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
                 }
-            } else {
-                handler.handle(Future.failedFuture(ar.cause()));
-            }
-        });
-    }
-
-    /** Called when a resource is deleted in k8s */
-    Future<Void> onResourceDeleted(LogContext logContext, KafkaTopic deletedTopic) {
-        Reconciliation action = new Reconciliation("onResourceDeleted") {
-            @Override
-            public void handle(Future<Void> fut) {
-                TopicOperator.this.reconcileOnResourceChange(logContext, deletedTopic, null, false, fut);
-            }
-        };
-        return executeWithTopicLockHeld(logContext, new TopicName(deletedTopic), action);
+                return result;
+            });
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -901,6 +1007,12 @@ class TopicOperator {
         public String toString() {
             return "UpdateInTopicStore(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
+    }
+
+    private Future<Void> createInTopicStore(LogContext logContext, Topic topic, HasMetadata involvedObject) {
+        Future<Void> result = Future.future();
+        enqueue(new CreateInTopicStore(logContext, topic, involvedObject, result));
+        return result;
     }
 
     class CreateInTopicStore implements Handler<Void> {
@@ -936,6 +1048,13 @@ class TopicOperator {
         public String toString() {
             return "CreateInTopicStore(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
+    }
+
+
+    private Future<Void> deleteFromTopicStore(LogContext logContext, HasMetadata involvedObject, TopicName topicName) {
+        Future<Void> reconciliationResultHandler = Future.future();
+        enqueue(new DeleteFromTopicStore(logContext, topicName, involvedObject, reconciliationResultHandler));
+        return reconciliationResultHandler;
     }
 
     class DeleteFromTopicStore implements Handler<Void> {
@@ -1065,8 +1184,9 @@ class TopicOperator {
                     LogContext logContext = LogContext.periodic(reconciliationType + "-" + tn);
                     futs2.add(executeWithTopicLockHeld(logContext, tn, new Reconciliation("delete-remaining") {
                         @Override
-                        public void handle(Future<Void> event) {
-                            getKafkaAndReconcile(logContext, tn, null, null).setHandler(event);
+                        public Future<Void> execute() {
+                            observedTopicFuture(null);
+                            return getKafkaAndReconcile(this, logContext, tn, null, null);
                         }
                     }));
                 }
@@ -1093,8 +1213,8 @@ class TopicOperator {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kafka " + topicName);
                 futures.add(executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-from-kafka") {
                     @Override
-                    public void handle(Future<Void> fut) {
-                        getFromTopicStore(topicName).recover(error -> {
+                    public Future<Void> execute() {
+                        return getFromTopicStore(topicName).recover(error -> {
                             failed.put(topicName,
                                     new OperatorException("Error getting KafkaTopic " + topicName + " during "
                                             + reconciliationType + " reconciliation", error));
@@ -1105,17 +1225,16 @@ class TopicOperator {
                                 return Future.succeededFuture();
                             } else {
                                 LOGGER.debug("{}: Have private topic for topic {} in Kafka", logContext, topicName);
-                                return reconcileWithPrivateTopic(logContext, topicName, topic).otherwise(error -> {
-                                    failed.put(topicName, error);
-                                    return null;
-                                }).map(ignored -> {
-                                    succeeded.add(topicName);
-                                    return null;
-                                });
+                                return reconcileWithPrivateTopic(logContext, topicName, topic, this)
+                                    .otherwise(error -> {
+                                        failed.put(topicName, error);
+                                        return null;
+                                    })
+                                    .map(ignored -> {
+                                        succeeded.add(topicName);
+                                        return null;
+                                    });
                             }
-                        }).map(i ->  {
-                            fut.complete();
-                            return null;
                         });
                     }
                 }));
@@ -1137,11 +1256,13 @@ class TopicOperator {
     /**
      * Reconcile the given topic which has the given {@code privateTopic} in the topic store.
      */
-    private Future<Void> reconcileWithPrivateTopic(LogContext logContext, TopicName topicName, Topic privateTopic) {
-        Future<KafkaTopic> kubeFuture = k8s.getFromName(privateTopic.getResourceName());
-        return kubeFuture
+    private Future<Void> reconcileWithPrivateTopic(LogContext logContext, TopicName topicName,
+                                                   Topic privateTopic,
+                                                   Reconciliation reconciliation) {
+        return k8s.getFromName(privateTopic.getResourceName())
             .compose(kafkaTopicResource -> {
-                return getKafkaAndReconcile(logContext, topicName, privateTopic, kafkaTopicResource);
+                reconciliation.observedTopicFuture(kafkaTopicResource);
+                return getKafkaAndReconcile(reconciliation, logContext, topicName, privateTopic, kafkaTopicResource);
             })
             .recover(error -> {
                 LOGGER.error("{}: Error getting KafkaTopic {} for topic {}",
@@ -1151,29 +1272,25 @@ class TopicOperator {
             });
     }
 
-    private Future<Void> getKafkaAndReconcile(LogContext logContext, TopicName topicName, Topic privateTopic, KafkaTopic kafkaTopicResource) {
+    private Future<Void> getKafkaAndReconcile(Reconciliation reconciliation, LogContext logContext, TopicName topicName,
+                                              Topic privateTopic, KafkaTopic kafkaTopicResource) {
         logContext.withKubeTopic(kafkaTopicResource);
         Future<Void> topicFuture = Future.future();
         try {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
-            kafka.topicMetadata(topicName).setHandler(metadataResult -> {
-                if (metadataResult.succeeded()) {
-                    TopicMetadata kafkaTopicMeta = metadataResult.result();
+            kafka.topicMetadata(topicName)
+                .compose(kafkaTopicMeta -> {
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                    reconcile(logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic, reconcileResult -> {
-                        if (reconcileResult.succeeded()) {
-                            LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
-                            topicFuture.complete();
-                        } else {
-                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), reconcileResult.cause());
-                            topicFuture.fail(reconcileResult.cause());
-                        }
-                    });
-                } else {
-                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), metadataResult.cause());
-                    topicFuture.fail(metadataResult.cause());
-                }
-            });
+                    return reconcile(reconciliation, logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
+                })
+                .setHandler(ar -> {
+                    if (ar.failed()) {
+                        LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());
+                    } else {
+                        LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
+                    }
+                    topicFuture.handle(ar);
+                });
         } catch (InvalidTopicException e) {
             LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
             topicFuture.fail(e);
@@ -1184,10 +1301,6 @@ class TopicOperator {
         return topicFuture;
     }
 
-    Future<KafkaTopic> getFromKube(ResourceName kubeName) {
-        return k8s.getFromName(kubeName);
-    }
-
     Future<Topic> getFromKafka(TopicName topicName) {
         return kafka.topicMetadata(topicName).map(TopicSerialization::fromTopicMetadata);
     }
@@ -1196,33 +1309,26 @@ class TopicOperator {
         return topicStore.read(topicName);
     }
 
-    private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
+    private Future<Void> reconcileWithKubeTopic(LogContext logContext, HasMetadata involvedObject,
+                                                String reconciliationType, ResourceName kubeName, TopicName topicName) {
         return executeWithTopicLockHeld(logContext, topicName, new Reconciliation("reconcile-with-kube") {
             @Override
-            public void handle(Future<Void> fut) {
-                CompositeFuture.join(getFromKube(kubeName),
+            public Future<Void> execute() {
+                Reconciliation self = this;
+                return CompositeFuture.all(
+                        k8s.getFromName(kubeName).map(kt -> {
+                            observedTopicFuture(kt);
+                            return kt;
+                        }),
                         getFromKafka(topicName),
                         getFromTopicStore(topicName))
-                    .setHandler(ar -> {
-                        if (ar.succeeded()) {
-                            KafkaTopic ktr = ar.result().resultAt(0);
-                            logContext.withKubeTopic(ktr);
-                            Topic k8sTopic = TopicSerialization.fromTopicResource(ktr);
-                            Topic kafkaTopic = ar.result().resultAt(1);
-                            Topic privateTopic = ar.result().resultAt(2);
-                            reconcile(logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
-                                if (reconcileResult.succeeded()) {
-                                    LOGGER.info("{}: Success reconciling KafkaTopic {}", logContext, logTopic(involvedObject));
-                                    fut.complete();
-                                } else {
-                                    LOGGER.error("{}: Error reconciling KafkaTopic {}", logContext, logTopic(involvedObject), reconcileResult.cause());
-                                    fut.fail(reconcileResult.cause());
-                                }
-                            });
-                        } else {
-                            LOGGER.error("{}: Error reconciling KafkaTopic {}", logContext, kubeName, ar.cause());
-                            fut.fail(ar.cause());
-                        }
+                    .compose(compositeResult -> {
+                        KafkaTopic ktr = compositeResult.resultAt(0);
+                        logContext.withKubeTopic(ktr);
+                        Topic k8sTopic = TopicSerialization.fromTopicResource(ktr);
+                        Topic kafkaTopic = compositeResult.resultAt(1);
+                        Topic privateTopic = compositeResult.resultAt(2);
+                        return reconcile(self, logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic);
                     });
             }
         });

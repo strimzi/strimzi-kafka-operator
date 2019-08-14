@@ -18,14 +18,21 @@ public interface K8s {
      * @param topicResource The resource to be created.
      * @return A future which completes when the topic has been created.
      */
-    Future<Void> createResource(KafkaTopic topicResource);
+    Future<KafkaTopic> createResource(KafkaTopic topicResource);
 
     /**
      * Asynchronously update the given resource.
      * @param topicResource The topic.
      * @return A future which completes when the topic has been updated.
      */
-    Future<Void> updateResource(KafkaTopic topicResource);
+    Future<KafkaTopic> updateResource(KafkaTopic topicResource);
+
+    /**
+     * Asynchronously update the given resource's status.
+     * @param topicResource The topic.
+     * @return A future which completes when the topic's status has been updated.
+     */
+    Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource);
 
     /**
      * Asynchronously delete the given resource.

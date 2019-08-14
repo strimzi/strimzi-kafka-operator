@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.MockTopicOperator.MockOperatorEvent.Type;
 import io.vertx.core.Future;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Before;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,7 +45,7 @@ public class ZkTopicsWatcherTest {
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
         assertEquals(asList(new MockTopicOperator.MockOperatorEvent(
-                MockTopicOperator.MockOperatorEvent.Type.CREATE, new TopicName("baz"))), operator.getMockOperatorEvents());
+                Type.CREATE, new TopicName("baz"))), operator.getMockOperatorEvents());
         assertTrue(topicConfigsWatcher.watching("baz"));
         assertTrue(topicWatcher.watching("baz"));
     }
@@ -54,10 +56,15 @@ public class ZkTopicsWatcherTest {
         addTopic();
         // Now change the config
         operator.clearEvents();
-        mockZk.triggerData(Future.succeededFuture(new byte[0]));
-        assertEquals(asList(
-                new MockTopicOperator.MockOperatorEvent(MockTopicOperator.MockOperatorEvent.Type.MODIFY_PARTITIONS, new TopicName("baz")),
-                new MockTopicOperator.MockOperatorEvent(MockTopicOperator.MockOperatorEvent.Type.MODIFY_CONFIG, new TopicName("baz"))),
+        mockZk.triggerData("/config/topics/baz", Future.succeededFuture(new byte[0]));
+        assertEquals(singletonList(
+                new MockTopicOperator.MockOperatorEvent(Type.MODIFY_CONFIG, new TopicName("baz"))),
+                operator.getMockOperatorEvents());
+
+        operator.clearEvents();
+        mockZk.triggerData("/brokers/topics/baz", Future.succeededFuture(new byte[0]));
+        assertEquals(singletonList(
+                new MockTopicOperator.MockOperatorEvent(Type.MODIFY_PARTITIONS, new TopicName("baz"))),
                 operator.getMockOperatorEvents());
     }
 
@@ -73,7 +80,7 @@ public class ZkTopicsWatcherTest {
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
         assertEquals(asList(new MockTopicOperator.MockOperatorEvent(
-                MockTopicOperator.MockOperatorEvent.Type.DELETE, new TopicName("bar"))), operator.getMockOperatorEvents());
+                Type.DELETE, new TopicName("bar"))), operator.getMockOperatorEvents());
         assertFalse(topicConfigsWatcher.watching("baz"));
     }
 }

@@ -14,6 +14,7 @@ rules:
   - "kafka.strimzi.io"
   resources:
   - kafkatopics
+  - kafkatopics/status
   verbs:
   - get
   - list
