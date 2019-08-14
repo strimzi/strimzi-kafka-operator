@@ -5,7 +5,7 @@
 [options="header"]
 |====
 |Property                       |Description
-|affinity                1.2+<.<|See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity].
+|affinity                1.2+<.<| See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity].
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]

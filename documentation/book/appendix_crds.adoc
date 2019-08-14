@@ -64,11 +64,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
-|affinity             1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity             1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|tolerations          1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations          1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -196,7 +196,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |Property                   |Description
 |authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -243,7 +243,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |Property                   |Description
 |authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -266,7 +266,7 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -338,7 +338,7 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -416,7 +416,7 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -496,7 +496,7 @@ It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
 |string
 |configuration       1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
@@ -769,23 +769,23 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 |Property                              |Description
 |metadata                       1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[core/v1 localobjectreference].
+|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[core/v1 localobjectreference].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#localobjectreference-v1-core[LocalObjectReference] array
-|securityContext                1.2+<.<|Configures pod-level security attributes and common container settings.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
+|securityContext                1.2+<.<|Configures pod-level security attributes and common container settings. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#podsecuritycontext-v1-core[PodSecurityContext]
 |terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
 |integer
-|affinity                       1.2+<.<|The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity                       1.2+<.<|The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
 |priorityClassName              1.2+<.<|The name of the Priority Class to which these pods will be assigned.
 |string
-|tolerations                    1.2+<.<|The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations                    1.2+<.<|The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -851,11 +851,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |config          1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme.
 |map
-|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -915,7 +915,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
-|affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity                        1.2+<.<|Pod affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
@@ -961,11 +961,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |userOperator   1.2+<.<|Configuration of the User Operator.
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
-|affinity       1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity       1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|tolerations    1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations    1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -1170,11 +1170,11 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions             1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -1345,11 +1345,11 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 [options="header"]
 |====
 |Property                |Description
-|configMapKeyRef  1.2+<.<|Refernce to a key in a ConfigMap.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
+|configMapKeyRef  1.2+<.<|Refernce to a key in a ConfigMap. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapkeyselector-v1-core[ConfigMapKeySelector]
-|secretKeyRef     1.2+<.<|Reference to a key in a Secret.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core[core/v1 secretkeyselector].
+|secretKeyRef     1.2+<.<|Reference to a key in a Secret. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core[core/v1 secretkeyselector].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core[SecretKeySelector]
@@ -1364,13 +1364,13 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 [options="header"]
 |====
 |Property          |Description
-|configMap  1.2+<.<|Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapvolumesource-v1-core[core/v1 configmapvolumesource].
+|configMap  1.2+<.<|Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapvolumesource-v1-core[core/v1 configmapvolumesource].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |name       1.2+<.<|Name of the volume which will be added to the Kafka Connect pods.
 |string
-|secret     1.2+<.<|Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretvolumesource-v1-core[core/v1 secretvolumesource].
+|secret     1.2+<.<|Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretvolumesource-v1-core[core/v1 secretvolumesource].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretvolumesource-v1-core[SecretVolumeSource]
@@ -1453,7 +1453,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions                1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|affinity                  1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity                  1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
@@ -1477,7 +1477,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
-|tolerations               1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations               1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -1762,7 +1762,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
-|whitelist       1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B can be achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. Multiple regular expressions separated by commas can be specified as well.
+|whitelist       1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
 |string
 |consumer        1.2+<.<|Configuration of source cluster.
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
@@ -1770,11 +1770,11 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 |resources       1.2+<.<|Resource constraints (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations.See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
@@ -1784,13 +1784,13 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
-|template        1.2+<.<|Template for Kafka Mirror Maker resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|template        1.2+<.<|Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|version         1.2+<.<|The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|version         1.2+<.<|The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
 
