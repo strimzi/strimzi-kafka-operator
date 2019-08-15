@@ -344,6 +344,10 @@ public class KubeClient {
         return client.secrets().inNamespace(getNamespace()).withName(secretName).get();
     }
 
+    public boolean deleteSecret(String secretName) {
+        return client.secrets().inNamespace(getNamespace()).withName(secretName).delete();
+    }
+
     public Service createService(Service service) {
         return client.services().inNamespace(getNamespace()).create(service);
     }

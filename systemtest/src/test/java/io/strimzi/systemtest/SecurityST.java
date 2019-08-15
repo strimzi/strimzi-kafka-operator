@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.strimzi.api.kafka.model.KafkaResources.clientsCaCertificateSecretName;
@@ -473,6 +474,50 @@ class SecurityST extends AbstractST {
 
         assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
         waitForClusterAvailability(NAMESPACE);
+    }
+
+    @Test
+    void testCertRegeneratedAfterInternalCAisDeleted() throws Exception {
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        String userName = "user-example";
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        StUtils.waitForSecretReady(userName);
+
+        List<Secret> secrets = kubeClient().listSecrets().stream()
+                .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
+                .collect(Collectors.toList());
+
+        for (Secret s : secrets) {
+            LOGGER.info("Verifying that secret {} with name {} is present", s, s.getMetadata().getName());
+            assertNotNull(s.getData());
+        }
+
+        for (Secret s : secrets) {
+            LOGGER.info("Deleting secret {}", s.getMetadata().getName());
+            kubeClient().deleteSecret(s.getMetadata().getName());
+            StUtils.waitForSecretReady(s.getMetadata().getName());
+        }
+
+        List<Secret> regeneratedSecrets = kubeClient().listSecrets().stream()
+                .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < secrets.size(); i++) {
+            assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
+        }
+
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     @BeforeEach
