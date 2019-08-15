@@ -24,7 +24,7 @@ TEST_COUNT=$(get_test_count "tests")
 TEST_ERRORS_COUNT=$(get_test_count "errors")
 TEST_SKIPPED_COUNT=$(get_test_count "skipped")
 
-SUMMARY="Test Profile: ${TEST_PROFILE}\n**Test Case:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ERRORS_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ERRORS_COUNT}\n**SKIPPED:** ${TEST_SKIPPED_COUNT}"
+SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ERRORS_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ERRORS_COUNT}\n**SKIPPED:** ${TEST_SKIPPED_COUNT}"
 
 FAILURES=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 grep "<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>$" | cut -d '"'  -f 2,4)
 
