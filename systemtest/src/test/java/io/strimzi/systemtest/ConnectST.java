@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
@@ -247,9 +246,6 @@ class ConnectST extends AbstractST {
 
         StUtils.waitForSecretReady(userName);
 
-        Secret userSecret = kubeClient().getSecret("user-example");
-        Secret clusterSecret = kubeClient().getSecret("connect-tests-cluster-ca-cert");
-
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
@@ -259,14 +255,14 @@ class ConnectST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .withNewTls()
                         .addNewTrustedCertificate()
-                            .withSecretName(clusterSecret.getMetadata().getName())
+                            .withSecretName("connect-tests-cluster-ca-cert")
                             .withCertificate("ca.crt")
                         .endTrustedCertificate()
                     .endTls()
                     .withBootstrapServers(KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9093")
                     .withNewKafkaConnectAuthenticationTls()
                         .withNewCertificateAndKey()
-                            .withSecretName(userSecret.getMetadata().getName())
+                            .withSecretName("user-example")
                             .withCertificate("user.crt")
                             .withKey("user.key")
                         .endCertificateAndKey()
