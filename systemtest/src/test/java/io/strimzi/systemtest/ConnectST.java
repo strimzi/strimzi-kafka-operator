@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
@@ -39,6 +40,7 @@ import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -114,8 +116,7 @@ class ConnectST extends AbstractST {
 
         sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
 
-        TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
+        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
     }
 
     @Test
@@ -238,6 +239,66 @@ class ConnectST extends AbstractST {
         }
     }
 
+    @Test
+    void testSecretsWithKafkaConnectWithTlsAuthentication() throws Exception {
+        final String userName = "user-example";
+
+        testMethodResources().tlsUser(KAFKA_CLUSTER_NAME, userName).done();
+
+        StUtils.waitForSecretReady(userName);
+
+        Secret userSecret = kubeClient().getSecret("user-example");
+        Secret clusterSecret = kubeClient().getSecret("connect-tests-cluster-ca-cert");
+
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect")
+                .endMetadata()
+                .editSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .withNewTls()
+                        .addNewTrustedCertificate()
+                            .withSecretName(clusterSecret.getMetadata().getName())
+                            .withCertificate("ca.crt")
+                        .endTrustedCertificate()
+                    .endTls()
+                    .withBootstrapServers(KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9093")
+                    .withNewKafkaConnectAuthenticationTls()
+                        .withNewCertificateAndKey()
+                            .withSecretName(userSecret.getMetadata().getName())
+                            .withCertificate("user.crt")
+                            .withKey("user.key")
+                        .endCertificateAndKey()
+                    .endKafkaConnectAuthenticationTls()
+                .endSpec()
+                .done();
+
+        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
+
+        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
+
+        LOGGER.info("Verifying that in kafka connect logs are everything fine");
+        assertThat(kafkaConnectLogs, not(containsString("ERROR")));
+
+        String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
+        String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
+        LOGGER.info("Getting configuration of Connector Sink from {}", pathToConnectorSinkConfig);
+
+        cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
+                + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
+
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
+
+        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
+
+        assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
+                containsString("0\n1\n"));
+
+        waitForClusterAvailabilityTls(userName, NAMESPACE, KAFKA_CLUSTER_NAME);
+    }
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -264,6 +325,14 @@ class ConnectST extends AbstractST {
         testClassResources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
+                    .editListeners()
+                        .withNewTls()
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()

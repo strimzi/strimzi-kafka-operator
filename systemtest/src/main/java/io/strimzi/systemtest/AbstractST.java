@@ -793,19 +793,20 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Wait for cluster availability, check availability of external routes with TLS
+     * Wait for cluster availability with specific cluster name, check availability of external routes with TLS
      * @param userName user name
      * @param namespace cluster namespace
-     * @throws Exception
+     * @param clusterName cluster name
+     * @throws Exception exception
      */
-    public void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
+    public void waitForClusterAvailabilityTls(String userName, String namespace, String clusterName) throws Exception {
         int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         KafkaClient testClient = new KafkaClient();
         try {
-            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
-            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
+            Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
