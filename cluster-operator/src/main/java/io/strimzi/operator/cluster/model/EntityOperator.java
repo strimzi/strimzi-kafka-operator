@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -16,6 +17,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -29,8 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Arrays.asList;
 
 /**
  * Represents the Entity Operator deployment
@@ -50,6 +50,7 @@ public class EntityOperator extends AbstractModel {
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     private TlsSidecar tlsSidecar;
+    private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
 
     private boolean isDeployed;
     private String tlsSidecarImage;
@@ -136,10 +137,10 @@ public class EntityOperator extends AbstractModel {
 
             result.setUserAffinity(affinity(entityOperatorSpec));
             result.setTolerations(tolerations(entityOperatorSpec));
-            result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());
-            result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
-            result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
-            result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
+
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(kafkaAssembly);
+            EntityUserOperator userOperator = EntityUserOperator.fromCrd(kafkaAssembly);
+            TlsSidecar tlsSidecar = entityOperatorSpec.getTlsSidecar();
 
             if (entityOperatorSpec.getTemplate() != null) {
                 EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
@@ -162,7 +163,24 @@ public class EntityOperator extends AbstractModel {
                     result.templateSecurityContext = pod.getSecurityContext();
                     result.templatePodPriorityClassName = pod.getPriorityClassName();
                 }
+
+                if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getEnv() != null) {
+                    topicOperator.setContainerEnvVars(template.getTopicOperatorContainer().getEnv());
+                }
+
+                if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getEnv() != null) {
+                    userOperator.setContainerEnvVars(template.getUserOperatorContainer().getEnv());
+                }
+
+                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
+                    result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
+                }
             }
+
+            result.setTlsSidecar(tlsSidecar);
+            result.setTopicOperator(topicOperator);
+            result.setUserOperator(userOperator);
+            result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
 
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
@@ -250,8 +268,7 @@ public class EntityOperator extends AbstractModel {
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
-                        buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
+                .withEnv(getTlsSidecarEnvVars())
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
@@ -264,6 +281,19 @@ public class EntityOperator extends AbstractModel {
         containers.add(tlsSidecarContainer);
 
         return containers;
+    }
+
+    protected List<EnvVar> getTlsSidecarEnvVars() {
+        List<EnvVar> varList = new ArrayList<>();
+
+        varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+
+        if (templateTlsSidecarContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
+        }
+
+        return varList;
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {

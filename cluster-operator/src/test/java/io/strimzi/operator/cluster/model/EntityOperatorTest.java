@@ -5,10 +5,12 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -21,6 +23,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.AfterClass;
@@ -470,5 +473,348 @@ public class EntityOperatorTest {
     @AfterClass
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
+    }
+
+    @Test
+    public void testTopicOperatorContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+
+        ContainerTemplate topicOperatorContainer = new ContainerTemplate();
+        topicOperatorContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                            .withNewEntityOperator()
+                                .withTopicOperator(entityTopicOperatorSpec)
+                                .withUserOperator(entityUserOperatorSpec)
+                                .withNewTemplate()
+                                    .withTopicOperatorContainer(topicOperatorContainer)
+                                .endTemplate()
+                            .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
+        EntityTopicOperator eto = eo.getTopicOperator();
+
+        List<EnvVar> containerEnvVars = eto.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all Entity Topic Operator container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testTopicOperatorContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = EntityTopicOperator.ENV_VAR_RESOURCE_LABELS;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS;
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        ContainerEnvVar envVar4 = new ContainerEnvVar();
+        String testEnvFourKey = "TEST_ENV_4";
+        String testEnvFourValue = "test.env.four";
+        envVar4.setName(testEnvFourKey);
+        envVar4.setValue(testEnvFourValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        testEnvs.add(envVar4);
+        ContainerTemplate topicOperatorContainer = new ContainerTemplate();
+        topicOperatorContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                        .withTopicOperatorContainer(topicOperatorContainer)
+                        .endTemplate()
+                        .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTopicOperator().getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
+            } else if (envVar.getName().equals(testEnvThreeKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
+            }
+        }
+
+        assertEquals("Failed to set Entity Topic Operator container template environment variables", 2, keyCount);
+    }
+
+    @Test
+    public void testUserOperatorContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+
+        ContainerTemplate userOperatorContainer = new ContainerTemplate();
+        userOperatorContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                        .withUserOperatorContainer(userOperatorContainer)
+                        .endTemplate()
+                        .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getUserOperator().getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all Entity User Operator container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testUserOperatorContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = EntityUserOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS;
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        ContainerEnvVar envVar4 = new ContainerEnvVar();
+        String testEnvFourKey = "TEST_ENV_4";
+        String testEnvFourValue = "test.env.four";
+        envVar4.setName(testEnvFourKey);
+        envVar4.setValue(testEnvFourValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        testEnvs.add(envVar4);
+        ContainerTemplate userOperatorContainer = new ContainerTemplate();
+        userOperatorContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                        .withUserOperatorContainer(userOperatorContainer)
+                        .endTemplate()
+                        .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getUserOperator().getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
+            } else if (envVar.getName().equals(testEnvThreeKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
+            }
+        }
+
+        assertEquals("Failed to set Entity User Operator container template environment variables", 2, keyCount);
+    }
+
+    @Test
+    public void testTlsSideCarContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate tlsContainer = new ContainerTemplate();
+        tlsContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                        .withTlsSidecarContainer(tlsContainer)
+                        .endTemplate()
+                        .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTlsSidecarEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all TLS sidecar container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testTlsSidecarContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = "TEST_ENV_3";
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        ContainerTemplate tlsContainer = new ContainerTemplate();
+        tlsContainer.setEnv(testEnvs);
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                        .withTlsSidecarContainer(tlsContainer)
+                        .endTemplate()
+                        .endEntityOperator()
+                        .endSpec()
+                        .build();
+
+
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTlsSidecarEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : containerEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvThreeKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
+            }
+        }
+
+        assertEquals("Failed to set TLS sidecar container template environment variables", 2, keyCount);
     }
 }

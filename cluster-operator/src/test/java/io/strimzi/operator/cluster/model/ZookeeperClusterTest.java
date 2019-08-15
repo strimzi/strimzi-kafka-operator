@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -22,6 +23,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -34,6 +36,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -63,6 +66,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class ZookeeperClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
@@ -86,6 +90,7 @@ public class ZookeeperClusterTest {
         kafkaLogConfigJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLogConfigJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
+
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
     private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
@@ -921,5 +926,226 @@ public class ZookeeperClusterTest {
                 .build();
         zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral);
         assertEquals(ephemeral, zc.getStorage());
+    }
+
+    @Test
+    public void testZookeeperContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate zookeeperContainer = new ContainerTemplate();
+        zookeeperContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                .editZookeeper()
+                .withNewTemplate()
+                .withZookeeperContainer(zookeeperContainer)
+                .endTemplate()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> zkEnvVars = zc.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : zkEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all Zookeeper container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testZookeeperContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        ContainerEnvVar envVar4 = new ContainerEnvVar();
+        String testEnvFourKey = "TEST_ENV_4";
+        String testEnvFourValue = "test.env.four";
+        envVar4.setName(testEnvFourKey);
+        envVar4.setValue(testEnvFourValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        testEnvs.add(envVar4);
+        ContainerTemplate zookeeperContainer = new ContainerTemplate();
+        zookeeperContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                .editZookeeper()
+                .withNewTemplate()
+                .withZookeeperContainer(zookeeperContainer)
+                .endTemplate()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> zkEnvVars = zc.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : zkEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
+            } else if (envVar.getName().equals(testEnvThreeKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
+            }
+        }
+
+        assertEquals("Failed to set Zookeeper container template environment variables", 2, keyCount);
+    }
+
+    @Test
+    public void testTlsSideCarContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate tlsContainer = new ContainerTemplate();
+        tlsContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                .editZookeeper()
+                .withNewTemplate()
+                .withTlsSidecarContainer(tlsContainer)
+                .endTemplate()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> zkEnvVars = zc.getTlsSidevarEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : zkEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all TLS sidecar container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testTlsSidecarContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = "TEST_ENV_3";
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        ContainerTemplate tlsContainer = new ContainerTemplate();
+        tlsContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                .editZookeeper()
+                .withNewTemplate()
+                .withTlsSidecarContainer(tlsContainer)
+                .endTemplate()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<EnvVar> zkEnvVars = zc.getTlsSidevarEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : zkEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvThreeKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse(envVar.getValue().equals(testEnvOneValue));
+            }
+        }
+
+        assertEquals("Failed to ignore TLS sidecar container template environment variables which conflict with those already in use", 2, keyCount);
     }
 }

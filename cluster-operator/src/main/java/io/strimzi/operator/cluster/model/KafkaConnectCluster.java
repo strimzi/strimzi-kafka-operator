@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
@@ -89,6 +90,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
+    protected List<ContainerEnvVar> templateContainerEnvVars;
 
     private KafkaConnectTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
@@ -213,6 +215,10 @@ public class KafkaConnectCluster extends AbstractModel {
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
                 kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
                 kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
+            }
+
+            if (template.getConnectContainer() != null && template.getConnectContainer().getEnv() != null) {
+                kafkaConnect.templateContainerEnvVars = template.getConnectContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
@@ -498,6 +504,10 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         varList.addAll(getExternalConfigurationEnvVars());
+
+        if (templateContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
+        }
 
         return varList;
     }

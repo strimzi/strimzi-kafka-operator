@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -90,6 +91,10 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
 
     public static final Map<String, String> IMAGE_MAP = parseMap(System.getenv().get("STRIMZI_ZOOKEEPER_IMAGE_MAP"));
+
+    // Templates
+    protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
+    protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
 
     public static String zookeeperClusterName(String cluster) {
         return KafkaResources.zookeeperStatefulSetName(cluster);
@@ -259,6 +264,14 @@ public class ZookeeperCluster extends AbstractModel {
             if (template.getNodesService() != null && template.getNodesService().getMetadata() != null)  {
                 zk.templateHeadlessServiceLabels = template.getNodesService().getMetadata().getLabels();
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
+            }
+
+            if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getEnv() != null) {
+                zk.templateZookeeperContainerEnvVars = template.getZookeeperContainer().getEnv();
+            }
+
+            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
+                zk.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
@@ -485,8 +498,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
-                        buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
+                .withEnv(getTlsSidevarEnvVars())
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_NODES_VOLUME_NAME, TLS_SIDECAR_NODES_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, TLS_SIDECAR_CLUSTER_CA_VOLUME_MOUNT))
                 .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
@@ -515,6 +527,23 @@ public class ZookeeperCluster extends AbstractModel {
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
+
+        if (templateZookeeperContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
+        }
+
+        return varList;
+    }
+
+    protected List<EnvVar> getTlsSidevarEnvVars() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
+        varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
+
+        if (templateTlsSidecarContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
+        }
+
         return varList;
     }
 

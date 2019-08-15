@@ -971,4 +971,29 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             teardownEnvForOperator();
         }
     }
+
+    /**
+     * Verifies container configuration by environment key
+     * @param podNamePrefix Name of pod where container is located
+     * @param containerName The container where verifying is expected
+     * @param configKey Expected configuration key
+     * @param config Expected configuration
+     */
+    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                        .forEach(container -> {
+                            container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey))
+                                    .forEach(envVar -> assertEquals(config, envVar.getValue()));
+                        });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
 }

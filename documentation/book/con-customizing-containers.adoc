@@ -5,14 +5,61 @@
 [id='con-customizing-containers-{context}']
 = Customizing containers with environment variables
 
-You can set custom environment variables for Kafka broker containers by using the `kafkaContainer` template property in `Kafka.spec.kafka`.
-These environment variables are defined under the `env` field as a list of objects with `name` and `value` fields.
+You can set custom environment variables for the various containers by using the relevant `template` container property. 
+The table below lists the various containers belonging to the different elements of {ProductName} and the relevant configuration path (under the top level `spec` for the custom resource) for each.
 
-The following example shows two custom environment variables set for a Kafka broker:
+.Table Container environment variable properties
+|===
+|{ProductName} Element |Container |Configuration property
+
+|Kafka 
+|Kafka Broker 
+|`kafka.template.kafkaContainer.env`
+
+|Kafka 
+|Kafka Broker TLS Sidecar
+|`kafka.template.tlsSidecarContainer.env`
+
+|Kafka
+|Zookeeper Node
+|`zookeeper.template.zookeeperContainer.env`
+
+|Kafka
+|Zookeeper TLS Sidecar
+|`zookeeper.template.tlsSidecarContainer.env`
+
+|Kafka
+|Topic Operator
+|`entityOperator.template.topicOperatorContainer.env`
+
+|Kafka
+|User Operator
+|`entityOperator.template.userOperatorContainer.env`
+
+|Kafka
+|Entity Operator TLS Sidecar
+|`entityOperator.template.tlsSidecarContainer.env`
+
+|KafkaConnect
+|Connect and ConnectS2I
+|`template.connectContainer.env`
+
+|KafkaMirrorMaker
+|Mirror Maker 
+|`template.mirrorMakerContainer.env`
+
+|KafkaBridge
+|Bridge
+|`template.bridgeContainer.env`
+|===
+
+The environment variables are defined under the `env` field as a list of objects with `name` and `value` fields. 
+The following example shows two custom environment variables set for the Kafka broker containers:
 
 [source,yaml,subs=attributes+]
 ----
 # ...
+kind: Kafka
 spec:
     kafka:
         template:

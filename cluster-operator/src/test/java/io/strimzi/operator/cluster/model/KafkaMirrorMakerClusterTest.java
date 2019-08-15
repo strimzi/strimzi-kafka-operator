@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
@@ -27,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -804,5 +806,115 @@ public class KafkaMirrorMakerClusterTest {
 
         assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("61"));
         assertTrue(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("60"));
+    }
+
+
+    @Test
+    public void testKafkaMMContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaMMContainer = new ContainerTemplate();
+        kafkaMMContainer.setEnv(testEnvs);
+
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withMirrorMakerContainer(kafkaMMContainer)
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        List<EnvVar> kafkaEnvVars = kmm.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : kafkaEnvVars) {
+
+            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
+                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
+                    keyCount++;
+                }
+            }
+
+        }
+
+        assertEquals("Failed to set all Kafka Mirror Maker container template environment variables", testEnvs.size(), keyCount);
+    }
+
+    @Test
+    public void testKafkaMMContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        ContainerEnvVar envVar3 = new ContainerEnvVar();
+        String testEnvThreeKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST;
+        String testEnvThreeValue = "test.env.three";
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
+
+        ContainerEnvVar envVar4 = new ContainerEnvVar();
+        String testEnvFourKey = "TEST_ENV_4";
+        String testEnvFourValue = "test.env.four";
+        envVar4.setName(testEnvFourKey);
+        envVar4.setValue(testEnvFourValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        testEnvs.add(envVar3);
+        testEnvs.add(envVar4);
+        ContainerTemplate kafkaMMContainer = new ContainerTemplate();
+        kafkaMMContainer.setEnv(testEnvs);
+
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .withNewTemplate()
+                .withMirrorMakerContainer(kafkaMMContainer)
+                .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        List<EnvVar> kafkaEnvVars = kmm.getEnvVars();
+
+        int keyCount = 0;
+
+        for (EnvVar envVar : kafkaEnvVars) {
+            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
+                keyCount++;
+            } else if (envVar.getName().equals(testEnvOneKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
+            } else if (envVar.getName().equals(testEnvThreeKey)) {
+                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
+            }
+        }
+
+        assertEquals("Failed to set Kafka Mirror Maker container template environment variables", 2, keyCount);
     }
 }

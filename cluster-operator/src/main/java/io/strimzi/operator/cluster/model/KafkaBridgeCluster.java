@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -103,6 +104,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private String bootstrapServers;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
+    private List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
      * Constructor
@@ -208,6 +210,10 @@ public class KafkaBridgeCluster extends AbstractModel {
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
                 kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
                 kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
+            }
+
+            if (template.getBridgeContainer() != null && template.getBridgeContainer().getEnv() != null) {
+                kafkaBridgeCluster.templateContainerEnvVars = template.getBridgeContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
@@ -398,6 +404,10 @@ public class KafkaBridgeCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE,
                     String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM, saslMechanism));
+        }
+
+        if (templateContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
         }
 
         return varList;
