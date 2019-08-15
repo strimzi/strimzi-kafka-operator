@@ -517,7 +517,7 @@ class SecurityST extends AbstractST {
             assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
         }
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @BeforeEach
