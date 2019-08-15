@@ -490,6 +490,10 @@ class SecurityST extends AbstractST {
                 .endSpec()
                 .done();
 
+        String userName = "user-example";
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        StUtils.waitForSecretReady(userName);
+
         List<Secret> secrets = kubeClient().listSecrets().stream()
                 .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
                 .collect(Collectors.toList());
@@ -513,7 +517,7 @@ class SecurityST extends AbstractST {
             assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
         }
 
-        waitForClusterAvailability(NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     @BeforeEach
