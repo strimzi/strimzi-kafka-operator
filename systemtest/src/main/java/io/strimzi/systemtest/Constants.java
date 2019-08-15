@@ -12,6 +12,7 @@ import java.time.Duration;
 public interface Constants {
     long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
+    long TIMEOUT_FOR_SECRET_CREATION = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_TOPIC_CREATION = Duration.ofMinutes(1).toMillis();

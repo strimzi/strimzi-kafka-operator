@@ -453,9 +453,10 @@ public class StUtils {
     }
 
     public static void waitForSecretReady(String secretName) {
-        LOGGER.info("Waiting for secret {}", secretName);
-        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        LOGGER.info("Waiting for Kafka user secret {}", secretName);
+        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> kubeClient().getSecret(secretName) != null);
+        LOGGER.info("Kafka user secret {} created", secretName);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -463,6 +464,7 @@ public class StUtils {
         TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
+        LOGGER.info("Kafka user {} deleted", userName);
     }
 
     public static void waitForKafkaUserCreationError(String userName, String eoPodName) {

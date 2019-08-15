@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -29,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
-@Tag(ACCEPTANCE)
 class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
@@ -71,6 +72,7 @@ class UserST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testUpdateUser() {
         String kafkaUser = "test-user";
 
@@ -151,6 +153,18 @@ class UserST extends AbstractST {
         }
     }
 
+    private void deployTestSpecificResources() {
+        testClassResources().kafka(testClassResources().defaultKafka(CLUSTER_NAME, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+    }
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -165,20 +179,17 @@ class UserST extends AbstractST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources().clusterOperator(NAMESPACE).done();
-
-        testClassResources().kafka(testClassResources().defaultKafka(CLUSTER_NAME, 3)
-                .editSpec()
-                .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .endKafkaListenerExternalNodePort()
-                .endListeners()
-                .endKafka()
-                .endSpec().build()).done();
+        deployTestSpecificResources();
     }
 
     @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
+    protected void tearDownEnvironmentAfterEach() {
         deleteTestMethodResources();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }
