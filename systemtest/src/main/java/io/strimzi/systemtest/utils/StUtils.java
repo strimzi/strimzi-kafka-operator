@@ -680,6 +680,12 @@ public class StUtils {
         return sb.toString();
     }
 
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName) {
+        LOGGER.info("Waiting for messages in file sink");
+        TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
+            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
+    }
+
     private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
         if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
             return envVar;

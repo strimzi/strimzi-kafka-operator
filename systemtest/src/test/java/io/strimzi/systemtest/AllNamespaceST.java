@@ -111,7 +111,7 @@ class AllNamespaceST extends AbstractNamespaceST {
                 copySecret(s, THIRD_NAMESPACE, USER_NAME);
             }
         }
-        waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE);
+        waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
 
         setNamespace(startingNamespace);
     }

@@ -1334,7 +1334,7 @@ class KafkaST extends MessagingBaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test
@@ -1376,7 +1376,7 @@ class KafkaST extends MessagingBaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     private Map<String, String> getAnnotationsForSS(String ssName) {

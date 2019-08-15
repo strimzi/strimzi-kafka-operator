@@ -173,7 +173,7 @@ class SecurityST extends AbstractST {
         waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
@@ -216,7 +216,7 @@ class SecurityST extends AbstractST {
                     initialCaCerts.get(secretName), value);
         }
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -228,7 +228,7 @@ class SecurityST extends AbstractST {
                 LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets());
             });
 
-        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test
@@ -241,7 +241,7 @@ class SecurityST extends AbstractST {
             () -> kubeClient().getSecret(aliceUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE, CLUSTER_NAME);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
@@ -291,7 +291,7 @@ class SecurityST extends AbstractST {
                     initialCaKeys.get(secretName), value);
         }
 
-        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE, CLUSTER_NAME);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -300,7 +300,7 @@ class SecurityST extends AbstractST {
             () -> kubeClient().getSecret(bobUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
     }
 
     private void createClusterWithExternalRoute() {
@@ -345,7 +345,7 @@ class SecurityST extends AbstractST {
         // Check if user exists
         StUtils.waitForSecretReady(userName);
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -353,7 +353,7 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     private void waitForClusterStability() {
