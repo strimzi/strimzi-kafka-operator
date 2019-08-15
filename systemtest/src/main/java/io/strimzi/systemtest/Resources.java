@@ -379,15 +379,15 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectBuilder defaultKafkaConnect(String name, int kafkaConnectReplicas) {
         return new KafkaConnectBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                .withNewSpec()
-                    .withVersion(KAFKA_VERSION)
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
-                    .withReplicas(kafkaConnectReplicas)
-                    .withResources(new ResourceRequirementsBuilder()
-                            .addToRequests("memory", new Quantity("1G")).build())
-                    .withMetrics(new HashMap<>())
-                .endSpec();
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withVersion(KAFKA_VERSION)
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withReplicas(kafkaConnectReplicas)
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
+                .withMetrics(new HashMap<>())
+            .endSpec();
     }
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
@@ -563,10 +563,10 @@ public class Resources extends AbstractResources {
         LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-                waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-                waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
@@ -940,7 +940,7 @@ public class Resources extends AbstractResources {
                 .withName(appName)
                 .withNamespace(namespace)
                 .addToLabels("run", appName)
-                .endMetadata()
+            .endMetadata()
             .withNewSpec()
                 .withSelector(Collections.singletonMap("app", appName))
                 .addNewPort()
