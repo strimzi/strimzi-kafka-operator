@@ -176,19 +176,6 @@ public class SeleniumProvider {
         clickOnItem(element, null);
     }
 
-    public void executeJavaScript(String script) {
-        executeJavaScript(script, null);
-    }
-
-    public void executeJavaScript(String script, String textToLog, Object... arguments) {
-        takeScreenShot();
-        assertNotNull(script, "Selenium provider failed, script to execute is null");
-        LOGGER.info("Execute script: " + (textToLog == null ? script : textToLog));
-        ((JavascriptExecutor) driver).executeScript(script, arguments);
-        angularDriver.waitForAngularRequestsToFinish();
-        takeScreenShot();
-    }
-
     public void clickOnItem(WebElement element, String textToLog) {
         takeScreenShot();
         assertNotNull(element, "Selenium provider failed, element is null");
@@ -278,14 +265,6 @@ public class SeleniumProvider {
         return getElement(webElements, 30, count);
     }
 
-    public <T extends WebItem> T waitUntilItemPresent(int timeInSeconds, Supplier<T> item) throws Exception {
-        return waitUntilItem(timeInSeconds, item, true);
-    }
-
-    public void waitUntilItemNotPresent(int timeInSeconds, Supplier<WebItem> item) throws Exception {
-        waitUntilItem(timeInSeconds, item, false);
-    }
-
     private <T extends WebItem> T waitUntilItem(int timeInSeconds, Supplier<T> item, boolean present) throws Exception {
         LOGGER.info("Waiting for element be present");
         int attempts = 0;
@@ -316,23 +295,6 @@ public class SeleniumProvider {
         LOGGER.info("End of waiting");
         return result;
     }
-
-    public void waitUntilPropertyPresent(int timeoutInSeconds, int expectedValue, Supplier<Integer> item) throws
-            Exception {
-        LOGGER.info("Waiting until data will be present");
-        int attempts = 0;
-        while (attempts < timeoutInSeconds) {
-            if (expectedValue == item.get())
-                break;
-            Thread.sleep(1000);
-            attempts++;
-        }
-        LOGGER.info("End of waiting");
-    }
-
-    //================================================================================================
-    //==================================== Checkbox methods ==========================================
-    //================================================================================================
 
     public void setValueOnCheckboxRequestedPermissions(WebElement element, boolean check) {
         if (getCheckboxValue(element) != check) {

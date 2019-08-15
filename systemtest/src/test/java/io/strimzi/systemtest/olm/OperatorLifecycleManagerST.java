@@ -40,7 +40,7 @@ class OperatorLifecycleManagerST extends MessagingBaseST {
     private static final String INFRA_NAMESPACE = "openshift-operators";
     private static final String USER_NAME = "my-user";
     private static final String TOPIC_NAME = "my-topic";
-    private final UserCredentials clusterUser = new UserCredentials("admin", "admin");
+    private final UserCredentials clusterUser = new UserCredentials("admin");
 
     @AfterAll
     void cleanRestOfResources() {

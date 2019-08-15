@@ -32,9 +32,6 @@ public class Openshift4WebPage implements IWebPage {
         this.loginPage = new OpenshiftLoginWebPage(selenium);
     }
 
-    //================================================================================================
-    // Get methods
-    //================================================================================================
     private WebElement getNavBar() {
         return selenium.getDriver().findElement(By.id("page-sidebar"));
     }
@@ -147,10 +144,6 @@ public class Openshift4WebPage implements IWebPage {
         selenium.getDriverWait().withTimeout(Duration.ofSeconds(30)).until(ExpectedConditions.presenceOfElementLocated(By.id("confirm-action")));
         return selenium.getDriver().findElement(By.className("co-catalog-install-modal")).findElement(By.id("confirm-action"));
     }
-
-    //================================================================================================
-    // Operations
-    //================================================================================================
 
     public void openOpenshiftPage() throws Exception {
         LOGGER.info("Opening openshift web page on route {}", ocRoute);
