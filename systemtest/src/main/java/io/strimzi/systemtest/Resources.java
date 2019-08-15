@@ -1163,15 +1163,15 @@ public class Resources extends AbstractResources {
 
     private KafkaBridgeBuilder defaultKafkaBridge(String name, String bootstrap, int replicas, int port) {
         return new KafkaBridgeBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                .withNewSpec()
-                    .withBootstrapServers(bootstrap)
-                    .withReplicas(replicas)
-                    .withNewHttp(port)
-                    .withResources(new ResourceRequirementsBuilder()
-                            .addToRequests("memory", new Quantity("1G")).build())
-                    .withMetrics(new HashMap<>())
-                .endSpec();
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withBootstrapServers(bootstrap)
+                .withReplicas(replicas)
+                .withNewHttp(port)
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
+                .withMetrics(new HashMap<>())
+            .endSpec();
     }
 
     private DoneableKafkaBridge kafkaBridge(KafkaBridge kafkaBridge) {
