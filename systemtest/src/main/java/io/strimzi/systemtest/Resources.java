@@ -279,15 +279,15 @@ public class Resources extends AbstractResources {
 
     public DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
         return kafka(defaultKafka(name, kafkaReplicas).
-                editSpec()
-                    .editKafka()
-                        .withStorage(jbodStorage)
-                    .endKafka()
-                    .editZookeeper().
-                            withReplicas(1)
-                    .endZookeeper()
-                .endSpec()
-                .build());
+            editSpec()
+                .editKafka()
+                    .withStorage(jbodStorage)
+                .endKafka()
+                .editZookeeper().
+                        withReplicas(1)
+                .endZookeeper()
+            .endSpec()
+            .build());
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
@@ -299,57 +299,57 @@ public class Resources extends AbstractResources {
         String uOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
         return new KafkaBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                .withNewSpec()
-                    .withNewKafka()
-                        .withVersion(KAFKA_VERSION)
-                        .withReplicas(kafkaReplicas)
-                        .withNewEphemeralStorage().endEphemeralStorage()
-                        .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
-                        .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
-                        .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                        .withNewListeners()
-                            .withNewPlain().endPlain()
-                            .withNewTls().endTls()
-                        .endListeners()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(15)
-                            .withTimeoutSeconds(5)
-                        .endReadinessProbe()
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withNewKafka()
+                    .withVersion(KAFKA_VERSION)
+                    .withReplicas(kafkaReplicas)
+                    .withNewEphemeralStorage().endEphemeralStorage()
+                    .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
+                    .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
+                    .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
+                    .withNewListeners()
+                        .withNewPlain().endPlain()
+                        .withNewTls().endTls()
+                    .endListeners()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(15)
+                        .withTimeoutSeconds(5)
+                    .endReadinessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(15)
+                        .withTimeoutSeconds(5)
+                    .endLivenessProbe()
+                    .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("memory", new Quantity("1G")).build())
+                    .withMetrics(new HashMap<>())
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endKafka()
+                .withNewZookeeper()
+                    .withReplicas(zookeeperReplicas)
+                    .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("memory", new Quantity("1G")).build())
+                    .withMetrics(new HashMap<>())
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(15)
+                        .withTimeoutSeconds(5)
+                    .endReadinessProbe()
                         .withNewLivenessProbe()
-                            .withInitialDelaySeconds(15)
-                            .withTimeoutSeconds(5)
-                        .endLivenessProbe()
-                        .withResources(new ResourceRequirementsBuilder()
-                                .addToRequests("memory", new Quantity("1G")).build())
-                        .withMetrics(new HashMap<>())
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(zookeeperReplicas)
-                        .withResources(new ResourceRequirementsBuilder()
-                                .addToRequests("memory", new Quantity("1G")).build())
-                        .withMetrics(new HashMap<>())
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(15)
-                            .withTimeoutSeconds(5)
-                        .endReadinessProbe()
-                            .withNewLivenessProbe()
-                            .withInitialDelaySeconds(15)
-                            .withTimeoutSeconds(5)
-                        .endLivenessProbe()
-                        .withNewEphemeralStorage().endEphemeralStorage()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
-                    .endZookeeper()
-                .withNewEntityOperator()
-                    .withNewTopicOperator().withImage(tOImage).endTopicOperator()
-                    .withNewUserOperator().withImage(uOImage).endUserOperator()
-                .endEntityOperator()
-                .endSpec();
+                        .withInitialDelaySeconds(15)
+                        .withTimeoutSeconds(5)
+                    .endLivenessProbe()
+                    .withNewEphemeralStorage().endEphemeralStorage()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endZookeeper()
+            .withNewEntityOperator()
+                .withNewTopicOperator().withImage(tOImage).endTopicOperator()
+                .withNewUserOperator().withImage(uOImage).endUserOperator()
+            .endEntityOperator()
+            .endSpec();
     }
 
     DoneableKafka kafka(Kafka kafka) {
@@ -424,15 +424,15 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
         return new KafkaConnectS2IBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                .withNewSpec()
-                    .withVersion(KAFKA_VERSION)
-                    .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
-                    .withReplicas(kafkaConnectS2IReplicas)
-                    .withNewTls()
-                        .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
-                    .endTls()
-                .endSpec();
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withVersion(KAFKA_VERSION)
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
+                .withReplicas(kafkaConnectS2IReplicas)
+                .withNewTls()
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                .endTls()
+            .endSpec();
     }
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
@@ -462,24 +462,24 @@ public class Resources extends AbstractResources {
 
     private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return new KafkaMirrorMakerBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                .withNewSpec()
-                    .withVersion(KAFKA_VERSION)
-                    .withNewConsumer()
-                        .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
-                        .withGroupId(groupId)
-                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                    .endConsumer()
-                    .withNewProducer()
-                        .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
-                        .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
-                    .endProducer()
-                    .withResources(new ResourceRequirementsBuilder()
-                            .addToRequests("memory", new Quantity("1G")).build())
-                    .withMetrics(new HashMap<>())
-                    .withReplicas(mirrorMakerReplicas)
-                    .withWhitelist(".*")
-                .endSpec();
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withVersion(KAFKA_VERSION)
+                .withNewConsumer()
+                    .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
+                    .withGroupId(groupId)
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .endConsumer()
+                .withNewProducer()
+                    .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
+                    .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
+                .endProducer()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
+                .withMetrics(new HashMap<>())
+                .withReplicas(mirrorMakerReplicas)
+                .withWhitelist(".*")
+            .endSpec();
     }
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
@@ -643,16 +643,16 @@ public class Resources extends AbstractResources {
     private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
         LOGGER.info("Creating topic: {} with {} partitions and {} replicas", topicName, partitions, replicas);
         return new KafkaTopicBuilder()
-                .withMetadata(
-                        new ObjectMetaBuilder()
-                                .withName(topicName)
-                                .withNamespace(client().getNamespace())
-                                .addToLabels("strimzi.io/cluster", clusterName)
-                                .build())
-                .withNewSpec()
-                    .withPartitions(partitions)
-                    .withReplicas(replicas)
-                .endSpec();
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(topicName)
+                    .withNamespace(client().getNamespace())
+                    .addToLabels("strimzi.io/cluster", clusterName)
+                    .build())
+            .withNewSpec()
+                .withPartitions(partitions)
+                .withReplicas(replicas)
+            .endSpec();
     }
 
     DoneableKafkaTopic topic(KafkaTopic topic) {
@@ -664,33 +664,35 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableKafkaUser tlsUser(String clusterName, String name) {
-        return user(new KafkaUserBuilder().withMetadata(
+        return user(new KafkaUserBuilder()
+            .withMetadata(
                 new ObjectMetaBuilder()
-                        .withClusterName(clusterName)
-                        .withName(name)
-                        .withNamespace(client().getNamespace())
-                        .addToLabels("strimzi.io/cluster", clusterName)
-                        .build())
-                .withNewSpec()
-                    .withNewKafkaUserTlsClientAuthentication()
-                    .endKafkaUserTlsClientAuthentication()
-                .endSpec()
-                .build());
+                    .withClusterName(clusterName)
+                    .withName(name)
+                    .withNamespace(client().getNamespace())
+                    .addToLabels("strimzi.io/cluster", clusterName)
+                    .build())
+            .withNewSpec()
+                .withNewKafkaUserTlsClientAuthentication()
+                .endKafkaUserTlsClientAuthentication()
+            .endSpec()
+            .build());
     }
 
     public DoneableKafkaUser scramShaUser(String clusterName, String name) {
-        return user(new KafkaUserBuilder().withMetadata(
+        return user(new KafkaUserBuilder()
+            .withMetadata(
                 new ObjectMetaBuilder()
-                        .withClusterName(clusterName)
-                        .withName(name)
-                        .withNamespace(client().getNamespace())
-                        .addToLabels("strimzi.io/cluster", clusterName)
-                        .build())
-                .withNewSpec()
-                    .withNewKafkaUserScramSha512ClientAuthentication()
-                    .endKafkaUserScramSha512ClientAuthentication()
-                .endSpec()
-                .build());
+                    .withClusterName(clusterName)
+                    .withName(name)
+                    .withNamespace(client().getNamespace())
+                    .addToLabels("strimzi.io/cluster", clusterName)
+                    .build())
+            .withNewSpec()
+                .withNewKafkaUserScramSha512ClientAuthentication()
+                .endKafkaUserScramSha512ClientAuthentication()
+            .endSpec()
+            .build());
     }
 
     DoneableKafkaUser user(KafkaUser user) {
@@ -752,19 +754,19 @@ public class Resources extends AbstractResources {
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
+            .withApiVersion("apps/v1")
+            .editSpec()
+                .withNewSelector()
+                    .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
+                .endSelector()
+            .editTemplate()
                 .editSpec()
-                    .withNewSelector()
-                        .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
-                    .endSelector()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .withImage(StUtils.changeOrgAndTag(coImage))
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-                .endSpec();
+                    .editFirstContainer()
+                        .withImage(StUtils.changeOrgAndTag(coImage))
+                    .endContainer()
+                .endSpec()
+            .endTemplate()
+            .endSpec();
     }
 
     private DoneableDeployment createNewDeployment(Deployment deployment, String namespace) {
@@ -804,10 +806,10 @@ public class Resources extends AbstractResources {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
 
         return new RoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .editFirstSubject()
-                    .withNamespace(namespace)
-                .endSubject();
+            .withApiVersion("rbac.authorization.k8s.io/v1")
+            .editFirstSubject()
+                .withNamespace(namespace)
+            .endSubject();
     }
 
     private DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
@@ -825,10 +827,10 @@ public class Resources extends AbstractResources {
         LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
 
         return new ClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .editFirstSubject()
-                    .withNamespace(namespace)
-                .endSubject();
+            .withApiVersion("rbac.authorization.k8s.io/v1")
+            .editFirstSubject()
+                .withNamespace(namespace)
+            .endSubject();
     }
 
     List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
@@ -837,60 +839,60 @@ public class Resources extends AbstractResources {
         List<ClusterRoleBinding> kCRBList = new ArrayList<>();
 
         kCRBList.add(
-                new ClusterRoleBindingBuilder()
-                        .withNewMetadata()
-                            .withName("strimzi-cluster-operator-namespaced")
-                        .endMetadata()
-                        .withNewRoleRef()
-                            .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName("strimzi-cluster-operator-namespaced")
-                        .endRoleRef()
-                        .withSubjects(new SubjectBuilder()
-                                .withKind("ServiceAccount")
-                                .withName("strimzi-cluster-operator")
-                                .withNamespace(namespace)
-                                .build()
-                        )
-                        .build()
+            new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endRoleRef()
+                .withSubjects(new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
         );
 
         kCRBList.add(
-                new ClusterRoleBindingBuilder()
-                        .withNewMetadata()
-                            .withName("strimzi-entity-operator")
-                        .endMetadata()
-                        .withNewRoleRef()
-                            .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName("strimzi-entity-operator")
-                        .endRoleRef()
-                        .withSubjects(new SubjectBuilder()
-                                .withKind("ServiceAccount")
-                                .withName("strimzi-cluster-operator")
-                                .withNamespace(namespace)
-                                .build()
-                        )
-                        .build()
+            new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-entity-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-entity-operator")
+                .endRoleRef()
+                .withSubjects(new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
         );
 
         kCRBList.add(
-                new ClusterRoleBindingBuilder()
-                        .withNewMetadata()
-                            .withName("strimzi-topic-operator")
-                        .endMetadata()
-                        .withNewRoleRef()
-                            .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName("strimzi-topic-operator")
-                        .endRoleRef()
-                        .withSubjects(new SubjectBuilder()
-                                .withKind("ServiceAccount")
-                                .withName("strimzi-cluster-operator")
-                                .withNamespace(namespace)
-                                .build()
-                        )
-                        .build()
+            new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-topic-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-topic-operator")
+                .endRoleRef()
+                .withSubjects(new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
         );
         return kCRBList;
     }
@@ -912,41 +914,41 @@ public class Resources extends AbstractResources {
 
     public DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, String namespace, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-" + Constants.KAFKA_CLIENTS)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewSelector()
-                        .addToMatchLabels("app", Constants.KAFKA_CLIENTS)
-                    .endSelector()
-                    .withReplicas(1)
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels("app", Constants.KAFKA_CLIENTS)
-                        .endMetadata()
-                        .withSpec(createClientSpec(tlsListener, kafkaUsers))
-                    .endTemplate()
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withName(clusterName + "-" + Constants.KAFKA_CLIENTS)
+            .endMetadata()
+            .withNewSpec()
+                .withNewSelector()
+                    .addToMatchLabels("app", Constants.KAFKA_CLIENTS)
+                .endSelector()
+                .withReplicas(1)
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .addToLabels("app", Constants.KAFKA_CLIENTS)
+                    .endMetadata()
+                    .withSpec(createClientSpec(tlsListener, kafkaUsers))
+                .endTemplate()
+            .endSpec()
+            .build();
 
         return createNewDeployment(kafkaClient, namespace);
     }
 
     public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
         return new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(appName)
-                    .withNamespace(namespace)
-                    .addToLabels("run", appName)
-                    .endMetadata()
-                .withNewSpec()
-                    .withSelector(Collections.singletonMap("app", appName))
-                    .addNewPort()
-                        .withName("http")
-                        .withPort(port)
-                        .withProtocol("TCP")
-                    .endPort()
-                .endSpec();
+            .withNewMetadata()
+                .withName(appName)
+                .withNamespace(namespace)
+                .addToLabels("run", appName)
+                .endMetadata()
+            .withNewSpec()
+                .withSelector(Collections.singletonMap("app", appName))
+                .addNewPort()
+                    .withName("http")
+                    .withPort(port)
+                    .withProtocol("TCP")
+                .endPort()
+            .endSpec();
     }
 
     public DoneableService createServiceResource(String appName, int port, String clientNamespace) {
@@ -973,19 +975,19 @@ public class Resources extends AbstractResources {
         path.setBackend(backend);
 
         return new IngressBuilder()
-                .withNewMetadata()
-                    .withName(appName)
-                    .addToLabels("route", appName)
-                .endMetadata()
-                .withNewSpec()
-                    .withRules(new IngressRuleBuilder()
-                        .withHost(appName + "." + (Environment.KUBERNETES_DOMAIN.equals(".nip.io") ? new URL(url).getHost() + ".nip.io" : Environment.KUBERNETES_DOMAIN))
-                        .withNewHttp()
-                        .withPaths(path)
-                        .endHttp()
-                        .build())
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withName(appName)
+                .addToLabels("route", appName)
+            .endMetadata()
+            .withNewSpec()
+                .withRules(new IngressRuleBuilder()
+                    .withHost(appName + "." + (Environment.KUBERNETES_DOMAIN.equals(".nip.io") ? new URL(url).getHost() + ".nip.io" : Environment.KUBERNETES_DOMAIN))
+                    .withNewHttp()
+                    .withPaths(path)
+                    .endHttp()
+                    .build())
+            .endSpec()
+            .build();
     }
 
     public DoneableIngress createIngress(String appName, int port, String url, String clientNamespace) throws Exception {
@@ -999,19 +1001,19 @@ public class Resources extends AbstractResources {
     private PodSpec createClientSpec(boolean tlsListener, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
-                .withName(Constants.KAFKA_CLIENTS)
-                .withImage(Environment.TEST_CLIENT_IMAGE)
-                .addNewPort()
-                    .withContainerPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
-                .endPort()
-                .withNewLivenessProbe()
-                    .withNewTcpSocket()
-                        .withNewPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
-                    .endTcpSocket()
-                    .withInitialDelaySeconds(10)
-                    .withPeriodSeconds(5)
-                .endLivenessProbe()
-                .withImagePullPolicy("IfNotPresent");
+            .withName(Constants.KAFKA_CLIENTS)
+            .withImage(Environment.TEST_CLIENT_IMAGE)
+            .addNewPort()
+                .withContainerPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
+            .endPort()
+            .withNewLivenessProbe()
+                .withNewTcpSocket()
+                    .withNewPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
+                .endTcpSocket()
+                .withInitialDelaySeconds(10)
+                .withPeriodSeconds(5)
+            .endLivenessProbe()
+            .withImagePullPolicy("IfNotPresent");
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
@@ -1195,37 +1197,37 @@ public class Resources extends AbstractResources {
 
     private static Deployment getSeleniumNodeDeploymentResource(String appName, String imageName) {
         return new DeploymentBuilder()
-                .withNewMetadata()
-                    .withName(appName)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewSelector()
-                        .addToMatchLabels("app", appName)
-                    .endSelector()
-                    .withReplicas(1)
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels("app", appName)
-                        .endMetadata()
-                        .withNewSpec()
-                            .addNewContainer()
-                                .withName(appName)
-                                .withImage(imageName)
-                                .addNewPort()
-                                    .withContainerPort(4444)
-                                .endPort()
-                                .withNewLivenessProbe()
-                                    .withNewHttpGet()
-                                    .withPath("/wd/hub")
-                                        .withNewPort(4444)
-                                    .endHttpGet()
-                                    .withInitialDelaySeconds(10)
-                                .endLivenessProbe()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withName(appName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewSelector()
+                    .addToMatchLabels("app", appName)
+                .endSelector()
+                .withReplicas(1)
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .addToLabels("app", appName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .addNewContainer()
+                            .withName(appName)
+                            .withImage(imageName)
+                            .addNewPort()
+                                .withContainerPort(4444)
+                            .endPort()
+                            .withNewLivenessProbe()
+                                .withNewHttpGet()
+                                .withPath("/wd/hub")
+                                    .withNewPort(4444)
+                                .endHttpGet()
+                                .withInitialDelaySeconds(10)
+                            .endLivenessProbe()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
     }
 
     public static void deployFirefoxSeleniumApp(String namespace, KubeClient kubeClient, Boolean isFullClass) throws Exception {
