@@ -95,7 +95,7 @@ spec:
       labels:
         severity: warning
       annotations:
-        description: 'One or more Kafka containers were restarted too often within the last 5 minutes. '
+        description: 'One or more Kafka containers were restarted too often within the last 5 minutes.'
   - name: zookeeper
     rules:
     - alert: AvgRequestLatency
