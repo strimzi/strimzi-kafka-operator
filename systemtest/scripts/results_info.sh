@@ -35,14 +35,19 @@ SUMMARY=${SUMMARY//\"// in }
 
 if [ -n "${FAILED_TESTS}" ]
 then
-  FAILED_TEST_BODY="### Test Failures\n- ${FAILED_TESTS}"
+  FAILED_TEST_BODY="### :heavy_exclamation_mark: Test Failures :heavy_exclamation_mark:\n- ${FAILED_TESTS}"
 fi
 
 if [ "${TEST_COUNT}" == 0 ]
 then
-  BODY="{\"body\":\"**Build Failed**\"}"
+  BODY="{\"body\":\":heavy_exclamation_mark: **Build Failed** :heavy_exclamation_mark:\"}"
 else
-  BODY="{\"body\":\"### Test Summary\n${SUMMARY}\n${FAILED_TEST_BODY}\"}"
+  if [ "${TEST_ERRORS_COUNT}" == 0 ]
+  then
+    BODY="{\"body\":\"### :heavy_check_mark: Test Summary :heavy_check_mark:\n${SUMMARY}\n${FAILED_TEST_BODY}\"}"
+  else
+    BODY="{\"body\":\"### :x: Test Summary :x:\n${SUMMARY}\n${FAILED_TEST_BODY}\"}"
+  fi
 fi
 
 echo "${BODY}" > ${JSON_FILE_RESULTS}
