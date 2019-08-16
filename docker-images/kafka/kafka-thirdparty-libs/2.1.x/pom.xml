@@ -47,7 +47,7 @@
         <dependency>
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-kafka-client</artifactId>
-            <version>0.1.2</version>
+            <version>0.1.1</version>
         </dependency>
     </dependencies>
 </project>
