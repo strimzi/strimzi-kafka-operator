@@ -722,7 +722,7 @@ public abstract class Ca {
         return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
     }
 
-    static X509Certificate cert(Secret secret, String key)  {
+    public static X509Certificate cert(Secret secret, String key)  {
         if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;
         }
