@@ -2,8 +2,8 @@
 //
 // assembly-kafka-bridge-quickstart.adoc
 
-[id='proc-bridge-committing-consumer-offsets-to-log-{context}']
-= Commiting consumer offsets to the log
+[id='proc-bridge-seeking-latest-offset-for-partition-{context}']
+= Seeking to the latest offset for a partition
 
 Intro
 

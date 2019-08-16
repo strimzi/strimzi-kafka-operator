@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-quickstart.adoc
+
+[id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
+= Retrieving the latest messages from a consumer
+
+Intro
+
+.Prerequisites
+
+* A running Kafka cluster.
+*
+*
+
+.Procedure
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+.Additional resources
+
+* For more information about, see .

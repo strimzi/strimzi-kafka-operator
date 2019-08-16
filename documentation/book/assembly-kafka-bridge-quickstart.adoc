@@ -1,0 +1,34 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+:parent-context-using-the-kafka-bridge: {context}
+:context: {parent-context-using-the-kafka-bridge}-bridge-quickstart
+
+[id='assembly-kafka-bridge-quickstart-{context}']
+= Kafka Bridge quick start
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+include::hello-world[leveloffset=+1]
+
+:context: {parent-context-using-the-kafka-bridge}

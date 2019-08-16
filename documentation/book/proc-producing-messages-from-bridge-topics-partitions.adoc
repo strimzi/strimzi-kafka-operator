@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-quickstart.adoc
+
+[id='proc-producing-messages-from-bridge-topics-partitions-{context}']
+= Producing messages from the Kafka Bridge to topics and partitions
+
+Intro
+
+.Prerequisites
+
+* A running Kafka cluster.
+*
+*
+
+.Procedure
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+.Additional resources
+
+* For more information about, see .
