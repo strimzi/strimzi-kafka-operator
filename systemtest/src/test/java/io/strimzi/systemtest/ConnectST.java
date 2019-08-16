@@ -41,6 +41,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -98,6 +99,7 @@ class ConnectST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(TRAVIS)
     void testKafkaConnectWithFileSinkPlugin() {
+        fail();
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")

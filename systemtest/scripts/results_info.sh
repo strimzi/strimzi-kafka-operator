@@ -26,16 +26,15 @@ TEST_SKIPPED_COUNT=$(get_test_count "skipped")
 
 SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ERRORS_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ERRORS_COUNT}\n**SKIPPED:** ${TEST_SKIPPED_COUNT}"
 
-FAILURES=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 grep "<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>$" | cut -d '"'  -f 2,4)
+FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*[^\/]>\)#\1#p" | awk -F '"' '{print "- " $2 " in "  $4}')
 
 echo "Creating body ..."
 
-FAILED_TESTS=$(echo "${FAILURES}" | sed 's@ST @ST\\n - @g' | sed 's@"@ in @g')
-SUMMARY=${SUMMARY//\"// in }
+FAILED_TESTS=${FAILED_TESTS//ST//ST\n}
 
 if [ -n "${FAILED_TESTS}" ]
 then
-  FAILED_TEST_BODY="### :heavy_exclamation_mark: Test Failures :heavy_exclamation_mark:\n- ${FAILED_TESTS}"
+  FAILED_TEST_BODY="### :heavy_exclamation_mark: Test Failures :heavy_exclamation_mark:\n${FAILED_TESTS}"
 fi
 
 if [ "${TEST_COUNT}" == 0 ]
