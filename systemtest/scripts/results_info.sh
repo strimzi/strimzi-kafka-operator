@@ -30,8 +30,6 @@ FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs 
 
 echo "Creating body ..."
 
-FAILED_TESTS=${FAILED_TESTS//ST//ST\n}
-
 if [ -n "${FAILED_TESTS}" ]
 then
   FAILED_TEST_BODY="### :heavy_exclamation_mark: Test Failures :heavy_exclamation_mark:\n${FAILED_TESTS}"

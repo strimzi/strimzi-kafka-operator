@@ -121,7 +121,9 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(TRAVIS)
     void testJvmAndResources() {
+        fail();
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
