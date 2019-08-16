@@ -3,30 +3,47 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-deploying-kafka-bridge-quickstart-{context}']
-= Procedure title
+= Deploying the Kafka Bridge to your Kubernetes cluster
 
-Intro
-
-.Prerequisites
-
-* A running Kafka cluster.
-*
-*
+{ProductName} includes a YAML template that specifies the configuration of the {ProductName} Kafka Bridge. Make some minimal configuration changes to the template and then deploy the Kafka Bridge to your Kubernetes cluster.
 
 .Procedure
 
-. Step
+. Edit the `examples/kafka-bridge/kafka-bridge.yaml` file.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaBridge
+metadata:
+  name: <bridge-name> <1>
+spec:
+  replicas: 1
+  bootstrapServers: <namespace>-kafka-bootstrap:9092 <2>
+  http:
+    port: 8080
+/ ...
+----
+<1> You can customize the name of the Kafka Bridge. When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. For example, if you name the Kafka Bridge `my-api`, the Deployment is named `my-api-bridge`, the Service is named `my-api-bridge-service`, and so on.
++
+<2> In the `bootstrapServers` property, enter the namespace in which your Kafka cluster is deployed.
 
-. Step
+. Deploy the Kafka Bridge to your Kubernetes cluster:
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
+----
++
+A `KafkaBridge` Deployment and related resources are created in your Kubernetes cluster.
 
-. Step
+. Verify that the Kafka Bridge was successfully deployed:
 
-. Step
-
-. Step
-
-. Step
+[source,shell,subs="attributes+"]
+----
+kubectl status
+----
 
 .Additional resources
 
-* For more information about, see .
+* For more information about configuring the Kafka Bridge, see . xref:assembly-deployment-configuration-kafka-bridge-{context}[].
