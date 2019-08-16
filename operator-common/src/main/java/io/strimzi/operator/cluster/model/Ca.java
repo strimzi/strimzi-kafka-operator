@@ -96,7 +96,7 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
 
-    private PasswordGenerator passwordGenerator;
+    private final PasswordGenerator passwordGenerator;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
