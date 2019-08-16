@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -86,11 +87,13 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_USERNAME = "KAFKA_CONNECT_SASL_USERNAME";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM = "KAFKA_CONNECT_SASL_MECHANISM";
+    protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected Tracing tracing;
 
     private KafkaConnectTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
@@ -140,7 +143,14 @@ public class KafkaConnectCluster extends AbstractModel {
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
         kafkaConnect.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
+        kafkaConnect.tracing = spec.getTracing();
+
+        KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+        if (kafkaConnect.tracing != null && "jaeger".equals(kafkaConnect.tracing.getType()))   {
+            config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+        }
+        kafkaConnect.setConfiguration(config);
 
         String image = spec instanceof KafkaConnectS2ISpec ?
                 versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
@@ -501,6 +511,10 @@ public class KafkaConnectCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE,
                     String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM, saslMechanism));
+        }
+
+        if (tracing != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
         varList.addAll(getExternalConfigurationEnvVars());

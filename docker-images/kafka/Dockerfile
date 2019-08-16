@@ -3,6 +3,7 @@ FROM centos:7
 ARG JAVA_VERSION
 ARG KAFKA_SHA512
 ARG KAFKA_VERSION
+ARG THIRD_PARTY_LIBS
 ARG strimzi_version
 
 RUN yum -y update \
@@ -34,8 +35,9 @@ RUN curl -O https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA
 
 COPY ./tmp/kafka-agent.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/mirror-maker-agent.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/tracing-agent.jar ${KAFKA_HOME}/libs/
 
-COPY kafka-thirdparty-libs/target/dependency/ ${KAFKA_HOME}/libs/
+COPY kafka-thirdparty-libs/${THIRD_PARTY_LIBS}/target/dependency/ ${KAFKA_HOME}/libs/
 
 RUN yum -y install stunnel net-tools bind-utils && yum clean all -y
 

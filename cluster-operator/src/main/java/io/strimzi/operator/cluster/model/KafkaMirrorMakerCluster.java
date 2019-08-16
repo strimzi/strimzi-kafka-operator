@@ -37,6 +37,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -88,8 +89,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected static final String ENV_VAR_STRIMZI_READINESS_PERIOD = "STRIMZI_READINESS_PERIOD";
     protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
+    protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected String whitelist;
+    protected Tracing tracing;
 
     protected KafkaMirrorMakerProducerSpec producer;
     protected CertAndKeySecretSource producerTlsAuthCertAndKey;
@@ -228,6 +231,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
+        kafkaMirrorMakerCluster.tracing = spec.getTracing();
+
         return kafkaMirrorMakerCluster;
     }
 
@@ -406,13 +411,33 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return containers;
     }
 
+    private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration()    {
+        KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
+
+        if (tracing != null && "jaeger".equals(tracing.getType())) {
+            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+        }
+
+        return config;
+    }
+
+    private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
+        KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
+
+        if (tracing != null && "jaeger".equals(tracing.getType())) {
+            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+        }
+
+        return config;
+    }
+
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER,
-                new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet()).getConfiguration()));
+                getConsumerConfiguration().getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER,
-                new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet()).getConfiguration()));
+                getProducerConfiguration().getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
@@ -428,6 +453,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE, Boolean.toString(producer.getAbortOnSendFailure())));
         }
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+
+        if (tracing != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
+        }
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);

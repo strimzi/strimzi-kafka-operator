@@ -4,15 +4,29 @@ PROJECT_NAME=kafka
 clean:
 	rm -rf tmp
 	rm -f .*.tmp
+	rm -rf kafka-thirdparty-libs/*/target
 
 .kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
 	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent.jar
-	cp ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar tmp/mirror-maker-agent.jar
-	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/pom.xml
 	touch .kafka-agent.tmp
 
-docker_build: .kafka-agent.tmp
+.mirror-maker-agent.tmp: ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar
+	test -d tmp || mkdir tmp
+	cp ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar tmp/mirror-maker-agent.jar
+	touch .mirror-maker-agent.tmp
+
+.tracing-agent.tmp: ../../tracing-agent/target/tracing-agent-$(RELEASE_VERSION).jar
+	test -d tmp || mkdir tmp
+	cp ../../tracing-agent/target/tracing-agent-$(RELEASE_VERSION).jar tmp/tracing-agent.jar
+	touch .tracing-agent.tmp
+
+.thirdparty-libs-$(THIRD_PARTY_LIBS).tmp: kafka-thirdparty-libs/$(THIRD_PARTY_LIBS)/pom.xml
+	test -d tmp || mkdir tmp
+	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/$(THIRD_PARTY_LIBS)/pom.xml
+	touch .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp
+
+docker_build: .kafka-agent.tmp .tracing-agent.tmp .mirror-maker-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp
 
 include ../../Makefile.docker
 
