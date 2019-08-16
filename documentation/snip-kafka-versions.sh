@@ -18,10 +18,8 @@ cat <<EOF
 EOF
 for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
     
-    for y in $(echo $x | $SED -E -e 's/[|][a-zA-Z0-9]+$'// -e 's/[|]/ /g' ); do
-        if [ "$y" != 'default' ]; then
-            echo -n "|$y "
-        fi
+    for y in $(echo $x | $SED -E -e 's/[|]default//g' | cut -d "|" -f 1,2,3 | $SED -E -e 's/[|]/ /g' ); do
+        echo -n "|$y "
     done
     echo "|3.4.13"
 done
