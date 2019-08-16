@@ -5,7 +5,7 @@
 [id='proc-deploying-kafka-bridge-quickstart-{context}']
 = Deploying the Kafka Bridge to your Kubernetes cluster
 
-{ProductName} includes a YAML template that specifies the configuration of the {ProductName} Kafka Bridge. Make some minimal configuration changes to the template and then deploy the Kafka Bridge to your Kubernetes cluster.
+{ProductName} includes a YAML template that specifies the configuration of the {ProductName} Kafka Bridge. Make some minimal configuration changes to this template and then deploy the Kafka Bridge to your Kubernetes cluster.
 
 .Procedure
 
@@ -35,10 +35,10 @@ spec:
 kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
 ----
 +
-A `KafkaBridge` Deployment and related resources are created in your Kubernetes cluster.
+A `KafkaBridge` Deployment and other related resources are created in your Kubernetes cluster.
 
 . Verify that the Kafka Bridge was successfully deployed:
-
++
 [source,shell,subs="attributes+"]
 ----
 kubectl status
@@ -46,4 +46,4 @@ kubectl status
 
 .Additional resources
 
-* For more information about configuring the Kafka Bridge, see . xref:assembly-deployment-configuration-kafka-bridge-{context}[].
+* For more information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-{context}[].
