@@ -30,7 +30,7 @@ public class TracingAgent {
                 Tracer tracer = Configuration.fromEnv().getTracer();
                 GlobalTracer.registerIfAbsent(tracer);
             } else {
-                LOGGER.error("Jaeger tracing cannot be initialized because Jaeger service name is not defined", jaegerServiceName);
+                LOGGER.error("Jaeger tracing cannot be initialized because JAEGER_SERVICE_NAME environment variable is not defined");
             }
         }
     }

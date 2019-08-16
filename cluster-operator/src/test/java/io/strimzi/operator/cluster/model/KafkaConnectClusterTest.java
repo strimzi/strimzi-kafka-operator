@@ -63,7 +63,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
             emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -954,9 +954,9 @@ public class KafkaConnectClusterTest {
 
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .withNewTemplate()
-                .withConnectContainer(kafkaConnectContainer)
-                .endTemplate()
+                    .withNewTemplate()
+                        .withConnectContainer(kafkaConnectContainer)
+                    .endTemplate()
                 .endSpec()
                 .build();
 
@@ -968,6 +968,22 @@ public class KafkaConnectClusterTest {
         assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+    }
 
+    @Test
+    public void testTracing() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("jaeger"));
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=io.opentracing.contrib.kafka.TracingConsumerInterceptor"));
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=io.opentracing.contrib.kafka.TracingProducerInterceptor"));
     }
 }

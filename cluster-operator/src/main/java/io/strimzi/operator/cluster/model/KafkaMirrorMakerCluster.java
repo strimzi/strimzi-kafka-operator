@@ -228,10 +228,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
             kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
+            kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
-        kafkaMirrorMakerCluster.tracing = spec.getTracing();
 
         return kafkaMirrorMakerCluster;
     }
