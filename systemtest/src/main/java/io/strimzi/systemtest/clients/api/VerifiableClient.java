@@ -1,24 +1,36 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.systemtest.clients.api;
 
+import io.strimzi.systemtest.executor.Executor;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+
+import static io.strimzi.test.BaseITST.kubeClient;
 
 /**
  * Class represent verifiable kafka client which keeps common features of kafka clients
  */
 public class VerifiableClient {
+
     private static final Logger LOGGER = LogManager.getLogger(VerifiableClient.class);
     protected ArrayList<ClientArgument> allowedArguments = new ArrayList<>();
+    private final Object lock = new Object();
     private JsonArray messages = new JsonArray();
     private ArrayList<String> arguments = new ArrayList<>();
     private String executable;
+    private ClientType clientType;
+    private Executor executor;
+    private String podName;
+    private String podNamespace;
 
     /**
      * Constructor of verifiable kafka client
@@ -27,6 +39,8 @@ public class VerifiableClient {
      */
     public VerifiableClient(ClientType clientType) {
         this.setAllowedArguments(clientType);
+        this.podName = kubeClient().listPodsByPrefixInName("my-cluster-kafka-clients-").get(0).getMetadata().getName();
+        this.podNamespace = kubeClient().getNamespace();
         this.executable = ClientType.getCommand(clientType);
     }
 
@@ -78,6 +92,90 @@ public class VerifiableClient {
                         arg.command(),
                         this.getClass().getSimpleName()));
             }
+        }
+    }
+
+    /**
+     * Run clients
+     *
+     * @param timeout kill timeout in ms
+     * @return true if command end with exit code 0
+     */
+    private boolean runClient(int timeout, boolean logToOutput) {
+        messages.clear();
+        try {
+            executor = new Executor();
+            int ret = executor.execute(prepareCommand(), timeout);
+            synchronized (lock) {
+                LOGGER.info("{} {} Return code - {}", this.getClass().getName(), clientType,  ret);
+                if (logToOutput) {
+                    LOGGER.info("{} {} stdout : {}", this.getClass().getName(), clientType, executor.getStdOut());
+                    if (!executor.getStdErr().isEmpty()) {
+                        LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.getStdErr());
+                    }
+                    if (ret == 0) {
+                        parseToJson(executor.getStdOut());
+                    }
+                }
+            }
+            return ret == 0;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Method for parse string output to json array of messages
+     *
+     * @param data string data output
+     */
+    private void parseToJson(String data) {
+        if (data != null) {
+            for (String line : data.split(System.getProperty("line.separator"))) {
+                if (!Objects.equals(line, "") && !line.trim().isEmpty()) {
+                    try {
+                        messages.add(new JsonObject(line));
+                    } catch (Exception ignored) {
+                        LOGGER.warn("{} - Failed to parse client output '{}' as JSON", clientType, line);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Merge command and arguments
+     *
+     * @return merged array of command and args
+     */
+    private ArrayList<String> prepareCommand() {
+        ArrayList<String> command = new ArrayList<>(arguments);
+        ArrayList<String> executableCommand = new ArrayList<>();
+        // TODO: create divider oc and kubectl
+        executableCommand.addAll(Arrays.asList("oc", "exec", podName, "-n", podNamespace, "--"));
+        executableCommand.add(executable);
+        executableCommand.addAll(command);
+        return executableCommand;
+    }
+
+    /**
+     * Run client in sync mode
+     *
+     * @return exit status of client
+     */
+    public boolean run() {
+        return runClient(60000, true);
+    }
+
+    /**
+     * Method for stop client
+     */
+    public void stop() {
+        try {
+            executor.stop();
+        } catch (Exception ex) {
+            LOGGER.warn("Client stop raise exception: " + ex.getMessage());
         }
     }
 

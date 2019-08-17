@@ -7,22 +7,17 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.clients.api.ClientArgument;
 import io.strimzi.systemtest.clients.api.ClientArgumentMap;
-import io.strimzi.systemtest.clients.api.MsgCliApiClient;
 import io.strimzi.systemtest.clients.api.VerifiableClient;
-import io.strimzi.test.TestUtils;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
 import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -31,19 +26,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class MessagingBaseST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(MessagingBaseST.class);
 
-    private MsgCliApiClient cliApiClient;
-    private JsonObject response;
     private int sent = 0;
     private int received = 0;
 
-    public void setResponse(JsonObject response) {
-        this.response = response;
-    }
-
     @BeforeAll
     public void setUpClientBase() throws MalformedURLException {
-        String clientUrl = Environment.KUBERNETES_DOMAIN.equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(CONFIG.getMasterUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : Environment.KUBERNETES_DOMAIN;
-        cliApiClient = new MsgCliApiClient(new URL("http://" + Constants.KAFKA_CLIENTS + "." + clientUrl + ":80"));
+        // TODO: what about this K8s domain ??
+//        Environment.KUBERNETES_DOMAIN.equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(CONFIG.getMasterUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : Environment.KUBERNETES_DOMAIN;
     }
 
     /**
@@ -51,45 +40,52 @@ public class MessagingBaseST extends AbstractST {
      * @param clusterName cluster name
      */
     void availabilityTest(String clusterName) throws Exception {
-        availabilityTest(100, 20000, clusterName, false, "my-topic", null);
+        availabilityTest(100, clusterName, false, "my-topic", null);
     }
 
     /**
      * Simple availability check for kafka cluster
      * @param messageCount message count
-     * @param timeout timeout
      * @param clusterName cluster name
      */
-    void availabilityTest(int messageCount, long timeout, String clusterName) throws Exception {
-        availabilityTest(messageCount, timeout, clusterName, false, "my-topic", null);
+    void availabilityTest(int messageCount, String clusterName) throws Exception {
+        availabilityTest(messageCount, clusterName, false, "my-topic", null);
     }
 
     /**
      * Simple availability check for kafka cluster
      * @param messageCount message count
-     * @param timeout timeout for producer and consumer to be finished
+     * @param clusterName cluster name
+     * @param topicName topic name
+     */
+    void availabilityTest(int messageCount, String clusterName, String topicName) throws Exception {
+        availabilityTest(messageCount, clusterName, false, topicName, null);
+    }
+
+    /**
+     * Simple availability check for kafka cluster
+     * @param messageCount message count
      * @param clusterName cluster name
      * @param tlsListener option for tls listener inside kafka cluster
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      */
-    void availabilityTest(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
-        sendMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
-        receiveMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
+    void availabilityTest(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+        sent = sendMessages(messageCount, clusterName, tlsListener, topicName, user);
+        received = receiveMessages(messageCount, clusterName, tlsListener, topicName, user);
         assertSentAndReceivedMessages(sent, received);
     }
 
     /**
      * Method for send messages to specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
      * @param messageCount messages count
-     * @param timeout timeout for producer to be finished
      * @param clusterName cluster name
      * @param tlsListener option for tls listener inside kafka cluster
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
-    int sendMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int sendMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -105,33 +101,25 @@ public class MessagingBaseST extends AbstractST {
         producer.setArguments(producerArguments);
 
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
-        response = cliApiClient.sendAndGetStatus(producer);
 
-        waitTillProcessFinish(getClientUUID(response), "producer", timeout);
+        boolean hasPassed = producer.run();
+        LOGGER.info("Producer -----> " + hasPassed);
 
-        assertThat(String.format("Return code of sender is not 0: %s", response),
-                response.getInteger("ecode"), is(0));
+        sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 
-        sent = getSentMessagesCount(response, messageCount);
-
-        assertThat(String.format("Sent (%s) and expected (%s) message count is not equal", sent, messageCount),
-                sent == messageCount);
-
-        LOGGER.info("Sent {} messages", sent);
         return sent;
     }
 
     /**
      * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
      * @param messageCount message count
-     * @param timeout timeout for consumer to be finished
      * @param clusterName cluster name
      * @param tlsListener option for tls listener inside kafka cluster
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int receiveMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -152,85 +140,13 @@ public class MessagingBaseST extends AbstractST {
         consumer.setArguments(consumerArguments);
 
         LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, bootstrapServer, topicName);
-        response = cliApiClient.sendAndGetStatus(consumer);
 
-        waitTillProcessFinish(getClientUUID(response), "consumer", timeout);
+        boolean hasPassed = consumer.run();
+        LOGGER.info("Consumer -----> " + hasPassed);
 
-        assertThat(String.format("Return code of receiver is not 0: %s", response),
-                response.getInteger("ecode"), is(0));
+        received = getReceivedMessagesCount(consumer.getMessages().toString());
 
-        received = getReceivedMessagesCount(response);
-
-        assertThat(String.format("Received (%s) and expected (%s) message count is not equal", received, messageCount),
-                received == messageCount);
-
-        LOGGER.info("Received {} messages", received);
         return received;
-    }
-
-    private String getClientUUID(JsonObject response) {
-        return response.getString("UUID");
-    }
-
-    /**
-     * Checks if process containing producer/consumer inside client pod finished or not
-     * @param processUuid process uuid
-     * @param description description for wait method
-     * @param timeout timeout
-     */
-    private void waitTillProcessFinish(String processUuid, String description, long timeout) {
-        TestUtils.waitFor("Wait till " + description + " finished", Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
-            JsonObject out;
-            try {
-                out = cliApiClient.getClientInfo(processUuid);
-                setResponse(out);
-                return !out.getBoolean("isRunning");
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        });
-    }
-
-    /**
-     * Get sent messages fro object response
-     * @param response response
-     * @param messageCount expected message count
-     * @return count of acknowledged messages
-     */
-    private int getSentMessagesCount(JsonObject response, int messageCount) {
-        int sentMessages;
-        String sentPattern = String.format("sent\":(%s)", messageCount);
-        String ackPattern = String.format("acked\":(%s)", messageCount);
-        Pattern r = Pattern.compile(sentPattern);
-        Matcher m = r.matcher(response.getString("stdOut"));
-        sentMessages = m.find() ? Integer.parseInt(m.group(1)) : -1;
-
-        r = Pattern.compile(ackPattern);
-        m = r.matcher(response.getString("stdOut"));
-
-        if (m.find()) {
-            return sentMessages == Integer.parseInt(m.group(1)) ? sentMessages : -1;
-        } else {
-            return -1;
-        }
-
-    }
-
-    /**
-     * Get recieved message count from object response
-     * @param response response
-     * @return count of received messages
-     */
-    private int getReceivedMessagesCount(JsonObject response) {
-        int receivedMessages = 0;
-        String pattern = String.format("records_consumed\",\"count\":([0-9]*)");
-        Pattern r = Pattern.compile(pattern);
-        Matcher m = r.matcher(response.getString("stdOut"));
-        while (m.find()) {
-            receivedMessages += Integer.parseInt(m.group(1));
-        }
-        return receivedMessages;
     }
 
     /**
@@ -253,5 +169,48 @@ public class MessagingBaseST extends AbstractST {
                     && Integer.valueOf(current.group("micro")) >= Integer.valueOf(minimal.group("micro"));
         }
         return false;
+    }
+
+    /**
+     * Get sent messages fro object response
+     * @param response response
+     * @param messageCount expected message count
+     * @return count of acknowledged messages
+     */
+    private int getSentMessagesCount(String response, int messageCount) {
+        int sentMessages;
+        String sentPattern = String.format("sent\":(%s)", messageCount);
+        String ackPattern = String.format("acked\":(%s)", messageCount);
+        Pattern r = Pattern.compile(sentPattern);
+        Matcher m = r.matcher(response);
+        sentMessages = m.find() ? Integer.parseInt(m.group(1)) : -1;
+
+        r = Pattern.compile(ackPattern);
+        m = r.matcher(response);
+
+        if (m.find()) {
+            return sentMessages == Integer.parseInt(m.group(1)) ? sentMessages : -1;
+        } else {
+            return -1;
+        }
+
+    }
+
+    /**
+     * Get recieved message count from object response
+     * @param response response
+     * @return count of received messages
+     */
+    private int getReceivedMessagesCount(String response) {
+        int receivedMessages = 0;
+        String pattern = String.format("records_consumed\",\"count\":([0-9]*)");
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(response);
+
+        if (m.find()) {
+            receivedMessages = Integer.parseInt(m.group(1));
+        }
+
+        return receivedMessages;
     }
 }

@@ -995,16 +995,8 @@ public class Resources extends AbstractResources {
         ContainerBuilder containerBuilder = new ContainerBuilder()
                 .withName(Constants.KAFKA_CLIENTS)
                 .withImage(Environment.TEST_CLIENT_IMAGE)
-                .addNewPort()
-                    .withContainerPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
-                .endPort()
-                .withNewLivenessProbe()
-                    .withNewTcpSocket()
-                    .withNewPort(Environment.KAFKA_CLIENTS_DEFAULT_PORT)
-                        .endTcpSocket()
-                    .withInitialDelaySeconds(10)
-                    .withPeriodSeconds(5)
-                .endLivenessProbe()
+                .withCommand("sleep")
+                .withArgs("infinity")
                 .withImagePullPolicy("IfNotPresent");
 
         if (kafkaUsers == null) {

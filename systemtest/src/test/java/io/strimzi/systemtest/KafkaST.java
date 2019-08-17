@@ -650,7 +650,7 @@ class KafkaST extends MessagingBaseST {
 
         testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
+        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
@@ -682,7 +682,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitForSecretReady(kafkaUser);
 
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
+        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
@@ -725,7 +725,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         testMethodResources().deployKafkaClients(false, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
+        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
@@ -754,7 +754,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitForSecretReady(kafkaUser);
 
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
+        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test
