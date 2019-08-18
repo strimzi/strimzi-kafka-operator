@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.model.Labels;
 
@@ -146,7 +147,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.tracing = spec.getTracing();
 
         KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
-        if (kafkaConnect.tracing != null && "jaeger".equals(kafkaConnect.tracing.getType()))   {
+        if (kafkaConnect.tracing != null && JaegerTracing.TYPE_JAEGER.equals(kafkaConnect.tracing.getType()))   {
             config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
             config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }

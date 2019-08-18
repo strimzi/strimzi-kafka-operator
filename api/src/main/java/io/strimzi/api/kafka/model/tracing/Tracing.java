@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.api.kafka.model.tracing;
@@ -32,10 +32,7 @@ public abstract class Tracing implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the tracing used. " +
-            "Currently the supported types are `route`, `loadbalancer`, and `nodeport`. \n\n" +
-            "* `route` type uses OpenShift Routes to expose Kafka." +
-            "* `loadbalancer` type uses LoadBalancer type services to expose Kafka." +
-            "* `nodeport` type uses NodePort type services to expose Kafka.")
+            "Currently the only supported type is `jaeger` for Jaeger tracing")
     public abstract String getType();
 
     @Override

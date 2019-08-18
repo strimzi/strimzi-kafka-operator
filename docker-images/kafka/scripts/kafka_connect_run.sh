@@ -36,7 +36,7 @@ if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
-# enabling Tracing agant (initializes Jaeger tracing) as Java agent
+# enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
   export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar):jaeger"
 fi
