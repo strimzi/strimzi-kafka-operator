@@ -3,30 +3,48 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-exposing-kafka-bridge-service-local-machine-{context}']
-= Exposing the Kafka Bridge service to your local machine
+= Exposing the Kafka Bridge Service to your local machine
 
-Intro
+Create an OpenShift Route to expose the {ProductName} Kafka Bridge Service to your local machine on port 8080.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
 
 .Procedure
 
-. Step
+. In a text editor, create a YAML definition for an unsecured OpenShift Route:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: <bridge-name>
+  labels:
+    app: <bridge-name>
+spec:
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: <bridge-name>-bridge-service
+    weight: 100
+----
+In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that you deployed to your Kubernetes cluster.
 
-. Step
+. Save the file to the `examples/kafka-bridge` directory as `bridge-quickstart-route.yaml`.
 
-. Step
+. Create the Route in your Kubernetes cluster:
++
+[source,yaml,subs=attributes+]
+----
+oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
+----
 
-. Step
-
-. Step
-
-. Step
-
-.Additional resources
-
-* For more information about, see .
+. Verify that the Route was successfully deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl status
+----

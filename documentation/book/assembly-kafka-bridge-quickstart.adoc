@@ -11,13 +11,13 @@
 [id='assembly-kafka-bridge-quickstart-{context}']
 = Kafka Bridge quick start
 
-Get started with the {ProductName} Kafka Bridge API by following the procedures in this quick start. 
+Follow the procedures in this quick start to get started with the {ProductName} Kafka Bridge. The quick start describes how to deploy the Kafka Bridge to your OpenShift cluster and make it available to your local machine. You can then produce records to topics and perform common consumer operations by making HTTP requests to the API.
 
-To run and manage a Kubernetes cluster on your local machine, use a tool such as Minikube, CodeReady Containers, or MiniShift.
+NOTE: To run and manage a Kubernetes cluster on your local machine, use a tool such as Minikube, CodeReady Containers, or MiniShift.
 
 .Prerequisites for the quick start
 
-* Cluster administrator access to a local or external Kubernetes cluster. 
+* Cluster administrator access to a local or remote Kubernetes cluster. 
 * {ProductName} is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Cluster Operator `RoleBindings` are installed.
@@ -25,7 +25,7 @@ To run and manage a Kubernetes cluster on your local machine, use a tool such as
 
 include::proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
 
 include::hello-world[leveloffset=+1]
 
