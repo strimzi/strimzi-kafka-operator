@@ -26,7 +26,7 @@ spec:
 ----
 <1> Customize the name of the Kafka Bridge. When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. For example, if you name the Kafka Bridge `my-kafka-api`, the `KafkaBridge` Deployment is named `my-kafka-api-bridge`, the Service is named `my-kafka-api-bridge-service`, and so on.
 +
-<2> In the `bootstrapServers` property, enter the namespace in which your Kafka cluster is deployed. For example, enter `my-project`.
+<2> In the `bootstrapServers` property, enter the Kubernetes namespace in which your Kafka cluster is deployed. For example, enter `my-project`.
 
 . Deploy the Kafka Bridge to your Kubernetes cluster:
 +

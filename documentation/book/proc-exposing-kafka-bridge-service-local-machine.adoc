@@ -30,6 +30,7 @@ spec:
     kind: Service
     name: <bridge-name>-bridge-service
     weight: 100
+    / ...
 ----
 In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that you deployed to your Kubernetes cluster.
 
@@ -37,7 +38,7 @@ In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that y
 
 . Create the Route in your Kubernetes cluster:
 +
-[source,yaml,subs=attributes+]
+[source,shell,subs=attributes+]
 ----
 oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
 ----

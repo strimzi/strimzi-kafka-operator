@@ -9,13 +9,41 @@ Intro
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge Service is exposed to your local machine on port 8080.
 
 .Procedure
 
-. Step
+. In a text editor, create a YAML definition for a Kafka topic. The topic is intended for use in this quick start guide only.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: bridge-quickstart-topic
+  labels:
+    strimzi.io/cluster: <kafka-cluster-name> <1>
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+/ ...
+----
+<1> The name of the Kafka cluster in which the Kafka Bridge is deployed.
+
+. Save the file to the `examples/topic` directory as `bridge-quickstart-topic.yaml`.
+
+. Create the topic in your Kubernetes cluster
++
+[source,shell,subs=attributes+]
+----
+oc apply -f examples/topic/bridge-quickstart-topic.yaml
+----
+
+oc apply -f topic.yaml
 
 . Step
 
