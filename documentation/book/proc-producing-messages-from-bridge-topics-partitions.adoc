@@ -3,7 +3,7 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
-= Producing messages from the Kafka Bridge to topics and partitions
+= Producing messages to topics and partitions using the API
 
 Intro
 
@@ -11,10 +11,11 @@ Intro
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
+* [environment variable for BRIDGE]
 
 .Procedure
 
-. In a text editor, create a YAML definition for a Kafka topic. The topic is intended for use in this quick start guide only.
+. In a text editor, create a YAML definition for a Kafka topic with three partitions. The topic is intended for use in this quick start guide only.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -25,7 +26,7 @@ metadata:
   labels:
     strimzi.io/cluster: <kafka-cluster-name> <1>
 spec:
-  partitions: 1
+  partitions: 3 <2>
   replicas: 1
   config:
     retention.ms: 7200000
@@ -36,25 +37,47 @@ spec:
 
 . Save the file to the `examples/topic` directory as `bridge-quickstart-topic.yaml`.
 
-. Create the topic in your Kubernetes cluster
+. Create the topic in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
 oc apply -f examples/topic/bridge-quickstart-topic.yaml
 ----
 
-oc apply -f topic.yaml
+. Using curl or a HTTP client application, produce three records to the topic you created:
++
+[source,curl,subs=attributes+]
+----
+curl -X POST \
+  http://$BRIDGE/topics/bridge-quickstart-topic \
+  -H 'content-type: application/vnd.kafka.json.v2+json' \
+  -d '{
+    "records": [
+        {
+            "key": "my-key",<1>
+            "value": "sales-lead-0001"
+        },
+        {
+            "value": "sales-lead-0002",
+            "partition": 2<2>
+        },
+        {
+            "value": "sales-lead-0003"<3>
+        }
+    ]
+}'
+----
++
+<1> Records containing a key are sent to a partition based on the hash of the key.
+<2> Records containing a partition are sent to that partition. 
+<3> Records containing a value only are sent to a partition using a round-robin method.
 
-. Step
+NOTE: /topics/partition endpoint alternative way to send msgs to partition. 
 
-. Step
+the second one has the specified destination partition and the value
 
-. Step
-
-. Step
-
-. Step
 
 .Additional resources
 
-* For more information about, see .
+* One
+* Two
