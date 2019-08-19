@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-access-configuration-kafka-mirror-maker-{context}']
+= Configuring Kafka Mirror Maker access control
+
+Configure Kafka Mirror Maker access control using supported authentication mechanisms:
+
+* TLS client authentication
+* SASL SCRAM-SHA-512
+* SASL PLAIN
+
+For more information on these mechanisms, see xref:assembly-kafka-mirror-maker-authentication-{context}[Authentication].
+
+include::proc-configuring-kafka-mirror-maker-tls.adoc[leveloffset=+1]
+include::proc-configuring-kafka-mirror-maker-authentication-tls.adoc[leveloffset=+1]
+include::proc-configuring-kafka-mirror-maker-authentication-scram-sha-512.adoc[leveloffset=+1]

@@ -2,7 +2,7 @@
 //
 // assembly-deployment-configuration.adoc
 
-//attribute for use in snip-external-logging.adoc
+//attribute for use in snip-inline-logging.adoc
 :kind: KafkaBridge
 
 // Save the context of the assembly that is including this one.

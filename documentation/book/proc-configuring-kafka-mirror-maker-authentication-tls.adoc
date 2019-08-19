@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* A Kubernetes cluster
+* Source and target Kafka clusters are available
 * A running Cluster Operator with a `tls` listener with `tls` authentication enabled
 * If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
 
@@ -25,7 +25,8 @@ This can be done using `kubectl create`:
 kubectl create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
 
 . Edit the `KafkaMirrorMaker.spec.consumer.authentication` property.
-For example:
++
+.An example TLS client authentication configuration
 +
 [source,yaml,subs=attributes+]
 ----
@@ -39,15 +40,22 @@ spec:
     authentication:
       type: tls
       certificateAndKey:
-        secretName: my-secret
-        certificate: my-public.crt
-        key: my-private.key
+        secretName: my-source-secret
+        certificate: public.crt
+        key: private.key
+  # ...
+  producer:
+    authentication:
+      type: tls
+      certificateAndKey:
+        secretName: my-target-secret
+        certificate: public.crt
+        key: private.key
   # ...
 ----
 +
-. Create or update the resource.
+. Create or update the resource:
 +
-This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 

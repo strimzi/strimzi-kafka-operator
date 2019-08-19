@@ -7,8 +7,8 @@
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
+* xref:cluster-operator-str[{ProductName} and Kafka is deployed]
+* Source and target Kafka clusters are available
 * If they exist, the name of the `Secret` for the certificate used for TLS Server Authentication and the key under which the certificate is stored in the `Secret`
 
 .Procedure
@@ -25,8 +25,8 @@ This can be done using `kubectl create`:
 kubectl create secret generic _<my-secret>_ --from-file=_<my-file.crt>_
 
 . Edit the `KafkaMirrorMaker.spec.consumer.tls` property.
-For example:
 +
+.An example showing TLS configuration with multiple certificates
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -38,14 +38,52 @@ spec:
   consumer:
     tls:
       trustedCertificates:
-        - secretName: my-cluster-cluster-cert
+        - secretName: my-source-secret
           certificate: ca.crt
+        - secretName: my-other-source-secret
+          certificate: certificate.crt
+  # ...
+  producer:
+    tls:
+      trustedCertificates:
+        - secretName: my-target-secret
+          certificate: ca.crt
+        - secretName: my-other-target-secret
+          certificate: certificate.crt
   # ...
 ----
 +
-. Create or update the resource.
+When multiple certificates are stored in the same secret, it can be listed multiple times.
 +
-This can be done using `kubectl apply`:
+.An example showing TLS configuration with multiple certificates from the same secret
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  consumer:
+    tls:
+      trustedCertificates:
+        - secretName: my-source-secret
+          certificate: ca.crt
+        - secretName: my-source-secret
+          certificate: ca2.crt
+  # ...
+  producer:
+    tls:
+      trustedCertificates:
+        - secretName: my-target-secret
+          certificate: ca.crt
+        - secretName: my-target-secret
+          certificate: ca2.crt
+  # ...
+----
++
+. Create or update the resource:
++
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 

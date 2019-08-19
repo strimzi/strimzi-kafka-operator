@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* A Kubernetes cluster
+* Source and target Kafka clusters are available
 * A running Cluster Operator with a `listener` configured for SCRAM-SHA-512 authentication
 * Username to be used for authentication
 * If they exist, the name of the `Secret` with the password used for authentication, and the key under which it is stored in the `Secret`
@@ -15,7 +15,9 @@
 .Procedure
 
 As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure SCRAM-SHA-512 authentication for one or both the clusters.
-The following steps describe how to configure SCRAM-SHA-512 authentication on the consumer side for connecting to the source Kafka cluster:
+The following steps describe how to configure SCRAM-SHA-512 authentication on the consumer side for connecting to the source Kafka cluster.
+
+If you want to use SASL PLAIN authentication, the steps are the same as shown here but you set the `authentication.type` property to `plain`.
 
 . (Optional) If they do not already exist, prepare a file with the password used for authentication and create the `Secret`.
 +
@@ -27,8 +29,8 @@ echo -n '_<password>_' > _<my-password.txt>_
 kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
 
 . Edit the `KafkaMirrorMaker.spec.consumer.authentication` property.
-For example:
 +
+.An example SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -40,12 +42,22 @@ spec:
   consumer:
     authentication:
       type: scram-sha-512
-      username: _<my-username>_
+      username: my-source-user
       passwordSecret:
-        secretName: _<my-secret>_
-        password: _<my-password.txt>_
+        secretName: my-source-user
+        password: my-source-password-key
+  # ...
+  producer:
+    authentication:
+      type: scram-sha-512
+      username: my-producer-user
+      passwordSecret:
+        secretName: my-producer-user
+        password: my-producer-password-key
   # ...
 ----
++
+IMPORTANT: Do not specify the actual password in the `password` field.
 +
 . Create or update the resource.
 +
