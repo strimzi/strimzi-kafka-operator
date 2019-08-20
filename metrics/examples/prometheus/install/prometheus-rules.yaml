@@ -73,29 +73,30 @@ spec:
       annotations:
         summary: 'Cluster Operator is down'
         description: 'Cluster Operator is down for more than 90 seconds'
-    - alert: KafkaBrokerContainerDown
+    - alert: KafkaBrokerContainersDown
       expr: absent(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Container `kafka` in one of the Kafka pods is down or in CrashLookBackOff status'
-        description: 'Container `kafka` in one of the Kafka pods is down or in CrashLookBackOff status for 3 minutes'
-    - alert: KafkaTlsSidecarContainerDown
+        summary: 'All `kafka` containers are down or in CrashLookBackOff status'
+        description: 'All `kafka` containers are down or in CrashLookBackOff status for 3 minutes'
+    - alert: KafkaTlsSidecarContainersDown
       expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-kafka-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Container `tls-sidecar` in one of the Kafka pods is down or in CrashLookBackOff status'
-        description: 'Container `tls-sidecar` in one of the Kafka pods is down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status'
+        description: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status'
     - alert: KafkaContainerRestartedInTheLast5Minutes
       expr: count(count_over_time(container_last_seen{container_name="kafka"}[5m])) > 2 * count(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
       for: 5m
       labels:
         severity: warning
       annotations:
-        description: 'One or more Kafka containers were restarted too often within the last 5 minutes.'
+        summary: 'One or more Kafka containers were restarted too often'
+        description: 'One or more Kafka containers were restarted too often within the last 5 minutes'
   - name: zookeeper
     rules:
     - alert: AvgRequestLatency
@@ -128,23 +129,24 @@ spec:
       labels:
         severity: warning
       annotations:
-        description: 'One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored during scaling up the Zookeeper cluster.'
-    - alert: ZookeeperContainerDown
+        summary: 'One or more Zookeeper containers were restarted too often'
+        description: 'One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored during scaling up the Zookeeper cluster'
+    - alert: ZookeeperContainersDown
       expr: absent(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Container `zookeeper` in one of the Zookeeper pods pod is down or in CrashLookBackOff status'
-        description: 'Container `zookeeper` in one of the Zookeeper pods is down or in CrashLookBackOff status for 3 minutes'
-    - alert: ZookeeperTlsSidecarContainerDown
+        summary: 'All `zookeeper` containers in the Zookeeper pods are down or in CrashLookBackOff status'
+        description: 'All `zookeeper` containers in the Zookeeper pods are down or in CrashLookBackOff status for 3 minutes'
+    - alert: ZookeeperTlsSidecarContainersDown
       expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Container `tls-sidecar` in one of the Zookeeper pods is down or in CrashLookBackOff status'
-        description: 'Container `tls-sidecar` in one of the Zookeeper pods is down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All `tls-sidecar` containers in the Zookeeper pods are down or in CrashLookBackOff status'
+        description: 'All `tls-sidecar` containers in the Zookeeper pods are down or in CrashLookBackOff status for 3 minutes'
   - name: entityOperator
     rules:
     - alert: TopicOperatorContainerDown
@@ -173,24 +175,24 @@ spec:
         description: 'Container tls-sidecar in Entity Operator pod is down or in CrashLookBackOff status for 3 minutes'
   - name: connect
     rules:
-    - alert: ConnectContainerDown
+    - alert: ConnectContainersDown
       expr: absent(container_last_seen{container_name=~".+-connect",kubernetes_pod_name=~".+-connect-.+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Kafka Connect container in the Kafka Connect pod is down or in CrashLookBackOff status'
-        description: 'Kafka Connect container in the Kafka Connect pod is down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All Kafka Connect containers are down or in CrashLookBackOff status'
+        description: 'All Kafka Connect containers are down or in CrashLookBackOff status for 3 minutes'
   - name: bridge
     rules:
-    - alert: BridgeContainerDown
+    - alert: BridgeContainersDown
       expr: absent(container_last_seen{container_name=~".+-bridge",kubernetes_pod_name=~".+-bridge-.+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'Kafka Bridge container in the Kafka Bridge pod is down or in CrashLookBackOff status'
-        description: 'Kafka Bridge container in the Kafka Bridge pod is down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All Kafka Bridge containers are down or in CrashLookBackOff status'
+        description: 'All Kafka Bridge containers are down or in CrashLookBackOff status for 3 minutes'
   - name: mirrorMaker
     rules:
     - alert: MirrorMakerContainerDown
@@ -199,9 +201,8 @@ spec:
       labels:
         severity: major
       annotations:
-        summary: 'Kafka Mirror Maker container in the Kafka Mirror Maker pod is down or in CrashLookBackOff status'
-        description: 'Kafka Mirror Maker container in the Kafka Mirror Maker pod is down or in CrashLookBackOff status for 3 minutes'
-
+        summary: 'All Kafka Mirror Maker containers are down or in CrashLookBackOff status'
+        description: 'All Kafka Mirror Maker containers are down or in CrashLookBackOff status for 3 minutes'
   - name: kafkaExporter
     rules:
     - alert: UnderReplicatedPartition
