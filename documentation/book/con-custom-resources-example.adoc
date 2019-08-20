@@ -31,8 +31,8 @@ spec: <2>
     - kt <3>
   additionalPrinterColumns: <4>
       # ...
-subresources: 
-  status: {} <5>
+  subresources: 
+    status: {} <5>
   validation: <6>
     openAPIV3Schema:
       properties:
@@ -52,7 +52,7 @@ subresources:
 <2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `kubectl get kafkatopics`.
 <3> The shortname can be used in CLI commands. For example, `kubectl get kt` can be used as an abbreviation instead of `kubectl get kafkatopic`.
 <4> The information presented when using a `get` command on the custom resource.
-<5> The current status of the CRD.
+<5> The current status of the CRD as described in the xref:type-Kafka-reference[schema reference] for the resource.
 <6> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 
 NOTE: You can identify the CRD YAML files supplied with the {ProductName} installation files, because the file names contain an index number followed by ‘Crd’.
