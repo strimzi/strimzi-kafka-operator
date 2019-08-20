@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -475,69 +476,6 @@ class SecurityST extends MessagingBaseST {
 
         assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
         waitForClusterAvailability(NAMESPACE);
-    }
-
-    @Test
-    void testNetworkPolicies() throws Exception {
-        Map<String, String> matchLabelsForConsumer = new HashMap<>();
-        matchLabelsForConsumer.put("app", Constants.KAFKA_CLIENTS);
-
-        NetworkPolicyPeer networkPolicyPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector()
-                    .withMatchLabels(matchLabelsForConsumer)
-                .endPodSelector()
-                .build();
-
-
-        Map<String, String> matchLabelsForProject2 = new HashMap<>();
-        matchLabelsForProject2.put("project", "myproject2");
-
-        NetworkPolicyPeer networkPolicyPeer1 = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector()
-                    .withMatchLabels(matchLabelsForProject2)
-                .endPodSelector()
-                .build();
-
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .editPlain()
-                                .withNewKafkaListenerAuthenticationScramSha512()
-                                .endKafkaListenerAuthenticationScramSha512()
-                                .withNetworkPolicyPeers(networkPolicyPeer)
-                            .endPlain()
-                            .withNewTls()
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                                .withNetworkPolicyPeers(networkPolicyPeer1)
-                            .endTls()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        String topic0 = "topic-example-0";
-        String topic1 = "topic-example-1";
-        testMethodResources().topic(CLUSTER_NAME, topic0).done();
-        testMethodResources().topic(CLUSTER_NAME, topic1).done();
-
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
-
-        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
-
-        // TODO: this will work.... (exchange messages)
-        availabilityTest(50, CLUSTER_NAME, topic0);
-
-        // TODO: edit configuration of kafka client... ->
-        Map<String, String> matchLabelsForConsumer1 = new HashMap<>();
-        matchLabelsForConsumer1.put("app", "client-who-will-not-work");
-
-        kubeClient().getDeployment("my-cluster-kafka-clients").getSpec().getSelector().setMatchLabels(matchLabelsForConsumer1);
-
-        // TODO: assertThat will be.....
-        availabilityTest(50, CLUSTER_NAME, topic1);
     }
 
     @BeforeEach
