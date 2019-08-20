@@ -31,7 +31,9 @@ spec: <2>
     - kt <3>
   additionalPrinterColumns: <4>
       # ...
-  validation: <5>
+  subresources: 
+    status: {} <5>
+  validation: <6>
     openAPIV3Schema:
       properties:
         spec:
@@ -50,7 +52,8 @@ spec: <2>
 <2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `kubectl get kafkatopics`.
 <3> The shortname can be used in CLI commands. For example, `kubectl get kt` can be used as an abbreviation instead of `kubectl get kafkatopic`.
 <4> The information presented when using a `get` command on the custom resource.
-<5> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
+<5> The current status of the CRD as described in the xref:type-Kafka-reference[schema reference] for the resource.
+<6> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 
 NOTE: You can identify the CRD YAML files supplied with the {ProductName} installation files, because the file names contain an index number followed by ‘Crd’.
 
@@ -71,12 +74,20 @@ spec: <3>
   config:
     retention.ms: 7200000
     segment.bytes: 1073741824
+status: 
+  conditions: <4>
+    lastTransitionTime: "2019-08-20T11:37:00.706Z" 
+    status: "True"
+    type: Ready
+  observedGeneration: 1
+  / ...
 ----
 <1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
 <2> A label, applicable only to `KafkaTopic` and `KafkaUser` resources, that defines the name of the Kafka cluster (which is same as the name of the `Kafka` resource) to which a topic or user belongs.
 +
 The name is used by the xref:con-topic-operator-cluster-label-deploying[Topic Operator] and xref:con-user-operator-cluster-label-deploying-uo[User Operator] to identify the Kafka cluster when creating a topic or user.
 <3> The spec shows the number of partitions and replicas for the topic as well as the configuration parameters for the topic itself. In this example, the retention period for a message to remain in the topic and the segment file size for the log are specified.
+<4> Status conditions for the `KafkaTopic` resource. The `type` condition changed to `Ready` at the `lastTransitionTime`.
 
 Custom resources can be applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 
