@@ -57,7 +57,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy Topic
         testMethodResources().topic(kafkaClusterSourceName, topicSourceName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName);
@@ -94,9 +94,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null);
+        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -161,7 +161,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
@@ -185,9 +185,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicSourceName, userTarget);
+        final String defaultKafkaClientPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, true, topicSourceName, userSource, defaultKafkaClientPodName);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicSourceName, userSource, defaultKafkaClientPodName);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicSourceName, userTarget, defaultKafkaClientPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -252,7 +254,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
@@ -286,9 +288,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget);
+        int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, Constants.KAFKA_CLIENTS);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, Constants.KAFKA_CLIENTS);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, Constants.KAFKA_CLIENTS);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -311,7 +313,7 @@ public class MirrorMakerST extends MessagingBaseST {
         StUtils.waitForKafkaTopicCreation(topicName);
         StUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName);
@@ -323,17 +325,17 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicName, null);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicName, null);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicName, null);
+        int sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, Constants.KAFKA_CLIENTS);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, Constants.KAFKA_CLIENTS);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicName, null, Constants.KAFKA_CLIENTS);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
 
-        sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null);
-        receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null);
+        sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, Constants.KAFKA_CLIENTS);
+        receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, Constants.KAFKA_CLIENTS);
 
-        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null));
+        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, Constants.KAFKA_CLIENTS));
         assertSentAndReceivedMessages(sent, receivedSource);
     }
 

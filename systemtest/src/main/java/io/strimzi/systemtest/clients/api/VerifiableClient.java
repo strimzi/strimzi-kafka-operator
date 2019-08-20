@@ -4,17 +4,16 @@
  */
 package io.strimzi.systemtest.clients.api;
 
-import io.strimzi.systemtest.executor.Executor;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.BaseITST.cmdKubeClient;
 
 /**
  * Class represent verifiable kafka client which keeps common features of kafka clients
@@ -22,13 +21,13 @@ import static io.strimzi.test.BaseITST.kubeClient;
 public class VerifiableClient {
 
     private static final Logger LOGGER = LogManager.getLogger(VerifiableClient.class);
-    protected ArrayList<ClientArgument> allowedArguments = new ArrayList<>();
+    private List<ClientArgument> allowedArguments = new ArrayList<>();
     private final Object lock = new Object();
-    private JsonArray messages = new JsonArray();
-    private ArrayList<String> arguments = new ArrayList<>();
+    private List<String> messages = new ArrayList<>();
+    private List<String> arguments = new ArrayList<>();
     private String executable;
     private ClientType clientType;
-    private Executor executor;
+    private Exec executor;
     private String podName;
     private String podNamespace;
 
@@ -37,10 +36,11 @@ public class VerifiableClient {
      *
      * @param clientType type of kafka client
      */
-    public VerifiableClient(ClientType clientType) {
+    public VerifiableClient(ClientType clientType, String podName, String podNamespace) {
         this.setAllowedArguments(clientType);
-        this.podName = kubeClient().listPodsByPrefixInName("my-cluster-kafka-clients-").get(0).getMetadata().getName();
-        this.podNamespace = kubeClient().getNamespace();
+        this.clientType = clientType;
+        this.podName = podName;
+        this.podNamespace = podNamespace;
         this.executable = ClientType.getCommand(clientType);
     }
 
@@ -49,21 +49,8 @@ public class VerifiableClient {
      *
      * @return Json array of messages;
      */
-    public JsonArray getMessages() {
+    public List<String> getMessages() {
         return messages;
-    }
-
-    /**
-     * Get all kafka client arguments.
-     *
-     * @return The kafka client arguments.
-     */
-    public ArrayList<String> getArguments() {
-        return arguments;
-    }
-
-    public String getExecutable() {
-        return this.executable;
     }
 
     /**
@@ -104,17 +91,17 @@ public class VerifiableClient {
     private boolean runClient(int timeout, boolean logToOutput) {
         messages.clear();
         try {
-            executor = new Executor();
-            int ret = executor.execute(prepareCommand(), timeout);
+            executor = new Exec();
+            int ret = executor.execute(null, prepareCommand(), timeout);
             synchronized (lock) {
                 LOGGER.info("{} {} Return code - {}", this.getClass().getName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.info("{} {} stdout : {}", this.getClass().getName(), clientType, executor.getStdOut());
-                    if (!executor.getStdErr().isEmpty()) {
-                        LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.getStdErr());
+                    LOGGER.info("{} {} stdout : {}", this.getClass().getName(), clientType, executor.out());
+                    if (!executor.err().isEmpty()) {
+                        LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.err());
                     }
                     if (ret == 0) {
-                        parseToJson(executor.getStdOut());
+                        parseToJson(executor.out());
                     }
                 }
             }
@@ -135,7 +122,7 @@ public class VerifiableClient {
             for (String line : data.split(System.getProperty("line.separator"))) {
                 if (!Objects.equals(line, "") && !line.trim().isEmpty()) {
                     try {
-                        messages.add(new JsonObject(line));
+                        messages.add(line);
                     } catch (Exception ignored) {
                         LOGGER.warn("{} - Failed to parse client output '{}' as JSON", clientType, line);
                     }
@@ -152,8 +139,7 @@ public class VerifiableClient {
     private ArrayList<String> prepareCommand() {
         ArrayList<String> command = new ArrayList<>(arguments);
         ArrayList<String> executableCommand = new ArrayList<>();
-        // TODO: create divider oc and kubectl
-        executableCommand.addAll(Arrays.asList("oc", "exec", podName, "-n", podNamespace, "--"));
+        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", podNamespace, "--"));
         executableCommand.add(executable);
         executableCommand.addAll(command);
         return executableCommand;

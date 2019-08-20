@@ -71,8 +71,25 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      */
     void availabilityTest(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
-        sent = sendMessages(messageCount, clusterName, tlsListener, topicName, user);
-        received = receiveMessages(messageCount, clusterName, tlsListener, topicName, user);
+        final String  defaultKafkaClientsPodName =
+                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        sent = sendMessages(messageCount, clusterName, tlsListener, topicName, user, defaultKafkaClientsPodName);
+        received = receiveMessages(messageCount, clusterName, tlsListener, topicName, user, defaultKafkaClientsPodName);
+        assertSentAndReceivedMessages(sent, received);
+    }
+
+    /**
+     * Simple availability check for kafka cluster
+     * @param messageCount message count
+     * @param clusterName cluster name
+     * @param tlsListener option for tls listener inside kafka cluster
+     * @param topicName topic name
+     * @param user user for tls if it's used for messages
+     * @param podName name of the pod
+     */
+    void availabilityTest(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user, String podName) throws Exception {
+        sent = sendMessages(messageCount, clusterName, tlsListener, topicName, user, podName);
+        received = receiveMessages(messageCount, clusterName, tlsListener, topicName, user, podName);
         assertSentAndReceivedMessages(sent, received);
     }
 
@@ -85,14 +102,16 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
-    int sendMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int sendMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user, String podName) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         producerArguments.put(ClientArgument.TOPIC, topicName);
         producerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
 
-        VerifiableClient producer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_PRODUCER);
+        VerifiableClient producer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_PRODUCER,
+                podName,
+                kubeClient().getNamespace());
 
         if (user != null) {
             producerArguments.put(ClientArgument.USER, user.getMetadata().getName().replace("-", "_"));
@@ -103,7 +122,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
         boolean hasPassed = producer.run();
-        LOGGER.info("Producer -----> " + hasPassed);
+        LOGGER.info("Producer -----> {}", hasPassed);
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 
@@ -119,7 +138,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int receiveMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user, String podName) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -131,7 +150,9 @@ public class MessagingBaseST extends AbstractST {
         consumerArguments.put(ClientArgument.TOPIC, topicName);
         consumerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
 
-        VerifiableClient consumer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_CONSUMER);
+        VerifiableClient consumer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_CONSUMER,
+                podName,
+                kubeClient().getNamespace());
 
         if (user != null) {
             consumerArguments.put(ClientArgument.USER, user.getMetadata().getName().replace("-", "_"));
@@ -142,7 +163,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, bootstrapServer, topicName);
 
         boolean hasPassed = consumer.run();
-        LOGGER.info("Consumer -----> " + hasPassed);
+        LOGGER.info("Consumer -----> {}", hasPassed);
 
         received = getReceivedMessagesCount(consumer.getMessages().toString());
 

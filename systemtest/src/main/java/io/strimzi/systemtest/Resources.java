@@ -705,7 +705,7 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
-        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build(), namespace);
+        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
     private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
@@ -762,7 +762,7 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    private DoneableDeployment createNewDeployment(Deployment deployment, String namespace) {
+    private DoneableDeployment createNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
             TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
@@ -897,33 +897,34 @@ public class Resources extends AbstractResources {
         return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 
-    DoneableDeployment deployKafkaClients(String clusterName, String namespace) {
-        return deployKafkaClients(false, clusterName, namespace, null);
+    DoneableDeployment deployKafkaClients(String kafkaClientsName) {
+        return deployKafkaClients(false, kafkaClientsName, null);
     }
 
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, String namespace) {
-        return deployKafkaClients(tlsListener, clusterName, namespace, null);
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, null);
     }
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, String namespace, KafkaUser... kafkaUsers) {
+
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
-                .withName(clusterName + "-" + Constants.KAFKA_CLIENTS)
+                .withName(kafkaClientsName)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
-                .addToMatchLabels("app", Constants.KAFKA_CLIENTS)
+                .addToMatchLabels("app", kafkaClientsName)
                 .endSelector()
                 .withReplicas(1)
                 .withNewTemplate()
                     .withNewMetadata()
-                        .addToLabels("app", Constants.KAFKA_CLIENTS)
+                        .addToLabels("app", kafkaClientsName)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
 
-        return createNewDeployment(kafkaClient, namespace);
+        return createNewDeployment(kafkaClient);
     }
 
     public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace) {
@@ -990,10 +991,10 @@ public class Resources extends AbstractResources {
         return new DoneableIngress(ingress);
     }
 
-    private PodSpec createClientSpec(boolean tlsListener, KafkaUser... kafkaUsers) {
+    private PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
-                .withName(Constants.KAFKA_CLIENTS)
+                .withName(kafkaClientsName)
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .withCommand("sleep")
                 .withArgs("infinity")
