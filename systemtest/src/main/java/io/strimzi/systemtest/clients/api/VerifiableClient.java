@@ -101,7 +101,7 @@ public class VerifiableClient {
                         LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.err());
                     }
                     if (ret == 0) {
-                        parseToJson(executor.out());
+                        parseToList(executor.out());
                     }
                 }
             }
@@ -113,11 +113,11 @@ public class VerifiableClient {
     }
 
     /**
-     * Method for parse string output to json array of messages
+     * Method for parse string output to List<string>
      *
      * @param data string data output
      */
-    private void parseToJson(String data) {
+    private void parseToList(String data) {
         if (data != null) {
             for (String line : data.split(System.getProperty("line.separator"))) {
                 if (!Objects.equals(line, "") && !line.trim().isEmpty()) {
