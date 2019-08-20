@@ -116,7 +116,6 @@
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
         <module>test</module>
-        <module>test-client</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
