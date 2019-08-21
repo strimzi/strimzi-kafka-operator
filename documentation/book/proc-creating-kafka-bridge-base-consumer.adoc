@@ -3,30 +3,47 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-creating-kafka-bridge-base-consumer-{context}']
-= Creating the Kafka Bridge base consumer
+= Creating a Kafka Bridge consumer
 
-Intro
+Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations in your Kafka cluster.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
 
-. Step
+. Using curl, create a Kafka Bridge consumer in a new consumer group. In the request body, name the consumer and define some basic consumer configuration settings.
++
+[source,curl,subs=attributes+]
+----
+curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
+  -H 'content-type: application/vnd.kafka.v2+json' \
+  -d '{
+    "name": "bridge-quickstart-consumer",
+    "auto.offset.reset": "earliest",
+    "enable.auto.commit": "false",
+    "fetch.min.bytes": "512",
+    "consumer.request.timeout.ms": "30000"
+  }'
+----
++
+When the `enable.auto.commit` setting is `false`, consumer offsets are not committed to the log automatically. You will commit the offsets for this consumer later in this quick start.
++
+If the request was successful, the Kafka bridge returns a 200 code and a response body in JSON format:
++
+[source,json,subs=attributes+]
+----
+{
+  "instance_id": "bridge-quickstart-consumer",
+  "base_uri":"http://<bridge-name>-bridge-service:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer"
+}
+----
 
-. Step
-
-. Step
-
-. Step
-
-. Step
-
-. Step
+. Make a note of the consumer base URL (`base_uri`) in the response body. You will use the base URL in the remaining consumer operations in this quick start.
 
 .Additional resources
 
-* For more information about, see .
+* link:https://strimzi.io/docs/bridge/latest/#_createconsumer[POST /consumers/{groupid}^] in the API reference documentation.

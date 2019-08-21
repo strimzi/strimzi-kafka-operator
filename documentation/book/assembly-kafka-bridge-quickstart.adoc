@@ -11,7 +11,7 @@
 [id='assembly-kafka-bridge-quickstart-{context}']
 = Kafka Bridge quick start
 
-Follow the procedures in this quick start to get started with the {ProductName} Kafka Bridge. The quick start describes how to deploy the Kafka Bridge to your OpenShift cluster and make it available to your local machine. You can then produce records to topics and perform common consumer operations by making HTTP requests to the API.
+Follow the procedures in this quick start to get started with the {ProductName} Kafka Bridge. The quick start describes how to deploy the Kafka Bridge to your OpenShift cluster and make it available to your local machine. You can then produce records to topics and perform common consumer operations by making HTTP requests to the REST API.
 
 NOTE: To run and manage a Kubernetes cluster on your local machine, use a tool such as Minikube, CodeReady Containers, or MiniShift.
 

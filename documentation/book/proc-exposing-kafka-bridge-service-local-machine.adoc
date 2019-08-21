@@ -43,9 +43,9 @@ In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that y
 oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
 ----
 
-. Verify that the Route was successfully deployed:
+. Retrieve the address of the route; you will use the address as the `<bridge-address>` parameter in the remainder of this quick start.
 +
-[source,shell,subs="attributes+"]
+[source,shell,subs=attributes+]
 ----
-kubectl status
+export BRIDGE="$(oc get routes my-bridge -o jsonpath='{.status.ingress[0].host}')"
 ----

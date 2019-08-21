@@ -3,19 +3,19 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
-= Producing messages to topics and partitions using the API
+= Producing messages to topics and partitions
 
-Intro
+First, produce messages, in JSON format, to topics in your Kafka cluster by using the `/topics` endpoint. This example shows how to specify destination partitions for messages in the request body. You can also use the `/topics/partitions` endpoint to specify a single destination partition for all messages as a path parameter.
 
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-* [environment variable for BRIDGE]
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
 
-. In a text editor, create a YAML definition for a Kafka topic with three partitions. The topic is intended for use in this quick start guide only.
+. In a text editor, create a YAML definition for a Kafka topic with three partitions.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -31,53 +31,49 @@ spec:
   config:
     retention.ms: 7200000
     segment.bytes: 1073741824
-/ ...
 ----
 <1> The name of the Kafka cluster in which the Kafka Bridge is deployed.
+<2> The number of partitions. 
 
 . Save the file to the `examples/topic` directory as `bridge-quickstart-topic.yaml`.
 
-. Create the topic in your Kubernetes cluster:
+. On the command line, create the topic in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
 oc apply -f examples/topic/bridge-quickstart-topic.yaml
 ----
 
-. Using curl or a HTTP client application, produce three records to the topic you created:
+. Using curl, produce three messages to the topic you created:
 +
 [source,curl,subs=attributes+]
 ----
 curl -X POST \
-  http://$BRIDGE/topics/bridge-quickstart-topic \
+  http://<bridge-address>/topics/bridge-quickstart-topic \
   -H 'content-type: application/vnd.kafka.json.v2+json' \
   -d '{
     "records": [
         {
-            "key": "my-key",<1>
+            "key": "my-key",
             "value": "sales-lead-0001"
         },
         {
             "value": "sales-lead-0002",
-            "partition": 2<2>
+            "partition": 2
         },
         {
-            "value": "sales-lead-0003"<3>
+            "value": "sales-lead-0003"
         }
     ]
 }'
 ----
 +
-<1> Records containing a key are sent to a partition based on the hash of the key.
-<2> Records containing a partition are sent to that partition. 
-<3> Records containing a value only are sent to a partition using a round-robin method.
-
-NOTE: /topics/partition endpoint alternative way to send msgs to partition. 
-
-the second one has the specified destination partition and the value
-
+* Messages containing a key are sent to a partition based on the hash of the key.
+* Messages containing a partition are sent to that partition. 
+* Messages containing a value only are sent to a partition using a round-robin method.
 
 .Additional resources
 
-* One
-* Two
+* link:https://strimzi.io/docs/bridge/latest/#_send[POST /topics/{topicname}^] in the API reference documentation.
+
+* link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[POST /topics/{topicname}/partitions/{partitionid}] in the API reference documentation.
