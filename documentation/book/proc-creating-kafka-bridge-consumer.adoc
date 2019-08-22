@@ -2,20 +2,20 @@
 //
 // assembly-kafka-bridge-quickstart.adoc
 
-[id='proc-creating-kafka-bridge-base-consumer-{context}']
+[id='proc-creating-kafka-bridge-consumer-{context}']
 = Creating a Kafka Bridge consumer
 
-Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations in your Kafka cluster.
+Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations, such as subscribing to topics and retrieving messages.
 
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
 
 .Procedure
 
-. Using curl, create a Kafka Bridge consumer in a new consumer group. In the request body, name the consumer and define some basic consumer configuration settings.
+. Using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[/consumers/{groupid}^] endpoint, create a Kafka Bridge consumer in a new consumer group. In the request body, assign a name (referred to as a consumer ID) to the consumer and define some basic configuration settings.
 +
 [source,curl,subs=attributes+]
 ----
@@ -30,9 +30,9 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
   }'
 ----
 +
-When the `enable.auto.commit` setting is `false`, consumer offsets are not committed to the log automatically. You will commit the offsets for this consumer later in this quick start.
+NOTE: The `enable.auto.commit` setting is `false`, so consumer offsets are not committed to the log automatically. You will commit the offsets for this consumer in a later procedure.
 +
-If the request was successful, the Kafka bridge returns a 200 code and a response body in JSON format:
+If the request was successful, the Kafka Bridge returns the consumer ID and base URL in a JSON response body, along with a `200` code.
 +
 [source,json,subs=attributes+]
 ----
@@ -42,7 +42,7 @@ If the request was successful, the Kafka bridge returns a 200 code and a respons
 }
 ----
 
-. Make a note of the consumer base URL (`base_uri`) in the response body. You will use the base URL in the remaining consumer operations in this quick start.
+. Copy the consumer base URL (`base_uri`) contained in the response for later use.
 
 .Additional resources
 
