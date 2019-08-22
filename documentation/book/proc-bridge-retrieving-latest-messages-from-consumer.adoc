@@ -5,28 +5,38 @@
 [id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
 = Retrieving the latest messages from a consumer
 
-Intro
+Next, retrieve the latest messages from the Kafka Bridge consumer by using the `/records` endpoint. HTTP clients can retrieve messages either repeatedly or as a one-off operation. 
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* A Kafka Bridge consumer that is subscribed to a topic. 
 
 .Procedure
 
-. Step
+* Retrieve the records that you sent in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions] from the Kafka Bridge consumer. Use the link:https://strimzi.io/docs/bridge/latest/#_poll[records] endpoint.
++
+[source,curl,subs=attributes+]
+----
+curl -X GET <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/records \
+  -H 'accept: application/vnd.kafka.json.v2+json'
+----
++
+If the request was successful, the Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body alongside a `200` code.
++
+[source,json,subs=attributes+]
+----
+INSERT JSON HERE
+----
++
+NOTE: If the response body is empty, produce more records to the consumer, and then try retrieving messages again. 
 
-. Step
+.What to do next
 
-. Step
-
-. Step
-
-. Step
-
-. Step
+After retrieving messages from the Kafka Bridge consumer, you can xref:proc-bridge-committing-consumer-offsets-to-log-{context}[commit the consumer offsets to the log].
 
 .Additional resources
 
-* For more information about, see .
+* link:https://strimzi.io/docs/bridge/latest/#_poll[GET /consumers/{groupid}/instances/{name}/records^] in the API reference documentation.

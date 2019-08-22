@@ -33,7 +33,7 @@ include::proc-creating-kafka-bridge-consumer.adoc[leveloffset=+1]
 
 include::proc-bridge-subscribing-consumer-topics.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-bridge-retrieving-latest-messages-from-consumer.adoc[leveloffset=+1]
 
 include::hello-world[leveloffset=+1]
 
