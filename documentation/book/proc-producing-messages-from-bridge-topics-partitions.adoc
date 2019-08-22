@@ -72,6 +72,10 @@ curl -X POST \
 * Messages containing a partition are sent to that partition. 
 * Messages containing a value only are sent to a partition using a round-robin method.
 
+.What to do next
+
+After producing messages to topics and partitions, xref:proc-creating-kafka-bridge-consumer-{context}[create a Kafka Bridge consumer]. 
+
 .Additional resources
 
 * link:https://strimzi.io/docs/bridge/latest/#_send[POST /topics/{topicname}^] in the API reference documentation.

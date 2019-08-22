@@ -31,7 +31,7 @@ include::proc-producing-messages-from-bridge-topics-partitions.adoc[leveloffset=
 
 include::proc-creating-kafka-bridge-consumer.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-bridge-subscribing-consumer-topics.adoc[leveloffset=+1]
 
 include::hello-world[leveloffset=+1]
 

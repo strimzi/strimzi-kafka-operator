@@ -15,7 +15,7 @@ Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer 
 
 .Procedure
 
-. Using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[/consumers/{groupid}^] endpoint, create a Kafka Bridge consumer in a new consumer group. In the request body, assign a name (referred to as a consumer ID) to the consumer and define some basic configuration settings.
+. Using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers/{groupid}^] endpoint, create a Kafka Bridge consumer in a new consumer group. In the request body, assign a name (referred to as a consumer ID) to the consumer and define some basic configuration settings.
 +
 [source,curl,subs=attributes+]
 ----
@@ -43,6 +43,10 @@ If the request was successful, the Kafka Bridge returns the consumer ID and base
 ----
 
 . Copy the consumer base URL (`base_uri`) contained in the response for later use.
+
+.What to do next
+
+After creating a Kafka Bridge consumer, xref:proc-bridge-subscribing-consumer-topics-{context}[subscribe the consumer to topics].
 
 .Additional resources
 

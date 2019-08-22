@@ -5,28 +5,34 @@
 [id='proc-bridge-subscribing-consumer-topics-{context}']
 = Subscribing a consumer to topics
 
-Intro
+After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics. Once subscribed, the consumer starts receiving all messages produced to the topic.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* The base URL of a Kafka Bridge consumer. 
 
 .Procedure
 
-. Step
+* Using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint, subscribe the consumer to the topic that you created earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions].
++
+[source,curl,subs=attributes+]
+----
+curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/subscription \
+  -H 'content-type: application/vnd.kafka.v2+json' \
+  -d '{"topics": ["bridge-quickstart-topic"]}'
+----
++
+The `topics` array can contain a single topic (as shown here) or multiple topics. If you want to subscribe the consumer to multiple topics that match a regular expression, you can use the `topic_pattern` string instead of the `topics` array. 
++
+If the request was successful, the Kafka Bridge returns a `204` code only.
 
-. Step
+.What to do next
 
-. Step
-
-. Step
-
-. Step
-
-. Step
+After subscribing a Kafka Bridge consumer to topics, xref:proc-bridge-retrieving-latest-messages-from-consumer-{context}[retrieve messages from the consumer].
 
 .Additional resources
 
-* For more information about, see .
+* link:https://strimzi.io/docs/bridge/latest/#_subscribe[POST /consumers/{groupid}/instances/{name}/subscription] in the API reference documentation.

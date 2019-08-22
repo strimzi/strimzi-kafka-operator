@@ -49,3 +49,7 @@ oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
 ----
 export BRIDGE="$(oc get routes my-bridge -o jsonpath='{.status.ingress[0].host}')"
 ----
+
+.What to do next
+
+After exposing the Kafka Bridge service to your local machine, xref:proc-producing-messages-from-bridge-topics-partitions-{context}[produce messages to topics and partitions].
