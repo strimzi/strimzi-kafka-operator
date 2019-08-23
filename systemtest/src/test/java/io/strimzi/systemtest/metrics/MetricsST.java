@@ -1,3 +1,7 @@
+/*
+ * Copyright 2019, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -10,10 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -166,7 +167,7 @@ public class MetricsST extends AbstractST {
      * @return collected metrics
      */
     private String collectMetrics(String podName) throws InterruptedException, ExecutionException, IOException {
-        ArrayList<String> command= new ArrayList<>();
+        ArrayList<String> command = new ArrayList<>();
         command.add("curl");
         command.add(kubeClient().getPod(podName).getStatus().getPodIP() + ":9404");
         ArrayList<String> executableCommand = new ArrayList<>();
