@@ -1,0 +1,62 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-quickstart.adoc
+
+[id='proc-bridge-seeking-offset-for-partition-{context}']
+= Seeking to offsets for a partition
+
+Next, use the `positions` endpoints to configure the Kafka Bridge consumer to retrieve messages for a partition from a specific offset, and then from the latest offset.
+
+.Prerequisites
+
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* A Kafka Bridge consumer that is subscribed to a topic. 
+
+.Procedure
+
+. Using the link:https://strimzi.io/docs/bridge/latest/#_seek[positions^] endpoint, seek to a specific offset for partition 1 of the `quickstart-bridge-topic` topic.
++
+[source,curl,subs=attributes+]
+----
+curl -X POST \
+  http://<bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions \
+  -H 'content-type: application/vnd.kafka.v2+json' \
+  -d {
+  "offsets" : [ {
+    "topic" : "quickstart-bridge-topic",
+    "partition" : 1,
+    "offset" : 6]
+}'
+----
++
+If the request was successful, the Kafka Bridge returns a `204` code only.
+
+. Restore the default fetch behavior for the Kafka Bridge consumer by seeking to the last offset for the same partition. Use the link:https://strimzi.io/docs/bridge/latest/#_seektoend[positions/end] endpoint.
++
+[source,curl,subs=attributes+]
+----
+curl -X POST \
+  http://<bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions/end \
+  -H 'content-type: application/vnd.kafka.v2+json' \
+  -d {
+  "partitions" : [ {
+    "topic" : "quickstart-bridge-topic",
+    "partition" : 1,
+}'
+----
++
+If the request was successful, the Kafka Bridge returns another `204` code.
+
+NOTE: You can also use the link:https://strimzi.io/docs/bridge/latest/#_seektobeginning[positions/beginning^] endpoint to seek to the first offset for one or more partitions. 
+
+.What to do next
+
+In this quick start, you have used the {ProductName} Kafka Bridge to perform several common operations on a Kafka cluster. You can now use the Kafka Bridge to xref:proc-bridge-deleting-consumer-{context}[delete the Kafka Bridge consumer] that you created earlier. 
+
+.Additional resources
+
+* link:https://strimzi.io/docs/bridge/latest/#_seek[POST /consumers/{groupid}/instances/{name}/positions^] in the API reference documentation.
+
+* link:https://strimzi.io/docs/bridge/latest/#_seektoend[POST /consumers/{groupid}/instances/{name}/positions/end^] in the API reference documentation.
