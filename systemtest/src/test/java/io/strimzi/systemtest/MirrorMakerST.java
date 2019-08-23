@@ -94,9 +94,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, Constants.KAFKA_CLIENTS);
+        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
