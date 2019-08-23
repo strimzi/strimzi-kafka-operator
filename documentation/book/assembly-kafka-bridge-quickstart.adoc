@@ -35,11 +35,11 @@ include::proc-bridge-subscribing-consumer-topics.adoc[leveloffset=+1]
 
 include::proc-bridge-retrieving-latest-messages-from-consumer.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-bridge-committing-consumer-offsets-to-log.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-bridge-seeking-latest-offset-for-partition.adoc[leveloffset=+1]
 
-include::hello-world[leveloffset=+1]
+include::proc-bridge-deleting-consumer.adoc[leveloffset=+1]
 
 include::hello-world[leveloffset=+1]
 
