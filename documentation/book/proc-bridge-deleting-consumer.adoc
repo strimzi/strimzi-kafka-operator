@@ -5,28 +5,26 @@
 [id='proc-bridge-deleting-consumer-{context}']
 = Deleting a consumer
 
-Intro
+Finally, delete the Kafa Bridge consumer that you used throughout this quick start.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* A Kafka Bridge consumer that is subscribed to a topic. 
 
 .Procedure
 
-. Step
-
-. Step
-
-. Step
-
-. Step
-
-. Step
-
-. Step
+* Delete the Kafka Bridge consumer by sending a DELETE request to the link:https://strimzi.io/docs/bridge/latest/#_deleteconsumer[instances/{name}] endpoint.
++
+[source,curl,subs=attributes+]
+----
+curl -X DELETE <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
+----
++
+If the request was successful, the Kafka Bridge returns a `204` code only.
 
 .Additional resources
 
-* For more information about, see .
+* link:https://strimzi.io/docs/bridge/latest/#_deleteconsumer[DELETE /consumers/{groupid}/instances/{name}^] in the API reference documentation.
