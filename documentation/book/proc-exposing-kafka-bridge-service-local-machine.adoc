@@ -5,7 +5,7 @@
 [id='proc-exposing-kafka-bridge-service-local-machine-{context}']
 = Exposing the Kafka Bridge Service to your local machine
 
-Create an OpenShift Route to expose the {ProductName} Kafka Bridge Service to your local machine on port 8080.
+Next, create an OpenShift Route to expose the {ProductName} Kafka Bridge Service to your local machine on port 8080.
 
 .Prerequisites
 
@@ -13,7 +13,7 @@ Create an OpenShift Route to expose the {ProductName} Kafka Bridge Service to yo
 
 .Procedure
 
-. In a text editor, create a YAML definition for an unsecured OpenShift Route:
+. In a text editor, create a YAML definition for an unsecured OpenShift Route.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -32,7 +32,7 @@ spec:
     weight: 100
     / ...
 ----
-In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that you deployed to your Kubernetes cluster.
+In the three `<bridge-name>` fields, enter the name of the Kafka Bridge that you deployed in xref:proc-deploying-kafka-bridge-quickstart-{context}[Deploying the Kafka Bridge to your Kubernetes cluster].
 
 . Save the file to the `examples/kafka-bridge` directory as `bridge-quickstart-route.yaml`.
 
@@ -40,10 +40,10 @@ In the three `<bridge-name>` fields, specify the name of the Kafka Bridge that y
 +
 [source,shell,subs=attributes+]
 ----
-oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
+kubectl apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
 ----
 
-. Retrieve the address of the route; you will use the address as the `<bridge-address>` parameter in the remainder of this quick start.
+. Retrieve the address of the route; you will use the address as the `<bridge-address>` parameter in the remainder of this quick start. **NOT ACCURATE - THE ENV VAR IS NOT USED IN OTHER PROCEDURES**
 +
 [source,shell,subs=attributes+]
 ----
@@ -52,4 +52,4 @@ export BRIDGE="$(oc get routes my-bridge -o jsonpath='{.status.ingress[0].host}'
 
 .What to do next
 
-After exposing the Kafka Bridge service to your local machine, xref:proc-producing-messages-from-bridge-topics-partitions-{context}[produce messages to topics and partitions].
+After exposing the Kafka Bridge Service to your local machine, xref:proc-producing-messages-from-bridge-topics-partitions-{context}[produce messages to topics and partitions].

@@ -5,7 +5,7 @@
 [id='proc-deploying-kafka-bridge-quickstart-{context}']
 = Deploying the Kafka Bridge to your Kubernetes cluster
 
-{ProductName} includes a YAML template that specifies the configuration of the {ProductName} Kafka Bridge. Make some minimal configuration changes to this template and then deploy the Kafka Bridge to your Kubernetes cluster.
+{ProductName} includes a YAML template that specifies the configuration of the {ProductName} Kafka Bridge. Make some minimal changes to this template and then deploy an instance of the Kafka Bridge to your Kubernetes cluster.
 
 .Procedure
 
@@ -46,8 +46,8 @@ kubectl status
 
 .What to do next
 
-After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-kafka-bridge-service-local-machine-{context}[expose the Kafka Bridge service to your local machine].
+After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-kafka-bridge-service-local-machine-{context}[expose the Kafka Bridge Service to your local machine].
 
 .Additional resources
 
-* For more information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-{context}[].
+* For more information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-str[].

@@ -11,9 +11,22 @@
 [id='assembly-kafka-bridge-quickstart-{context}']
 = Kafka Bridge quick start
 
-Follow the procedures in this quick start to get started with the {ProductName} Kafka Bridge. The quick start describes how to deploy the Kafka Bridge to your OpenShift cluster and make it available to your local machine. You can then produce records to topics and perform common consumer operations by making HTTP requests to the REST API. Requests are formatted as curl commands that you can copy and paste to your terminal. You can use an API testing tool if preferred.
+Use this quick start to try out the {ProductName} Kafka Bridge in your local development environment. You will learn how to:
 
-NOTE: To run and manage a Kubernetes cluster on your local machine, use a tool such as Minikube, CodeReady Containers, or MiniShift.
+* Deploy the Kafka Bridge to your OpenShift cluster
+* Expose the Kafka Bridge Service to your local machine
+* Produce messages to topics, including to a specific partition
+* Create a Kafka Bridge consumer for use in this quick start
+* Perform basic consumer operations
+
+HTTP requests are formatted as curl commands that you can copy and paste to your terminal. You can use an API testing tool to call the API if preferred. As described in xref:con-requests-kafka-bridge-{context}[Requests to the {ProductName} Kafka Bridge], all POST requests used in this quick start supply the following Content-Type header:
+
+[source,http,subs=attributes+]
+----
+Content-Type: application/vnd.kafka.v2+json
+----
+
+You must have access to a Kubernetes cluster. To run and manage a Kubernetes cluster locally, use a tool such as Minikube, CodeReady Containers, or MiniShift.
 
 .Prerequisites for the quick start
 
@@ -21,7 +34,7 @@ NOTE: To run and manage a Kubernetes cluster on your local machine, use a tool s
 * {ProductName} is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Cluster Operator `RoleBindings` are installed.
-* The Entity Operator is running and the Topic Operator and User Operator are both enabled.  
+* The Entity Operator is deployed and running.  
 
 include::proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 
@@ -40,7 +53,5 @@ include::proc-bridge-committing-consumer-offsets-to-log.adoc[leveloffset=+1]
 include::proc-bridge-seeking-offsets-for-partition.adoc[leveloffset=+1]
 
 include::proc-bridge-deleting-consumer.adoc[leveloffset=+1]
-
-include::hello-world[leveloffset=+1]
 
 :context: {parent-context-using-the-kafka-bridge}

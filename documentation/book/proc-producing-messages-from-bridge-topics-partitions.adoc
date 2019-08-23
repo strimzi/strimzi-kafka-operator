@@ -5,12 +5,12 @@
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
 = Producing messages to topics and partitions
 
-First, produce messages, in JSON format, to topics in your Kafka cluster by using the `topics` endpoint. This example shows how to specify destination partitions for messages in the request body. You can also use the `/topics/partitions` endpoint to specify a single destination partition for all messages as a path parameter.
+Next, produce messages in JSON format to topics by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. As shown in the following procedure, you can specify destination partitions for messages in the request body. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The Kafka Bridge Service is exposed to your local machine on port 8080.
 * The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
@@ -37,14 +37,14 @@ spec:
 
 . Save the file to the `examples/topic` directory as `bridge-quickstart-topic.yaml`.
 
-. On the command line, create the topic in your Kubernetes cluster:
+. Create the topic in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
-oc apply -f examples/topic/bridge-quickstart-topic.yaml
+kubectl apply -f examples/topic/bridge-quickstart-topic.yaml
 ----
 
-. Using curl, produce three messages to the topic you created:
+. Produce three messages to the topic you created:
 +
 [source,curl,subs=attributes+]
 ----
@@ -68,9 +68,9 @@ curl -X POST \
 }'
 ----
 +
-* Messages containing a key are sent to a partition based on the hash of the key.
-* Messages containing a partition are sent to that partition. 
-* Messages containing a value only are sent to a partition using a round-robin method.
+* `sales-lead-0001` is sent to a partition based on the hash of the key.
+* `sales-lead-0002` is sent directly to partition 2. 
+* `sales-lead-0003` is sent to a partition in the `bridge-quickstart-topic` topic using a round-robin method.
 
 .What to do next
 
@@ -80,4 +80,4 @@ After producing messages to topics and partitions, xref:proc-creating-kafka-brid
 
 * link:https://strimzi.io/docs/bridge/latest/#_send[POST /topics/{topicname}^] in the API reference documentation.
 
-* link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[POST /topics/{topicname}/partitions/{partitionid}] in the API reference documentation.
+* link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[POST /topics/{topicname}/partitions/{partitionid}^] in the API reference documentation.

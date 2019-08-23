@@ -5,7 +5,7 @@
 [id='proc-creating-kafka-bridge-consumer-{context}']
 = Creating a Kafka Bridge consumer
 
-Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations, such as subscribing to topics and retrieving messages.
+Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations in the Kafka cluster, such as subscribing to topics and retrieving messages.
 
 .Prerequisites
 
