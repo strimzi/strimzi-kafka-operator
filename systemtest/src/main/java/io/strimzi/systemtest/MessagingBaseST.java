@@ -10,9 +10,7 @@ import io.strimzi.systemtest.clients.api.ClientArgumentMap;
 import io.strimzi.systemtest.clients.api.VerifiableClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 
-import java.net.MalformedURLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
