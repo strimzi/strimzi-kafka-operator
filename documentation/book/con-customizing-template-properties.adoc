@@ -70,8 +70,8 @@ When defined in an Entity Operator , the template object can have the following 
 
 `deployment`:: Configures the Deployment used by the Entity Operator.
 `pod`:: Configures the Entity Operator `Pod` created by the `Deployment`.
-`topicOperatorContainer`:: Configures the container used to run the topic operator, including custom environment variables. 
-`userOperatorContainer`:: Configures the container used to run the topic operator, including custom environment variables. 
+`topicOperatorContainer`:: Configures the container used to run the Topic Operator, including custom environment variables. 
+`userOperatorContainer`:: Configures the container used to run the User Operator, including custom environment variables. 
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
 
 .Supported resources in Kafka Connect and Kafka Connect with Source2Image support

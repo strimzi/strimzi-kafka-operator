@@ -5,8 +5,8 @@
 [id='con-customizing-containers-{context}']
 = Customizing containers with environment variables
 
-You can set custom environment variables for the various containers by using the relevant `template` container property. 
-The table below lists the various containers belonging to the different elements of {ProductName} and the relevant configuration path (under the top level `spec` for the custom resource) for each.
+You can set custom environment variables for a container by using the relevant `template` container property. 
+The following table lists the {ProductName} containers and the relevant template configuration property (defined under `spec`) for each custom resource.
 
 .Table Container environment variable properties
 |===
@@ -53,7 +53,7 @@ The table below lists the various containers belonging to the different elements
 |`template.bridgeContainer.env`
 |===
 
-The environment variables are defined under the `env` field as a list of objects with `name` and `value` fields. 
+The environment variables are defined under the `env` property as a list of objects with `name` and `value` fields. 
 The following example shows two custom environment variables set for the Kafka broker containers:
 
 [source,yaml,subs=attributes+]
