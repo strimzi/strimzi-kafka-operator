@@ -3,30 +3,36 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-bridge-committing-consumer-offsets-to-log-{context}']
-= Commiting consumer offsets to the log
+= Commiting offsets to the log
 
-Intro
+Next, manually commit  offsets to the log for all messages received by the Kafka Bridge consumer. This is required because the Kafka Bridge consumer that you created earlier, in xref:proc-creating-kafka-bridge-consumer-{context}[Creating a Kafka Bridge consumer], was configured with the `enable.auto.commit` setting as `false`.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* The Kafka Bridge is deployed to your Kubernetes cluster.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* A Kafka Bridge consumer that is subscribed to a topic. 
 
 .Procedure
 
-. Step
+* Using the link:https://strimzi.io/docs/bridge/latest/#_commit[offsets^] endpoint, commit consumer offsets to the log for the `bridge-quickstart-consumer`. 
++
+[source,curl,subs=attributes+]
+----
+curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/offsets \
+  -H 'content-type: application/vnd.kafka.v2+json' \
+  -d '{}'
+----
++
+Here the request body contains an empty object, so offsets are committed for all the records received by the consumer. Alternatively, you can use the `offsets` array in the request body to specify the topics and partitions for which you want to commit offsets.
++
+If the request was successful, the Kafka Bridge returns a `204` code only.
 
-. Step
+.What to do next
 
-. Step
-
-. Step
-
-. Step
-
-. Step
+After committing offsets to the log, try out the endpoints for xref:proc-bridge-seeking-offset-for-partition-{context}[seeking to offsets].
 
 .Additional resources
 
-* For more information about, see .
+* link:https://strimzi.io/docs/bridge/latest/#_commit[POST /consumers/{groupid}/instances/{name}/offsets] in the API reference documentation.

@@ -2,10 +2,11 @@
 //
 // assembly-kafka-bridge-quickstart.adoc
 
-[id='proc-bridge-seeking-latest-offset-for-partition-{context}']
-= Seeking to the latest offset for a partition
+[id='proc-bridge-seeking-offset-for-partition-{context}']
+= Seeking to offsets for a partition
 
-Intro
+Seeking to a specific offset for a partition
+Seeking to the latest offset for a partition
 
 .Prerequisites
 

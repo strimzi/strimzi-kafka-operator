@@ -16,7 +16,7 @@ Next, retrieve the latest messages from the Kafka Bridge consumer by using the `
 
 .Procedure
 
-* Retrieve the records that you sent in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions] from the Kafka Bridge consumer. Use the link:https://strimzi.io/docs/bridge/latest/#_poll[records] endpoint.
+* Retrieve the records that you sent earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions], by requesting data from the `bridge-quickstart-consumer`. Send a GET request to the link:https://strimzi.io/docs/bridge/latest/#_poll[records] endpoint.
 +
 [source,curl,subs=attributes+]
 ----
@@ -24,14 +24,14 @@ curl -X GET <bridge-address>/consumers/bridge-quickstart-consumer-group/instance
   -H 'accept: application/vnd.kafka.json.v2+json'
 ----
 +
-If the request was successful, the Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body alongside a `200` code.
+If the request was successful, the Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body, along with a `200` code. Messages are retrieved from the latest offset by default.
 +
 [source,json,subs=attributes+]
 ----
 INSERT JSON HERE
 ----
 +
-NOTE: If the response body is empty, produce more records to the consumer, and then try retrieving messages again. 
+NOTE: If the response body is empty, produce more records to the consumer by using the `topics` endpoint, and then try retrieving messages again. 
 
 .What to do next
 

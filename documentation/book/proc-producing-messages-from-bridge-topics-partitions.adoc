@@ -5,7 +5,7 @@
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
 = Producing messages to topics and partitions
 
-First, produce messages, in JSON format, to topics in your Kafka cluster by using the `/topics` endpoint. This example shows how to specify destination partitions for messages in the request body. You can also use the `/topics/partitions` endpoint to specify a single destination partition for all messages as a path parameter.
+First, produce messages, in JSON format, to topics in your Kafka cluster by using the `topics` endpoint. This example shows how to specify destination partitions for messages in the request body. You can also use the `/topics/partitions` endpoint to specify a single destination partition for all messages as a path parameter.
 
 .Prerequisites
 
