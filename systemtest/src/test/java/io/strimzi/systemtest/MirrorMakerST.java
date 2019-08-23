@@ -94,9 +94,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, kafkaClientsPodName);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, kafkaClientsPodName);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -185,11 +187,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        final String defaultKafkaClientPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, true, topicSourceName, userSource, defaultKafkaClientPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicSourceName, userSource, defaultKafkaClientPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicSourceName, userTarget, defaultKafkaClientPodName);
+        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, true, topicSourceName, userSource, kafkaClientsPodName);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicSourceName, userSource, kafkaClientsPodName);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicSourceName, userTarget, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -288,9 +290,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -325,17 +329,19 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicName, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        int sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, kafkaClientsPodName);
+        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, kafkaClientsPodName);
+        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicName, null, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
 
-        sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+        sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
+        receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
 
-        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, Constants.KAFKA_CLIENTS));
+        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName));
         assertSentAndReceivedMessages(sent, receivedSource);
     }
 

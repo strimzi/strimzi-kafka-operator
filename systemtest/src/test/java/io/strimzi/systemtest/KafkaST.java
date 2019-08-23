@@ -1640,6 +1640,7 @@ class KafkaST extends MessagingBaseST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()

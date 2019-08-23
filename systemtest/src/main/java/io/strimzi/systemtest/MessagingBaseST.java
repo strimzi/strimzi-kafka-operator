@@ -29,12 +29,6 @@ public class MessagingBaseST extends AbstractST {
     private int sent = 0;
     private int received = 0;
 
-    @BeforeAll
-    public void setUpClientBase() throws MalformedURLException {
-        // TODO: what about this K8s domain ??
-//        Environment.KUBERNETES_DOMAIN.equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(CONFIG.getMasterUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : Environment.KUBERNETES_DOMAIN;
-    }
-
     /**
      * Simple availability check for kafka cluster
      * @param clusterName cluster name
@@ -118,7 +112,6 @@ public class MessagingBaseST extends AbstractST {
         }
 
         producer.setArguments(producerArguments);
-
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
         boolean hasPassed = producer.run();
