@@ -92,6 +92,8 @@ public class Resources extends AbstractResources {
     private static final String KAFKA_VERSION = Environment.ST_KAFKA_VERSION;
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String PATH_TO_KAFKA_METRICS_CONFIG = "../metrics/examples/kafka/kafka-metrics.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../metrics/examples/kafka/kafka-connect-metrics.yaml";
 
     private static final String DEPLOYMENT = "Deployment";
     private static final String SERVICE = "Service";
@@ -348,6 +350,26 @@ public class Resources extends AbstractResources {
                     .endSpec();
     }
 
+    public DoneableKafka kafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        return kafka(defaultKafkaWithMetrics(name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    private KafkaBuilder defaultKafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
+
+        return new KafkaBuilder(kafka)
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .editSpec()
+                .editKafka()
+                    .withVersion(Environment.ST_KAFKA_VERSION)
+                    .withReplicas(kafkaReplicas)
+                .endKafka()
+                .editZookeeper()
+                    .withReplicas(zookeeperReplicas)
+                .endZookeeper()
+            .endSpec();
+    }
+
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
             TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
@@ -384,6 +406,24 @@ public class Resources extends AbstractResources {
                         .addToRequests("memory", new Quantity("1G")).build())
                 .withMetrics(new HashMap<>())
             .endSpec();
+    }
+
+    public DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+        return kafkaConnect(defaultKafkaConnectWithMetrics(name, kafkaConnectReplicas).build());
+    }
+
+    private KafkaConnectBuilder defaultKafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+
+        return new KafkaConnectBuilder(kafkaConnect)
+                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+                .editSpec()
+                    .withVersion(KAFKA_VERSION)
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                    .withReplicas(kafkaConnectReplicas)
+                    .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("memory", new Quantity("1G")).build())
+                .endSpec();
     }
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
@@ -694,6 +734,13 @@ public class Resources extends AbstractResources {
             LOGGER.info("Created KafkaUser {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
+    }
+
+    private Kafka getKafkaFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, Kafka.class);
+    }
+    private KafkaConnect getKafkaConnectFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, KafkaConnect.class);
     }
 
     private Deployment getDeploymentFromYaml(String yamlPath) {
