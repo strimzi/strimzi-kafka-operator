@@ -13,12 +13,14 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -128,7 +130,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
-    @Disabled("Currently, readiness check for MM is not working correctly so MM status is not set properly when MM config is corrupted by wrong bootstrap server")
+//    @Disabled("Currently, readiness check for MM is not working correctly so MM status is not set properly when MM config is corrupted by wrong bootstrap server")
     void testKafkaMirrorMakerStatusWrongBootstrap() {
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
         waitForKafkaMirrorMakerStatus("Ready");
@@ -198,6 +200,19 @@ class CustomResourceStatusST extends AbstractST {
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
+    }
+
+    @Test
+    void testKafkaTopicStatus() {
+        waitForKafkaTopic("Ready");
+        assertKafkaTopicStatus(1);
+    }
+
+    @Test
+    void testKafkaTopicStatusNotReady() throws Exception {
+        testMethodResources().topic(CLUSTER_NAME, "my-topic", 1, 10).done();
+        waitForKafkaTopic("NotReady");
+        assertKafkaTopicStatus(1);
     }
 
     @BeforeAll
@@ -307,6 +322,16 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("Kafka ConnectS2I cluster is in desired state: {}", status);
     }
 
+    void waitForKafkaTopic(String status) {
+        LOGGER.info("Wait until Kafka Topic is in desired state: {}", status);
+        TestUtils.waitFor("Kafka Topic status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = testClassResources().kafkaTopic().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0);
+            logCurrentStatus(kafkaCondition, KafkaTopic.RESOURCE_KIND);
+            return kafkaCondition.getType().equals(status);
+        });
+        LOGGER.info("Kafka Topic is in desired state: {}", status);
+    }
+
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
         KafkaStatus kafkaStatus = testClassResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat("Kafka cluster status has incorrect Observed Generation", kafkaStatus.getObservedGeneration(), is(expectedObservedGeneration));
@@ -355,5 +380,10 @@ class CustomResourceStatusST extends AbstractST {
         assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
+    }
+
+    void assertKafkaTopicStatus(long expectedObservedGeneration) {
+        KafkaTopicStatus kafkaTopicStatus = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus();
+        assertThat("Kafka Topic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 }
