@@ -3,7 +3,7 @@
 // assembly-deployment-configuration-kafka.adoc
 
 [id='ref-loggers-Kafka-{context}']
-= Kafka loggers
+= Kafka and Zookeeper loggers
 
 Kafka has its own configurable loggers:
 
@@ -21,5 +21,6 @@ Kafka has its own configurable loggers:
 * `log4j.logger.state.change.logger`
 * `log4j.logger.kafka.authorizer.logger`
 
-* Zookeeper
-** `zookeeper.root.logger`
+Zookeeper has its own logger as well:
+
+* `zookeeper.root.logger`
