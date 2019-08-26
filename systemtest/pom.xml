@@ -226,5 +226,12 @@
                 <groups>scalability &amp; !flaky</groups>
             </properties>
         </profile>
+        <profile>
+            <id>specific</id>
+            <properties>
+                <skippTests>false</skippTests>
+                <groups>specific</groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

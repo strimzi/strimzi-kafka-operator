@@ -170,7 +170,7 @@ class KafkaST extends MessagingBaseST {
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
-        List<Event> events = getEvents(uid);
+        List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE, firstTopicName);
         //Test that CO doesn't have any exceptions in log
@@ -189,10 +189,10 @@ class KafkaST extends MessagingBaseST {
         assertEquals(initialReplicas, finalReplicas);
 
         //Test that the new broker has event 'Killing'
-        assertThat(getEvents(uid), hasAllOfReasons(Killing));
+        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         uid = kubeClient().getStatefulSetUid(kafkaClusterName(CLUSTER_NAME));
-        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(getOperationID());
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
@@ -268,10 +268,10 @@ class KafkaST extends MessagingBaseST {
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents(uid), hasAllOfReasons(Killing));
+        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         uid = kubeClient().getStatefulSetUid(zookeeperClusterName(CLUSTER_NAME));
-        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(getOperationID());
         //Test that CO doesn't have any exceptions in log
@@ -1174,39 +1174,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    void testRackAware() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewRack()
-                        .withTopologyKey("rack-key")
-                    .endRack()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                            .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                .endKafka()
-            .endSpec().done();
-
-        testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
-
-        String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        StUtils.waitForPod(kafkaPodName);
-
-        String rackId = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
-        assertEquals("zone", rackId.trim());
-
-        String brokerRack = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
-        assertTrue(brokerRack.contains("broker.rack=zone"));
-
-        String uid = kubeClient().getPodUid(kafkaPodName);
-        List<Event> events = getEvents(uid);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        waitForClusterAvailability(NAMESPACE);
-    }
-
-    @Test
     void testManualTriggeringRollingUpdate() {
         String coPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
@@ -1411,7 +1378,7 @@ class KafkaST extends MessagingBaseST {
             //Test that second pod does not have errors or failures in events
             LOGGER.info("Checking logs fro pod {}", name);
             String uid = kubeClient().getPodUid(name);
-            List<Event> eventsForSecondPod = getEvents(uid);
+            List<Event> eventsForSecondPod = kubeClient().listEvents(uid);
             assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         }
     }

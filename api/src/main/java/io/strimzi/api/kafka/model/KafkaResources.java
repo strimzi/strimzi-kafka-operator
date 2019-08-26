@@ -159,6 +159,16 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the {@code Service} for a specific Kafka {@code Pod} of a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Kafka pod corresponding to the service
+     * @return The name of the corresponding Kafka {@code Service}.
+     */
+    public static String brokerSpecificService(String clusterName, int podNum) {
+        return clusterName + "-kafka-" + podNum;
+    }
+
+    /**
      * Returns the name of the Kafka metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Kafka metrics and log {@code ConfigMap}.

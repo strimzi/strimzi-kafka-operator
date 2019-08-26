@@ -91,4 +91,8 @@ public interface Constants {
      * Tag for scalability tests
      */
     String SCALABILITY = "scalability";
+    /**
+     * Tag for tests, which are working only on specific environment and we usually don't want to execute them on all environments.
+     */
+    String SPECIFIC = "specific";
 }
