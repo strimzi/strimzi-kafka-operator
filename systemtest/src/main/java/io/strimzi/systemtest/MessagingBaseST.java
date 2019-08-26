@@ -129,7 +129,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user, String podName) throws Exception {
+    int receiveMessages(int messageCount, String clusterName, boolean tlsListener, String topicName, KafkaUser user, String podName) {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);

@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
@@ -203,9 +203,9 @@ public class MirrorMakerST extends MessagingBaseST {
     @Test
     void testMirrorMakerTlsScramSha() throws Exception {
         setOperationID(startTimeMeasuring(Operation.MM_DEPLOYMENT));
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterSourceName, 1, 1)
@@ -341,8 +341,8 @@ public class MirrorMakerST extends MessagingBaseST {
         sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
         receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
 
-        assertThrows(TimeoutException.class, () -> receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName));
         assertSentAndReceivedMessages(sent, receivedSource);
+        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist +" is not in whitelist", receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName) == 0);
     }
 
     @BeforeEach
