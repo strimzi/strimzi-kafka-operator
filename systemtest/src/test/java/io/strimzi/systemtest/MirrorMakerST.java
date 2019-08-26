@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.TimeoutException;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -342,7 +341,7 @@ public class MirrorMakerST extends MessagingBaseST {
         receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
-        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist +" is not in whitelist", receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName) == 0);
+        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist + " is not in whitelist", receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName) == 0);
     }
 
     @BeforeEach
