@@ -8,7 +8,6 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -300,12 +299,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      */
     static String globalVariableJsonPathBuilder(String envVar) {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
-    }
-
-    List<Event> getEvents(String resourceUid) {
-        return kubeClient().listEvents().stream()
-                .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
-                .collect(Collectors.toList());
     }
 
     public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {

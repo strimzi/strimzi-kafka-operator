@@ -168,7 +168,7 @@ class ConnectST extends AbstractST {
         for (String pod : connectPods) {
             StUtils.waitForPod(pod);
             String uid = kubeClient().getPodUid(pod);
-            List<Event> events = getEvents(uid);
+            List<Event> events = kubeClient().listEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
@@ -182,7 +182,7 @@ class ConnectST extends AbstractST {
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
             String uid = kubeClient().getPodUid(pod);
-            List<Event> events = getEvents(uid);
+            List<Event> events = kubeClient().listEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }

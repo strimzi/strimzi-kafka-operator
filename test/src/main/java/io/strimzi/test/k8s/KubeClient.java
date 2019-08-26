@@ -421,6 +421,12 @@ public class KubeClient {
                 .collect(Collectors.toList());
     }
 
+    public List<Event> listEvents(String resourceUid) {
+        return listEvents().stream()
+                .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
+                .collect(Collectors.toList());
+    }
+
     public RoleBinding createOrReplaceRoleBinding(RoleBinding roleBinding) {
         return client.rbac().roleBindings().inNamespace(getNamespace()).createOrReplace(roleBinding);
     }
