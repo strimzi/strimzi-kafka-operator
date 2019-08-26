@@ -39,6 +39,9 @@ COPY kafka-thirdparty-libs/target/dependency/ ${KAFKA_HOME}/libs/
 
 RUN yum -y install stunnel net-tools && yum clean all -y
 
+# for nslookup
+RUN yum -y install bind-utils && yum clean all -y
+
 # set Stunnel home folder
 ENV STUNNEL_HOME=/opt/stunnel
 
