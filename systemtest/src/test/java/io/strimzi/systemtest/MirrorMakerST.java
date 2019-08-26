@@ -30,6 +30,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
@@ -341,7 +342,8 @@ public class MirrorMakerST extends MessagingBaseST {
         receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);
-        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist + " is not in whitelist", receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName) == 0);
+        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist + " is not in whitelist",
+                receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName), is(0));
     }
 
     @BeforeEach

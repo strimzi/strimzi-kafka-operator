@@ -113,7 +113,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Sending {} messages to {}#{}", messageCount, bootstrapServer, topicName);
 
         boolean hasPassed = producer.run();
-        LOGGER.info("Producer -----> {}", hasPassed);
+        LOGGER.info("Producer finished correctly: {}", hasPassed);
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 
@@ -154,7 +154,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, bootstrapServer, topicName);
 
         boolean hasPassed = consumer.run();
-        LOGGER.info("Consumer -----> {}", hasPassed);
+        LOGGER.info("Consumer finished correctly: {}", hasPassed);
 
         received = getReceivedMessagesCount(consumer.getMessages().toString());
 
