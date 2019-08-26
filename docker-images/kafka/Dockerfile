@@ -37,10 +37,7 @@ COPY ./tmp/mirror-maker-agent.jar ${KAFKA_HOME}/libs/
 
 COPY kafka-thirdparty-libs/target/dependency/ ${KAFKA_HOME}/libs/
 
-RUN yum -y install stunnel net-tools && yum clean all -y
-
-# for nslookup
-RUN yum -y install bind-utils && yum clean all -y
+RUN yum -y install stunnel net-tools bind-utils && yum clean all -y
 
 # set Stunnel home folder
 ENV STUNNEL_HOME=/opt/stunnel
