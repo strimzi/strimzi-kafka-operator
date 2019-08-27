@@ -718,6 +718,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|initContainer             1.2+<.<|Template for the Kafka init container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.

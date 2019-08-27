@@ -1085,6 +1085,18 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    initContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                     kafkaContainer:
                       type: object
                       properties:

@@ -2394,9 +2394,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        List<EnvVar> kafkaEnvVars = kc.getTlsSidevarEnvVars();
+        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getTlsSidevarEnvVars();
 
         assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -2431,13 +2429,104 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        List<EnvVar> kafkaEnvVars = kc.getTlsSidevarEnvVars();
+        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getTlsSidevarEnvVars();
 
         assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+
+    }
+
+    @Test
+    public void testInitContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate initContainer = new ContainerTemplate();
+        initContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewTemplate()
+                .withInitContainer(initContainer)
+                .endTemplate()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getInitContainerEnvVars();
+
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+
+    }
+
+    @Test
+    public void testInitContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS;
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate initContainer = new ContainerTemplate();
+        initContainer.setEnv(testEnvs);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewTemplate()
+                .withInitContainer(initContainer)
+                .endTemplate()
+                .withNewListeners()
+                .withNewKafkaListenerExternalNodePort()
+                .withNewKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getInitContainerEnvVars();
+
+        System.err.println(kafkaEnvVars);
+
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
     }
 }

@@ -20,6 +20,10 @@ The following table lists the {ProductName} containers and the relevant template
 |Kafka Broker TLS Sidecar
 |`kafka.template.tlsSidecarContainer.env`
 
+|Kafka 
+|Kafka Initialization
+|`kafka.template.initContainer.env`
+
 |Kafka
 |Zookeeper Node
 |`zookeeper.template.zookeeperContainer.env`

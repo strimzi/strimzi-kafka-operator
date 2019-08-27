@@ -102,10 +102,10 @@ public class KafkaCluster extends AbstractModel {
     protected static final String INIT_NAME = "kafka-init";
     protected static final String INIT_VOLUME_NAME = "rack-volume";
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
-    private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
-    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
+    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
     /**
      * {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled
      */
@@ -203,6 +203,7 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templatePerPodIngressAnnotations;
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
+    protected List<ContainerEnvVar> templateInitContainerEnvVars;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -488,6 +489,10 @@ public class KafkaCluster extends AbstractModel {
 
             if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
                 result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
+            }
+
+            if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
+                result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -1209,6 +1214,26 @@ public class KafkaCluster extends AbstractModel {
         return builder.build();
     }
 
+    protected List<EnvVar> getInitContainerEnvVars() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+
+        if (rack != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+        }
+
+        if (isExposedWithNodePort()) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
+        }
+
+        if (templateInitContainerEnvVars != null) {
+            addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
+        }
+
+        return varList;
+    }
+
     @Override
     protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> initContainers = new ArrayList<>();
@@ -1221,24 +1246,12 @@ public class KafkaCluster extends AbstractModel {
                     .addToLimits("memory", new Quantity("256Mi"))
                     .build();
 
-            List<EnvVar> varList = new ArrayList<>();
-            varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
-
-            if (rack != null) {
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
-            }
-
-            if (isExposedWithNodePort()) {
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
-            }
-
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
-                    .withEnv(varList)
+                    .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .build();

@@ -51,6 +51,7 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka broker `StatefulSet`.
 `kafkaContainer`:: Configures the container used to run the Kafka broker, including custom environment variables. 
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
+`initContainer`:: Configures the container used to initialize the brokers.
 
 .Supported resources in Zookeeper cluster
 
