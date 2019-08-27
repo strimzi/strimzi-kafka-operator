@@ -5,7 +5,7 @@
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
 = Producing messages to topics and partitions
 
-Next, produce messages in JSON format to topics by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. As shown in the following procedure, you can specify destination partitions for messages in the request body. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
+Next, produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. As described in the following procedure, you can specify destination partitions for messages in the request body. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
 .Prerequisites
 

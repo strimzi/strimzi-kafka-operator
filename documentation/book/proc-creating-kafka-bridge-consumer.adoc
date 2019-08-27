@@ -5,17 +5,17 @@
 [id='proc-creating-kafka-bridge-consumer-{context}']
 = Creating a Kafka Bridge consumer
 
-Next, create a Kafka Bridge consumer to enable HTTP clients to perform consumer operations in the Kafka cluster, such as subscribing to topics and retrieving messages.
+Next, create a Kafka Bridge consumer by using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers/{groupid}^] endpoint. This consumer enables you to perform consumer operations in the Kafka cluster, such as subscribing to topics and retrieving messages from topics.
 
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
+* The Kafka Bridge Service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
 
-. Using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers/{groupid}^] endpoint, create a Kafka Bridge consumer in a new consumer group. In the request body, assign a name (referred to as a consumer ID) to the consumer and define some basic configuration settings.
+. Create a Kafka Bridge consumer in a new consumer group named `bridge-quickstart-consumer-group`: 
 +
 [source,curl,subs=attributes+]
 ----
@@ -30,9 +30,11 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
   }'
 ----
 +
-NOTE: The `enable.auto.commit` setting is `false`, so consumer offsets are not committed to the log automatically. You will commit the offsets for this consumer in a later procedure.
+In the request body, the consumer is named `bridge-quickstart-consumer` and some basic configuration settings are defined.
 +
-If the request was successful, the Kafka Bridge returns the consumer ID and base URL in the response body, along with a `200` code.
+NOTE: The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. You will commit the offsets for this consumer in a later procedure.
++
+If the request was successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code:
 +
 [source,json,subs=attributes+]
 ----
@@ -46,7 +48,7 @@ If the request was successful, the Kafka Bridge returns the consumer ID and base
 
 .What to do next
 
-After creating a Kafka Bridge consumer, xref:proc-bridge-subscribing-consumer-topics-{context}[subscribe the consumer to topics].
+Now that you have created a Kafka Bridge consumer, you can  xref:proc-bridge-subscribing-consumer-topics-{context}[subscribe it to topics].
 
 .Additional resources
 
