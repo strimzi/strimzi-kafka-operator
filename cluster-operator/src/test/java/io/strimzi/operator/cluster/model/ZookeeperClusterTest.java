@@ -964,19 +964,13 @@ public class ZookeeperClusterTest {
 
         List<EnvVar> zkEnvVars = zc.getEnvVars();
 
-        int keyCount = 0;
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                zkEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
-        for (EnvVar envVar : zkEnvVars) {
-
-            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
-                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
-                    keyCount++;
-                }
-            }
-
-        }
-
-        assertEquals("Failed to set all Zookeeper container template environment variables", testEnvs.size(), keyCount);
     }
 
     @Test
@@ -988,28 +982,14 @@ public class ZookeeperClusterTest {
         envVar1.setValue(testEnvOneValue);
 
         ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
         String testEnvTwoValue = "test.env.two";
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);
 
-        ContainerEnvVar envVar3 = new ContainerEnvVar();
-        String testEnvThreeKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
-        String testEnvThreeValue = "test.env.three";
-        envVar3.setName(testEnvThreeKey);
-        envVar3.setValue(testEnvThreeValue);
-
-        ContainerEnvVar envVar4 = new ContainerEnvVar();
-        String testEnvFourKey = "TEST_ENV_4";
-        String testEnvFourValue = "test.env.four";
-        envVar4.setName(testEnvFourKey);
-        envVar4.setValue(testEnvFourValue);
-
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
         testEnvs.add(envVar2);
-        testEnvs.add(envVar3);
-        testEnvs.add(envVar4);
         ContainerTemplate zookeeperContainer = new ContainerTemplate();
         zookeeperContainer.setEnv(testEnvs);
 
@@ -1028,19 +1008,13 @@ public class ZookeeperClusterTest {
 
         List<EnvVar> zkEnvVars = zc.getEnvVars();
 
-        int keyCount = 0;
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                zkEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
-        for (EnvVar envVar : zkEnvVars) {
-            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
-                keyCount++;
-            } else if (envVar.getName().equals(testEnvOneKey)) {
-                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
-            } else if (envVar.getName().equals(testEnvThreeKey)) {
-                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
-            }
-        }
-
-        assertEquals("Failed to set Zookeeper container template environment variables", 2, keyCount);
     }
 
     @Test
@@ -1079,45 +1053,27 @@ public class ZookeeperClusterTest {
 
         List<EnvVar> zkEnvVars = zc.getTlsSidevarEnvVars();
 
-        int keyCount = 0;
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                zkEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
-        for (EnvVar envVar : zkEnvVars) {
-
-            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
-                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
-                    keyCount++;
-                }
-            }
-
-        }
-
-        assertEquals("Failed to set all TLS sidecar container template environment variables", testEnvs.size(), keyCount);
     }
 
     @Test
     public void testTlsSidecarContainerEnvVarsConflict() {
+
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT;
         String testEnvOneValue = "test.env.one";
         envVar1.setName(testEnvOneKey);
         envVar1.setValue(testEnvOneValue);
 
-        ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = "TEST_ENV_2";
-        String testEnvTwoValue = "test.env.two";
-        envVar2.setName(testEnvTwoKey);
-        envVar2.setValue(testEnvTwoValue);
-
-        ContainerEnvVar envVar3 = new ContainerEnvVar();
-        String testEnvThreeKey = "TEST_ENV_3";
-        String testEnvThreeValue = "test.env.three";
-        envVar3.setName(testEnvThreeKey);
-        envVar3.setValue(testEnvThreeValue);
 
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
-        testEnvs.add(envVar2);
-        testEnvs.add(envVar3);
         ContainerTemplate tlsContainer = new ContainerTemplate();
         tlsContainer.setEnv(testEnvs);
 
@@ -1136,16 +1092,9 @@ public class ZookeeperClusterTest {
 
         List<EnvVar> zkEnvVars = zc.getTlsSidevarEnvVars();
 
-        int keyCount = 0;
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
 
-        for (EnvVar envVar : zkEnvVars) {
-            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvThreeKey)) {
-                keyCount++;
-            } else if (envVar.getName().equals(testEnvOneKey)) {
-                assertFalse(envVar.getValue().equals(testEnvOneValue));
-            }
-        }
-
-        assertEquals("Failed to ignore TLS sidecar container template environment variables which conflict with those already in use", 2, keyCount);
     }
 }

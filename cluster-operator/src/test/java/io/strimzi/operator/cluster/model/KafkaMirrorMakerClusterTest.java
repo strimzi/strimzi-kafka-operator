@@ -838,23 +838,14 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        List<EnvVar> kafkaEnvVars = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS).getEnvVars();
 
-        List<EnvVar> kafkaEnvVars = kmm.getEnvVars();
-
-        int keyCount = 0;
-
-        for (EnvVar envVar : kafkaEnvVars) {
-
-            if (envVar.getName().equals(testEnvOneKey) || envVar.getName().equals(testEnvTwoKey)) {
-                if (envVar.getValue().equals(testEnvOneValue) || envVar.getValue().equals(testEnvTwoValue)) {
-                    keyCount++;
-                }
-            }
-
-        }
-
-        assertEquals("Failed to set all Kafka Mirror Maker container template environment variables", testEnvs.size(), keyCount);
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
     }
 
     @Test
@@ -866,28 +857,14 @@ public class KafkaMirrorMakerClusterTest {
         envVar1.setValue(testEnvOneValue);
 
         ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST;
         String testEnvTwoValue = "test.env.two";
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);
 
-        ContainerEnvVar envVar3 = new ContainerEnvVar();
-        String testEnvThreeKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST;
-        String testEnvThreeValue = "test.env.three";
-        envVar3.setName(testEnvThreeKey);
-        envVar3.setValue(testEnvThreeValue);
-
-        ContainerEnvVar envVar4 = new ContainerEnvVar();
-        String testEnvFourKey = "TEST_ENV_4";
-        String testEnvFourValue = "test.env.four";
-        envVar4.setName(testEnvFourKey);
-        envVar4.setValue(testEnvFourValue);
-
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
         testEnvs.add(envVar2);
-        testEnvs.add(envVar3);
-        testEnvs.add(envVar4);
         ContainerTemplate kafkaMMContainer = new ContainerTemplate();
         kafkaMMContainer.setEnv(testEnvs);
 
@@ -899,22 +876,13 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        List<EnvVar> kafkaEnvVars = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS).getEnvVars();
 
-        List<EnvVar> kafkaEnvVars = kmm.getEnvVars();
-
-        int keyCount = 0;
-
-        for (EnvVar envVar : kafkaEnvVars) {
-            if (envVar.getName().equals(testEnvTwoKey) || envVar.getName().equals(testEnvFourKey)) {
-                keyCount++;
-            } else if (envVar.getName().equals(testEnvOneKey)) {
-                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvOneValue));
-            } else if (envVar.getName().equals(testEnvThreeKey)) {
-                assertFalse("Failed to prevent overwriting existing environment variables", envVar.getValue().equals(testEnvThreeValue));
-            }
-        }
-
-        assertEquals("Failed to set Kafka Mirror Maker container template environment variables", 2, keyCount);
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
     }
 }

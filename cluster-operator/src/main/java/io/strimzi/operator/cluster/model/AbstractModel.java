@@ -1189,7 +1189,6 @@ public abstract class AbstractModel {
             .build();
     }
 
-
     /**
      * Adds the supplied list of container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
      * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar}, checking first if the
