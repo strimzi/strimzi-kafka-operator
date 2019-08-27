@@ -6,10 +6,10 @@ metadata:
     openshift.io/display-name: "Apache Kafka (Persistent storage)"
     description: >-
       This template installs Apache Zookeeper and Apache Kafka clusters. For more information
-      about using this template see http://strimzi.io
+      about using this template see https://strimzi.io
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
-    template.openshift.io/documentation-url: "http://strimzi.io"
+    template.openshift.io/documentation-url: "https://strimzi.io"
 message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}-kafka-bootstrap:9092' as bootstrap server in your application."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
