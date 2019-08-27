@@ -1,4 +1,4 @@
-[![Strimzi](./documentation/logo/strimzi.png)](http://strimzi.io/)
+[![Strimzi](./documentation/logo/strimzi.png)](https://strimzi.io/)
 
 # Run Apache Kafka on Kubernetes and OpenShift
 
@@ -13,7 +13,7 @@ See our [website][strimzi] for more details about the project.
 
 ## Quickstart
 
-To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](http://strimzi.io/quickstarts/okd/) and [Minikube](http://strimzi.io/quickstarts/minikube/). 
+To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](https://strimzi.io/quickstarts/okd/) and [Minikube](https://strimzi.io/quickstarts/minikube/). 
 
 ## Documentation
 
@@ -41,7 +41,7 @@ label.
 The [Hacking guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) describes how to build Strimzi and how to 
 test your changes before submitting a patch or opening a PR.
 
-The [Documentation Contributor Guide](http://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
+The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
 
 If you want to get in touch with us first before contributing, you can use:
 
@@ -51,7 +51,7 @@ If you want to get in touch with us first before contributing, you can use:
 ## License
 Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
-[strimzi]: http://strimzi.io "Strimzi"
+[strimzi]: https://strimzi.io "Strimzi"
 [kafka]: https://kafka.apache.org "Apache Kafka"
 [k8s]: https://kubernetes.io/ "Kubernetes"
 [os]: https://www.openshift.com/ "OpenShift"

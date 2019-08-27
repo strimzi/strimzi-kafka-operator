@@ -17,7 +17,7 @@
     <name>Strimzi - Apache Kafka on Kubernetes and OpenShift</name>
     <description>Strimzi uses the Kubernetes operator pattern to provide a way to run an Apache Kafka cluster on
         Kubernetes or OpenShift in various deployment configurations. </description>
-    <url>http://strimzi.io/</url>
+    <url>https://strimzi.io/</url>
 
     <scm>
         <connection>scm:git:git://github.com/strimzi/strimzi-kafka-operator.git</connection>

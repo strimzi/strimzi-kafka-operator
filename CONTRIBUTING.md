@@ -27,6 +27,6 @@ If you want to get in touch with us first before contributing, you can use:
 [hacking-guide]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md
 [dev-quick-start]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md
 [release-list]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/RELEASE.md
-[doc-contrib-guide]: http://strimzi.io/contributing/guide/
+[doc-contrib-guide]: https://strimzi.io/contributing/guide/
 [mailinglist]: https://www.redhat.com/mailman/listinfo/strimzi 
 [slack]: https://join.slack.com/t/strimzi/shared_invite/enQtMzU2Mjk3NTgxMzE5LTYyMTUwMGNlMDQwMzBhOGI4YmY4MjhiMDgyNjA5OTk2MTFiYjc4M2Q3NGU1YTFjOWRiMzM2NGMwNDUwMjBlNDY

@@ -20,7 +20,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 Add the Strimzi Helm Chart repository:
 
 ```bash
-$ helm repo add strimzi http://strimzi.io/charts/
+$ helm repo add strimzi https://strimzi.io/charts/
 ```
 
 To install the chart with the release name `my-release`:
