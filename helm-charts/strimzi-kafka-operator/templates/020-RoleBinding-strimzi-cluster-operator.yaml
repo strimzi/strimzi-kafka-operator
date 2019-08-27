@@ -2,9 +2,17 @@
 {{- range append .Values.watchNamespaces .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+{{- if $root.Values.watchAnyNamespace }}
+kind: ClusterRoleBinding
+{{- else }}
 kind: RoleBinding
+{{- end }}
 metadata:
+  {{- if $root.Values.watchAnyNamespace }}
+  name: strimzi-cluster-operator-namespaced
+  {{- else }}
   name: strimzi-cluster-operator
+  {{- end }}
   namespace: {{ . }}
   labels:
     app: {{ template "strimzi.name" $root }}

@@ -29,6 +29,9 @@ spec:
             - /opt/strimzi/bin/cluster_operator_run.sh
           env:
             - name: STRIMZI_NAMESPACE
+              {{- if .Values.watchAnyNamespace }}
+              value: "*"
+              {{- else }}
               {{- if .Values.watchNamespaces -}}
               {{- $ns := .Values.watchNamespaces -}}
               {{- $ns := append $ns .Release.Namespace }}
@@ -37,6 +40,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+              {{- end }}
               {{- end }}
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: {{ .Values.fullReconciliationIntervalMs | quote }}

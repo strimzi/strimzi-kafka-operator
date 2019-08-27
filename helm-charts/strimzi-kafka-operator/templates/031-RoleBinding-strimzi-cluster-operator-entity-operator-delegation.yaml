@@ -2,7 +2,11 @@
 {{- range append .Values.watchNamespaces .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+{{- if $root.Values.watchAnyNamespace }}
+kind: ClusterRoleBinding
+{{- else }}
 kind: RoleBinding
+{{- end }}
 metadata:
   name: strimzi-cluster-operator-entity-operator-delegation
   namespace: {{ . }}
