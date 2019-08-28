@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,14 +54,20 @@ public class TopicST extends AbstractST {
 
         topicReplicationFactor = 3;
 
-        kafkaTopic = testMethodResources().topic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor).done();
+        final String newTopicName = "topic-example-new";
 
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName));
-        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
+        kafkaTopic = testMethodResources().topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
 
-        LOGGER.info("Delete topic {}", topicName);
-        cmdKubeClient().deleteByName("kafkatopic", topicName);
-        StUtils.waitForKafkaTopicDeletion(topicName);
+        TestUtils.waitFor("Waiting for " + newTopicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
+            () -> listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(newTopicName)
+        );
+
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
+        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
+
+        LOGGER.info("Delete topic {}", newTopicName);
+        cmdKubeClient().deleteByName("kafkatopic", newTopicName);
+        StUtils.waitForKafkaTopicDeletion(newTopicName);
     }
 
     @Tag(SCALABILITY)

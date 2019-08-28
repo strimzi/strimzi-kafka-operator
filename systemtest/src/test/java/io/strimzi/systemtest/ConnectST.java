@@ -60,7 +60,6 @@ class ConnectST extends AbstractST {
 
     @Test
     void testDeployUndeploy() {
-        String appName = "strimzi-ephemeral";
         testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -241,6 +240,7 @@ class ConnectST extends AbstractST {
     @Test
     void testSecretsWithKafkaConnectWithTlsAuthentication() throws Exception {
         final String userName = "user-example";
+        final String topicName = "topic-example";
 
         testMethodResources().tlsUser(KAFKA_CLUSTER_NAME, userName).done();
 
@@ -270,7 +270,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(KAFKA_CLUSTER_NAME, topicName).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -285,7 +285,7 @@ class ConnectST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), topicName, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 

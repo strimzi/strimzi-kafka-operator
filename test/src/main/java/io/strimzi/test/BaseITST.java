@@ -61,6 +61,7 @@ public class BaseITST {
      */
     public static String setNamespace(String futureNamespace) {
         String previousNamespace = namespace;
+        LOGGER.info("Changing to {} namespace", futureNamespace);
         namespace = futureNamespace;
         return previousNamespace;
     }

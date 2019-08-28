@@ -14,6 +14,7 @@ public interface Constants {
     long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_SECRET_CREATION = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
+    long TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_TOPIC_CREATION = Duration.ofMinutes(1).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();

@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,13 +38,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-        String previousNamespce = setNamespace(THIRD_NAMESPACE);
+        String previousNamespace = setNamespace(THIRD_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
         deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
-        setNamespace(previousNamespce);
+        setNamespace(previousNamespace);
     }
 
     /**
@@ -71,11 +70,11 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
         // Deploy Kafka Connect in other namespace than CO
-        secondNamespaceResources.kafkaConnect(CLUSTER_NAME, 1).done();
+        secondNamespaceResources.kafkaConnect(CLUSTER_NAME + "-second", 1).done();
         // Check that Kafka Connect was deployed
-        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME), 1);
+        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME + "-second"), 1);
         setNamespace(previousNamespace);
     }
 
@@ -149,7 +148,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @BeforeAll
-    void setupEnvironment(TestInfo testInfo) {
+    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
         createTestClassResources();
