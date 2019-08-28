@@ -12,7 +12,7 @@ keywords:
 - messaging
 - datastore
 - topic
-home: http://strimzi.io/
+home: https://strimzi.io/
 sources:
 - https://github.com/strimzi/strimzi-kafka-operator
 maintainers:

@@ -121,7 +121,7 @@
 // Helm Chart - deploy cluster operator
 :ChartName: strimzi-kafka-operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
-:ChartRepositoryUrl: http://strimzi.io/charts/
+:ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
 :ProductVersion: 0.12.x

@@ -6,10 +6,10 @@ metadata:
     openshift.io/display-name: "Apache Kafka Connect"
     description: >-
       This template installs Apache Kafka Connect in distributed mode. For more information
-      about using this template see http://strimzi.io
+      about using this template see https://strimzi.io
     tags: "messaging"
     iconClass: "fa fa-exchange"
-    template.openshift.io/documentation-url: "http://strimzi.io"
+    template.openshift.io/documentation-url: "https://strimzi.io"
 message: "Kafka Connect cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}-connect-api:8083' to access Kafka Connect REST API."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name

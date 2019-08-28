@@ -6,7 +6,7 @@ entries:
     created: 2019-07-29T18:12:49.026595+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 19b2654650bff0bf2b449820ce5104bf6cce3a4f72babea32e5217c6fa751601
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -31,7 +31,7 @@ entries:
     created: 2019-07-18T10:00:58.022983+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 2d9941e9f73e0e57ed521ddffbd1eb1a5edb39d891cdf7756ecd73e761075b55
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -56,7 +56,7 @@ entries:
     created: 2019-06-24T11:35:41.042200072+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: a9e82303e02d412e4e1b5e13d2b9b2d5c6290d6411f3aa78cd7647cd617dfd89
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -81,7 +81,7 @@ entries:
     created: 2019-06-14T16:28:55.590731075+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: 42f957fc2d2df0943e75cf274baba3c839e65e4aafb70e0593e77d69be715098
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -106,7 +106,7 @@ entries:
     created: 2019-05-15T17:15:58.840777+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 58bb338054aff06dc0ebbdd13f544ec7802bb4dac8a23c32b7533bfa78c4209d
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -131,7 +131,7 @@ entries:
     created: 2019-04-29T21:15:08.617707+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 03086beb8771c0fe95fd6ef8003ea68dd79f81e66937456c3957d2dd79aa15b8
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -156,7 +156,7 @@ entries:
     created: 2019-04-27T14:46:09.201004+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 2c8ae7ee38f49cb57ed501a89128d503bb28e034855b2d9cc6f504bd9f65c35d
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -181,7 +181,7 @@ entries:
     created: 2019-03-05T00:09:37.350407+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: eb5d8fb9f8861a98c22ded2a7143597d49d2276ea55225af2564c365ad2f356d
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -206,7 +206,7 @@ entries:
     created: 2019-03-05T00:09:37.352282+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: 8d429c9b44b2fffe14ff5f00e462934fbdaa83374d7b7221b186c4e24690ef8a
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -231,7 +231,7 @@ entries:
     created: 2019-02-21T11:16:28.462123+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: d172fa9e91e254e4ba2057ec70a8c047402513f585e07edce59a96fb6d59dd90
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -256,7 +256,7 @@ entries:
     created: 2018-12-13T19:20:03.332037+01:00
     description: 'Strimzi: Kafka as a Service'
     digest: d915c029ee9692a1eab7d51d71c415db1a533756eb3bf1a997e5769f127601e0
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -281,7 +281,7 @@ entries:
     created: 2018-10-26T10:31:11.712551341+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 2e21d3a86d3fd6f36b259f19086b93c478da1b9e0f9dccbfaa379d87091ce457
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -306,7 +306,7 @@ entries:
     created: 2018-10-26T10:31:11.711883438+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 67d28bf30bad5fbae8a63c4e1bc2065c2b9fd4a88e9dec78e82ddb57d9c49a79
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -331,7 +331,7 @@ entries:
     created: 2018-10-12T14:28:03.648679252+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 331b9bab35aea7413716e8b79e773f653909afc53209f25ff0033fc6a8dbc06a
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -356,7 +356,7 @@ entries:
     created: 2018-09-18T22:22:50.0474295+02:00
     description: 'Strimzi: Kafka as a Service'
     digest: 0ae660efb5f445a98649d4a6768d09defe8fabebf0ca807fac9075376f460944
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
@@ -381,7 +381,7 @@ entries:
     created: 2018-08-23T14:25:34.526805221-04:00
     description: 'Strimzi: Kafka as a Service'
     digest: 684868a46604411a151d90579f15e065320ba636c2afd25702b508fe11b30c64
-    home: http://strimzi.io/
+    home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
