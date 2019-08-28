@@ -20,7 +20,7 @@
         <dependency>
             <groupId>io.prometheus.jmx</groupId>
             <artifactId>jmx_prometheus_javaagent</artifactId>
-            <version>0.11.0</version>
+            <version>0.12.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/net.logstash.log4j/jsonevent-layout -->
         <dependency>
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>io.jaegertracing</groupId>
             <artifactId>jaeger-client</artifactId>
-            <version>0.34.0</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentracing</groupId>
