@@ -1,32 +1,46 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.systemtest.clients.api;
 
-import io.vertx.core.json.JsonArray;
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import static io.strimzi.test.BaseITST.cmdKubeClient;
 
 /**
  * Class represent verifiable kafka client which keeps common features of kafka clients
  */
 public class VerifiableClient {
+
     private static final Logger LOGGER = LogManager.getLogger(VerifiableClient.class);
-    protected ArrayList<ClientArgument> allowedArguments = new ArrayList<>();
-    private JsonArray messages = new JsonArray();
-    private ArrayList<String> arguments = new ArrayList<>();
+    private List<ClientArgument> allowedArguments = new ArrayList<>();
+    private final Object lock = new Object();
+    private List<String> messages = new ArrayList<>();
+    private List<String> arguments = new ArrayList<>();
     private String executable;
+    private ClientType clientType;
+    private Exec executor;
+    private String podName;
+    private String podNamespace;
 
     /**
      * Constructor of verifiable kafka client
      *
      * @param clientType type of kafka client
      */
-    public VerifiableClient(ClientType clientType) {
+    public VerifiableClient(ClientType clientType, String podName, String podNamespace) {
         this.setAllowedArguments(clientType);
+        this.clientType = clientType;
+        this.podName = podName;
+        this.podNamespace = podNamespace;
         this.executable = ClientType.getCommand(clientType);
     }
 
@@ -35,21 +49,8 @@ public class VerifiableClient {
      *
      * @return Json array of messages;
      */
-    public JsonArray getMessages() {
+    public List<String> getMessages() {
         return messages;
-    }
-
-    /**
-     * Get all kafka client arguments.
-     *
-     * @return The kafka client arguments.
-     */
-    public ArrayList<String> getArguments() {
-        return arguments;
-    }
-
-    public String getExecutable() {
-        return this.executable;
     }
 
     /**
@@ -78,6 +79,89 @@ public class VerifiableClient {
                         arg.command(),
                         this.getClass().getSimpleName()));
             }
+        }
+    }
+
+    /**
+     * Run clients
+     *
+     * @param timeout kill timeout in ms
+     * @return true if command end with exit code 0
+     */
+    private boolean runClient(int timeout, boolean logToOutput) {
+        messages.clear();
+        try {
+            executor = new Exec();
+            int ret = executor.execute(null, prepareCommand(), timeout);
+            synchronized (lock) {
+                LOGGER.info("{} {} Return code - {}", this.getClass().getName(), clientType,  ret);
+                if (logToOutput) {
+                    LOGGER.info("{} {} stdout : {}", this.getClass().getName(), clientType, executor.out());
+                    if (!executor.err().isEmpty()) {
+                        LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.err());
+                    }
+                    if (ret == 0) {
+                        parseToList(executor.out());
+                    }
+                }
+            }
+            return ret == 0;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Method for parse string output to List<string>
+     *
+     * @param data string data output
+     */
+    private void parseToList(String data) {
+        if (data != null) {
+            for (String line : data.split(System.getProperty("line.separator"))) {
+                if (!Objects.equals(line, "") && !line.trim().isEmpty()) {
+                    try {
+                        messages.add(line);
+                    } catch (Exception ignored) {
+                        LOGGER.warn("{} - Failed to parse client output '{}' as JSON", clientType, line);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Merge command and arguments
+     *
+     * @return merged array of command and args
+     */
+    private ArrayList<String> prepareCommand() {
+        ArrayList<String> command = new ArrayList<>(arguments);
+        ArrayList<String> executableCommand = new ArrayList<>();
+        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", podNamespace, "--"));
+        executableCommand.add(executable);
+        executableCommand.addAll(command);
+        return executableCommand;
+    }
+
+    /**
+     * Run client in sync mode
+     *
+     * @return exit status of client
+     */
+    public boolean run() {
+        return runClient(60000, true);
+    }
+
+    /**
+     * Method for stop client
+     */
+    public void stop() {
+        try {
+            executor.stop();
+        } catch (Exception ex) {
+            LOGGER.warn("Client stop raise exception: " + ex.getMessage());
         }
     }
 

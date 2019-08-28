@@ -26,8 +26,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -649,9 +647,9 @@ class KafkaST extends MessagingBaseST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
+        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
@@ -663,17 +661,14 @@ class KafkaST extends MessagingBaseST {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
-        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(auth);
-
         // Use a Kafka with plain listener disabled
         testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withTls(listenerTls)
                             .withNewTls()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
                             .endTls()
                         .endListeners()
                     .endKafka()
@@ -682,8 +677,8 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         StUtils.waitForSecretReady(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
@@ -696,19 +691,18 @@ class KafkaST extends MessagingBaseST {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
-        KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
-        KafkaListenerPlain listenerTls = new KafkaListenerPlain();
-        listenerTls.setAuthentication(auth);
-
         // Use a Kafka with plain listener disabled
-        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withPlain(listenerTls)
+                            .withNewPlain()
+                                .withNewKafkaListenerAuthenticationScramSha512()
+                                .endKafkaListenerAuthenticationScramSha512()
+                            .endPlain()
                         .endListeners()
                     .endKafka()
-                .endSpec().build()).done();
+                .endSpec().done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         StUtils.waitForSecretReady(kafkaUser);
@@ -725,8 +719,8 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
@@ -754,8 +748,8 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         StUtils.waitForSecretReady(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
-        availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test
@@ -1703,6 +1697,7 @@ class KafkaST extends MessagingBaseST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
@@ -1955,8 +1950,6 @@ class KafkaST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach

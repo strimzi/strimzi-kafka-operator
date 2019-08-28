@@ -127,7 +127,7 @@ public class TopicST extends AbstractST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             StUtils.waitForKafkaTopicCreation(currentTopic);
-            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().withName(currentTopic).get();
+            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(currentTopic).get();
             verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
         }
 

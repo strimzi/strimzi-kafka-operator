@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag(REGRESSION)
-class SecurityST extends AbstractST {
+class SecurityST extends MessagingBaseST {
 
     public static final String NAMESPACE = "security-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
