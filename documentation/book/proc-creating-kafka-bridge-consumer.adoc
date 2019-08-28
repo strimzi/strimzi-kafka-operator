@@ -5,7 +5,7 @@
 [id='proc-creating-kafka-bridge-consumer-{context}']
 = Creating a Kafka Bridge consumer
 
-Next, create a Kafka Bridge consumer by using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers/{groupid}^] endpoint. This consumer enables you to perform consumer operations in the Kafka cluster, such as subscribing to topics and retrieving messages from topics.
+Before you can perform consumer operations, such as subscribing to topics and retrieving messages from topics, you must create a consumer by using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers^] endpoint. This is referred to as a __Kafka Bridge consumer__.
 
 .Prerequisites
 
@@ -30,9 +30,8 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
   }'
 ----
 +
-In the request body, the consumer is named `bridge-quickstart-consumer` and some basic configuration settings are defined.
-+
-NOTE: The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. You will commit the offsets for this consumer in a later procedure.
+* In the request body, the consumer is named `bridge-quickstart-consumer` and some basic configuration settings are defined.
+* The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. A later procedure in this quick start describes how to commit the offsets for this consumer manually.
 +
 If the request was successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code:
 +
@@ -44,7 +43,7 @@ If the request was successful, the Kafka Bridge returns the consumer ID (`instan
 }
 ----
 
-. Copy the consumer base URL (`base_uri`) contained in the response for later use.
+. Copy the consumer base URL (`base_uri`) contained in the response for use in other operations on this consumer.
 
 .What to do next
 

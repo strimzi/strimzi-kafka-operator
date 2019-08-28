@@ -3,20 +3,20 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-bridge-subscribing-consumer-topics-{context}']
-= Subscribing a consumer to topics
+= Subscribing a Kafka Bridge consumer to topics
 
-After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics. Once subscribed, the consumer starts receiving all messages produced to the topic.
+After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics by using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint. Once subscribed, the consumer starts receiving all messages produced to the topic.
 
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge; use this as the `<bridge-address>` parameter.
-* The base URL of a Kafka Bridge consumer. 
+* The Kafka Bridge Service is exposed to your local machine on port 8080.
+* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
+* The base URL of the Kafka Bridge consumer. 
 
 .Procedure
 
-* Using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint, subscribe the consumer to the topic that you created earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions].
+* Subscribe the consumer to the topic that you created earlier in this quick start, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:
 +
 [source,curl,subs=attributes+]
 ----
@@ -31,7 +31,7 @@ If the request was successful, the Kafka Bridge returns a `204` code only.
 
 .What to do next
 
-After subscribing a Kafka Bridge consumer to topics, xref:proc-bridge-retrieving-latest-messages-from-consumer-{context}[retrieve messages from the consumer].
+After subscribing a Kafka Bridge consumer to topics, you can xref:proc-bridge-retrieving-latest-messages-from-consumer-{context}[retrieve messages from the consumer].
 
 .Additional resources
 
