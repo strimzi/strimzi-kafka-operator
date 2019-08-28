@@ -19,7 +19,7 @@ Use this quick start to try out the {ProductName} Kafka Bridge in your local dev
 * Create a Kafka Bridge consumer for use in this quick start
 * Perform basic consumer operations
 
-HTTP requests are formatted as curl commands that you can copy and paste to your terminal. You can use an API testing tool to call the API if preferred. As described in xref:con-requests-kafka-bridge-{context}[Requests to the {ProductName} Kafka Bridge], all POST requests used in this quick start supply the following Content-Type header:
+HTTP requests are formatted as curl commands that you can copy and paste to your terminal. You can use an API testing tool to call the API if preferred. As described in xref:con-requests-kafka-bridge-str[Requests to the {ProductName} Kafka Bridge], all POST requests used in this quick start supply the following Content-Type header:
 
 [source,http,subs=attributes+]
 ----
