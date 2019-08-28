@@ -243,7 +243,9 @@ public class CrdGenerator {
                 colNode.put("description", col.description());
                 colNode.put("JSONPath", col.jsonPath());
                 colNode.put("type", col.type());
-                colNode.put("priority", col.priority());
+                if (col.priority() != 0) {
+                    colNode.put("priority", col.priority());
+                }
                 if (!col.format().isEmpty()) {
                     colNode.put("format", col.format());
                 }

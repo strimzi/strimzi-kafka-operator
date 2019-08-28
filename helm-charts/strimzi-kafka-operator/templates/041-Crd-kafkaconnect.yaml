@@ -32,7 +32,6 @@ spec:
     description: The desired number of Kafka Connect replicas
     JSONPath: .spec.replicas
     type: integer
-    priority: 0
   subresources:
     status: {}
   validation:

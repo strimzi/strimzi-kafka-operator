@@ -29,7 +29,6 @@ spec:
     description: "The foo"
     JSONPath: "..."
     type: "integer"
-    priority: 0
   validation:
     openAPIV3Schema:
       properties:
