@@ -505,9 +505,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         varList.addAll(getExternalConfigurationEnvVars());
 
-        if (templateContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }

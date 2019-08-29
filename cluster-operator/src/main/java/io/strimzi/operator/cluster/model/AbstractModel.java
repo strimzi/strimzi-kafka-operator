@@ -1202,19 +1202,21 @@ public abstract class AbstractModel {
      **/
     protected void addContainerEnvsToExistingEnvs(List<EnvVar> existingEnvs, List<ContainerEnvVar> containerEnvs) {
 
-        // Create set of env var names to test if any user defined template env vars will conflict with those set above
-        Set<String> predefinedEnvs = new HashSet<String>();
-        for (EnvVar envVar : existingEnvs) {
-            predefinedEnvs.add(envVar.getName());
-        }
+        if (containerEnvs != null) {
+            // Create set of env var names to test if any user defined template env vars will conflict with those set above
+            Set<String> predefinedEnvs = new HashSet<String>();
+            for (EnvVar envVar : existingEnvs) {
+                predefinedEnvs.add(envVar.getName());
+            }
 
-        // Set custom env vars from the user defined template
-        for (ContainerEnvVar containerEnvVar : containerEnvs) {
-            if (predefinedEnvs.contains(containerEnvVar.getName())) {
-                log.warn("User defined container template environment variable " + containerEnvVar.getName() +
-                        " is already in use and will be ignored");
-            } else {
-                existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+            // Set custom env vars from the user defined template
+            for (ContainerEnvVar containerEnvVar : containerEnvs) {
+                if (predefinedEnvs.contains(containerEnvVar.getName())) {
+                    log.warn("User defined container template environment variable " + containerEnvVar.getName() +
+                            " is already in use and will be ignored");
+                } else {
+                    existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+                }
             }
         }
     }

@@ -528,9 +528,7 @@ public class ZookeeperCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
-        if (templateZookeeperContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
 
         return varList;
     }
@@ -540,9 +538,7 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
 
-        if (templateTlsSidecarContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
         return varList;
     }

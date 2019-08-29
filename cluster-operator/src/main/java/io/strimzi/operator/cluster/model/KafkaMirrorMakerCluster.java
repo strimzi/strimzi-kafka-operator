@@ -443,9 +443,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_READINESS_PERIOD,
                 String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
 
-        if (templateContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }

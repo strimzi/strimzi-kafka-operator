@@ -406,9 +406,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM, saslMechanism));
         }
 
-        if (templateContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }

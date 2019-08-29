@@ -66,7 +66,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for Kafka Mirror Maker `Deployment`.")
+    @Description("Template for Kafka Mirror Maker container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getMirrorMakerContainer() {
         return mirrorMakerContainer;

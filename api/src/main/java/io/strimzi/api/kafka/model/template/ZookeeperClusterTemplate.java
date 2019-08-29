@@ -99,7 +99,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.zookeeperContainer = zookeeperContainer;
     }
 
-    @Description("Template for the Kafka broker TLS sidevar container")
+    @Description("Template for the Kafka broker TLS sidecar container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {
         return tlsSidecarContainer;

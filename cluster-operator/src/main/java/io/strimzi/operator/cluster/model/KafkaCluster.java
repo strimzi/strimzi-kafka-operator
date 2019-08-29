@@ -750,23 +750,23 @@ public class KafkaCluster extends AbstractModel {
 
             Route route = new RouteBuilder()
                     .withNewMetadata()
-                    .withName(perPodServiceName)
-                    .withLabels(getLabelsWithName(perPodServiceName, templatePerPodRouteLabels))
-                    .withAnnotations(mergeLabelsOrAnnotations(null, templatePerPodRouteAnnotations))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                        .withName(perPodServiceName)
+                        .withLabels(getLabelsWithName(perPodServiceName, templatePerPodRouteLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templatePerPodRouteAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
-                    .withNewTo()
-                    .withKind("Service")
-                    .withName(perPodServiceName)
-                    .endTo()
-                    .withNewPort()
-                    .withNewTargetPort(EXTERNAL_PORT)
-                    .endPort()
-                    .withNewTls()
-                    .withTermination("passthrough")
-                    .endTls()
+                        .withNewTo()
+                            .withKind("Service")
+                            .withName(perPodServiceName)
+                        .endTo()
+                        .withNewPort()
+                            .withNewTargetPort(EXTERNAL_PORT)
+                        .endPort()
+                        .withNewTls()
+                            .withTermination("passthrough")
+                        .endTls()
                     .endSpec()
                     .build();
 
@@ -799,23 +799,23 @@ public class KafkaCluster extends AbstractModel {
         if (isExposedWithRoute()) {
             Route route = new RouteBuilder()
                     .withNewMetadata()
-                    .withName(serviceName)
-                    .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapRouteLabels))
-                    .withAnnotations(mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapRouteLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(null, templateExternalBootstrapRouteAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
-                    .withNewTo()
-                    .withKind("Service")
-                    .withName(externalBootstrapServiceName(cluster))
-                    .endTo()
-                    .withNewPort()
-                    .withNewTargetPort(EXTERNAL_PORT)
-                    .endPort()
-                    .withNewTls()
-                    .withTermination("passthrough")
-                    .endTls()
+                        .withNewTo()
+                            .withKind("Service")
+                            .withName(externalBootstrapServiceName(cluster))
+                        .endTo()
+                        .withNewPort()
+                            .withNewTargetPort(EXTERNAL_PORT)
+                        .endPort()
+                        .withNewTls()
+                            .withTermination("passthrough")
+                        .endTls()
                     .endSpec()
                     .build();
 
@@ -862,15 +862,15 @@ public class KafkaCluster extends AbstractModel {
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
                     .withNewBackend()
-                    .withNewServicePort(EXTERNAL_PORT)
-                    .withServiceName(perPodServiceName)
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(perPodServiceName)
                     .endBackend()
                     .build();
 
             IngressRule rule = new IngressRuleBuilder()
                     .withHost(host)
                     .withNewHttp()
-                    .withPaths(path)
+                        .withPaths(path)
                     .endHttp()
                     .build();
 
@@ -880,15 +880,15 @@ public class KafkaCluster extends AbstractModel {
 
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
-                    .withName(perPodServiceName)
-                    .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
-                    .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                        .withName(perPodServiceName)
+                        .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
-                    .withRules(rule)
-                    .withTls(tls)
+                        .withRules(rule)
+                        .withTls(tls)
                     .endSpec()
                     .build();
 
@@ -919,15 +919,15 @@ public class KafkaCluster extends AbstractModel {
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
                     .withNewBackend()
-                    .withNewServicePort(EXTERNAL_PORT)
-                    .withServiceName(externalBootstrapServiceName(cluster))
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(externalBootstrapServiceName(cluster))
                     .endBackend()
                     .build();
 
             IngressRule rule = new IngressRuleBuilder()
                     .withHost(host)
                     .withNewHttp()
-                    .withPaths(path)
+                        .withPaths(path)
                     .endHttp()
                     .build();
 
@@ -937,15 +937,15 @@ public class KafkaCluster extends AbstractModel {
 
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
-                    .withName(serviceName)
-                    .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
-                    .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
+                        .withAnnotations(mergeLabelsOrAnnotations(generateInternalIngressAnnotations(listener), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
-                    .withRules(rule)
-                    .withTls(tls)
+                        .withRules(rule)
+                        .withTls(tls)
                     .endSpec()
                     .build();
 
@@ -1199,16 +1199,16 @@ public class KafkaCluster extends AbstractModel {
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
             builder = builder
                     .editOrNewPodAntiAffinity()
-                    .addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                    .withWeight(100)
-                    .withNewPodAffinityTerm()
-                    .withTopologyKey(rack.getTopologyKey())
-                    .withNewLabelSelector()
-                    .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
-                    .endLabelSelector()
-                    .endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution()
+                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                            .withWeight(100)
+                            .withNewPodAffinityTerm()
+                                .withTopologyKey(rack.getTopologyKey())
+                                .withNewLabelSelector()
+                                    .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
+                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
+                                .endLabelSelector()
+                            .endPodAffinityTerm()
+                        .endPreferredDuringSchedulingIgnoredDuringExecution()
                     .endPodAntiAffinity();
         }
         return builder.build();
@@ -1275,12 +1275,12 @@ public class KafkaCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ModelUtils.newProbeBuilder(livenessProbeOptions)
                         .withNewExec()
-                        .withCommand("/opt/kafka/kafka_liveness.sh")
+                            .withCommand("/opt/kafka/kafka_liveness.sh")
                         .endExec().build())
                 .withReadinessProbe(ModelUtils.newProbeBuilder(readinessProbeOptions)
                         .withNewExec()
-                        // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
-                        .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
+                            // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
+                            .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
                         .endExec().build())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -1376,9 +1376,7 @@ public class KafkaCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
 
         // Add user defined environment variables to the Kafka broker containers
-        if (templateKafkaContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
         return varList;
     }
@@ -1388,9 +1386,7 @@ public class KafkaCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
 
-        if (templateTlsSidecarContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
         return varList;
     }
@@ -1460,9 +1456,9 @@ public class KafkaCluster extends AbstractModel {
 
             return new ClusterRoleBindingBuilder()
                     .withNewMetadata()
-                    .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
+                        .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                        .withOwnerReferences(createOwnerReference())
+                        .withLabels(labels.toMap())
                     .endMetadata()
                     .withSubjects(ks)
                     .withRoleRef(roleRef)
@@ -1564,14 +1560,14 @@ public class KafkaCluster extends AbstractModel {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                .withName(policyName(cluster))
-                .withNamespace(namespace)
-                .withLabels(labels.toMap())
-                .withOwnerReferences(createOwnerReference())
+                    .withName(policyName(cluster))
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                .withPodSelector(labelSelector)
-                .withIngress(rules)
+                    .withPodSelector(labelSelector)
+                    .withIngress(rules)
                 .endSpec()
                 .build();
 
