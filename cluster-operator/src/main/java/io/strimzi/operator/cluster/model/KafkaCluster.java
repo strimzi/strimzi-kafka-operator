@@ -1227,9 +1227,7 @@ public class KafkaCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
         }
 
-        if (templateInitContainerEnvVars != null) {
-            addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
-        }
+        addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
 
         return varList;
     }

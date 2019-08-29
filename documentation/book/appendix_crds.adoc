@@ -900,7 +900,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|tlsSidecarContainer  1.2+<.<|Template for the Kafka broker TLS sidevar container.
+|tlsSidecarContainer  1.2+<.<|Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |zookeeperContainer   1.2+<.<|Template for the Zookeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -1937,7 +1937,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                   1.2+<.<|Template for Kafka Mirror Maker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|mirrorMakerContainer  1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
+|mirrorMakerContainer  1.2+<.<|Template for Kafka Mirror Maker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget   1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
