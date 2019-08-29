@@ -111,7 +111,7 @@ public class MirrorMakerAgent {
                     } else {
                         LOGGER.debug("Mirror Maker is not ready");
 
-                        if (!readinessFile.delete()) {
+                        if (readinessFile.exists() && !readinessFile.delete()) {
                             LOGGER.error("Could not delete readiness indicator file {}", readinessFile);
                         }
                     }
