@@ -1,0 +1,71 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='proc-kafka-cluster-{context}']
+= Creating a cluster
+
+Create a Kafka cluster, then a topic within the cluster.
+
+When you create a cluster, the Cluster Operator you deployed listens for new Kafka resources.
+
+.Prerequisites
+
+* For the Kafka cluster, a Cluster Operator is deployed
+* For the topic, a running Kafka cluster
+
+.Procedure
+
+. Log in to the Kubernetes cluster as a non-privileged user.
+
+. Create a new `my-cluster` Kafka cluster with 3 Zookeeper and 3 broker nodes.
++
+* Use `ephemeral` storage
+* Expose the Kafka cluster outside of the Kubernetes cluster using an external listener configured to use a `loadbalancer`.
++
+--
+[source,yaml,subs=attributes+]
+----
+cat << EOF | kubectl create -n my-kafka-project -f -
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    listeners:
+      plain: {}
+      tls: {}
+      external:
+        type: loadbalancer
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 3
+    storage:
+      type: ephemeral
+  entityOperator:
+    topicOperator: {}
+EOF
+----
+--
+
+. Now that your cluster is running, create a topic to publish and subscribe from your external client.
++
+Create the following `my-topic` custom resource definition with 3 replicas and 3 partitions in the `my-cluster` Kafka cluster:
++
+[source, yaml, subs=attributes+]
+----
+cat << EOF | kubectl create -n my-kafka-project -f -
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: "my-cluster"
+spec:
+  partitions: 3
+  replicas: 3
+EOF
+----

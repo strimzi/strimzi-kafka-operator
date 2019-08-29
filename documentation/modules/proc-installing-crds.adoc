@@ -1,0 +1,92 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='proc-install-crds-{context}']
+= Installing {ProductName}
+
+Install {ProductName} with the Custom Resource Definitions (CRDs) required for deployment.
+
+.Prerequisites
+
+* Installation requires a Kubernetes account with cluster admin credentials.
+
+.Procedure
+
+. Log in to the Kubernetes cluster with cluster admin privileges.
+
+. Modify the installation files according to the `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
++
+NOTE: By default, the files work in the `myproject` namespace.
++
+* On Linux, use:
++
+
+[source, shell, subs=+quotes]
+----
+sed -i 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
+----
++
+* On Mac, use:
++
+[source, shell, subs=+quotes]
+----
+sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
+----
+. Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
++
+[source, shell, subs=+quotes ]
+----
+kubectl create ns kafka
+kubectl apply -f install/cluster-operator/ -n kafka
+----
+
+. Create the project `my-kafka-project` where you will deploy your Kafka cluster.
++
+[source, shell, subs=+quotes ]
+----
+kubectl create ns my-kafka-project
+----
+
+. Enable the Cluster Operator to watch that namespace.
++
+--
+[source, shell, subs=+quotes]
+----
+kubectl edit deployment strimzi-cluster-operator STRIMZI_NAMESPACE=kafka,my-kafka-project -n kafka
+----
+[source, shell, subs=+quotes]
+----
+kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n my-kafka-project
+----
+[source, shell, subs=+quotes]
+----
+kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n my-kafka-project
+----
+[source, shell, subs=+quotes]
+----
+kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n my-kafka-project
+----
+--
+
+////
+. Give access to your non-admin user `developer`.
++
+[source, shell, subs=+quotes]
+----
+kubectl adm policy add-role-to-user admin developer -n my-kafka-project
+----
+////
+
+
+////
+. Create a `strimzi-admin` cluster role in Kubernetes.
++
+[source,shell,subs=+quotes]
+kubectl apply -f install/strimzi-admin
+
+. Assign the `strimzi-admin` cluster role to a non-admin user in the Kubernetes cluster.
++
+[source,shell,subs=+quotes]
+kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_non-admin-user_
+////

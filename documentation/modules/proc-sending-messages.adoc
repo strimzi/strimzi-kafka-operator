@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='proc-using-amq-streams-{context}']
+
+= Sending and receiving messages from a topic
+
+Test your {ProductName} installation by sending and receiving messages outside the cluster from `my-topic`.
+
+In this procedure, you access {ProductName} from a local client.
+
+.Prerequisites
+
+* {ProductName} is installed on the Kubernetes cluster
+* Zookeeper and Kafka are running
+
+.Procedure
+
+. Download the latest Kafka binaries and install Kafka on your local machine.
++
+{ApacheKafkaDownload}
+
+. Start the Kafka console producer with the topic `my-topic` and the authentication properties for TLS:
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-console-producer.sh --broker-list _<loadbalancer-address>_:9094 --producer-property security.protocol=SSL --producer-property ssl.truststore.password=password --producer-property ssl.truststore.location=./client.truststore.jks --topic my-topic
+----
+
+. Type your message into the console where the producer is running.
+
+. Press Enter to send the message.
+
+. Press Ctrl+C to exit the Kafka console producer.
+
+. Start the consumer to receive the messages:
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-console-consumer.sh --bootstrap-server _<loadbalancer-address>_:9094 --consumer-property security.protocol=SSL --consumer-property ssl.truststore.password=password --consumer-property ssl.truststore.location=./client.truststore.jks --topic my-topic --from-beginning
+----
+
+. Confirm that you see the incoming messages in the consumer console.
+
+. Press Crtl+C to exit the Kafka console consumer.

@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='ref-install-prerequisites-{context}']
+= Prerequisites
+
+* Kubernetes cluster ({KubernetesVersion}) running on which to deploy {ProductName}.

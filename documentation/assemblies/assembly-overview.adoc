@@ -23,6 +23,6 @@ NOTE: The Cluster Operator can deploy the Topic Operator and User Operator (as p
 
 image:operators.png[Operators]
 
-include::ref-key-features.adoc[leveloffset=+1]
+include::modules/ref-key-features.adoc[leveloffset=+1]
 
-include::ref-document-conventions.adoc[leveloffset=+1]
+include::modules/ref-document-conventions.adoc[leveloffset=+1]

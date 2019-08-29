@@ -62,6 +62,7 @@
 :ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
 :ApacheKafkaConsumerConfig: link:http://kafka.apache.org/20/documentation.html#newconsumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka configuration documentation for producers^]
+:ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 :PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Configuration^]
