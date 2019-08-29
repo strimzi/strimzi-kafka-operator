@@ -6,7 +6,11 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.annotations.NetworkPolicy;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -46,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 class SecurityST extends MessagingBaseST {
@@ -519,6 +524,106 @@ class SecurityST extends MessagingBaseST {
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
+
+    @Test
+    @NetworkPolicy
+    void testNetworkPoliciesWithPlainListener() throws Exception {
+        Map<String, String> matchLabelForPlain = new HashMap<>();
+        matchLabelForPlain.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withNewKafkaListenerAuthenticationScramSha512()
+                                .endKafkaListenerAuthenticationScramSha512()
+                                .withNetworkPolicyPeers(
+                                    new NetworkPolicyPeerBuilder()
+                                        .withNewPodSelector()
+                                            .withMatchLabels(matchLabelForPlain)
+                                        .endPodSelector()
+                                        .build())
+                                .endPlain()
+                            .endListeners()
+                        .endKafka()
+                    .endSpec()
+                .done();
+
+        String topic0 = "topic-example-0";
+        String topic1 = "topic-example-1";
+
+        String userName = "user-example";
+        KafkaUser kafkaUser = testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        StUtils.waitForSecretReady(userName);
+
+        testMethodResources().topic(CLUSTER_NAME, topic0).done();
+        testMethodResources().topic(CLUSTER_NAME, topic1).done();
+
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        availabilityTest(50, CLUSTER_NAME, false, topic0, kafkaUser, kafkaClientsPodName);
+
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
+
+        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
+
+        LOGGER.info("Verifying that {} pod is not able to exchange messages", kafkaClientsNewPodName);
+        assertThrows(AssertionError.class, () ->  availabilityTest(50, CLUSTER_NAME, false, topic1, kafkaUser, kafkaClientsNewPodName));
+    }
+
+    @Test
+    @NetworkPolicy
+    void testNetworkPoliciesWithTlsListener() throws Exception {
+        Map<String, String> matchLabelsForTls = new HashMap<>();
+        matchLabelsForTls.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewTls()
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                                .withNetworkPolicyPeers(
+                                    new NetworkPolicyPeerBuilder()
+                                        .withNewPodSelector()
+                                            .withMatchLabels(matchLabelsForTls)
+                                        .endPodSelector()
+                                        .build())
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        String topic0 = "topic-example-0";
+        String topic1 = "topic-example-1";
+        testMethodResources().topic(CLUSTER_NAME, topic0).done();
+        testMethodResources().topic(CLUSTER_NAME, topic1).done();
+
+        String userName = "user-example";
+        KafkaUser kafkaUser = testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        StUtils.waitForSecretReady(userName);
+
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
+        availabilityTest(50, CLUSTER_NAME, true, topic0, kafkaUser, kafkaClientsPodName);
+
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-kafka-clients-new", kafkaUser).done();
+
+        String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
+
+        LOGGER.info("Verifying that {} pod is  not able to exchange messages", kafkaClientsNewPodName);
+        assertThrows(AssertionError.class, () -> availabilityTest(50, CLUSTER_NAME, true, topic1, kafkaUser, kafkaClientsNewPodName));
+    }
+
 
     @BeforeEach
     void createTestResources() {

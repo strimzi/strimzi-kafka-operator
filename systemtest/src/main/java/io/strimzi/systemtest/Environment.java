@@ -51,6 +51,11 @@ public class Environment {
      */
     private static final String KUBERNETES_DOMAIN_ENV = "KUBERNETES_DOMAIN";
     /**
+     * Network policy environment variable
+     */
+    private static final String NETWORK_POLICY_ENV = "NETWORK_POLICY";
+
+    /**
      * CO reconciliation interval.
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -58,6 +63,7 @@ public class Environment {
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.3.0";
+    private static final String NETWORK_POLICY_DEFAULT = "false";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
@@ -70,6 +76,7 @@ public class Environment {
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = System.getenv().getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
+    public static final String NETWORK_POLICY = System.getenv().getOrDefault(NETWORK_POLICY_ENV, NETWORK_POLICY_DEFAULT);
     static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
@@ -98,5 +105,6 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
+        LOGGER.info(debugFormat, NETWORK_POLICY_ENV, NETWORK_POLICY);
     }
 }
