@@ -53,8 +53,10 @@ $ git add <file-name>
 +
 [source,options="nowrap",subs="+quotes"]
 ----
-$ git commit -a -m "<message>"
+$ git commit -a -s -m "<message>"
 ----
++
+Note that the project requires all commits to be signed off, indicating that _you_ certify the changes with the link:https://developercertificate.org/[DCO]. 
 . Push your changes to your fork
 +
 [source]

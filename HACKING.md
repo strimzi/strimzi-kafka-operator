@@ -280,3 +280,9 @@ The integration and system tests are run against a cluster specified in the envi
 For example command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`. However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
 
 System tests uses admin user for some actions. You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
+
+## DCO Signoff
+
+The project requires that all commits are signed-off, indicating that _you_ certify the changes with the DCO (https://developercertificate.org/). 
+This can be done using `git commit -s` for each commit in your pull request. 
+Alternatively, to signoff a bunch of commits you can use `git rebase --signoff _your-branch_`.
