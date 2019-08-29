@@ -372,7 +372,7 @@ public class Resources extends AbstractResources {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -428,7 +428,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
@@ -472,7 +472,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            TestUtils.waitFor("KafkaConnectS2I creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
@@ -519,7 +519,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
-            TestUtils.waitFor("Kafka Mirror Maker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Kafka Mirror Maker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -811,7 +811,7 @@ public class Resources extends AbstractResources {
 
     private DoneableDeployment createNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         client().createOrReplaceDeployment(co);
@@ -1208,7 +1208,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKafkaBridge kafkaBridge(KafkaBridge kafkaBridge) {
         return new DoneableKafkaBridge(kafkaBridge, kB -> {
-            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaBridge().inNamespace(client().getNamespace()).createOrReplace(kB);
