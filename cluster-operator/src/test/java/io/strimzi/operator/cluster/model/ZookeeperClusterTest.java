@@ -881,6 +881,42 @@ public class ZookeeperClusterTest {
     }
 
     @Test
+    public void testGeneratePersistentVolumeClaimsWithTemplate() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .withLabels(singletonMap("testLabel", "testValue"))
+                                    .withAnnotations(singletonMap("testAnno", "testValue"))
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                        .withDeleteClaim(false)
+                                        .withId(0)
+                                        .withSize("100Gi")
+                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                        .build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals("testValue", pvc.getMetadata().getLabels().get("testLabel"));
+            assertEquals("testValue", pvc.getMetadata().getAnnotations().get("testAnno"));
+        }
+    }
+
+    @Test
     public void testGeneratePersistentVolumeClaimsephemeral()    {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()

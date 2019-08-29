@@ -25,7 +25,9 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "statefulset", "pod", "bootstrapService", "brokersService"})
+        "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
+        "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
+        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -40,6 +42,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate perPodRoute;
     private ResourceTemplate externalBootstrapIngress;
     private ResourceTemplate perPodIngress;
+    private ResourceTemplate persistentVolumeClaim;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate kafkaContainer;
     private ContainerTemplate tlsSidecarContainer;
@@ -124,6 +127,16 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setPerPodIngress(ResourceTemplate perPodIngress) {
         this.perPodIngress = perPodIngress;
+    }
+
+    @Description("Template for all Kafka `PersistentVolumeClaims`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPersistentVolumeClaim() {
+        return persistentVolumeClaim;
+    }
+
+    public void setPersistentVolumeClaim(ResourceTemplate persistentVolumeClaim) {
+        this.persistentVolumeClaim = persistentVolumeClaim;
     }
 
     @Description("Template for Kafka `PodDisruptionBudget`.")

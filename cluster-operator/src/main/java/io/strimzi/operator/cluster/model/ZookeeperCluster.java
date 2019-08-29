@@ -266,6 +266,11 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
             }
 
+            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
+                zk.templatePersistentVolumeClaimLabels = template.getPersistentVolumeClaim().getMetadata().getLabels();
+                zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
+            }
+
             if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getEnv() != null) {
                 zk.templateZookeeperContainerEnvVars = template.getZookeeperContainer().getEnv();
             }
