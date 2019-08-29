@@ -42,6 +42,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate perPodIngress;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate kafkaContainer;
+    private ContainerTemplate tlsSidecarContainer;
+    private ContainerTemplate initContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -162,6 +164,26 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setKafkaContainer(ContainerTemplate kafkaContainer) {
         this.kafkaContainer = kafkaContainer;
+    }
+
+    @Description("Template for the Kafka broker TLS sidecar container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getTlsSidecarContainer() {
+        return tlsSidecarContainer;
+    }
+
+    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
+        this.tlsSidecarContainer = tlsSidecarContainer;
+    }
+
+    @Description("Template for the Kafka init container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getInitContainer() {
+        return initContainer;
+    }
+
+    public void setInitContainer(ContainerTemplate initContainer) {
+        this.initContainer = initContainer;
     }
 
     @Override

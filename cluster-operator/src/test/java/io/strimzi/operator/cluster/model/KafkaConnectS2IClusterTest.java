@@ -30,6 +30,7 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
@@ -39,6 +40,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuilder;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -943,5 +945,82 @@ public class KafkaConnectS2IClusterTest {
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-XX:MaxGCPauseMillis=20"));
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xmx1024m"));
         assertTrue(cont.getEnv().stream().filter(env -> "KAFKA_HEAP_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-Xms512m"));
+    }
+
+    @Test
+    public void testKafkaConnectContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
+        kafkaConnectContainer.setEnv(testEnvs);
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewTemplate()
+                .withConnectContainer(kafkaConnectContainer)
+                .endTemplate()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+    }
+
+    @Test
+    public void testKafkaContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS;
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
+        kafkaConnectContainer.setEnv(testEnvs);
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewTemplate()
+                .withConnectContainer(kafkaConnectContainer)
+                .endTemplate()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
     }
 }

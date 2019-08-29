@@ -280,11 +280,13 @@ class KafkaST extends MessagingBaseST {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues() {
 
+        // Kafka Broker config
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
         kafkaConfig.put("transaction.state.log.replication.factor", "1");
         kafkaConfig.put("default.replication.factor", "1");
 
+        // Kafka broker container env vars
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
         String testEnvOneValue = "test.env.one";
@@ -303,12 +305,37 @@ class KafkaST extends MessagingBaseST {
         ContainerTemplate kafkaContainer = new ContainerTemplate();
         kafkaContainer.setEnv(testEnvs);
 
+        // TLS Sidecar container env vars
+        ContainerEnvVar tlsEnvVar1 = new ContainerEnvVar();
+        String testTlsEnvOneKey = "TEST_ENV_1";
+        String testTlsEnvOneValue = "test.env.one";
+        tlsEnvVar1.setName(testTlsEnvOneKey);
+        tlsEnvVar1.setValue(testTlsEnvOneValue);
+
+        ContainerEnvVar tlsEnvVar2 = new ContainerEnvVar();
+        String testTlsEnvTwoKey = "TEST_ENV_2";
+        String testTlsEnvTwoValue = "test.env.two";
+        tlsEnvVar2.setName(testTlsEnvTwoKey);
+        tlsEnvVar2.setValue(testTlsEnvTwoValue);
+
+        List<ContainerEnvVar> tlsTestEnvs = new ArrayList<>();
+        tlsTestEnvs.add(tlsEnvVar1);
+        tlsTestEnvs.add(tlsEnvVar2);
+        ContainerTemplate tlsSidecarContainer = new ContainerTemplate();
+        tlsSidecarContainer.setEnv(tlsTestEnvs);
+
+        // Zookeeper Config
         Map<String, Object> zookeeperConfig = new HashMap<>();
         zookeeperConfig.put("tickTime", "2000");
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
         zookeeperConfig.put("autopurge.purgeInterval", "1");
 
+        // Zookeeper Env Vars
+        ContainerTemplate zookeeperContainer = new ContainerTemplate();
+        zookeeperContainer.setEnv(testEnvs);
+
+        // Updated broker env vars
         ContainerEnvVar updatedEnvVar2 = new ContainerEnvVar();
         String updatedTestEnvTwoValue = "updated.test.env.two";
         updatedEnvVar2.setName(testEnvTwoKey);
@@ -317,12 +344,28 @@ class KafkaST extends MessagingBaseST {
         ContainerEnvVar envVar3 = new ContainerEnvVar();
         String testEnvThreeKey = "TEST_ENV_3";
         String testEnvThreeValue = "test.env.three";
-        envVar3.setName(testEnvTwoKey);
-        envVar3.setValue(testEnvTwoValue);
+        envVar3.setName(testEnvThreeKey);
+        envVar3.setValue(testEnvThreeValue);
 
         List<ContainerEnvVar> updatedTestEnvs = new ArrayList<>();
         updatedTestEnvs.add(updatedEnvVar2);
         updatedTestEnvs.add(envVar3);
+
+        // Updated TLS Sidecar env vars
+        ContainerEnvVar updatedTlsEnvVar2 = new ContainerEnvVar();
+        String updatedTlsTestEnvTwoValue = "updated.test.env.two";
+        updatedEnvVar2.setName(testTlsEnvTwoKey);
+        updatedEnvVar2.setValue(updatedTlsTestEnvTwoValue);
+
+        ContainerEnvVar tlsEnvVar3 = new ContainerEnvVar();
+        String testTlsEnvThreeKey = "TEST_ENV_3";
+        String testTlsEnvThreeValue = "test.env.three";
+        tlsEnvVar3.setName(testTlsEnvThreeKey);
+        tlsEnvVar3.setValue(testTlsEnvThreeValue);
+
+        List<ContainerEnvVar> updatedTlsTestEnvs = new ArrayList<>();
+        updatedTlsTestEnvs.add(updatedTlsEnvVar2);
+        updatedTlsTestEnvs.add(tlsEnvVar3);
 
         int initialDelaySeconds = 30;
         int timeoutSeconds = 10;
@@ -364,6 +407,7 @@ class KafkaST extends MessagingBaseST {
                     .withConfig(kafkaConfig)
                     .withNewTemplate()
                         .withKafkaContainer(kafkaContainer)
+                        .withTlsSidecarContainer(tlsSidecarContainer)
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
@@ -383,7 +427,7 @@ class KafkaST extends MessagingBaseST {
                             .withFailureThreshold(failureThreshold)
                         .endLivenessProbe()
                     .endTlsSidecar()
-                .withReplicas(2)
+                    .withReplicas(2)
                     .withNewReadinessProbe()
                        .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
@@ -393,6 +437,10 @@ class KafkaST extends MessagingBaseST {
                         .withTimeoutSeconds(timeoutSeconds)
                     .endLivenessProbe()
                     .withConfig(zookeeperConfig)
+                    .withNewTemplate()
+                        .withZookeeperContainer(zookeeperContainer)
+                        .withTlsSidecarContainer(tlsSidecarContainer)
+                    .endTemplate()
                 .endZookeeper()
                 .editEntityOperator()
                     .editUserOperator()
@@ -460,14 +508,20 @@ class KafkaST extends MessagingBaseST {
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvTwoKey, testEnvTwoValue);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvOneKey, testTlsEnvOneValue);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvTwoKey, testTlsEnvTwoValue);
 
         LOGGER.info("Testing Zookeepers");
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n");
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", testEnvOneKey, testEnvOneValue);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", testEnvTwoKey, testEnvTwoValue);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvOneKey, testTlsEnvOneValue);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvTwoKey, testTlsEnvTwoValue);
 
         LOGGER.info("Checking configuration of TO and UO");
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
@@ -498,6 +552,7 @@ class KafkaST extends MessagingBaseST {
             kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.getTemplate().getKafkaContainer().setEnv(updatedTestEnvs);
+            kafkaClusterSpec.getTemplate().getTlsSidecarContainer().setEnv(updatedTlsTestEnvs);
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
             zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
@@ -516,6 +571,8 @@ class KafkaST extends MessagingBaseST {
             zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+            zookeeperClusterSpec.getTemplate().getZookeeperContainer().setEnv(updatedTestEnvs);
+            zookeeperClusterSpec.getTemplate().getTlsSidecarContainer().setEnv(updatedTlsTestEnvs);
             // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
             entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
@@ -557,14 +614,20 @@ class KafkaST extends MessagingBaseST {
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", testEnvThreeKey, testEnvThreeValue);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvTwoKey, updatedTlsTestEnvTwoValue);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvThreeKey, testTlsEnvThreeValue);
 
         LOGGER.info("Testing Zookeepers");
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n");
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", testEnvTwoKey, updatedTestEnvTwoValue);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", testEnvThreeKey, testEnvThreeValue);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvTwoKey, updatedTlsTestEnvTwoValue);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", testTlsEnvThreeKey, testTlsEnvThreeValue);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -602,32 +665,6 @@ class KafkaST extends MessagingBaseST {
                         assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
                         assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
                         assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
-                    });
-            });
-        } else {
-            fail("Pod with prefix " + podNamePrefix + " in name, not found");
-        }
-    }
-
-    /**
-     * Verifies container configuration by environment key
-     * @param podNamePrefix Name of pod where container is located
-     * @param containerName The container where verifying is expected
-     * @param configKey Expected configuration key
-     * @param config Expected configuration
-     */
-    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
-        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
-
-        if (pods.size() != 0) {
-            LOGGER.info("Testing configuration for container {}", containerName);
-            pods.forEach(pod -> {
-                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                    .forEach(container -> {
-                        container.getEnv().stream().filter(
-                            envVar -> envVar.getName().equals(configKey))
-                                .forEach(envVar -> assertEquals(config, envVar.getValue()));
                     });
             });
         } else {

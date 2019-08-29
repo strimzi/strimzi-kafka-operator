@@ -1088,6 +1088,18 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    initContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                     kafkaContainer:
                       type: object
                       properties:
@@ -1143,6 +1155,18 @@ spec:
                         maxUnavailable:
                           type: integer
                           minimum: 0
+                    tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                 version:
                   type: string
               required:
@@ -1857,6 +1881,30 @@ spec:
                         maxUnavailable:
                           type: integer
                           minimum: 0
+                    tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    zookeeperContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
               required:
               - replicas
               - storage
@@ -2904,6 +2952,42 @@ spec:
                                 type: string
                               tolerationSeconds:
                                 type: integer
+                              value:
+                                type: string
+                    tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    topicOperatorContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    userOperatorContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
                               value:
                                 type: string
             clusterCa:

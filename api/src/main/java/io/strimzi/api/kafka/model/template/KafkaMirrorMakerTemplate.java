@@ -33,6 +33,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
     private ResourceTemplate deployment;
     private PodTemplate pod;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
+    private ContainerTemplate mirrorMakerContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Mirror Maker `Deployment`.")
@@ -63,6 +64,16 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
 
     public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
         this.podDisruptionBudget = podDisruptionBudget;
+    }
+
+    @Description("Template for Kafka Mirror Maker container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getMirrorMakerContainer() {
+        return mirrorMakerContainer;
+    }
+
+    public void setMirrorMakerContainer(ContainerTemplate mirrorMakerContainer) {
+        this.mirrorMakerContainer = mirrorMakerContainer;
     }
 
     @Override

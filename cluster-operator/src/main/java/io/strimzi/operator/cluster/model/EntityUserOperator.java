@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
@@ -63,6 +64,7 @@ public class EntityUserOperator extends AbstractModel {
     private long zookeeperSessionTimeoutMs;
     private int clientsCaValidityDays;
     private int clientsCaRenewalDays;
+    protected List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -254,6 +256,9 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
+
         return varList;
     }
 
@@ -290,5 +295,9 @@ public class EntityUserOperator extends AbstractModel {
                 .build();
 
         return rb;
+    }
+
+    public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
+        templateContainerEnvVars = envVars;
     }
 }

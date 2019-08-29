@@ -718,6 +718,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|initContainer             1.2+<.<|Template for the Kafka init container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
@@ -728,6 +730,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget       1.2+<.<|Template for Kafka `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|tlsSidecarContainer       1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-ResourceTemplate-{context}']
@@ -794,7 +798,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -896,6 +900,10 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|tlsSidecarContainer  1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|zookeeperContainer   1.2+<.<|Template for the Zookeeper container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-TopicOperatorSpec-{context}']
@@ -1043,11 +1051,17 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Property           |Description
-|deployment  1.2+<.<|Template for Entity Operator `Deployment`.
+|Property                       |Description
+|deployment              1.2+<.<|Template for Entity Operator `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod         1.2+<.<|Template for Entity Operator `Pods`.
+|pod                     1.2+<.<|Template for Entity Operator `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
+|tlsSidecarContainer     1.2+<.<|Template for the Entity Operator TLS sidecar container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|topicOperatorContainer  1.2+<.<|Template for the Entity Topic Operator container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|userOperatorContainer   1.2+<.<|Template for the Entity User Operator container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-CertificateAuthority-{context}']
@@ -1215,6 +1229,8 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<|Template for Kafka Connect API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|connectContainer     1.2+<.<|Template for the Kafka Connect container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Connect `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
@@ -1916,12 +1932,14 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Property                    |Description
-|deployment           1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
+|Property                     |Description
+|deployment            1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                  1.2+<.<|Template for Kafka Mirror Maker `Pods`.
+|pod                   1.2+<.<|Template for Kafka Mirror Maker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|podDisruptionBudget  1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
+|mirrorMakerContainer  1.2+<.<|Template for Kafka Mirror Maker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|podDisruptionBudget   1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 
@@ -2116,6 +2134,8 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<|Template for Kafka Bridge API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|bridgeContainer      1.2+<.<|Template for the Kafka Bridge container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Bridge `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====

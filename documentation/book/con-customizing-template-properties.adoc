@@ -50,6 +50,8 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `perPodRoute`:: Configures the per-Pod routes used by clients connecting to the Kafka broker from outside OpenShift to access individual brokers using OpenShift `Routes`.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka broker `StatefulSet`.
 `kafkaContainer`:: Configures the container used to run the Kafka broker, including custom environment variables. 
+`tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
+`initContainer`:: Configures the container used to initialize the brokers.
 
 .Supported resources in Zookeeper cluster
 
@@ -60,6 +62,8 @@ When defined in a Zookeeper cluster, the `template` object can have the followin
 `clientsService`:: Configures the service used by clients to access Zookeeper.
 `nodesService`:: Configures the headless service.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Zookeeper `StatefulSet`.
+`zookeeperContainer`:: Configures the container used to run the Zookeeper Node, including custom environment variables. 
+`tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
 
 .Supported resources in Entity Operator
 
@@ -67,6 +71,9 @@ When defined in an Entity Operator , the template object can have the following 
 
 `deployment`:: Configures the Deployment used by the Entity Operator.
 `pod`:: Configures the Entity Operator `Pod` created by the `Deployment`.
+`topicOperatorContainer`:: Configures the container used to run the Topic Operator, including custom environment variables. 
+`userOperatorContainer`:: Configures the container used to run the User Operator, including custom environment variables. 
+`tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
 
 .Supported resources in Kafka Connect and Kafka Connect with Source2Image support
 
@@ -76,6 +83,7 @@ When used with Kafka Connect and Kafka Connect with Source2Image support , the t
 `pod`:: Configures the Kafka Connect `Pods` created by the `Deployment`.
 `apiService`:: Configures the service used by the Kafka Connect REST API.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Connect `Deployment`.
+`connectContainer`:: Configures the container used to run Kafka Connect, including custom environment variables. 
 
 .Supported resource in Kafka Mirror Maker
 
@@ -84,3 +92,4 @@ When used with Kafka Mirror Maker , the template object can have the following f
 `deployment`:: Configures the Kafka Mirror Maker `Deployment`.
 `pod`:: Configures the Kafka Mirror Maker `Pods` created by the `Deployment`.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Mirror Maker `Deployment`.
+`mirrorMakerContainer`:: Configures the container used to run Kafka Mirror Maker, including custom environment variables. 

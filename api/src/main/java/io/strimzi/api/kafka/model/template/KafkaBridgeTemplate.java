@@ -34,6 +34,7 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
     private PodTemplate pod;
     private ResourceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
+    private ContainerTemplate bridgeContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Bridge `Deployment`.")
@@ -74,6 +75,16 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
 
     public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
         this.podDisruptionBudget = podDisruptionBudget;
+    }
+
+    @Description("Template for the Kafka Bridge container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getBridgeContainer() {
+        return bridgeContainer;
+    }
+
+    public void setBridgeContainer(ContainerTemplate bridgeContainer) {
+        this.bridgeContainer = bridgeContainer;
     }
 
     @Override

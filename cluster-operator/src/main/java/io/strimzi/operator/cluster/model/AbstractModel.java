@@ -50,6 +50,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -70,9 +71,11 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1184,5 +1187,37 @@ public abstract class AbstractModel {
                     .withLabels(labels.toMap())
                 .endMetadata()
             .build();
+    }
+
+    /**
+     * Adds the supplied list of container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
+     * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar}, checking first if the
+     * environment variable key has already been set in the existing list and then converts them. If a key is already in
+     * use then the container environment variable will not be added to the environment variable list and a warning will
+     * be logged.
+     *
+     * @param existingEnvs The list of fabric8 environment variable object that will be modified.
+     * @param containerEnvs The list of container environment variable objects to be converted and added to the existing
+     *                      environment variable list
+     **/
+    protected void addContainerEnvsToExistingEnvs(List<EnvVar> existingEnvs, List<ContainerEnvVar> containerEnvs) {
+
+        if (containerEnvs != null) {
+            // Create set of env var names to test if any user defined template env vars will conflict with those set above
+            Set<String> predefinedEnvs = new HashSet<String>();
+            for (EnvVar envVar : existingEnvs) {
+                predefinedEnvs.add(envVar.getName());
+            }
+
+            // Set custom env vars from the user defined template
+            for (ContainerEnvVar containerEnvVar : containerEnvs) {
+                if (predefinedEnvs.contains(containerEnvVar.getName())) {
+                    log.warn("User defined container template environment variable " + containerEnvVar.getName() +
+                            " is already in use and will be ignored");
+                } else {
+                    existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+                }
+            }
+        }
     }
 }

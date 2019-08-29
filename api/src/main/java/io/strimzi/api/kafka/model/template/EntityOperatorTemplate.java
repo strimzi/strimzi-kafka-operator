@@ -32,6 +32,9 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
 
     private ResourceTemplate deployment;
     private PodTemplate pod;
+    private ContainerTemplate topicOperatorContainer;
+    private ContainerTemplate userOperatorContainer;
+    private ContainerTemplate tlsSidecarContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Entity Operator `Deployment`.")
@@ -52,6 +55,36 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
 
     public void setPod(PodTemplate pod) {
         this.pod = pod;
+    }
+
+    @Description("Template for the Entity Topic Operator container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getTopicOperatorContainer() {
+        return topicOperatorContainer;
+    }
+
+    public void setTopicOperatorContainer(ContainerTemplate topicOperatorContainer) {
+        this.topicOperatorContainer = topicOperatorContainer;
+    }
+
+    @Description("Template for the Entity User Operator container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getUserOperatorContainer() {
+        return userOperatorContainer;
+    }
+
+    public void setUserOperatorContainer(ContainerTemplate userOperatorContainer) {
+        this.userOperatorContainer = userOperatorContainer;
+    }
+
+    @Description("Template for the Entity Operator TLS sidecar container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getTlsSidecarContainer() {
+        return tlsSidecarContainer;
+    }
+
+    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
+        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Override

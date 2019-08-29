@@ -19,11 +19,13 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -596,5 +598,82 @@ public class KafkaBridgeClusterTest {
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertEquals(limits, cont.getResources().getLimits());
         assertEquals(requests, cont.getResources().getRequests());
+    }
+
+    @Test
+    public void testKafkaBridgeContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaBridgeContainer = new ContainerTemplate();
+        kafkaBridgeContainer.setEnv(testEnvs);
+
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withNewTemplate()
+                .withBridgeContainer(kafkaBridgeContainer)
+                .endTemplate()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+    }
+
+    @Test
+    public void testKafkaBridgeContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG;
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate kafkaBridgeContainer = new ContainerTemplate();
+        kafkaBridgeContainer.setEnv(testEnvs);
+
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withNewTemplate()
+                .withBridgeContainer(kafkaBridgeContainer)
+                .endTemplate()
+                .endSpec()
+                .build();
+
+        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
     }
 }

@@ -629,6 +629,18 @@ spec:
                           type: object
                         annotations:
                           type: object
+                connectContainer:
+                  type: object
+                  properties:
+                    env:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
                 podDisruptionBudget:
                   type: object
                   properties:

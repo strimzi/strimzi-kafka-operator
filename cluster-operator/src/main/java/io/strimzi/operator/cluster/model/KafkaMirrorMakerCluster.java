@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationScramSha512;
@@ -100,6 +101,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private String consumerSaslMechanism;
     private String consumerUsername;
     private PasswordSecretSource consumerPasswordSecret;
+    protected List<ContainerEnvVar> templateContainerEnvVars;
 
     /**
      * Constructor
@@ -211,6 +213,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
                     kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
                     kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                if (template.getMirrorMakerContainer() != null && template.getMirrorMakerContainer().getEnv() != null) {
+                    kafkaMirrorMakerCluster.templateContainerEnvVars = template.getMirrorMakerContainer().getEnv();
                 }
 
                 ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
@@ -436,6 +442,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 String.valueOf(livenessProbeOptions.getPeriodSeconds() != null ? livenessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_READINESS_PERIOD,
                 String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
+
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }
