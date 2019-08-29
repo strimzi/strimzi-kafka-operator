@@ -283,6 +283,6 @@ System tests uses admin user for some actions. You can specify admin user via va
 
 ## DCO Signoff
 
-The project requires that all commits are signed-off, indicating that _you_ certify the changes with the DCO (https://developercertificate.org/). 
+The project requires that all commits are signed-off, indicating that _you_ certify the changes with the developer certificate of origin (DCO) (https://developercertificate.org/). 
 This can be done using `git commit -s` for each commit in your pull request. 
 Alternatively, to signoff a bunch of commits you can use `git rebase --signoff _your-branch_`.

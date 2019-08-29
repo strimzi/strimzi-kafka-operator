@@ -56,7 +56,7 @@ $ git add <file-name>
 $ git commit -a -s -m "<message>"
 ----
 +
-Note that the project requires all commits to be signed off, indicating that _you_ certify the changes with the link:https://developercertificate.org/[DCO]. 
+Note that the project requires all commits to be signed off, indicating that _you_ certify the changes with the link:https://developercertificate.org/[developer certificate of origin (DCO)]. 
 . Push your changes to your fork
 +
 [source]
