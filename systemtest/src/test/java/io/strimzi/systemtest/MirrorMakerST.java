@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -294,6 +295,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
         int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
+
+        TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
+            Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            () -> sent == receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, kafkaClientsPodName));
+
         int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, kafkaClientsPodName);
 
         assertSentAndReceivedMessages(sent, receivedSource);

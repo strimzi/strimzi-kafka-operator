@@ -490,6 +490,8 @@ class SecurityST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
         String userName = "user-example";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
@@ -506,6 +508,12 @@ class SecurityST extends MessagingBaseST {
         for (Secret s : secrets) {
             LOGGER.info("Deleting secret {}", s.getMetadata().getName());
             kubeClient().deleteSecret(s.getMetadata().getName());
+        }
+
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+        for (Secret s : secrets) {
             StUtils.waitForSecretReady(s.getMetadata().getName());
         }
 

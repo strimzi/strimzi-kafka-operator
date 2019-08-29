@@ -215,7 +215,7 @@ class KafkaST extends MessagingBaseST {
         // Remove EO from Kafka DTO
         kafka.getSpec().setEntityOperator(null);
         // Replace Kafka configuration with removed EO
-        testMethodResources.kafka(kafka).done();
+        testMethodResources().kafka(kafka).done();
 
         // Wait when EO(UO + TO) will be removed
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
@@ -1840,6 +1840,7 @@ class KafkaST extends MessagingBaseST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
