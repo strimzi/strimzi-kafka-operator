@@ -20,35 +20,41 @@ Next, create an OpenShift Route to expose the {ProductName} Kafka Bridge Service
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: <bridge-name>
+  name: quickstart-route
   labels:
-    app: <bridge-name>
+    app: quickstart-route
 spec:
   port:
     targetPort: 8080
   to:
     kind: Service
-    name: <bridge-name>-bridge-service
+    name: quickstart-bridge-service
     weight: 100
-    / ...
 ----
-In the three `<bridge-name>` fields, enter the name of the Kafka Bridge that you deployed in xref:proc-deploying-kafka-bridge-quickstart-{context}[Deploying the Kafka Bridge to your Kubernetes cluster].
 
 . Save the file to the `examples/kafka-bridge` directory as `bridge-quickstart-route.yaml`.
 
-. Create the Route in your Kubernetes cluster:
+. Use `oc` to create the Route in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
-kubectl apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
+oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
 ----
 
-. Retrieve the address of the route; you will use the address as the `<bridge-address>` parameter in the remainder of this quick start. **NOT ACCURATE - THE ENV VAR IS NOT USED IN OTHER PROCEDURES**
+. Use `oc` to retrieve the location of the Route:
 +
 [source,shell,subs=attributes+]
 ----
-export BRIDGE="$(oc get routes my-bridge -o jsonpath='{.status.ingress[0].host}')"
+oc get routes
 ----
++
+[source,shell,subs=attributes+]
+----
+NAME               HOST/PORT                              
+quickstart-route   quickstart-route-<namespace>.<address>
+----
++
+Use the HOST/PORT as the `<bridge-address>` parameter in the remainder of this quick start.
 
 .What to do next
 

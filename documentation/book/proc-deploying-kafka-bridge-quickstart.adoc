@@ -16,17 +16,17 @@
 apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaBridge
 metadata:
-  name: <bridge-name> <1>
+  name: quickstart <1>
 spec:
   replicas: 1
-  bootstrapServers: <namespace>-kafka-bootstrap:9092 <2>
+  bootstrapServers: <cluster-name>-kafka-bootstrap:9092 <2>
   http:
     port: 8080
 / ...
 ----
-<1> Customize the name of the Kafka Bridge. When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. For example, if you name the Kafka Bridge `my-kafka-api`, the `KafkaBridge` Deployment is named `my-kafka-api-bridge`, the Service is named `my-kafka-api-bridge-service`, and so on.
+<1> When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. In this example, the  Kafka Bridge Deployment is named `quickstart-bridge` and the accompanying Kafka Bridge Service is named `quickstart-bridge-service`.
 +
-<2> In the `bootstrapServers` property, enter the Kubernetes namespace in which your Kafka cluster is deployed. For example, enter `my-project`.
+<2> In the `bootstrapServers` property, enter the name of the Kafka cluster.
 
 . Deploy the Kafka Bridge to your Kubernetes cluster:
 +
@@ -35,13 +35,22 @@ spec:
 kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
 ----
 +
-A `KafkaBridge` Deployment and other related resources are created in your Kubernetes cluster.
+A `quickstart-bridge` Deployment and other related resources are created in your Kubernetes cluster.
 
 . Verify that the Kafka Bridge was successfully deployed:
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl status
+kubectl get deployments
+----
++
+[source,shell,subs="attributes+"]
+----
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
+quickstart-bridge                  1/1     1            1          34m
+my-cluster-connect                 1/1     1            1          24h
+my-cluster-entity-operator         1/1     1            1          24h
+/...
 ----
 
 .What to do next
@@ -50,4 +59,4 @@ After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-
 
 .Additional resources
 
-* For more information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-str[].
+* For more detailed information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-str[].
