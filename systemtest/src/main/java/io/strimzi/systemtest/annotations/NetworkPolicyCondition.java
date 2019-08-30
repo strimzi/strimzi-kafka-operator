@@ -19,7 +19,7 @@ public class NetworkPolicyCondition implements ExecutionCondition {
         if (Environment.NETWORK_POLICY.equals("true")) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
-            LOGGER.info("{} is for NetworkPolicy, but the running cluster has not enabled NetworkPolicy {}",
+            LOGGER.info("{} is for NetworkPolicy, but the running cluster has not enabled NetworkPolicy: Ignoring {}",
                     extensionContext.getDisplayName(),
                     extensionContext.getDisplayName()
             );
