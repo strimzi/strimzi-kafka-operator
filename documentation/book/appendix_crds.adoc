@@ -35,6 +35,8 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
+|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter.
+|xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
 |string array
 |====
@@ -588,7 +590,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -628,7 +630,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 [id='type-ResourceRequirements-{context}']
 ### `ResourceRequirements` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -739,7 +741,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -767,7 +769,7 @@ Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTem
 [id='type-PodTemplate-{context}']
 ### `PodTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -840,6 +842,24 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |====
 
+<<<<<<< HEAD
+=======
+[id='type-PodDisruptionBudgetTemplate-{context}']
+### `PodDisruptionBudgetTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
+|integer
+|====
+
+>>>>>>> Add kafka exporter
 [id='type-ZookeeperClusterSpec-{context}']
 ### `ZookeeperClusterSpec` schema reference
 
@@ -1086,6 +1106,56 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |integer
 |certificateExpirationPolicy   1.2+<.<|How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
 |string (one of [replace-key, renew-certificate])
+|====
+
+[id='type-KafkaExporterSpec-{context}']
+### `KafkaExporterSpec` schema reference
+
+Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|replicas          1.2+<.<|The number of pods in the `Deployment`.
+|integer
+|image             1.2+<.<|The docker image for the pods.
+|string
+|groupRegex        1.2+<.<|Regex that determines which consumer groups to collect.
+|string
+|topicRegex        1.2+<.<|Regex that determines which topics to collect.
+|string
+|watchedNamespace  1.2+<.<|The namespace the Exporter Operator should watch.
+|string
+|resources         1.2+<.<|Resource constraints (limits and requests).
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|logging           1.2+<.<|Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].
+|string
+|enableSarama      1.2+<.<|Turn on Sarama logging.
+|boolean
+|template          1.2+<.<|Template for Kafka Exporter resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+|livenessProbe     1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe    1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|====
+
+[id='type-KafkaExporterTemplate-{context}']
+### `KafkaExporterTemplate` schema reference
+
+Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|deployment           1.2+<.<|Template for Kafka Exporter `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod                  1.2+<.<|Template for Kafka Exporter `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|podDisruptionBudget  1.2+<.<|Template for Kafka Exporter `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 
 [id='type-KafkaStatus-{context}']

@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaUpgrade;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -301,6 +302,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
+                .compose(state -> state.getExporterOperatorDescription())
+                .compose(state -> state.exporterOperatorServiceAccount())
+                .compose(state -> state.exporterOperatorDeployment())
+                .compose(state -> state.exporterOperatorReady())
+
                 .compose(state -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
@@ -354,6 +360,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
+
+        /* test */ KafkaExporter exporterOperator;
+        /* test */ Deployment exporterDeployment = null;
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
@@ -2639,6 +2648,71 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String getInternalServiceHostname(String serviceName)    {
             return serviceName + "." + namespace + ".svc";
         }
+
+        private final Future<ReconciliationState> getExporterOperatorDescription() {
+            Future<ReconciliationState> fut = Future.future();
+
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    try {
+                        this.exporterOperator = KafkaExporter.fromCrd(kafkaAssembly);
+
+                        if (exporterOperator != null && kafkaAssembly.getSpec().getKafkaExporter() != null) {
+                            this.exporterDeployment = exporterOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                        } else {
+                            this.exporterOperator = null;
+                            this.exporterDeployment = null;
+                        }
+
+                        future.complete(this);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                }, true,
+                res -> {
+                    if (res.succeeded()) {
+                        fut.complete(res.result());
+                    } else {
+                        fut.fail(res.cause());
+                    }
+                }
+            );
+            return fut;
+        }
+
+        Future<ReconciliationState> exporterOperatorServiceAccount() {
+            return withVoid(serviceAccountOperations.reconcile(namespace,
+                    KafkaExporter.containerServiceAccountName(name),
+                    exporterDeployment != null ? exporterOperator.generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> exporterOperatorDeployment() {
+            if (this.exporterOperator != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.exporterOperator.getName());
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int caCertGeneration = getCaCertGeneration(this.clusterCa);
+                    Annotations.annotations(exporterDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.exporterOperatorName(name), exporterDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.exporterOperatorName(name), null));
+            }
+        }
+
+        Future<ReconciliationState> exporterOperatorReady() {
+            if (this.exporterOperator != null && exporterDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.exporterOperator.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.waitForObserved(namespace, this.exporterOperator.getName(), 1_000, operationTimeoutMs));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.exporterOperator.getName(), 1_000, operationTimeoutMs));
+                }).map(i -> this);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
     }
 
     private Date dateSupplier() {

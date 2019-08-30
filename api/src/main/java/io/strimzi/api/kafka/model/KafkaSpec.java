@@ -41,6 +41,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
     private TopicOperatorSpec topicOperator;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
+    private KafkaExporterSpec kafkaExporter;
 
     private CertificateAuthority clientsCa;
     private List<String> maintenanceTimeWindows;
@@ -114,6 +115,15 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
 
     public void setMaintenanceTimeWindows(List<String> maintenanceTimeWindows) {
         this.maintenanceTimeWindows = maintenanceTimeWindows;
+    }
+
+    @Description("Configuration of the Kafka Exporter")
+    public KafkaExporterSpec getKafkaExporter() {
+        return kafkaExporter;
+    }
+
+    public void setKafkaExporter(KafkaExporterSpec kafkaExporter) {
+        this.kafkaExporter = kafkaExporter;
     }
 
     @Override
