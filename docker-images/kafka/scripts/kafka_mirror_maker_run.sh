@@ -58,7 +58,7 @@ fi
 
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar):jaeger"
+  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar)=jaeger"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
