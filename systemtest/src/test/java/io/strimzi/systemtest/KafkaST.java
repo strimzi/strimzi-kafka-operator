@@ -1913,8 +1913,6 @@ class KafkaST extends MessagingBaseST {
 
         testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
 
-        LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
-
         String topicNameInPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
                 "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out();
 
@@ -1927,6 +1925,7 @@ class KafkaST extends MessagingBaseST {
         String topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         assertThat("Topic contains data", topicData, isEmptyOrNullString());
 
         waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
@@ -1936,8 +1935,6 @@ class KafkaST extends MessagingBaseST {
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
-
-        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
     }
 
     @Test
@@ -1978,8 +1975,6 @@ class KafkaST extends MessagingBaseST {
         }
 
         assertThat("Folder kafka-log0 doesn't contains 50 files", result, containsString(stringToMatch.toString()));
-
-        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
     }
 
     @BeforeEach
