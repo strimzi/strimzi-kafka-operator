@@ -40,6 +40,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
 
     private Map<String, Object> config = new HashMap<>(0);
 
