@@ -50,8 +50,8 @@ import static org.junit.Assert.assertTrue;
 public class EntityOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
-            "2.1.0         2.1 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
+            "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
             map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
                     "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
 

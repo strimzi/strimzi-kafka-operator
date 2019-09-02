@@ -28,7 +28,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         "(?<default>default)?\\s+" +
         "(?<proto>[0-9.]+)\\s+" +
         "(?<msg>[0-9.]+)\\s+" +
-        "(?<sha>[0-9A-Za-z]+)");
+        "(?<sha>[0-9A-Za-z]+)\\s+" +
+        "(?<thirdpartylibs>[0-9A-Za-z._-]+)");
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.

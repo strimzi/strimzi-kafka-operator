@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
@@ -32,13 +33,13 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "template"})
+        "affinity", "tolerations", "logging", "metrics", "tracing", "template"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers";
+    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
 
     private Map<String, Object> config = new HashMap<>(0);
 
@@ -52,6 +53,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
     private Map<String, Object> metrics;
+    private Tracing tracing;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private String bootstrapServers;
@@ -160,6 +162,16 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The configuration of tracing in Kafka Connect.")
+    public Tracing getTracing() {
+        return tracing;
+    }
+
+    public void setTracing(Tracing tracing) {
+        this.tracing = tracing;
     }
 
     @Description("The pod's affinity rules.")
