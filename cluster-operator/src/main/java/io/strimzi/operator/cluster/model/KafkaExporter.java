@@ -32,7 +32,6 @@ import java.util.List;
 public class KafkaExporter extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka-exporter";
-    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -60,14 +59,14 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Mirror Maker cluster resources are going to be created
-     * @param cluster   overall cluster name
-     * @param labels    labels to add to the cluster
+     * @param namespace Kubernetes/OpenShift namespace where Kafka Exporter resources are going to be created
+     * @param kafkaCluster kafkaCluster name
+     * @param labels    labels to add to the kafkaCluster
      */
-    protected KafkaExporter(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
-        this.name = KafkaExporterResources.deploymentName(cluster);
-        this.serviceName = KafkaExporterResources.serviceName(cluster);
+    protected KafkaExporter(String namespace, String kafkaCluster, Labels labels) {
+        super(namespace, kafkaCluster, labels);
+        this.name = KafkaExporterResources.deploymentName(kafkaCluster);
+        this.serviceName = KafkaExporterResources.serviceName(kafkaCluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -109,7 +108,6 @@ public class KafkaExporter extends AbstractModel {
 
             kafkaExporter.setLogging(spec.getLogging());
             kafkaExporter.setSaramaLoggingEnabled(spec.getEnableSaramaLogging());
-
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
@@ -241,17 +239,17 @@ public class KafkaExporter extends AbstractModel {
         return createPodDisruptionBudget();
     }
 
-    public static String entityOperatorName(String cluster) {
-        return KafkaExporterResources.deploymentName(cluster);
+    public static String kafkaExporterName(String kafkaCluster) {
+        return KafkaExporterResources.deploymentName(kafkaCluster);
     }
 
     /**
-     * Get the name of the Entity Operator service account given the name of the {@code cluster}.
-     * @param cluster The cluster name
-     * @return The name of the EO service account.
+     * Get the name of the Kafka Exporter service account given the name of the {@code kafkaCluster}.
+     * @param kafkaCluster The cluster name
+     * @return The name of the KE service account.
      */
-    public static String containerServiceAccountName(String cluster) {
-        return entityOperatorName(cluster);
+    public static String containerServiceAccountName(String kafkaCluster) {
+        return kafkaExporterName(kafkaCluster);
     }
 
     @Override
@@ -275,17 +273,13 @@ public class KafkaExporter extends AbstractModel {
         return topicRegex;
     }
 
-    public static String metricAndLogConfigsName(String cluster) {
-        return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
-    }
-
     @Override
     protected String getServiceAccountName() {
         return KafkaExporterResources.serviceAccountName(cluster);
     }
 
-    public static String exporterOperatorName(String cluster) {
-        return cluster + NAME_SUFFIX;
+    public static String exporterOperatorName(String kafkaCluster) {
+        return kafkaCluster + NAME_SUFFIX;
     }
 
     public void setLogging(String logging) {
@@ -296,7 +290,7 @@ public class KafkaExporter extends AbstractModel {
         this.version = version;
     }
 
-    public String getExporterName(String cluster) {
-        return KafkaExporterResources.deploymentName(cluster);
+    public String getExporterName(String kafkaCluster) {
+        return KafkaExporterResources.deploymentName(kafkaCluster);
     }
 }

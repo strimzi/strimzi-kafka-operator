@@ -6,35 +6,35 @@ package io.strimzi.api.kafka.model;
 
 /**
  * Encapsulates the naming scheme used for the resources which the Cluster Operator manages for a
- * {@code KafkaExporter} cluster.
+ * {@code KafkaExporter} instance.
  */
 public class KafkaExporterResources {
     protected KafkaExporterResources() { }
 
     /**
-     * Returns the name of the Kafka Exporter {@code Deployment} for a {@code KafkaExporter} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
+     * Returns the name of the Kafka Exporter {@code Deployment}.
+     * @param kafkaClusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
      * @return The name of the corresponding Kafka Exporter {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
-        return clusterName + "-kafka-exporter";
+    public static String deploymentName(String kafkaClusterName) {
+        return kafkaClusterName + "-kafka-exporter";
     }
 
     /**
-     * Returns the name of the Kafka Exporter {@code ServiceAccount} for a {@code KafkaExporter} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
+     * Returns the name of the Kafka Exporter {@code ServiceAccount}.
+     * @param kafkaClusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
      * @return The name of the corresponding Kafka Exporter {@code ServiceAccount}.
      */
-    public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+    public static String serviceAccountName(String kafkaClusterName) {
+        return deploymentName(kafkaClusterName);
     }
 
     /**
-     * Returns the name of the Prometheus {@code Service} for a {@code KafkaExporter} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
+     * Returns the name of the Prometheus {@code Service}.
+     * @param kafkaClusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
      * @return The name of the corresponding {@code Service}.
      */
-    public static String serviceName(String clusterName) {
-        return clusterName + "-kafka-exporter";
+    public static String serviceName(String kafkaClusterName) {
+        return kafkaClusterName + "-kafka-exporter";
     }
 }
