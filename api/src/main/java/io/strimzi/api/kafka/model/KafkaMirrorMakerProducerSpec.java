@@ -25,7 +25,7 @@ public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
 
     private Boolean abortOnSendFailure;
 
-    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security.";
+    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security., interceptor.classes";
 
     @Description("Flag to set the Mirror Maker to exit on a failed send. Default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)

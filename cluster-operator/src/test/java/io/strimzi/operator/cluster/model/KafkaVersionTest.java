@@ -34,8 +34,8 @@ public class KafkaVersionTest {
     public void parse() throws Exception {
         Map<String, KafkaVersion> map = new HashMap<>();
         KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(new LineNumberReader(new StringReader(
-                "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
-                        "2.0.1  2.0 2.0 1234567890abcdef")), map);
+                "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
+                        "2.0.1  2.0 2.0 1234567890abcdef 2.0.x")), map);
         assertEquals("2.0.0", defaultVersion.version());
         assertEquals(2, map.size());
         assertTrue(map.containsKey("2.0.0"));

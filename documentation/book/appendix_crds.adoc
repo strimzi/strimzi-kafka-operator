@@ -1196,13 +1196,15 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication         1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
+|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
@@ -1211,6 +1213,21 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |tls                    1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|====
+
+[id='type-JaegerTracing-{context}']
+### `JaegerTracing` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `JaegerTracing` from other subtypes which may be added in the future.
+It must have the value `jaeger` for the type `JaegerTracing`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<|Must be `jaeger`.
 |string
 |====
 
@@ -1483,7 +1500,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
+|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
 |externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
@@ -1497,6 +1514,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|tracing                   1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
@@ -1800,6 +1819,8 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
+|tracing         1.2+<.<|The configuration of tracing in Kafka Mirror Maker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template        1.2+<.<|Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<|Pod liveness checking.
@@ -1829,7 +1850,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
+|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes.
 |map
 |tls                   1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
@@ -1918,7 +1939,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |boolean
 |authentication      1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security., interceptor.classes.
 |map
 |tls                 1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]

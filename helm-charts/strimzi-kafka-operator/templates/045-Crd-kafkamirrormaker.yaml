@@ -446,6 +446,15 @@ spec:
               - type
             metrics:
               type: object
+            tracing:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jaeger
+              required:
+              - type
             template:
               type: object
               properties:
