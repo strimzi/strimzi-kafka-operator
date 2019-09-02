@@ -1351,6 +1351,8 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
+        StUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+
         waitForClusterAvailability(NAMESPACE);
     }
 
@@ -1374,6 +1376,8 @@ class KafkaST extends MessagingBaseST {
         waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
+
+        StUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }

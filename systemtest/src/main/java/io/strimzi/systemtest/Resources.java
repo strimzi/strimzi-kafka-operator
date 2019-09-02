@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -55,6 +56,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -631,7 +633,7 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-
+        client().getClient().apps().deployments().inNamespace(kafkaMirrorMaker.getMetadata().getNamespace()).withName(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName())).delete();
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
@@ -639,7 +641,7 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(kafkaBridge.getMetadata().getName()).delete();
+        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName())).delete();
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));

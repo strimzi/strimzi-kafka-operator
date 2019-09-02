@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Date;
@@ -705,5 +706,17 @@ public class StUtils {
             }
         }
         return currentTag;
+    }
+
+    public static void waitUntilAddressIsReachable(String address) {
+        TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    InetAddress.getByName(kubeClient().getService("my-cluster-kafka-external-bootstrap").getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            });
     }
 }
