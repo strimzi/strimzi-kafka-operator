@@ -19,6 +19,7 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
+import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
@@ -742,16 +743,31 @@ public class TopicOperatorTest {
 
         Async async = context.async();
         topicOperator.onResourceEvent(logContext, resource, DELETED).setHandler(ar -> {
-            if (deleteTopicException != null
-                    || storeException != null) {
-                assertFailed(context, ar);
+            if (deleteTopicException != null || storeException != null) {
+
+                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                    // For the specific topic deletion disabled exception the exception will be caught and the resource
+                    // event will be processed successfully
+                    assertSucceeded(context, ar);
+                } else {
+                    // For all other exceptions the resource event will fail.
+                    assertFailed(context, ar);
+                }
+
                 if (deleteTopicException != null) {
-                    // should still exist
+                    // If there was a broker deletion exception the broker topic should still exist
                     mockKafka.assertExists(context, kafkaTopic.getTopicName());
                 } else {
                     mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
                 }
-                mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
+
+                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                    //If there was a topic deletion disabled exception then the Store topic would still be deleted.
+                    mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
+                } else {
+                    mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
+                }
+
             } else {
                 assertSucceeded(context, ar);
                 mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
@@ -821,6 +837,14 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicRemoved_NoSuchEntityExistsException(TestContext context) {
         Exception deleteTopicException = null;
         Exception storeException = new TopicStore.NoSuchEntityExistsException();
+        resourceRemoved(context, deleteTopicException, storeException);
+    }
+
+    @Test
+    public void testOnKafkaTopicRemoved_TopicDeletionDisabledException(TestContext context) {
+        // Deals with the situation where the delete.topic.enable=false config is set in the broker
+        Exception deleteTopicException = new TopicDeletionDisabledException("Topic deletion disable");
+        Exception storeException = null;
         resourceRemoved(context, deleteTopicException, storeException);
     }
 
