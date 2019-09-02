@@ -277,6 +277,8 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         }
     }
 
+    // spotbugs bug
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
         JsonFactory factory = new JsonFactory();
 
@@ -306,7 +308,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         final ProcessHelper.ProcessResult processResult = ProcessHelper.executeSubprocess(executeArgs);
         ProcessHelper.delete(topicsToMove);
         String json = forEachLineStdout(processResult, new ReassignmentLineParser());
-        return json == null ? "{\"error\": \"Reassign Partitions not implemented\"}" : json;
+        return json == null ? "{\"error\": \"Reassign Partitions is not supported\"}" : json;
 
     }
 
