@@ -35,7 +35,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter.
+|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter. Kafka Exporter can gain Kafka specific metrics, for example lag of consumer group at topic/partition.
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
 |string array
@@ -847,7 +847,7 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 [id='type-PodDisruptionBudgetTemplate-{context}']
 ### `PodDisruptionBudgetTemplate` schema reference
 
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1116,28 +1116,24 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Property                 |Description
-|replicas          1.2+<.<|The number of pods in the `Deployment`.
-|integer
-|image             1.2+<.<|The docker image for the pods.
+|Property                    |Description
+|image                1.2+<.<|The docker image for the pods.
 |string
-|groupRegex        1.2+<.<|Regex that determines which consumer groups to collect.
+|groupRegex           1.2+<.<|Regex that determines which consumer groups to collect.
 |string
-|topicRegex        1.2+<.<|Regex that determines which topics to collect.
+|topicRegex           1.2+<.<|Regex that determines which topics to collect.
 |string
-|watchedNamespace  1.2+<.<|The namespace the Exporter Operator should watch.
-|string
-|resources         1.2+<.<|Resource constraints (limits and requests).
+|resources            1.2+<.<|Resource constraints (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|logging           1.2+<.<|Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].
+|logging              1.2+<.<|Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].
 |string
-|enableSarama      1.2+<.<|Turn on Sarama logging.
+|enableSaramaLogging  1.2+<.<|Turn on Sarama logging.
 |boolean
-|template          1.2+<.<|Template for Kafka Exporter resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|template             1.2+<.<|Template for Kafka Exporter resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
 |xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
-|livenessProbe     1.2+<.<|Pod liveness checking.
+|livenessProbe        1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
-|readinessProbe    1.2+<.<|Pod readiness checking.
+|readinessProbe       1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
 |====
 
@@ -1149,13 +1145,13 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 
 [options="header"]
 |====
-|Property                    |Description
-|deployment           1.2+<.<|Template for Kafka Exporter `Deployment`.
+|Property                     |Description
+|deployment            1.2+<.<|Template for Kafka Exporter `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                  1.2+<.<|Template for Kafka Exporter `Pods`.
+|pod                   1.2+<.<|Template for Kafka Exporter `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|podDisruptionBudget  1.2+<.<|Template for Kafka Exporter `PodDisruptionBudget`.
-|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|kafkaExporterService  1.2+<.<|Template for Kafka Exporter `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-KafkaStatus-{context}']

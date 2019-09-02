@@ -5,12 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,48 +26,25 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "groupRegex",
-        "topicRegex", "watchedNamespace",
-        "resources", "logging",
-        "enableSarama", "template"})
+        "image", "groupRegex",
+        "topicRegex", "resources", "logging",
+        "enableSaramaLogging", "template"})
 @EqualsAndHashCode
 public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
-    public static final int DEFAULT_REPLICAS = 1;
 
-    private int replicas;
     private String image;
-    private String groupRegex;
-    private String topicRegex;
+    private String groupRegex = ".*";
+    private String topicRegex = ".*";
 
-    private String watchedNamespace;
     private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private String logging;
-    private boolean enableSarama;
+    private boolean enableSaramaLogging;
     private KafkaExporterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    @Description("The namespace the Exporter Operator should watch.")
-    public String getWatchedNamespace() {
-        return watchedNamespace;
-    }
-
-    public void setWatchedNamespace(String watchedNamespace) {
-        this.watchedNamespace = watchedNamespace;
-    }
-
-    @Description("The number of pods in the `Deployment`.")
-    @Minimum(1)
-    public int getReplicas() {
-        return replicas;
-    }
-
-    public void setReplicas(int replicas) {
-        this.replicas = replicas;
-    }
 
     @Description("The docker image for the pods.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -82,7 +57,6 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("Regex that determines which consumer groups to collect.")
-    @JsonProperty(required = true)
     public String getGroupRegex() {
         return groupRegex;
     }
@@ -92,7 +66,6 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("Regex that determines which topics to collect.")
-    @JsonProperty(required = true)
     public String getTopicRegex() {
         return topicRegex;
     }
@@ -102,17 +75,17 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("Turn on Sarama logging.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public boolean getEnableSarama() {
-        return enableSarama;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public boolean getEnableSaramaLogging() {
+        return enableSaramaLogging;
     }
 
-    public void setEnableSarama(boolean enableSarama) {
-        this.enableSarama = enableSarama;
+    public void setEnableSaramaLogging(boolean enableSaramaLogging) {
+        this.enableSaramaLogging = enableSaramaLogging;
     }
 
     @Description("Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getLogging() {
         return logging;
     }
@@ -141,7 +114,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.livenessProbe = livenessProbe;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness checking.")
     public Probe getReadinessProbe() {
         return readinessProbe;

@@ -64,7 +64,6 @@ public class KafkaExporterTest {
             .withGroupRegex(groupRegex)
             .withTopicRegex(topicRegex)
             .withImage(keImage)
-            .withWatchedNamespace(keWatchedNamespace)
             .build();
     private final Kafka resource =
             new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -105,7 +104,6 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, new KafkaExporterSpec());
         KafkaExporter ke = KafkaExporter.fromCrd(resource);
         Assert.assertEquals(null, ke.getImage());
-        assertEquals(namespace, ke.getWatchedNamespace());
         assertNull(ke.getLogging());
     }
 
@@ -115,9 +113,7 @@ public class KafkaExporterTest {
         Assert.assertEquals(namespace, ke.namespace);
         Assert.assertEquals(cluster, ke.cluster);
         assertEquals(keImage, ke.image);
-        assertEquals(KafkaExporterSpec.DEFAULT_REPLICAS, ke.replicas);
         assertEquals(keImage, ke.getImage());
-        assertEquals(keWatchedNamespace, ke.getWatchedNamespace());
     }
 
     @Test
@@ -131,7 +127,6 @@ public class KafkaExporterTest {
 
         Assert.assertEquals(ke.getExporterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(new Integer(KafkaExporterSpec.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
         assertEquals(1, dep.getMetadata().getOwnerReferences().size());
         assertEquals(ke.createOwnerReference(), dep.getMetadata().getOwnerReferences().get(0));
 

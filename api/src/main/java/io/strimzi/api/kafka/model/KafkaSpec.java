@@ -117,7 +117,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
         this.maintenanceTimeWindows = maintenanceTimeWindows;
     }
 
-    @Description("Configuration of the Kafka Exporter")
+    @Description("Configuration of the Kafka Exporter. Kafka Exporter can gain Kafka specific metrics, for example lag of consumer group at topic/partition.")
     public KafkaExporterSpec getKafkaExporter() {
         return kafkaExporter;
     }

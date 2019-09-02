@@ -25,14 +25,14 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "podDisruptionBudget"})
+        "deployment", "pod"})
 @EqualsAndHashCode
 public class KafkaExporterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
     private PodTemplate pod;
-    private PodDisruptionBudgetTemplate podDisruptionBudget;
+    private ResourceTemplate kafkaExporterService;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Exporter `Deployment`.")
@@ -55,19 +55,19 @@ public class KafkaExporterTemplate implements Serializable, UnknownPropertyPrese
         this.pod = pod;
     }
 
+    @Description("Template for Kafka Exporter `Service`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getKafkaExporterService() {
+        return kafkaExporterService;
+    }
+
+    public void setKafkaExporterService(ResourceTemplate kafkaExporterService) {
+        this.kafkaExporterService = kafkaExporterService;
+    }
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
-    }
-
-    @Description("Template for Kafka Exporter `PodDisruptionBudget`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
-        return podDisruptionBudget;
-    }
-
-    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
-        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @Override

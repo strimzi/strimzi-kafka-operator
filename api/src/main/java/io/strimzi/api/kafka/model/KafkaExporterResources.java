@@ -37,13 +37,4 @@ public class KafkaExporterResources {
     public static String serviceName(String clusterName) {
         return clusterName + "-kafka-exporter";
     }
-
-    /**
-     * Returns the name of the Kafka Exporter metrics and log {@code ConfigMap} for a {@code KafkaExporter} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaExporter} resource.
-     * @return The name of the corresponding Kafka Exporter metrics and log {@code ConfigMap}.
-     */
-    public static String metricsAndLogConfigMapName(String clusterName) {
-        return clusterName + "-exporter-config";
-    }
 }

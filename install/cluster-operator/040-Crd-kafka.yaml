@@ -3040,16 +3040,11 @@ spec:
             kafkaExporter:
               type: object
               properties:
-                replicas:
-                  type: integer
-                  minimum: 1
                 image:
                   type: string
                 groupRegex:
                   type: string
                 topicRegex:
-                  type: string
-                watchedNamespace:
                   type: string
                 resources:
                   type: object
@@ -3060,7 +3055,7 @@ spec:
                       type: object
                 logging:
                   type: string
-                enableSarama:
+                enableSaramaLogging:
                   type: boolean
                 template:
                   type: object
@@ -3355,7 +3350,7 @@ spec:
                                 type: integer
                               value:
                                 type: string
-                    podDisruptionBudget:
+                    kafkaExporterService:
                       type: object
                       properties:
                         metadata:
@@ -3365,9 +3360,6 @@ spec:
                               type: object
                             annotations:
                               type: object
-                        maxUnavailable:
-                          type: integer
-                          minimum: 0
                 livenessProbe:
                   type: object
                   properties:
@@ -3398,9 +3390,6 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 0
-              required:
-              - groupRegex
-              - topicRegex
             maintenanceTimeWindows:
               type: array
               items:

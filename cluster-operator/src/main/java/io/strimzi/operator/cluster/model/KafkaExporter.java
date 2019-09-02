@@ -51,10 +51,9 @@ public class KafkaExporter extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_READINESS_PERIOD = "STRIMZI_READINESS_PERIOD";
     protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
 
-    private String watchedNamespace;
-    protected String groupRegex;
-    protected String topicRegex;
-    private boolean saramaEnabled;
+    protected String groupRegex = ".*";
+    protected String topicRegex = ".*";
+    private boolean saramaLoggingEnabled;
     private String logging;
     private String version;
 
@@ -69,14 +68,13 @@ public class KafkaExporter extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = KafkaExporterResources.deploymentName(cluster);
         this.serviceName = KafkaExporterResources.serviceName(cluster);
-        this.ancillaryConfigName = KafkaExporterResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/metrics";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
 
-        this.saramaEnabled = false;
+        this.saramaLoggingEnabled = false;
         this.mountPath = "/var/lib/kafka";
     }
 
@@ -89,10 +87,7 @@ public class KafkaExporter extends AbstractModel {
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
-        String namespace = kafkaAssembly.getMetadata().getNamespace();
-        kafkaExporter.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         if (spec != null) {
-            kafkaExporter.setWatchedNamespace(spec.getWatchedNamespace() != null ? spec.getWatchedNamespace() : namespace);
             kafkaExporter.setResources(spec.getResources());
 
             if (spec.getReadinessProbe() != null) {
@@ -113,7 +108,7 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.setImage(image);
 
             kafkaExporter.setLogging(spec.getLogging());
-            kafkaExporter.setSaramaEnabled(spec.getEnableSarama());
+            kafkaExporter.setSaramaLoggingEnabled(spec.getEnableSaramaLogging());
 
 
             if (spec.getTemplate() != null) {
@@ -122,10 +117,14 @@ public class KafkaExporter extends AbstractModel {
                 if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
                     kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
                     kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+
+                    if (template.getKafkaExporterService() != null && template.getKafkaExporterService().getMetadata() != null)  {
+                        kafkaExporter.templateServiceLabels = template.getKafkaExporterService().getMetadata().getLabels();
+                        kafkaExporter.templateServiceAnnotations = template.getKafkaExporterService().getMetadata().getAnnotations();
+                    }
                 }
 
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
-                ModelUtils.parsePodDisruptionBudgetTemplate(kafkaExporter, template.getPodDisruptionBudget());
             }
 
             kafkaExporter.setUserAffinity(affinity(spec));
@@ -137,12 +136,8 @@ public class KafkaExporter extends AbstractModel {
         return kafkaExporter;
     }
 
-    protected void setSaramaEnabled(boolean saramaEnabled) {
-        this.saramaEnabled = saramaEnabled;
-    }
-
-    public void setWatchedNamespace(String watchedNamespace) {
-        this.watchedNamespace = watchedNamespace;
+    protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
+        this.saramaLoggingEnabled = saramaLoggingEnabled;
     }
 
     static List<Toleration> tolerations(KafkaExporterSpec spec) {
@@ -227,7 +222,7 @@ public class KafkaExporter extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaCluster.serviceName(cluster) + ":9092"));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
 
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_LIVENESS_PERIOD,
                 String.valueOf(livenessProbeOptions.getPeriodSeconds() != null ? livenessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
@@ -278,10 +273,6 @@ public class KafkaExporter extends AbstractModel {
 
     protected String getTopicRegex() {
         return topicRegex;
-    }
-
-    public String getWatchedNamespace() {
-        return watchedNamespace;
     }
 
     public static String metricAndLogConfigsName(String cluster) {
