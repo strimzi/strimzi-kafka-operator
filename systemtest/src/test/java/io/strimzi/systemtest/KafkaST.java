@@ -355,8 +355,8 @@ class KafkaST extends MessagingBaseST {
         // Updated TLS Sidecar env vars
         ContainerEnvVar updatedTlsEnvVar2 = new ContainerEnvVar();
         String updatedTlsTestEnvTwoValue = "updated.test.env.two";
-        updatedEnvVar2.setName(testTlsEnvTwoKey);
-        updatedEnvVar2.setValue(updatedTlsTestEnvTwoValue);
+        updatedTlsEnvVar2.setName(testTlsEnvTwoKey);
+        updatedTlsEnvVar2.setValue(updatedTlsTestEnvTwoValue);
 
         ContainerEnvVar tlsEnvVar3 = new ContainerEnvVar();
         String testTlsEnvThreeKey = "TEST_ENV_3";
@@ -1899,7 +1899,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testMessagesAreStoredInDisk() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1911,7 +1911,13 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
+        Map<String, String> kafkaPodsSnapshot = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
+        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
+
+        TestUtils.waitFor("Wait for kafka topic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> !cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
+                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out().equals(""));
 
         String topicNameInPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
                 "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out();
@@ -1935,10 +1941,30 @@ class KafkaST extends MessagingBaseST {
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
+
+        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        for (Pod kafkaPod : kafkaPods) {
+            LOGGER.info("Deleting kafka pod {}", kafkaPod.getMetadata().getName());
+            kubeClient().deletePod(kafkaPod);
+        }
+
+        LOGGER.info("Wait for kafka to rolling restart ...");
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaPodsSnapshot);
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c",
+                commandToGetDataFromTopic).out();
+
+        assertThat("Topic has no data", topicData, notNullValue());
     }
 
     @Test
     void testConsumerOffsetFiles() throws Exception {
+        Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "3");
+        kafkaConfig.put("offsets.topic.num.partitions", "100");
+
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -1947,6 +1973,7 @@ class KafkaST extends MessagingBaseST {
                             .withTls(false)
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
+                    .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
             .done();
@@ -1970,11 +1997,11 @@ class KafkaST extends MessagingBaseST {
 
         StringBuilder stringToMatch = new StringBuilder();
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             stringToMatch.append(i).append("\n");
         }
 
-        assertThat("Folder kafka-log0 doesn't contains 50 files", result, containsString(stringToMatch.toString()));
+        assertThat("Folder kafka-log0 doesn't contains 100 files", result, containsString(stringToMatch.toString()));
     }
 
     @BeforeEach
