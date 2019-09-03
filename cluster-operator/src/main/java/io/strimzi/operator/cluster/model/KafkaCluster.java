@@ -92,6 +92,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1344,7 +1345,7 @@ public class KafkaCluster extends AbstractModel {
         // Add user defined environment variables to the Kafka broker containers
         if (templateKafkaContainerEnvVars != null) {
             // Create set of env var names to test if any user defined template env vars will conflict with those set above
-            Set<String> predefinedEnvs = new HashSet<String>();
+            Set<String> predefinedEnvs = new LinkedHashSet<>();
             for (EnvVar envVar : varList) {
                 predefinedEnvs.add(envVar.getName());
             }
