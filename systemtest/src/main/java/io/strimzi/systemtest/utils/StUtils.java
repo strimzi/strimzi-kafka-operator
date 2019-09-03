@@ -709,6 +709,7 @@ public class StUtils {
     }
 
     public static void waitUntilAddressIsReachable(String address) {
+        LOGGER.info("Waiting till address {} is reachable", address);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
@@ -718,5 +719,6 @@ public class StUtils {
                     return false;
                 }
             });
+        LOGGER.info("Address {} is reachable", address);
     }
 }
