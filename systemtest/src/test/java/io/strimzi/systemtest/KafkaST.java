@@ -61,7 +61,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
@@ -80,7 +79,9 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -355,8 +356,8 @@ class KafkaST extends MessagingBaseST {
         // Updated TLS Sidecar env vars
         ContainerEnvVar updatedTlsEnvVar2 = new ContainerEnvVar();
         String updatedTlsTestEnvTwoValue = "updated.test.env.two";
-        updatedEnvVar2.setName(testTlsEnvTwoKey);
-        updatedEnvVar2.setValue(updatedTlsTestEnvTwoValue);
+        updatedTlsEnvVar2.setName(testTlsEnvTwoKey);
+        updatedTlsEnvVar2.setValue(updatedTlsTestEnvTwoValue);
 
         ContainerEnvVar tlsEnvVar3 = new ContainerEnvVar();
         String testTlsEnvThreeKey = "TEST_ENV_3";
@@ -1599,95 +1600,6 @@ class KafkaST extends MessagingBaseST {
         }
     }
 
-    @Tag(SCALABILITY)
-    @Test
-    void testBigAmountOfTopicsCreatingViaK8s() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int numberOfTopics = 50;
-        int topicPartitions = 3;
-
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
-        LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            testMethodResources().topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-
-        topicPartitions = 5;
-        LOGGER.info("Editing topic via Kubernetes settings to partitions {}", topicPartitions);
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-
-            replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
-            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-    }
-
-    @Tag(SCALABILITY)
-    @Test
-    void testBigAmountOfTopicsCreatingViaKafka() {
-        final String topicName = "topic-example";
-        String currentTopic;
-        int numberOfTopics = 50;
-        int topicPartitions = 3;
-
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
-        LOGGER.info("Creating topics via Kafka");
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().withName(currentTopic).get();
-            verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
-        }
-
-        topicPartitions = 5;
-        LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
-        }
-
-        for (int i = 0; i < numberOfTopics; i++) {
-            currentTopic = topicName + i;
-            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
-            verifyTopicViaKafka(currentTopic, topicPartitions);
-        }
-    }
-
-    void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        LOGGER.info("Checking topic in Kafka {}", describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName));
-        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
-                hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
-    }
-
-    void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {
-        LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
-        assertNotNull(kafkaTopic);
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
-        assertEquals(topicName, kafkaTopic.getMetadata().getName());
-        assertEquals(topicPartitions, kafkaTopic.getSpec().getPartitions());
-    }
-
     @Test
     void testRegenerateCertExternalAddressChange() throws InterruptedException {
         LOGGER.info("Creating kafka without external listener");
@@ -1990,8 +1902,115 @@ class KafkaST extends MessagingBaseST {
         assertThat(kafkaUserResource, containsString("strimzi.io/cluster: " + firstClusterName));
     }
 
+    @Test
+    void testMessagesAreStoredInDisk() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        Map<String, String> kafkaPodsSnapshot = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
+        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
+
+        TestUtils.waitFor("Wait for kafka topic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> !cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
+                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out().equals(""));
+
+        String topicNameInPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash",
+                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/test/p'").out();
+
+        LOGGER.info("This is topic in kafka broker itself {}", topicNameInPod);
+
+        String commandToGetDataFromTopic =
+                "cd /var/lib/kafka/data/kafka-log0/" + topicNameInPod + "/;cat 00000000000000000000.log";
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        String topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "/bin/bash", "-c", commandToGetDataFromTopic).out();
+
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        assertThat("Topic contains data", topicData, isEmptyOrNullString());
+
+        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c",
+                commandToGetDataFromTopic).out();
+
+        assertThat("Topic has no data", topicData, notNullValue());
+
+        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        for (Pod kafkaPod : kafkaPods) {
+            LOGGER.info("Deleting kafka pod {}", kafkaPod.getMetadata().getName());
+            kubeClient().deletePod(kafkaPod);
+        }
+
+        LOGGER.info("Wait for kafka to rolling restart ...");
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaPodsSnapshot);
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c",
+                commandToGetDataFromTopic).out();
+
+        assertThat("Topic has no data", topicData, notNullValue());
+    }
+
+    @Test
+    void testConsumerOffsetFiles() throws Exception {
+        Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "3");
+        kafkaConfig.put("offsets.topic.num.partitions", "100");
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec()
+            .done();
+
+        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME, 3, 1).done();
+
+        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
+                "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
+
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        String result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "/bin/bash", "-c", commandToGetFiles).out();
+
+        assertThat("Folder kafka-log0 has data in files", result.equals(""));
+
+        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
+
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "/bin/bash", "-c", commandToGetFiles).out();
+
+        StringBuilder stringToMatch = new StringBuilder();
+
+        for (int i = 0; i < 100; i++) {
+            stringToMatch.append(i).append("\n");
+        }
+
+        assertThat("Folder kafka-log0 doesn't contains 100 files", result, containsString(stringToMatch.toString()));
+    }
+
     @BeforeEach
-    void createTestResources() throws Exception {
+    void createTestResources() {
         createTestMethodResources();
     }
 
