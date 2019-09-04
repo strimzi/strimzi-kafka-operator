@@ -34,7 +34,7 @@ You must have access to a Kubernetes cluster. To run and manage a Kubernetes clu
 * {ProductName} is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Cluster Operator `RoleBindings` are installed.
-* The Entity Operator is deployed and running.  
+* The Entity Operator is deployed and running as part of the Kafka cluster.  
 
 include::proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 
