@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker-authentication.adoc
 
 [id='proc-configuring-kafka-mirror-maker-authentication-scram-sha-512-{context}']
-= Configuring SCRAM-SHA-512 authentication in Kafka Mirror Maker
+= Configuring SASL authentication in Kafka Mirror Maker
 
 .Prerequisites
 
@@ -14,19 +14,18 @@
 
 .Procedure
 
-As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure SCRAM-SHA-512 authentication for one or both the clusters.
+As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure SCRAM-SHA-512 authentication for one or both of the clusters.
 The following steps describe how to configure SCRAM-SHA-512 authentication on the consumer side for connecting to the source Kafka cluster.
 
 If you want to use SASL PLAIN authentication, the steps are the same as shown here but you set the `authentication.type` property to `plain`.
 
-. (Optional) If they do not already exist, prepare a file with the password used for authentication and create the `Secret`.
+. (Optional) If they do not already exist, prepare a file with the password used for authentication and create the `Secret`:
 +
-NOTE: Secrets created by the User Operator may be used.
-+
-This can be done using `kubectl create`:
 [source,shell,subs=+quotes]
 echo -n '_<password>_' > _<my-password.txt>_
 kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
++
+NOTE: Secrets created by the User Operator may be used.
 
 . Edit the `KafkaMirrorMaker.spec.consumer.authentication` property.
 +
@@ -58,10 +57,9 @@ spec:
 ----
 +
 IMPORTANT: Do not specify the actual password in the `password` field.
+
+. Create or update the resource:
 +
-. Create or update the resource.
-+
-This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 

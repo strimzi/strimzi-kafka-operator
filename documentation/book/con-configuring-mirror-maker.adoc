@@ -41,5 +41,3 @@ include::con-metrics.adoc[leveloffset=+1]
 include::con-jvm-options.adoc[leveloffset=+1]
 
 include::con-configuring-container-images.adoc[leveloffset=+1]
-
-include::con-pod-scheduling.adoc[leveloffset=+1]

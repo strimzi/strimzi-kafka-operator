@@ -13,16 +13,15 @@
 
 .Procedure
 
-As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure TLS client authentication for one or both the clusters.
+As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure TLS client authentication for one or both of the clusters.
 The following steps describe how to configure TLS client authentication on the consumer side for connecting to the source Kafka cluster:
 
-. (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`.
+. (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`:
 +
-NOTE: Secrets created by the User Operator may be used.
-+
-This can be done using `kubectl create`:
 [source,shell,subs=+quotes]
 kubectl create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
++
+NOTE: Secrets created by the User Operator may be used.
 
 . Edit the `KafkaMirrorMaker.spec.consumer.authentication` property.
 +
@@ -53,7 +52,7 @@ spec:
         key: private.key
   # ...
 ----
-+
+
 . Create or update the resource:
 +
 [source,shell,subs=+quotes]

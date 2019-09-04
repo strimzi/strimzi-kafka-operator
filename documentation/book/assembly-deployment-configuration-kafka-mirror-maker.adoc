@@ -17,7 +17,7 @@
 
 This chapter describes how to configure the `KafkaMirrorMaker` resource to support a Kafka Mirror Maker deployment in your cluster.
 
-Procedures show how the resource is configured:
+The following procedures show how the resource is configured:
 
 * xref:configuring-kafka-bridge-{context}[Configuring Kafka Mirror Maker]
 * xref:assembly-access-configuration-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker access control]

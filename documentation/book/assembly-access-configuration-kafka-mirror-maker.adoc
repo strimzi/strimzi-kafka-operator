@@ -3,13 +3,13 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-access-configuration-kafka-mirror-maker-{context}']
-= Configuring Kafka Mirror Maker access control
+= Configuring Kafka Mirror Maker authentication
 
-Configure Kafka Mirror Maker access control using supported authentication mechanisms:
+Configure Kafka Mirror Maker authentication using supported mechanisms:
 
+* TLS encryption
 * TLS client authentication
-* SASL SCRAM-SHA-512
-* SASL PLAIN
+* SASL SCRAM-SHA-512 and PLAIN authentication
 
 For more information on these mechanisms, see xref:assembly-kafka-mirror-maker-authentication-{context}[Authentication].
 
