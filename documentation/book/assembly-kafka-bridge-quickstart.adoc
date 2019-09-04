@@ -13,7 +13,7 @@
 
 Use this quick start to try out the {ProductName} Kafka Bridge in your local development environment. You will learn how to:
 
-* Deploy the Kafka Bridge to your OpenShift cluster
+* Deploy the Kafka Bridge to your Kubernetes cluster
 * Expose the Kafka Bridge Service to your local machine
 * Produce messages to topics, including to a specific partition
 * Create a Kafka Bridge consumer for use in this quick start
