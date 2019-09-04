@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-name.adoc
+
+[id='proc-configuring-jaeger-tracer-kafka-clients-{context}']
+= Configuring a Jaeger tracer for Kafka clients
+
+Intro
+
+.Prerequisites
+
+* A running Kafka cluster.
+*
+*
+
+.Procedure
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+.Additional resources
+
+* For more information about, see .

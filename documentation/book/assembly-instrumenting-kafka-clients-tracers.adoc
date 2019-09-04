@@ -1,0 +1,15 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-tracing.adoc
+[id='assembly-instrumenting-kafka-clients-tracers-{context}']
+= Instrumenting Kafka clients with tracers
+
+Intro
+
+include::proc-instrumenting-producers-consumers-with-tracers.adoc[leveloffset=+1]
+
+include::proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
+
+include::ref-tracing-built-in-span-names.adoc[leveloffset=+1]
+
+include::con-tracing-across-process-boundaries.adoc[leveloffset=+1]

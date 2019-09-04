@@ -1,0 +1,33 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-tracing-{context}']
+= Tracing
+
+{ProductName} provides support for the distributed tracing of messages in Kafka clusters. After you set up tracing, a message is traced:
+
+* From a producer to a Kafka cluster to a consumer.
+* From a Kafka cluster to a Kafka Streams application, and back again.
+* Between a source and a target Kafka cluster through Kafka Mirror Maker.
+* From a Kafka Connect connector (including a Source-to-Image connector) to a Kafka cluster.
+
+{ProductName} uses the emerging {OpenTracingHome} specification and the {JaegerHome} distributed tracing system to provide tracing capabilities. OpenTracing defines APIs that developers can use to instrument their applications (most commonly, in microservices architectures) for tracing. It is independent from the chosen tracing system. Jaeger is an implementation of the OpenTracing APIs that developers can use to visualize, query, filter, and analyze trace data. {ProductName} uses the `java-kafka-client` OpenTracing library (also referred to as a tracer) to simplify the instrumentation of the producers and consumers in a Kafka cluster.
+
+After you set up tracing, you can view end-to-end logging of transactions--referred to as distributed traces--in the Jaeger UI. This information is useful for monitoring the operation of your Kafka cluster and debugging performance issues with target systems and applications.
+
+The rest of this chapter describes how to set up tracing in your kafka clients, Kafka Mirror Maker, and Kafka Connect connectors. 
+
+.Prerequisites
+
+It is helpful to understand:
+
+* The basics of OpenTracing, including key concepts such as traces, spans, and tracers. Refer to the {OpenTracingDocs}.
+
+* The components of the {JaegerArch}. 
+
+include::assembly-setting-up-tracing-kafka-clients.adoc[leveloffset=+1]
+
+include::assembly-instrumenting-kafka-clients-tracers.adoc[leveloffset=+1]
+
+include::assembly-setting-up-tracing-mirror-maker-connect.adoc[leveloffset=+1]

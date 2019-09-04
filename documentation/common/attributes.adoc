@@ -66,6 +66,10 @@
 
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+:OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
+:JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
+:OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
+:JaegerArch: link:https://www.jaegertracing.io/docs/1.14/architecture/[Jaeger architecure^]
 
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi

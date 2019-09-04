@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-setting-up-tracing-mirror-maker-connect.adoc
+
+[id='proc-enabling-tracing-in-connect-mirror-maker-resources-{context}']
+= Enabling tracing in the KafkaConnect, KafkaConnectS2I and KafkaMirrorMaker custom resources
+
+Intro
+
+.Prerequisites
+
+* A running Kafka cluster.
+*
+*
+
+.Procedure
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+.Additional resources
+
+* For more information about, see .

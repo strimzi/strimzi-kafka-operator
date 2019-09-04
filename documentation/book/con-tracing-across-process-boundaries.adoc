@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-instrumenting-kafka-clients-tracers.adoc
+
+[id='con-tracing-across-process-boundaries-{context}']
+= Tracing across process boundaries
+
+Concept goes here

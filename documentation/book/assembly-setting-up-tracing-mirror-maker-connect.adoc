@@ -1,0 +1,9 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-tracing.adoc
+[id='assembly-setting-up-tracing-mirror-maker-connect-{context}']
+= Setting up tracing for Kafka Mirror Maker and Kafka Connect
+
+Intro
+
+include::proc-enabling-tracing-in-connect-mirror-maker-resources.adoc[leveloffset=+1]
