@@ -20,14 +20,24 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.util.IOUtils;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -288,6 +298,52 @@ public class StUtils {
             }
         }
         return dir;
+    }
+
+    public static File downloadYamlAndReplaceNameSpace(String url, String namespace) {
+        try {
+            InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+            StringBuilder sb = new StringBuilder();
+            BufferedReader br = new BufferedReader(new InputStreamReader(bais));
+            String read;
+            while ((read = br.readLine()) != null) {
+                sb.append(read + "\n");
+            }
+            br.close();
+            String yaml = sb.toString();
+            File yamlFile = File.createTempFile("temp-file", ".yaml");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
+            yaml = yaml.replace("securityContext:\n" +
+                    "        runAsNonRoot: true\n" +
+                    "        runAsUser: 65534" , "");
+            bw.write(yaml);
+            bw.close();
+            return yamlFile;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) {
+        byte[] encoded = new byte[0];
+        try {
+            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
+
+            String yaml = new String(encoded, StandardCharsets.UTF_8);
+            yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
+
+            File yamlFile = File.createTempFile("temp-file", ".yaml");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            bw.write(yaml);
+            bw.close();
+        return yamlFile.toPath().toFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
