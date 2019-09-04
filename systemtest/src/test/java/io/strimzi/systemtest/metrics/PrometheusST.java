@@ -24,35 +24,35 @@ public class PrometheusST extends AbstractST {
 
     public static final String NAMESPACE = "prometheus-test";
 
-    private static final String prometheus = "prometheus";
-    private static final String prometheusPod = "prometheus-prometheus-0";
-    private static final String alertmanager = "alertmanager";
-    private static final String alertmanagerPod = "alertmanager-alertmanager-0";
+    private static final String PROMETHEUS = "prometheus";
+    private static final String PROMETHEUS_POD = "prometheus-prometheus-0";
+    private static final String ALERTMANAGER = "alertmanager";
+    private static final String ALERTMANAGER_POD = "alertmanager-alertmanager-0";
 
     @Test
     public void testPrometheusService() {
-        assertThat("Prometheus service not found", kubeClient().getService(prometheus) != null);
-        assertThat("Prometheus service port is not 9090", kubeClient().getService(prometheus).getSpec().getPorts().get(0).getPort() == 9090);
+        assertThat("Prometheus service not found", kubeClient().getService(PROMETHEUS) != null);
+        assertThat("Prometheus service port is not 9090", kubeClient().getService(PROMETHEUS).getSpec().getPorts().get(0).getPort() == 9090);
     }
 
     @Test
     public void testAlertManagerService() {
-        assertThat("AlertManager service not found", kubeClient().getService(alertmanager) != null);
-        assertThat("AlertManager service port is not 9090", kubeClient().getService(alertmanager).getSpec().getPorts().get(0).getPort() == 9093);
+        assertThat("AlertManager service not found", kubeClient().getService(ALERTMANAGER) != null);
+        assertThat("AlertManager service port is not 9090", kubeClient().getService(ALERTMANAGER).getSpec().getPorts().get(0).getPort() == 9093);
     }
 
     @Test
     public void testAlertManagerPodIsUp() {
-        assertThat("AlertManager pod not found", kubeClient().getPod(alertmanagerPod) != null);
-        int conditionsSize = kubeClient().getPod(alertmanagerPod).getStatus().getConditions().get(0).getStatus().length();
-        assertThat("AlertManager pod is not ready", kubeClient().getPod(alertmanagerPod).getStatus().getConditions().get(conditionsSize - 1).getStatus().equals("True"));
+        assertThat("AlertManager pod not found", kubeClient().getPod(ALERTMANAGER_POD) != null);
+        int conditionsSize = kubeClient().getPod(ALERTMANAGER_POD).getStatus().getConditions().get(0).getStatus().length();
+        assertThat("AlertManager pod is not ready", kubeClient().getPod(ALERTMANAGER_POD).getStatus().getConditions().get(conditionsSize - 1).getStatus().equals("True"));
     }
 
     @Test
     public void testPrometheusPodIsUp() {
-        assertThat("Prometheus pod not found", kubeClient().getPod(prometheusPod) != null);
-        int conditionsSize = kubeClient().getPod(prometheusPod).getStatus().getConditions().get(0).getStatus().length();
-        assertThat("Prometheus pod is not ready", kubeClient().getPod(prometheusPod).getStatus().getConditions().get(conditionsSize - 1).getStatus().equals("True"));
+        assertThat("Prometheus pod not found", kubeClient().getPod(PROMETHEUS_POD) != null);
+        int conditionsSize = kubeClient().getPod(PROMETHEUS_POD).getStatus().getConditions().get(0).getStatus().length();
+        assertThat("Prometheus pod is not ready", kubeClient().getPod(PROMETHEUS_POD).getStatus().getConditions().get(conditionsSize - 1).getStatus().equals("True"));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class PrometheusST extends AbstractST {
         cmdKubeClient().apply(StUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/alert-manager.yaml", NAMESPACE));
         cmdKubeClient().apply(StUtils.updateNamespaceOfYamlFile("../metrics/examples/prometheus/install/prometheus.yaml", NAMESPACE));
 
-        StUtils.waitForPod(alertmanagerPod);
-        StUtils.waitForPod(prometheusPod);
+        StUtils.waitForPod(ALERTMANAGER_POD);
+        StUtils.waitForPod(PROMETHEUS_POD);
     }
 }

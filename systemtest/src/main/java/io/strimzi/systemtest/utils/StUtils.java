@@ -20,7 +20,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.util.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,13 +29,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
@@ -316,7 +312,7 @@ public class StUtils {
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
             yaml = yaml.replace("securityContext:\n" +
                     "        runAsNonRoot: true\n" +
-                    "        runAsUser: 65534" , "");
+                    "        runAsUser: 65534", "");
             bw.write(yaml);
             bw.close();
             return yamlFile;
@@ -339,7 +335,7 @@ public class StUtils {
             BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
             bw.write(yaml);
             bw.close();
-        return yamlFile.toPath().toFile();
+            return yamlFile.toPath().toFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
