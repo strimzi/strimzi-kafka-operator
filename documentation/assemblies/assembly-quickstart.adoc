@@ -11,19 +11,19 @@ Install {ProductName} and start sending and receiving messages from a topic in m
 Ensure you have the prerequisites and then follow the tasks in the order provided in this chapter.
 
 //prerequisites
-include::modules/ref-install-prerequisites.adoc[leveloffset=+1]
+include::../modules/ref-install-prerequisites.adoc[leveloffset=+1]
 
 //download the files
-include::modules/proc-downloading-product.adoc[leveloffset=+1]
+include::../modules/proc-downloading-product.adoc[leveloffset=+1]
 
 //install CRDs
-include::modules/proc-installing-crds.adoc[leveloffset=+1]
+include::../modules/proc-installing-crds.adoc[leveloffset=+1]
 
 //create kafka cluster
-include::modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
+include::../modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
 
 //enable TLS security
-include::modules/proc-enabling-tls.adoc[leveloffset=+1]
+include::../modules/proc-enabling-tls.adoc[leveloffset=+1]
 
 //send and receive messages from a topic
-include::modules/proc-sending-messages.adoc[leveloffset=+1]
+include::../modules/proc-sending-messages.adoc[leveloffset=+1]

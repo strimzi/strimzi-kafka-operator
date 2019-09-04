@@ -13,7 +13,7 @@ Download a ZIP file that contains the resources required for installation and ex
 
 .Procedure
 
-. Download the `strimzi-xyz.zip` file from {ReleaseDownload}.
+. Download the `strimzi-x.y.z.zip` file from {ReleaseDownload}.
 
 . Unzip the file to any destination.
 * On Windows or Mac, you can extract the contents of the ZIP archive by double clicking on the ZIP file.

@@ -53,10 +53,6 @@ kubectl create ns my-kafka-project
 --
 [source, shell, subs=+quotes]
 ----
-kubectl edit deployment strimzi-cluster-operator STRIMZI_NAMESPACE=kafka,my-kafka-project -n kafka
-----
-[source, shell, subs=+quotes]
-----
 kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n my-kafka-project
 ----
 [source, shell, subs=+quotes]
@@ -68,25 +64,3 @@ kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operat
 kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n my-kafka-project
 ----
 --
-
-////
-. Give access to your non-admin user `developer`.
-+
-[source, shell, subs=+quotes]
-----
-kubectl adm policy add-role-to-user admin developer -n my-kafka-project
-----
-////
-
-
-////
-. Create a `strimzi-admin` cluster role in Kubernetes.
-+
-[source,shell,subs=+quotes]
-kubectl apply -f install/strimzi-admin
-
-. Assign the `strimzi-admin` cluster role to a non-admin user in the Kubernetes cluster.
-+
-[source,shell,subs=+quotes]
-kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_non-admin-user_
-////
