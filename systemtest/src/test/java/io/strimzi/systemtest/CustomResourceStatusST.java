@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,6 +49,7 @@ class CustomResourceStatusST extends AbstractST {
     private static final String CONNECTS2I_CLUSTER_NAME = CLUSTER_NAME + "-s2i";
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
@@ -207,7 +209,7 @@ class CustomResourceStatusST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
+        testClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT_SHORT)).done();
 
         deployTestSpecificResources();
     }
@@ -229,7 +231,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
         deployTestSpecificResources();
     }
 

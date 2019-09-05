@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -39,6 +40,7 @@ public class SpecificST extends MessagingBaseST {
     public static final String NAMESPACE = "specific-cluster-test";
 
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testRackAware() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -68,6 +70,7 @@ public class SpecificST extends MessagingBaseST {
 
 
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testLoadBalancerIpOverride() throws Exception {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";

@@ -750,7 +750,7 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, "300000");
+        return clusterOperator(namespace, Long.toString(Constants.CO_OPERATION_TIMEOUT_DEFAULT));
     }
 
     public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
@@ -792,11 +792,13 @@ public class Resources extends AbstractResources {
                     }
             }
         }
+
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
+//                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
@@ -805,6 +807,7 @@ public class Resources extends AbstractResources {
                         .editSpec()
                             .editFirstContainer()
                                 .withImage(StUtils.changeOrgAndTag(coImage))
+                                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
                             .endContainer()
                         .endSpec()
                     .endTemplate()
@@ -1047,7 +1050,7 @@ public class Resources extends AbstractResources {
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .withCommand("sleep")
                 .withArgs("infinity")
-                .withImagePullPolicy("IfNotPresent");
+                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
