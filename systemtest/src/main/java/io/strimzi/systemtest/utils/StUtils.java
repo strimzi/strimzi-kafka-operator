@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
@@ -34,7 +36,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -795,5 +799,30 @@ public class StUtils {
             return true;
         }
         return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
+    }
+
+    public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
+        byte[] encoded = new byte[0];
+        try {
+            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
+
+            Map<String, String> data = new HashMap<>();
+            Base64.Encoder encoder = Base64.getEncoder();
+            data.put(key, encoder.encodeToString(encoded));
+
+            Secret secret = new SecretBuilder()
+                    .withData(data)
+                    .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .endMetadata()
+                    .build();
+            kubeClient().namespace(namespace).createSecret(secret);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 }

@@ -75,8 +75,11 @@ public class PrometheusST extends AbstractST {
         createTestClassResources();
         cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
 
-        cmdKubeClient().exec("oc", "create", "secret", "generic", "additional-scrape-configs", "--from-file=prometheus-additional.yaml=../metrics/examples/prometheus/additional-properties/prometheus-additional.yaml", "-n", NAMESPACE);
-        cmdKubeClient().exec("oc", "create", "secret", "generic", "alertmanager-alertmanager", "--from-file=alertmanager.yaml=../metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml", "-n", NAMESPACE);
+        StUtils.createSecretFromFile("../metrics/examples/prometheus/additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
+        StUtils.createSecretFromFile("../metrics/examples/prometheus/alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
+
+        StUtils.waitForSecretReady("additional-scrape-configs");
+        StUtils.waitForSecretReady("alertmanager-alertmanager");
 
         StUtils.waitForDeploymentReady("prometheus-operator", 1);
 
