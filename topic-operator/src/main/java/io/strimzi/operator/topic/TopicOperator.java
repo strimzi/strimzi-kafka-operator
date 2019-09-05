@@ -567,7 +567,7 @@ class TopicOperator {
     private Future<Void> handleTopicDeletionDisabled(Throwable thrown) {
 
         if (thrown instanceof org.apache.kafka.common.errors.TopicDeletionDisabledException) {
-            LOGGER.warn("Topic deletion is disabled. Kafka broker topic will persist and KafkaTopic resource will be recreated in the next reconciliation.");
+            LOGGER.warn("Topic deletion is disabled. Kafka topic will persist and KafkaTopic resource will be recreated in the next reconciliation.");
         } else {
             LOGGER.error("Topic deletion failed with ({}) error: {}", thrown.getClass(), thrown.getMessage());
             return Future.failedFuture(thrown);
