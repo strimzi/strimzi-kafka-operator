@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.operator.common.process.ProcessHelper;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -23,19 +22,14 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -87,6 +81,9 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
     @Override
     public Future<Void> changeReplicationFactor(Topic topic) {
+
+        return Future.failedFuture("Changing replication factor is not supported");
+        /*
         Future<Void> handler = Future.future();
 
         LOGGER.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
@@ -179,7 +176,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
 
         CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void) null).setHandler(handler);
-        return handler;
+        return handler;*/
         // TODO The algorithm should really be more like this:
         // 1. Use the cmdline tool to generate an assignment
         // 2. Set the throttles
@@ -230,6 +227,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         }
     }
 
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private boolean verifyReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
         List<String> verifyArgs = new ArrayList<>();
         addJavaArgs(verifyArgs);
@@ -249,6 +247,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         return verifyLineParser.inProgress == 0;
     }
 
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private void executeReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
         List<String> executeArgs = new ArrayList<>();
         addJavaArgs(executeArgs);
@@ -278,7 +277,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
     }
 
     // spotbugs bug
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "UPM_UNCALLED_PRIVATE_METHOD"})
     private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
         JsonFactory factory = new JsonFactory();
 
@@ -308,7 +307,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         final ProcessHelper.ProcessResult processResult = ProcessHelper.executeSubprocess(executeArgs);
         ProcessHelper.delete(topicsToMove);
         String json = forEachLineStdout(processResult, new ReassignmentLineParser());
-        return json == null ? "{\"error\": \"Reassign Partitions is not supported\"}" : json;
+        return json;
 
     }
 
