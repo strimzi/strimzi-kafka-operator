@@ -15,25 +15,39 @@ Use this quick start to try out the {ProductName} Kafka Bridge in your local dev
 
 * Deploy the Kafka Bridge to your Kubernetes cluster
 * Expose the Kafka Bridge Service to your local machine
-* Produce messages to topics, including to a specific partition
-* Create a Kafka Bridge consumer for use in this quick start
-* Perform basic consumer operations
+* Produce messages to topics and partitions in your Kafka cluster
+* Create a Kafka Bridge consumer
+* Perform basic consumer operations, such as subscribing the consumer to topics and retrieving the messages that you produced
 
-HTTP requests are formatted as curl commands that you can copy and paste to your terminal. You can use an API testing tool to call the API if preferred. As described in xref:con-requests-kafka-bridge-str[Requests to the {ProductName} Kafka Bridge], all POST requests used in this quick start supply the following Content-Type header:
+HTTP requests are formatted as curl commands that you can copy and paste to your terminal. Access to a Kubernetes cluster is required: to run and manage a Kubernetes cluster locally, use a tool such as Minikube, CodeReady Containers, or MiniShift.
 
+.About data formats
+
+This quick start describes how to produce and consume messages in JSON format, not binary. 
+
+* When producing messages to topics and partitions, the following `Content-Type` header is used:
++
+[source,http,subs=attributes+]
+----
+Content-Type: application/vnd.kafka.json.v2+json
+----
+
+* When creating a Kafka Bridge consumer, an _embedded data format_ of JSON is specified in the request body.
+
+* When creating a Kafka Bridge consumer and performing consumer operations, the following `Content-Type` header is used:
++
 [source,http,subs=attributes+]
 ----
 Content-Type: application/vnd.kafka.v2+json
 ----
 
-You must have access to a Kubernetes cluster. To run and manage a Kubernetes cluster locally, use a tool such as Minikube, CodeReady Containers, or MiniShift.
+For more information, see xref:con-requests-kafka-bridge-{context}[Requests to the {ProductName} Kafka Bridge].
 
 .Prerequisites for the quick start
 
 * Cluster administrator access to a local or remote Kubernetes cluster. 
 * {ProductName} is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
-* The Cluster Operator `RoleBindings` are installed.
 * The Entity Operator is deployed and running as part of the Kafka cluster.  
 
 include::proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
