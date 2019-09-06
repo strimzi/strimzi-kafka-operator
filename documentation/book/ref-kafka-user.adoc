@@ -168,7 +168,7 @@ Only certain operations work with each resource.
 +
 For more details about `SimpleAclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
 
-`host`:: The `host` property specifies a remote host from which is the rule allowed or denied.
+`host`:: The `host` property specifies a remote host from which the rule is allowed or denied.
 +
 Use an asterisk (`\*`) to allow or deny the operation from all hosts.
 The `host` field is optional. If `host` is unspecified, the `*` value is used by default.
