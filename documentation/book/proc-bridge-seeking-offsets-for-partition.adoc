@@ -47,7 +47,7 @@ curl -X POST \
 }'
 ----
 +
-If the request was successful, the Kafka Bridge returns another `204` code.
+If the request is successful, the Kafka Bridge returns another `204` code.
 
 NOTE: You can also use the link:https://strimzi.io/docs/bridge/latest/#_seektobeginning[positions/beginning^] endpoint to seek to the first offset for one or more partitions. 
 
