@@ -3,9 +3,11 @@
 // assembly-kafka-bridge-quickstart.adoc
 
 [id='proc-exposing-kafka-bridge-service-local-machine-{context}']
-= Exposing the Kafka Bridge Service to your local machine
+= Exposing the Kafka Bridge service to your local machine
 
-Next, create an OpenShift Route to expose the {ProductName} Kafka Bridge Service to your local machine on port 8080.
+Next, use port forwarding to expose the {ProductName} Kafka Bridge service to your local machine on http://localhost:8080.
+
+NOTE: Port forwarding is only suitable for development and testing purposes.
 
 .Prerequisites
 
@@ -13,49 +15,23 @@ Next, create an OpenShift Route to expose the {ProductName} Kafka Bridge Service
 
 .Procedure
 
-. In a text editor, create a YAML definition for an unsecured OpenShift Route.
-+
-[source,yaml,subs=attributes+]
-----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: quickstart-route
-  labels:
-    app: quickstart-route
-spec:
-  port:
-    targetPort: 8080
-  to:
-    kind: Service
-    name: quickstart-bridge-service
-    weight: 100
-----
-
-. Save the file to the `examples/kafka-bridge` directory as `bridge-quickstart-route.yaml`.
-
-. Use `oc` to create the Route in your Kubernetes cluster:
+. List the names of the pods in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
-oc apply -f examples/kafka-bridge/bridge-quickstart-route.yaml
+kubectl get pods -o name
+
+pod/kafka-consumer
+# ...
+pod/quickstart-bridge-589d78784d-9jcnr
+pod/strimzi-cluster-operator-76bcf9bc76-8dnfm
 ----
 
-. Use `oc` to retrieve the location of the Route:
+. Connect to the `quickstart-bridge` pod on port `8080`:
 +
 [source,shell,subs=attributes+]
 ----
-oc get routes
+kubectl port-forward quickstart-bridge-589d78784d-9jcnr 8080 8080
 ----
-+
-[source,shell,subs=attributes+]
-----
-NAME               HOST/PORT                              
-quickstart-route   quickstart-route-<namespace>.<address>
-----
-+
-Use the HOST/PORT as the `<bridge-address>` parameter in the remainder of this quick start.
 
-.What to do next
-
-After exposing the Kafka Bridge Service to your local machine, xref:proc-producing-messages-from-bridge-topics-partitions-{context}[produce messages to topics and partitions].
+API requests are now forwarded from port 8080 on your local machine to port 8080 in the Kafka Bridge pod.

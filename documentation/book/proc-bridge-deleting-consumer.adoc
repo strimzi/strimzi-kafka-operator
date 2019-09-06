@@ -11,7 +11,6 @@ Finally, delete the Kafa Bridge consumer that you used throughout this quick sta
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
 
@@ -19,7 +18,7 @@ Finally, delete the Kafa Bridge consumer that you used throughout this quick sta
 +
 [source,curl,subs=attributes+]
 ----
-curl -X DELETE <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
+curl -X DELETE http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
 ----
 +
 If the request is successful, the Kafka Bridge returns a `204` code only.

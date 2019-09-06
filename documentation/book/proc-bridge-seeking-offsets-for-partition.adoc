@@ -11,7 +11,6 @@ Next, use the link:https://strimzi.io/docs/bridge/latest/#_seek[positions^] endp
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 * The Kafka Bridge consumer is subscribed to a topic. 
 
 .Procedure
@@ -21,7 +20,7 @@ Next, use the link:https://strimzi.io/docs/bridge/latest/#_seek[positions^] endp
 [source,curl,subs=attributes+]
 ----
 curl -X POST \
-  http://<bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions \
+  http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d {
   "offsets" : [ {

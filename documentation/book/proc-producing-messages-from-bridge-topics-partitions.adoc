@@ -10,8 +10,7 @@ Next, produce messages to topics in JSON format by using the link:https://strimz
 .Prerequisites
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
+* The Kafka Bridge service is exposed to your local machine on port 8080.
 
 .Procedure
 
@@ -49,7 +48,7 @@ kubectl apply -f examples/topic/bridge-quickstart-topic.yaml
 [source,curl,subs=attributes+]
 ----
 curl -X POST \
-  http://<bridge-address>/topics/bridge-quickstart-topic \
+  http://localhost:8080/topics/bridge-quickstart-topic \
   -H 'content-type: application/vnd.kafka.json.v2+json' \
   -d '{
     "records": [

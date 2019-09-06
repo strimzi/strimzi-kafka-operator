@@ -11,7 +11,6 @@ Next, manually commit  offsets to the log for all messages received by a Kafka B
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 * The Kafka Bridge consumer is subscribed to a topic. 
 
 .Procedure
@@ -20,7 +19,7 @@ Next, manually commit  offsets to the log for all messages received by a Kafka B
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/offsets \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/offsets \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{}'
 ----

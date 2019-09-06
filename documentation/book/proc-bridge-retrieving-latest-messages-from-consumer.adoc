@@ -11,7 +11,6 @@ Next, retrieve the latest messages from a Kafka Bridge consumer by requesting da
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 * The Kafka Bridge consumer is subscribed to a topic. 
 
 .Procedure
@@ -20,7 +19,7 @@ Next, retrieve the latest messages from a Kafka Bridge consumer by requesting da
 +
 [source,curl,subs=attributes+]
 ----
-curl -X GET <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/records \
+curl -X GET http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/records \
   -H 'accept: application/vnd.kafka.json.v2+json'
 ----
 +

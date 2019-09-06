@@ -11,7 +11,6 @@ Before you can perform consumer operations, such as subscribing to topics and re
 
 * The Kafka Bridge is deployed to your Kubernetes cluster.
 * The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The address of the Kafka Bridge to use as the `<bridge-address>` parameter.
 
 .Procedure
 
@@ -19,7 +18,7 @@ Before you can perform consumer operations, such as subscribing to topics and re
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{
     "name": "bridge-quickstart-consumer",
