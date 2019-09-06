@@ -24,7 +24,7 @@ spec:
     port: 8080
 / ...
 ----
-<1> When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. In this example, the Kafka Bridge Deployment is named `quickstart-bridge` and the accompanying Kafka Bridge Service is named `quickstart-bridge-service`.
+<1> When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. In this example, the Kafka Bridge Deployment is named `quickstart-bridge` and the accompanying Kafka Bridge ervice is named `quickstart-bridge-service`.
 +
 <2> In the `bootstrapServers` property, enter the name of the Kafka cluster.
 
@@ -55,7 +55,7 @@ my-cluster-entity-operator         1/1     1            1          24h
 
 .What to do next
 
-After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-kafka-bridge-service-local-machine-{context}[expose the Kafka Bridge Service to your local machine].
+After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-kafka-bridge-service-local-machine-{context}[expose the Kafka Bridge service to your local machine].
 
 .Additional resources
 
