@@ -51,7 +51,14 @@ EOF
 ----
 --
 
-. Now that your cluster is running, create a topic to publish and subscribe from your external client.
+. Verify that the cluster was successfully deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl get deployments
+----
+
+. When your cluster is ready, create a topic to publish and subscribe from your external client.
 +
 Create the following `my-topic` custom resource definition with 3 replicas and 3 partitions in the `my-cluster` Kafka cluster:
 +

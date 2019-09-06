@@ -5,4 +5,4 @@
 [id='ref-install-prerequisites-{context}']
 = Prerequisites
 
-* Kubernetes cluster ({KubernetesVersion}) running on which to deploy {ProductName}.
+* Kubernetes cluster ({KubernetesVersion}) running on which to deploy {ProductName}

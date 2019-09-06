@@ -8,12 +8,11 @@
 
 Test your {ProductName} installation by sending and receiving messages outside the cluster from `my-topic`.
 
-In this procedure, you access {ProductName} from a local client.
-
 .Prerequisites
 
 * {ProductName} is installed on the Kubernetes cluster
 * Zookeeper and Kafka are running
+* xref:proc-enabling-tls-{context}[Loadbalancer address and truststore for access to the cluster]
 
 .Procedure
 
@@ -27,6 +26,8 @@ In this procedure, you access {ProductName} from a local client.
 ----
 bin/kafka-console-producer.sh --broker-list _<loadbalancer-address>_:9094 --producer-property security.protocol=SSL --producer-property ssl.truststore.password=password --producer-property ssl.truststore.location=./client.truststore.jks --topic my-topic
 ----
++
+Use the xref:proc-enabling-tls-{context}[loadbalancer address and truststore] you obtained as parameter values.
 
 . Type your message into the console where the producer is running.
 

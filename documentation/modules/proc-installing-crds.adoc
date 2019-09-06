@@ -5,17 +5,17 @@
 [id='proc-install-crds-{context}']
 = Installing {ProductName}
 
-Install {ProductName} with the Custom Resource Definitions (CRDs) required for deployment.
+Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) required for deployment.
 
 .Prerequisites
 
-* Installation requires a Kubernetes account with cluster admin credentials.
+* Installation requires a Kubernetes account with cluster admin credentials
 
 .Procedure
 
 . Log in to the Kubernetes cluster with cluster admin privileges.
 
-. Modify the installation files according to the `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
+. Modify the installation files to reference a new `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
 +
 NOTE: By default, the files work in the `myproject` namespace.
 +
@@ -33,11 +33,18 @@ sed -i 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBindin
 ----
 sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
 ----
-. Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
+
+. Create the new `kafka` namespace.
 +
 [source, shell, subs=+quotes ]
 ----
 kubectl create ns kafka
+----
+
+. Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
++
+[source, shell, subs=+quotes ]
+----
 kubectl apply -f install/cluster-operator/ -n kafka
 ----
 

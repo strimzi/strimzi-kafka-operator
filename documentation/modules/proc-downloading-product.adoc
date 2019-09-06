@@ -9,7 +9,7 @@ Download a ZIP file that contains the resources required for installation and ex
 
 .Prerequisites
 
-* Access to {ReleaseDownload}.
+* Access to {ReleaseDownload}
 
 .Procedure
 

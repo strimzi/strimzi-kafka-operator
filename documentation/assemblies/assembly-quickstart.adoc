@@ -6,7 +6,13 @@
 
 = Try {ProductName}
 
-Install {ProductName} and start sending and receiving messages from a topic in minutes.
+Use the instructions in this Quick Start Guide to install {ProductName} and start sending and receiving messages from a topic in minutes.
+
+You will:
+
+* Install {ProductName}
+* Create a Kafka cluster
+* Access the Kafka cluster to send and receive messages
 
 Ensure you have the prerequisites and then follow the tasks in the order provided in this chapter.
 

@@ -2,7 +2,7 @@ include::common/attributes.adoc[]
 
 :context: str
 
-= {ProductName} Quickstart
+= {ProductName} Quick Start
 
 // common intro
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
