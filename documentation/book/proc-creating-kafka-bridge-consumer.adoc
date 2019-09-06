@@ -33,7 +33,7 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group \
 * In the request body, the consumer is named `bridge-quickstart-consumer` and some basic configuration settings are defined.
 * The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. A later procedure in this quick start describes how to commit the offsets for this consumer manually.
 +
-If the request was successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code:
+If the request is successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code:
 +
 [source,json,subs=attributes+]
 ----
