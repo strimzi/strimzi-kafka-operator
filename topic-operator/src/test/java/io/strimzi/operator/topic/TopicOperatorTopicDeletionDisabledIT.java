@@ -25,7 +25,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 @RunWith(VertxUnitRunner.class)
-public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorIT {
+public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTopicDeletionDisabledIT.class);
 
