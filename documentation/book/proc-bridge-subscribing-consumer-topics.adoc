@@ -7,12 +7,6 @@
 
 After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics by using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint. Once subscribed, the consumer starts receiving all messages produced to the topic.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The base URL of the Kafka Bridge consumer. 
-
 .Procedure
 
 * Subscribe the consumer to the topic that you created earlier in this quick start, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:

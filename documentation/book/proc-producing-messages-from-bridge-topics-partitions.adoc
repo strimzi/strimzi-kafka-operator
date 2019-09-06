@@ -7,11 +7,6 @@
 
 Next, produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. As described in the following procedure, you can specify destination partitions for messages in the request body. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge service is exposed to your local machine on port 8080.
-
 .Procedure
 
 . In a text editor, create a YAML definition for a Kafka topic with three partitions.

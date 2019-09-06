@@ -9,10 +9,6 @@ Next, use port forwarding to expose the {ProductName} Kafka Bridge service to yo
 
 NOTE: Port forwarding is only suitable for development and testing purposes.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-
 .Procedure
 
 . List the names of the pods in your Kubernetes cluster:

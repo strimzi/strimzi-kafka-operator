@@ -7,12 +7,6 @@
 
 Next, retrieve the latest messages from a Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production use, HTTP clients can call this endpoint repeatedly (in a loop).
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The Kafka Bridge consumer is subscribed to a topic. 
-
 .Procedure
 
 * Retrieve messages from the Kafka Bridge consumer (these messages were sent to the consumer in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]):

@@ -7,11 +7,6 @@
 
 Before you can perform consumer operations, such as subscribing to topics and retrieving messages from topics, you must create a consumer by using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers^] endpoint. This is referred to as a __Kafka Bridge consumer__.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-
 .Procedure
 
 . Create a Kafka Bridge consumer in a new consumer group named `bridge-quickstart-consumer-group`: 

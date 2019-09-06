@@ -7,11 +7,6 @@
 
 Finally, delete the Kafa Bridge consumer that you used throughout this quick start.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-
 .Procedure
 
 * Delete the Kafka Bridge consumer by sending a DELETE request to the link:https://strimzi.io/docs/bridge/latest/#_deleteconsumer[instances] endpoint.

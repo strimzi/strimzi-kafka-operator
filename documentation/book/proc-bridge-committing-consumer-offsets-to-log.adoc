@@ -7,12 +7,6 @@
 
 Next, manually commit  offsets to the log for all messages received by a Kafka Bridge consumer by using the link:https://strimzi.io/docs/bridge/latest/#_commit[offsets^] endpoint. This is required because the Kafka Bridge consumer that you created earlier, in xref:proc-creating-kafka-bridge-consumer-{context}[Creating a Kafka Bridge consumer], was configured with the `enable.auto.commit` setting as `false`.
 
-.Prerequisites
-
-* The Kafka Bridge is deployed to your Kubernetes cluster.
-* The Kafka Bridge Service is exposed to your local machine on port 8080.
-* The Kafka Bridge consumer is subscribed to a topic. 
-
 .Procedure
 
 * Commit offsets to the log for the `bridge-quickstart-consumer`: 
