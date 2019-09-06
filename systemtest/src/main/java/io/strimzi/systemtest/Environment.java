@@ -59,6 +59,10 @@ public class Environment {
      * CO reconciliation interval.
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    /**
+     * Openshift 4 parameter.
+     */
+    private static final String OPENSHIFT4_ENV = "OPENSHIFT4";
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
@@ -72,6 +76,7 @@ public class Environment {
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
+    public static final String OPENSHIFT4_DEFAULT = "true";
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
@@ -89,6 +94,7 @@ public class Environment {
     // variables for kafka bridge image
     private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
+    public static final boolean OPENSHIFT4 = Boolean.parseBoolean(System.getenv().getOrDefault(OPENSHIFT4_ENV, OPENSHIFT4_DEFAULT));
 
     private Environment() {
     }
