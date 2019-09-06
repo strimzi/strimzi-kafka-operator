@@ -22,7 +22,7 @@ Finally, delete the Kafa Bridge consumer that you used throughout this quick sta
 curl -X DELETE <bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
 ----
 +
-If the request was successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` code only.
 
 .Additional resources
 
