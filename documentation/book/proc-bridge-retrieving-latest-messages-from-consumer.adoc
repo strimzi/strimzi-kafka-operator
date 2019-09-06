@@ -5,7 +5,7 @@
 [id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
 = Retrieving the latest messages from a Kafka Bridge consumer
 
-Next, retrieve the latest messages from a Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. For production use, HTTP clients can retrieve messages repeatedly or as a one-off operation. 
+Next, retrieve the latest messages from a Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production use, HTTP clients can call this endpoint repeatedly (in a loop).
 
 .Prerequisites
 
