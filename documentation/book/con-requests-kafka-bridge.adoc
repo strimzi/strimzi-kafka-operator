@@ -3,7 +3,7 @@
 // assembly-kafka-bridge-overview.adoc
 
 [id='con-requests-kafka-bridge-{context}']
-= Requests to the {ProductName} Kafka Bridge
+= Requests to the Kafka Bridge
 
 Specify data formats and HTTP headers to ensure valid requests are submitted to the Kafka Bridge. 
 
