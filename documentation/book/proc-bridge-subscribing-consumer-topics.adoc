@@ -27,7 +27,7 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group/instanc
 +
 The `topics` array can contain a single topic (as shown here) or multiple topics. If you want to subscribe the consumer to multiple topics that match a regular expression, you can use the `topic_pattern` string instead of the `topics` array. 
 +
-If the request was successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` code only.
 
 .What to do next
 
