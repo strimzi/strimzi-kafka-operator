@@ -30,7 +30,10 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.8.2-kafka-2.0.0",
       "afterKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0"
     },
-    "maxKubernetesVersion": "1.11"
+    "supportedK8sVersion": {
+      "version": "1.11",
+      "reason" : "Currently 0.8.2 CO cannot be deployed on newer versions of Kubernetes than 1.11.x. This test will be skipped until better understanding of the issue."
+    }
   },
   {
     "fromVersion":"0.11.4",
@@ -63,7 +66,10 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0",
       "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1"
     },
-    "maxKubernetesVersion": "latest"
+    "supportedK8sVersion": {
+      "version": "latest",
+      "reason" : "Test is working on all environment used by QE."
+    }
   },
   {
     "fromVersion":"0.12.1",
@@ -96,7 +102,10 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1",
       "afterKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0"
     },
-    "maxKubernetesVersion": "latest"
+    "supportedK8sVersion": {
+      "version": "latest",
+      "reason" : "Test is working on all environment used by QE."
+    }
   },
   {
     "fromVersion":"0.13.0",
@@ -129,6 +138,9 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.3.0"
     },
-    "maxKubernetesVersion": "latest"
+    "supportedK8sVersion": {
+      "version": "latest",
+      "reason" : "Test is working on all environment used by QE."
+    }
   }
 ]

@@ -55,7 +55,7 @@ public class StrimziUpgradeST extends AbstractST {
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
     void upgradeStrimziVersion(JsonObject parameters) throws Exception {
 
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getString("maxKubernetesVersion")));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("maxKubernetesVersion").getString("version")));
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
         setNamespace(NAMESPACE);
