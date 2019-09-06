@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-using-the-kafka-bridge.adoc
+// assembly-kafka-bridge-overview.adoc
 
 [id='con-securing-kafka-bridge-{context}']
 
