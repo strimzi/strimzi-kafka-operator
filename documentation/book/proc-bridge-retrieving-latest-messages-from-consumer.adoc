@@ -24,7 +24,7 @@ curl -X GET <bridge-address>/consumers/bridge-quickstart-consumer-group/instance
   -H 'accept: application/vnd.kafka.json.v2+json'
 ----
 +
-If the request was successful, the Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body, along with a `200` code. Messages are retrieved from the latest offset by default.
+If the request is successful, the Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body, along with a `200` code. Messages are retrieved from the latest offset by default.
 +
 [source,json,subs=attributes+]
 ----
