@@ -82,18 +82,18 @@ public class TopicOperatorIT extends BaseITST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    private static String oldNamespace;
+    protected static String oldNamespace;
 
-    private final Labels labels = Labels.fromString(
+    protected final Labels labels = Labels.fromString(
             "strimzi.io/kind=topic");
 
     public static final String NAMESPACE = "topic-operator-it";
 
-    private final Vertx vertx = Vertx.vertx();
-    private KafkaCluster kafkaCluster;
-    private volatile AdminClient adminClient;
-    private KubernetesClient kubeClient;
-    private Thread kafkaHook = new Thread() {
+    protected final Vertx vertx = Vertx.vertx();
+    protected KafkaCluster kafkaCluster;
+    protected volatile AdminClient adminClient;
+    protected KubernetesClient kubeClient;
+    protected Thread kafkaHook = new Thread() {
         @Override
         public void run() {
             if (kafkaCluster != null) {
@@ -101,12 +101,12 @@ public class TopicOperatorIT extends BaseITST {
             }
         }
     };
-    private final long timeout = 30_000L;
+    protected final long timeout = 30_000L;
 
-    private volatile String deploymentId;
-    private Set<String> preExistingEvents;
+    protected volatile String deploymentId;
+    protected Set<String> preExistingEvents;
 
-    private Session session;
+    protected Session session;
 
     @BeforeClass
     public static void setupKubeCluster() throws IOException {
@@ -208,7 +208,7 @@ public class TopicOperatorIT extends BaseITST {
         LOGGER.info("Started Topic Operator");
     }
 
-    private static int zkPort(KafkaCluster cluster) {
+    protected static int zkPort(KafkaCluster cluster) {
         // TODO Method was added in DBZ-540, so no need for reflection once
         // dependency gets upgraded
         try {
@@ -295,7 +295,7 @@ public class TopicOperatorIT extends BaseITST {
         }, 60000, "status ready");
     }
 
-    private KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
+    protected KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         return createKafkaTopicResource(context, topicResource);
@@ -319,7 +319,7 @@ public class TopicOperatorIT extends BaseITST {
         waitForTopicInKube(context, resourceName, true);
     }
 
-    private void waitForTopicInKube(TestContext context, String resourceName, boolean exist) {
+    protected void waitForTopicInKube(TestContext context, String resourceName, boolean exist) {
         waitFor(context, () -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
             LOGGER.info("Polled topic {} waiting for " + (exist ? "existence" : "non-existence"), resourceName);
@@ -572,7 +572,7 @@ public class TopicOperatorIT extends BaseITST {
         }, timeout, "Expected topic to be deleted by now");
     }
 
-    private void deleteInKube(String resourceName) {
+    protected void deleteInKube(String resourceName) {
         // can now delete the topicResource
         operation().inNamespace(NAMESPACE).withName(resourceName).delete();
     }
@@ -663,7 +663,7 @@ public class TopicOperatorIT extends BaseITST {
                 TopicOperator.EventType.WARNING);
     }
 
-    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
+    protected MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
         return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
