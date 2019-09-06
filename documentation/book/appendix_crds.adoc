@@ -712,25 +712,27 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |brokersService            1.2+<.<|Template for Kafka broker `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|initContainer             1.2+<.<|Template for the Kafka init container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|persistentVolumeClaim     1.2+<.<|Template for all Kafka `PersistentVolumeClaims`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget       1.2+<.<|Template for Kafka `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |tlsSidecarContainer       1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
@@ -795,6 +797,21 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |====
 
+[id='type-PodDisruptionBudgetTemplate-{context}']
+### `PodDisruptionBudgetTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
+|integer
+|====
+
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
@@ -821,21 +838,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |value  1.2+<.<|The environment variable value.
 |string
-|====
-
-[id='type-PodDisruptionBudgetTemplate-{context}']
-### `PodDisruptionBudgetTemplate` schema reference
-
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
-|integer
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']
@@ -889,20 +891,22 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 [options="header"]
 |====
-|Property                    |Description
-|statefulset          1.2+<.<|Template for Zookeeper `StatefulSet`.
+|Property                      |Description
+|statefulset            1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                  1.2+<.<|Template for Zookeeper `Pods`.
+|pod                    1.2+<.<|Template for Zookeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|clientService        1.2+<.<|Template for Zookeeper client `Service`.
+|clientService          1.2+<.<|Template for Zookeeper client `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|nodesService         1.2+<.<|Template for Zookeeper nodes `Service`.
+|nodesService           1.2+<.<|Template for Zookeeper nodes `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|podDisruptionBudget  1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
+|persistentVolumeClaim  1.2+<.<|Template for all Zookeeper `PersistentVolumeClaims`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget    1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|tlsSidecarContainer  1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|zookeeperContainer     1.2+<.<|Template for the Zookeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|zookeeperContainer   1.2+<.<|Template for the Zookeeper container.
+|tlsSidecarContainer    1.2+<.<|Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 

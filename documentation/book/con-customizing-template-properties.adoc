@@ -52,6 +52,7 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `kafkaContainer`:: Configures the container used to run the Kafka broker, including custom environment variables. 
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
 `initContainer`:: Configures the container used to initialize the brokers.
+`persistentVolumeClaim`:: Configures the metadata of the Kafka `PersistentVolumeClaims`.
 
 .Supported resources in Zookeeper cluster
 
@@ -63,7 +64,8 @@ When defined in a Zookeeper cluster, the `template` object can have the followin
 `nodesService`:: Configures the headless service.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Zookeeper `StatefulSet`.
 `zookeeperContainer`:: Configures the container used to run the Zookeeper Node, including custom environment variables. 
-`tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables. 
+`tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
+`persistentVolumeClaim`:: Configures the metadata of the Zookeeper `PersistentVolumeClaims`.
 
 .Supported resources in Entity Operator
 

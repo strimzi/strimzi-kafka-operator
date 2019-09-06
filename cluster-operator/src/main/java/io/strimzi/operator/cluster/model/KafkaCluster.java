@@ -483,6 +483,11 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
             }
 
+            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
+                result.templatePersistentVolumeClaimLabels = template.getPersistentVolumeClaim().getMetadata().getLabels();
+                result.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
+            }
+
             if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
                 result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }

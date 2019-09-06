@@ -6,6 +6,7 @@
 * Add support for setting custom environment variables in all containers
 * Add liveness and readiness checks to Mirror Maker
 * Allow configuring loadBalancerIP for LoadBalancer type services
+* Allow setting labels and annotations for Persistent Volume Claims
 * Add support for Jaeger tracing in Kafka Mirror Maker and Kafka Connect
 
 ## 0.13.0
