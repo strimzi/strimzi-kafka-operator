@@ -8,6 +8,9 @@ spec:
   selector:
     matchLabels:
       strimzi.io/kind: Kafka
+  namespaceSelector:
+    matchNames:
+      - myproject
   endpoints:
   #### job_name: kubernetes-cadvisor
   # configured in additional secret
@@ -19,8 +22,6 @@ spec:
     scrapeTimeout: 10s
     path: /metrics
     scheme: http
-    namespaceSelector:
-      any: true
     relabelings:
     - sourceLabels: [__meta_kubernetes_endpoints_name]
       separator: ;
@@ -69,8 +70,6 @@ spec:
     scrapeTimeout: 10s
     path: /metrics
     scheme: http
-    namespaceSelector:
-      any: true
     relabelings:
     - sourceLabels: [__meta_kubernetes_endpoints_name]
       separator: ;
