@@ -27,7 +27,7 @@ curl -X POST <bridge-address>/consumers/bridge-quickstart-consumer-group/instanc
 +
 Here the request body contains an empty object, so offsets are committed for all the records received by the consumer. Alternatively, you can use the link:https://strimzi.io/docs/bridge/latest/#_offsetcommitseeklist[OffsetCommitSeekList^] array to specify the topics and partitions for which you want to commit offsets.
 +
-If the request was successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` code only.
 
 .What to do next
 
