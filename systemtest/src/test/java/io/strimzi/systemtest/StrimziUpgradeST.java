@@ -35,6 +35,7 @@ import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
 public class StrimziUpgradeST extends AbstractST {
@@ -53,91 +54,90 @@ public class StrimziUpgradeST extends AbstractST {
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
     void upgradeStrimziVersion(JsonObject parameters) throws Exception {
-        if (parameters.getBoolean("ocp4") == Environment.OPENSHIFT4) {
-            LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
-            setNamespace(NAMESPACE);
-            File coDir = null;
-            File kafkaEphemeralYaml = null;
-            File kafkaTopicYaml = null;
-            File kafkaUserYaml = null;
 
-            try {
-                String url = parameters.getString("urlFrom");
-                File dir = StUtils.downloadAndUnzip(url);
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getString("maxKubernetesVersion")));
 
-                coDir = new File(dir, parameters.getString("fromExamples") + "/install/cluster-operator/");
+        LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
+        setNamespace(NAMESPACE);
+        File coDir = null;
+        File kafkaEphemeralYaml = null;
+        File kafkaTopicYaml = null;
+        File kafkaUserYaml = null;
 
-                // Modify + apply installation files
-                copyModifyApply(coDir);
+        try {
+            String url = parameters.getString("urlFrom");
+            File dir = StUtils.downloadAndUnzip(url);
 
-                LOGGER.info("Waiting for CO deployment");
-                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+            coDir = new File(dir, parameters.getString("fromExamples") + "/install/cluster-operator/");
 
-                // Deploy a Kafka cluster
-                kafkaEphemeralYaml = new File(dir, parameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-                cmdKubeClient().create(kafkaEphemeralYaml);
-                // Wait for readiness
-                waitForClusterReadiness();
+            // Modify + apply installation files
+            copyModifyApply(coDir);
 
-                // And a topic and a user
-                kafkaTopicYaml = new File(dir, parameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
-                cmdKubeClient().create(kafkaTopicYaml);
-                kafkaUserYaml = new File(dir, parameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
-                cmdKubeClient().create(kafkaUserYaml);
+            LOGGER.info("Waiting for CO deployment");
+            StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
 
-                makeSnapshots();
-                logPodImages();
-                // Execution of required procedures before upgrading CO
-                changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresBefore"));
+            // Deploy a Kafka cluster
+            kafkaEphemeralYaml = new File(dir, parameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
+            cmdKubeClient().create(kafkaEphemeralYaml);
+            // Wait for readiness
+            waitForClusterReadiness();
 
-                // Upgrade the CO
-                // Modify + apply installation files
-                if ("HEAD" .equals(parameters.getString("toVersion"))) {
-                    LOGGER.info("Updating");
-                    coDir = new File("../install/cluster-operator");
-                    upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
-                } else {
-                    url = parameters.getString("urlTo");
-                    dir = StUtils.downloadAndUnzip(url);
-                    coDir = new File(dir, parameters.getString("toExamples") + "/install/cluster-operator/");
-                    upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
-                }
+            // And a topic and a user
+            kafkaTopicYaml = new File(dir, parameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
+            cmdKubeClient().create(kafkaTopicYaml);
+            kafkaUserYaml = new File(dir, parameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
+            cmdKubeClient().create(kafkaUserYaml);
 
-                // Make snapshots of all pods
-                makeSnapshots();
-                logPodImages();
-                //  Upgrade kafka
-                changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresAfter"));
-                logPodImages();
-                checkAllImages(parameters.getJsonObject("imagesAfterKafkaUpdate"));
+            makeSnapshots();
+            logPodImages();
+            // Execution of required procedures before upgrading CO
+            changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresBefore"));
 
-                // Check errors in CO log
-                assertNoCoErrorsLogged(0);
-
-                // Tidy up
-            } catch (KubeClusterException e) {
-                if (kafkaEphemeralYaml != null) {
-                    cmdKubeClient().delete(kafkaEphemeralYaml);
-                }
-                if (coDir != null) {
-                    cmdKubeClient().delete(coDir);
-                }
-                e.printStackTrace();
-                throw e;
-            } finally {
-                // Get current date to create a unique folder
-                String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-                String logDir = TEST_LOG_DIR + testClass + currentDate;
-
-                LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
-                logCollector.collectEvents();
-                logCollector.collectConfigMaps();
-                logCollector.collectLogsFromPods();
-
-                deleteInstalledYamls(coDir);
+            // Upgrade the CO
+            // Modify + apply installation files
+            if ("HEAD" .equals(parameters.getString("toVersion"))) {
+                LOGGER.info("Updating");
+                coDir = new File("../install/cluster-operator");
+                upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
+            } else {
+                url = parameters.getString("urlTo");
+                dir = StUtils.downloadAndUnzip(url);
+                coDir = new File(dir, parameters.getString("toExamples") + "/install/cluster-operator/");
+                upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
             }
-        } else {
-            LOGGER.warn("This upgrade test from version {} to version {} is not applicable on OpenShift 4", parameters.getString("fromVersion"), parameters.getString("toVersion"));
+
+            // Make snapshots of all pods
+            makeSnapshots();
+            logPodImages();
+            //  Upgrade kafka
+            changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresAfter"));
+            logPodImages();
+            checkAllImages(parameters.getJsonObject("imagesAfterKafkaUpdate"));
+
+            // Check errors in CO log
+            assertNoCoErrorsLogged(0);
+
+            // Tidy up
+        } catch (KubeClusterException e) {
+            if (kafkaEphemeralYaml != null) {
+                cmdKubeClient().delete(kafkaEphemeralYaml);
+            }
+            if (coDir != null) {
+                cmdKubeClient().delete(coDir);
+            }
+            e.printStackTrace();
+            throw e;
+        } finally {
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = TEST_LOG_DIR + testClass + currentDate;
+
+            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
+            logCollector.collectEvents();
+            logCollector.collectConfigMaps();
+            logCollector.collectLogsFromPods();
+
+            deleteInstalledYamls(coDir);
         }
     }
 

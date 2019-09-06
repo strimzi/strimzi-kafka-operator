@@ -26,7 +26,9 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
@@ -474,5 +476,15 @@ public class KubeClient {
             LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
             execLatch.countDown();
         }
+    }
+
+    /**
+     * Method which return kubernetes version
+     * @return kubernetes version
+     */
+    public String clusterKubernetesVersion() {
+        // This is basically workaround cause this.client.getVersion() returns null every time
+        VersionInfo versionInfo = new DefaultKubernetesClient().getVersion();
+        return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
 }

@@ -30,7 +30,7 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.8.2-kafka-2.0.0",
       "afterKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0"
     },
-    "ocp4": false
+    "maxKubernetesVersion": "1.11"
   },
   {
     "fromVersion":"0.11.4",
@@ -63,7 +63,7 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0",
       "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1"
     },
-    "ocp4": true
+    "maxKubernetesVersion": "latest"
   },
   {
     "fromVersion":"0.12.1",
@@ -96,7 +96,7 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1",
       "afterKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0"
     },
-    "ocp4": true
+    "maxKubernetesVersion": "latest"
   },
   {
     "fromVersion":"0.13.0",
@@ -129,6 +129,6 @@
       "beforeKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.3.0"
     },
-    "ocp4": true
+    "maxKubernetesVersion": "latest"
   }
 ]
