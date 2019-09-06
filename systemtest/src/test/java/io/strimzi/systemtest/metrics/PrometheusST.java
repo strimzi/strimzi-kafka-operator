@@ -14,10 +14,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.PROMETHEUS;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
+@Tag(PROMETHEUS)
 public class PrometheusST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
