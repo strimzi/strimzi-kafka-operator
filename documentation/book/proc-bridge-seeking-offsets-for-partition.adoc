@@ -31,7 +31,7 @@ curl -X POST \
 }'
 ----
 +
-If the request was successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` code only.
 
 . Restore the default message retrieval behavior by seeking to the last offset for the same partition. This time, use the link:https://strimzi.io/docs/bridge/latest/#_seektoend[positions/end] endpoint.
 +
