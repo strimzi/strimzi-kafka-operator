@@ -5,11 +5,11 @@
 [id='proc-bridge-subscribing-consumer-topics-{context}']
 = Subscribing a Kafka Bridge consumer to topics
 
-After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics by using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint. Once subscribed, the consumer starts receiving all messages produced to the topic.
+After you have created a Kafka Bridge consumer, you can subscribe it to one or more topics by using the link:https://strimzi.io/docs/bridge/latest/#_subscribe[subscription^] endpoint. Once subscribed, the consumer starts receiving all messages that are produced to the topic.
 
 .Procedure
 
-* Subscribe the consumer to the topic that you created earlier in this quick start, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:
+* Subscribe the consumer to the topic that you created earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:
 +
 [source,curl,subs=attributes+]
 ----
@@ -28,4 +28,4 @@ After subscribing a Kafka Bridge consumer to topics, you can xref:proc-bridge-re
 
 .Additional resources
 
-* link:https://strimzi.io/docs/bridge/latest/#_subscribe[POST /consumers/{groupid}/instances/{name}/subscription] in the API reference documentation.
+* link:https://strimzi.io/docs/bridge/latest/#_subscribe[POST /consumers/{groupid}/instances/{name}/subscription^] in the API reference documentation.

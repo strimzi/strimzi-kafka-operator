@@ -24,7 +24,7 @@ spec:
     port: 8080
 / ...
 ----
-<1> When the Kafka Bridge is deployed, `-bridge` is appended to the name of the Deployment and other related resources. In this example, the Kafka Bridge Deployment is named `quickstart-bridge` and the accompanying Kafka Bridge ervice is named `quickstart-bridge-service`.
+<1> When the Kafka Bridge is deployed, `-bridge` is appended to the name of the deployment and other related resources. In this example, the Kafka Bridge deployment is named `quickstart-bridge` and the accompanying Kafka Bridge service is named `quickstart-bridge-service`.
 +
 <2> In the `bootstrapServers` property, enter the name of the Kafka cluster.
 
@@ -35,7 +35,7 @@ spec:
 kubectl apply -f examples/kafka-bridge/kafka-bridge.yaml
 ----
 +
-A `quickstart-bridge` Deployment and other related resources are created in your Kubernetes cluster.
+A `quickstart-bridge` deployment, service, and other related resources are created in your Kubernetes cluster.
 
 . Verify that the Kafka Bridge was successfully deployed:
 +
@@ -50,7 +50,7 @@ NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
 quickstart-bridge                  1/1     1            1          34m
 my-cluster-connect                 1/1     1            1          24h
 my-cluster-entity-operator         1/1     1            1          24h
-/...
+#...
 ----
 
 .What to do next

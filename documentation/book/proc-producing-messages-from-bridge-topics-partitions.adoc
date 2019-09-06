@@ -5,7 +5,7 @@
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
 = Producing messages to topics and partitions
 
-Next, produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. As described in the following procedure, you can specify destination partitions for messages in the request body. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
+Next, produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. You can specify destination partitions for messages in the request body, as shown here. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
 .Procedure
 
@@ -27,7 +27,7 @@ spec:
     segment.bytes: 1073741824
 ----
 <1> The name of the Kafka cluster in which the Kafka Bridge is deployed.
-<2> The number of partitions. 
+<2> The number of partitions for the topic. 
 
 . Save the file to the `examples/topic` directory as `bridge-quickstart-topic.yaml`.
 
@@ -38,7 +38,7 @@ spec:
 kubectl apply -f examples/topic/bridge-quickstart-topic.yaml
 ----
 
-. Produce three messages to the topic you created:
+. Using the Kafka Bridge, produce three messages to the topic you created:
 +
 [source,curl,subs=attributes+]
 ----

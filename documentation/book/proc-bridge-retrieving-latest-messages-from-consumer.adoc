@@ -5,11 +5,11 @@
 [id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
 = Retrieving the latest messages from a Kafka Bridge consumer
 
-Next, retrieve the latest messages from a Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production use, HTTP clients can call this endpoint repeatedly (in a loop).
+Next, retrieve the latest messages from the Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production use, HTTP clients can call this endpoint repeatedly (in a loop).
 
 .Procedure
 
-* Retrieve messages from the Kafka Bridge consumer (these messages were sent to the consumer in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]):
+* Retrieve messages from the Kafka Bridge consumer (you sent these messages to the consumer earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]):
 +
 [source,curl,subs=attributes+]
 ----
