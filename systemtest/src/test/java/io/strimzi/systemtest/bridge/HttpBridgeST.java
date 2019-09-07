@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
+@Tag(NODEPORT_SUPPORTED)
 @ExtendWith(VertxExtension.class)
 class HttpBridgeST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);

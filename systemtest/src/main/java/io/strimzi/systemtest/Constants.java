@@ -40,8 +40,9 @@ public interface Constants {
     long CONNECT_STATUS_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
 
-    long CO_OPERATION_TIMEOUT = Duration.ofMinutes(1).toMillis();
-    long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT + Duration.ofSeconds(20).toMillis();
+    long CO_OPERATION_TIMEOUT_DEFAULT = TIMEOUT_FOR_RESOURCE_READINESS;
+    long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
+    long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(20).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
 
     String KAFKA_CLIENTS = "kafka-clients";
@@ -97,4 +98,16 @@ public interface Constants {
      * Tag for tests, which are working only on specific environment and we usually don't want to execute them on all environments.
      */
     String SPECIFIC = "specific";
+    /**
+     * Tag for tests, which are using NodePort.
+     */
+    String NODEPORT_SUPPORTED = "nodeport";
+    /**
+     * Tag for tests, which are using LoadBalancer.
+     */
+    String LOADBALANCER_SUPPORTED = "loadbalancer";
+    /**
+     * Tag for tests, which are using NetworkPolicies.
+     */
+    String NETWORKPOLICIES_SUPPORTED = "networkpolicies";
 }

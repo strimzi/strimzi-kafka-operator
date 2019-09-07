@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +32,6 @@ class RollingUpdateST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
     static final String NAMESPACE = "rolling-update-cluster-test";
-    private static final String RECONCILIATION_PATTERN = "'Triggering periodic reconciliation for namespace " + NAMESPACE + "'";
 
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() {
@@ -47,38 +45,24 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for pods");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                .editZookeeper()
-                .withResources(new ResourceRequirementsBuilder()
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec()
+                .getZookeeper()
+                .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("100000m"))
-                        .build())
-                .endZookeeper()
-                .endSpec()
-                .done();
+                        .build());
+        });
 
-        StUtils.waitForPod(firstZkPodName);
-
-        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, getOperationID()), logZkPattern).isEmpty());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, getOperationID());
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-
-        LOGGER.info("Wait till another rolling update starts");
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
-
-        TimeMeasuringSystem.stopOperation(reconciliation);
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Second part
         String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
-        LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
-
-        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logZkPattern).isEmpty());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -98,20 +82,15 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for pods");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                .editKafka()
-                .withResources(new ResourceRequirementsBuilder()
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec()
+                .getKafka()
+                .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("100000m"))
-                        .build())
-                .endKafka()
-                .endSpec()
-                .done();
+                        .build());
+        });
 
-        StUtils.waitForPod(firstKafkaPodName);
-
-        TestUtils.waitFor("Wait till rolling update timeouted", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, getOperationID()), logKafkaPattern).isEmpty());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, getOperationID());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
@@ -120,10 +99,7 @@ class RollingUpdateST extends AbstractST {
         // Second part
         String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
-        LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
-
-        TestUtils.waitFor("Wait till rolling update timedout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
@@ -167,7 +143,7 @@ class RollingUpdateST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Long.toString(Constants.CO_OPERATION_TIMEOUT)).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
     }
 
     @Override

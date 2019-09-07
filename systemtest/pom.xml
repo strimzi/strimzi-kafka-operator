@@ -201,7 +201,6 @@
             <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance | regression | flaky | travis</groups>
             </properties>
         </profile>
         <profile>
@@ -235,15 +234,36 @@
         <profile>
             <id>scalability</id>
             <properties>
-                <skippTests>false</skippTests>
+                <skipTests>false</skipTests>
                 <groups>scalability &amp; !flaky</groups>
             </properties>
         </profile>
         <profile>
             <id>specific</id>
             <properties>
-                <skippTests>false</skippTests>
+                <skipTests>false</skipTests>
                 <groups>specific</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>nodeport</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>nodeport</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>loadbalancer</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>loadbalancer</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>networkpolicies</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>networkpolicies</groups>
             </properties>
         </profile>
     </profiles>

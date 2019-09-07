@@ -750,14 +750,14 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, "300000");
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+    public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
-    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -780,7 +780,7 @@ public class Resources extends AbstractResources {
                     envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(operationTimeout);
+                    envVar.setValue(Long.toString(operationTimeout));
                     break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
@@ -792,11 +792,12 @@ public class Resources extends AbstractResources {
                     }
             }
         }
+
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
@@ -805,6 +806,7 @@ public class Resources extends AbstractResources {
                         .editSpec()
                             .editFirstContainer()
                                 .withImage(StUtils.changeOrgAndTag(coImage))
+                                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
                             .endContainer()
                         .endSpec()
                     .endTemplate()
@@ -1047,7 +1049,7 @@ public class Resources extends AbstractResources {
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .withCommand("sleep")
                 .withArgs("infinity")
-                .withImagePullPolicy("IfNotPresent");
+                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";

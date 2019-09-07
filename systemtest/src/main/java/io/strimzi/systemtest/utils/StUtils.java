@@ -602,14 +602,19 @@ public class StUtils {
         }
     }
 
-    public static void waitForReconciliation(String testClass, String testName, String nameSpace) {
+    public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
         String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Long.parseLong(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS) + 20000,
             () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
                     TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                        "'Triggering periodic reconciliation for namespace " + nameSpace + "'").isEmpty());
+                        "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
         TimeMeasuringSystem.stopOperation(reconciliation);
+    }
+
+    public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
+        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
     }
 
     public static void waitForLoadBalancerService(String serviceName) {

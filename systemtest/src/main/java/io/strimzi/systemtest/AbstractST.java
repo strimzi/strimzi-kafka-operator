@@ -696,6 +696,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
+     * @param operationTimeout timeout for CO operations
+     */
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -708,7 +718,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources.clusterOperator(coNamespace).done();
+        testClassResources().clusterOperator(coNamespace, operationTimeout).done();
     }
 
     /**

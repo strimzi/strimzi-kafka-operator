@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -238,6 +239,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAuthentication() throws Exception {
         final String userName = "user-example";
         final String topicName = "topic-example";

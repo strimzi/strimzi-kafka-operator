@@ -60,6 +60,8 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -133,6 +135,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(LOADBALANCER_SUPPORTED)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         setOperationID(startTimeMeasuring(Operation.SCALE_UP));
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
@@ -1255,6 +1258,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testNodePort() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -1273,6 +1277,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testOverrideNodePortConfiguration() throws Exception {
         int brokerNodePort = 32000;
         int brokerId = 0;
@@ -1316,6 +1321,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(NODEPORT_SUPPORTED)
     void testNodePortTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -1339,6 +1345,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testLoadBalancer() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -1360,6 +1367,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(LOADBALANCER_SUPPORTED)
     void testLoadBalancerTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -1549,6 +1557,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testPersistentStorageSize() throws Exception {
         String[] diskSizes = {"70Gi", "20Gi"};
         int kafkaRepl = 2;
@@ -1601,6 +1610,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange() throws InterruptedException {
         LOGGER.info("Creating kafka without external listener");
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
@@ -1636,6 +1646,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testLabelModificationDoesNotBreakCluster() throws Exception {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1788,6 +1799,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testAppDomainLabels() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()

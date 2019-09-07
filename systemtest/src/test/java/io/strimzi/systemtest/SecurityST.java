@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.annotations.NetworkPolicy;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -39,6 +38,8 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -431,6 +432,7 @@ class SecurityST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testCertRenewalInMaintenanceWindow() throws Exception {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
@@ -481,6 +483,7 @@ class SecurityST extends MessagingBaseST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testCertRegeneratedAfterInternalCAisDeleted() throws Exception {
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
@@ -533,7 +536,7 @@ class SecurityST extends MessagingBaseST {
     }
 
     @Test
-    @NetworkPolicy
+    @Tag(NETWORKPOLICIES_SUPPORTED)
     void testNetworkPoliciesWithPlainListener() throws Exception {
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
@@ -583,7 +586,7 @@ class SecurityST extends MessagingBaseST {
     }
 
     @Test
-    @NetworkPolicy
+    @Tag(NETWORKPOLICIES_SUPPORTED)
     void testNetworkPoliciesWithTlsListener() throws Exception {
         Map<String, String> matchLabelsForTls = new HashMap<>();
         matchLabelsForTls.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
