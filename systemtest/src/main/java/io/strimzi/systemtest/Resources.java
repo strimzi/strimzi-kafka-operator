@@ -798,7 +798,6 @@ public class Resources extends AbstractResources {
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-//                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
