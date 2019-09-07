@@ -718,7 +718,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources().clusterOperator(coNamespace, Long.toString(operationTimeout)).done();
+        testClassResources().clusterOperator(coNamespace, operationTimeout).done();
     }
 
     /**

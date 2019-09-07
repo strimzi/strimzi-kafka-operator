@@ -750,14 +750,14 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, Long.toString(Constants.CO_OPERATION_TIMEOUT_DEFAULT));
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+    public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
-    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -780,7 +780,7 @@ public class Resources extends AbstractResources {
                     envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(operationTimeout);
+                    envVar.setValue(Long.toString(operationTimeout));
                     break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
