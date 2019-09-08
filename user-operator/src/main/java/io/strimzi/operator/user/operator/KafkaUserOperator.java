@@ -140,19 +140,19 @@ public class KafkaUserOperator {
         }
 
         Set<SimpleAclRule> tlsAcls = null;
-        Set<SimpleAclRule> scramAcls = null;
+        Set<SimpleAclRule> scramOrNoneAcls = null;
 
         if (user.isTlsUser())   {
             tlsAcls = user.getSimpleAclRules();
-        } else if (user.isScramUser())  {
-            scramAcls = user.getSimpleAclRules();
+        } else if (user.isScramUser() || user.isNoneUser())  {
+            scramOrNoneAcls = user.getSimpleAclRules();
         }
 
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
-                aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
+                aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getName());

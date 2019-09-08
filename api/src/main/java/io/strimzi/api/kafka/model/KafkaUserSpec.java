@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -23,7 +22,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "authentication" })
+@JsonPropertyOrder({ "authentication", "authorization" })
 @EqualsAndHashCode
 public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
@@ -34,7 +33,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
-    @JsonProperty(required = true)
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaUserAuthentication getAuthentication() {
         return authentication;
     }

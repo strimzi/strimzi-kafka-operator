@@ -124,12 +124,28 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            introspectionEndpointUri:
+                              type: string
+                            issuerUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
                           required:
+                          - issuerUri
                           - type
                         networkPolicyPeers:
                           type: array
@@ -187,12 +203,28 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            introspectionEndpointUri:
+                              type: string
+                            issuerUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
                           required:
+                          - issuerUri
                           - type
                         networkPolicyPeers:
                           type: array
@@ -250,12 +282,28 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            introspectionEndpointUri:
+                              type: string
+                            issuerUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
                           required:
+                          - issuerUri
                           - type
                         class:
                           type: string

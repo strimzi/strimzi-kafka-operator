@@ -65,6 +65,7 @@ import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
@@ -133,6 +134,19 @@ public class KafkaCluster extends AbstractModel {
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
+
+    // OAuth configuration options
+    private static final String OAUTH_JWKS_ENDPOINT_URI = "oauth.jwks.endpoint.uri";
+    private static final String OAUTH_JWKS_EXPIRY_SECONDS = "oauth.jwks.expiry.seconds";
+    private static final String OAUTH_JWKS_REFRESH_SECONDS = "oauth.jwks.refresh.seconds";
+    private static final String OAUTH_VALID_ISSUER_URI = "oauth.valid.issuer.uri";
+    private static final String OAUTH_INTROSPECTION_ENDPOINT_URI = "oauth.introspection.endpoint.uri";
+    private static final String OAUTH_USERNAME_CLAIM = "oauth.username.claim";
+
+    // OAUTH ENV VARS
+    private static final String ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS = "STRIMZI_CLIENT_OAUTH_OPTIONS";
+    private static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS = "STRIMZI_CLIENTTLS_OAUTH_OPTIONS";
+    private static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS = "STRIMZI_EXTERNAL_OAUTH_OPTIONS";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -422,7 +436,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (listeners != null) {
             if (listeners.getPlain() != null
-                    && listeners.getPlain().getAuthentication() instanceof KafkaListenerAuthenticationTls) {
+                    && listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
                 throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
             }
 
@@ -1340,8 +1354,13 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getPlain() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_ENABLED, "TRUE"));
 
-                if (listeners.getPlain().getAuthentication() != null) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuthentication().getType()));
+                if (listeners.getPlain().getAuth() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuth().getType()));
+
+                    if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getPlain().getAuth().getType())) {
+                        // set OAUHT configuration
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth())));
+                    }
                 }
             }
 
@@ -1350,6 +1369,11 @@ public class KafkaCluster extends AbstractModel {
 
                 if (listeners.getTls().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuth().getType()));
+
+                    if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getTls().getAuth().getType())) {
+                        // set OAUHT configuration
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth())));
+                    }
                 }
             }
 
@@ -1360,6 +1384,11 @@ public class KafkaCluster extends AbstractModel {
 
                 if (listeners.getExternal().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
+
+                    if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getExternal().getAuth().getType())) {
+                        // set OAUHT configuration
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth())));
+                    }
                 }
             }
         }
@@ -1382,6 +1411,19 @@ public class KafkaCluster extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
         return varList;
+    }
+
+    protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
+        List<String> options = new ArrayList<>(5);
+
+        if (oauth.getIssuerUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_VALID_ISSUER_URI, oauth.getIssuerUri()));
+        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
+        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=%d", OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
+        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=%d", OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
+        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
+
+        return String.join(" ", options);
     }
 
     protected List<EnvVar> getTlsSidevarEnvVars() {

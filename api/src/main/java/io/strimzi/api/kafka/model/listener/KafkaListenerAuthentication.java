@@ -25,6 +25,7 @@ import java.util.Map;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaListenerAuthenticationTls.TYPE_TLS, value = KafkaListenerAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaListenerAuthenticationScramSha512.SCRAM_SHA_512, value = KafkaListenerAuthenticationScramSha512.class),
+        @JsonSubTypes.Type(name = KafkaListenerAuthenticationOAuth.TYPE_OAUTH, value = KafkaListenerAuthenticationOAuth.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
@@ -39,6 +40,7 @@ public abstract class KafkaListenerAuthentication implements UnknownPropertyPres
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
+            "`oauth` type uses SASL OAUTHBEARER Authentication. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only on TLS listeners.")

@@ -107,8 +107,6 @@ spec:
               required:
               - acls
               - type
-          required:
-          - authentication
         status:
           type: object
           properties:

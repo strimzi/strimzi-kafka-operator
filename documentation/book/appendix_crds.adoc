@@ -196,8 +196,8 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 [options="header"]
 |====
 |Property                   |Description
-|authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -210,7 +210,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
 It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [options="header"]
 |====
@@ -225,12 +225,39 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
 It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
 [options="header"]
 |====
 |Property     |Description
 |type  1.2+<.<|Must be `scram-sha-512`.
+|string
+|====
+
+[id='type-KafkaListenerAuthenticationOAuth-{context}']
+### `KafkaListenerAuthenticationOAuth` schema reference
+
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationOAuth` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
+It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
+[options="header"]
+|====
+|Property                         |Description
+|introspectionEndpointUri  1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+|string
+|issuerUri                 1.2+<.<|URI of the token issuer used for authentication.
+|string
+|jwksEndpointUri           1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
+|string
+|jwksExpirySeconds         1.2+<.<|Configures how often are the JWKS certificates considered valid. Defaults to 360 seconds.
+|integer
+|jwksRefreshSeconds        1.2+<.<|Configures how often are the JWKS certificates refreshed. Defaults to 300 seconds.
+|integer
+|type                      1.2+<.<|Must be `oauth`.
+|string
+|userNameClaim             1.2+<.<|Name of the claim from the authentication token which will be used as the user principal. Defaults to `sub`.
 |string
 |====
 
@@ -243,8 +270,8 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 [options="header"]
 |====
 |Property                   |Description
-|authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -264,8 +291,8 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 |Property                   |Description
 |type                1.2+<.<|Must be `route`.
 |string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
@@ -336,8 +363,8 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 |Property                   |Description
 |type                1.2+<.<|Must be `loadbalancer`.
 |string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
@@ -414,8 +441,8 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |Property                   |Description
 |type                1.2+<.<|Must be `nodeport`.
 |string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
@@ -492,8 +519,8 @@ It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
 |Property                   |Description
 |type                1.2+<.<|Must be `ingress`.
 |string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |class               1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
 |string
 |configuration       1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.

@@ -49,5 +49,15 @@
             <artifactId>opentracing-kafka-client</artifactId>
             <version>0.1.4</version>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi.oauth</groupId>
+            <artifactId>strimzi-kafka-oauth-server</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>io.strimzi.kafka-kubernetes-authenticator</groupId>
+            <artifactId>authenticator-server</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>-->
     </dependencies>
 </project>
