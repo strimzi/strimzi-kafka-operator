@@ -536,8 +536,9 @@ class TopicOperator {
                     reconciliationResultHandler = deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName());
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
+                    // If delete.topic.enable=false then the resulting exception will be ignored and only the privateState topic will be deleted
                     LOGGER.debug("{}: KafkaTopic deleted in k8s => delete topic from kafka and from topicStore", logContext);
-                    reconciliationResultHandler = deleteKafkaTopic(logContext, kafkaTopic.getTopicName())
+                    reconciliationResultHandler = deleteKafkaTopic(logContext, kafkaTopic.getTopicName()).recover(this::handleTopicDeletionDisabled)
                         .compose(ignored -> deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName()));
                 }
             } else if (kafkaTopic == null) {
@@ -553,6 +554,26 @@ class TopicOperator {
             }
         }
         return reconciliationResultHandler;
+    }
+
+    /**
+     * Function for handling the exceptions thrown by attempting to delete a topic. If the  delete.topic.enable config
+     * is set to false on the broker the exception is ignored an a blank future returned. For any other form of exception
+     * a failed future is returned using that exception as the cause.
+     *
+     * @param thrown The exception encountered when attempting to delete the kafka topic.
+     * @return Either an succeeded future in the case that topic deletion is disabled or a failed future in all other cases.
+     */
+    private Future<Void> handleTopicDeletionDisabled(Throwable thrown) {
+
+        if (thrown instanceof org.apache.kafka.common.errors.TopicDeletionDisabledException) {
+            LOGGER.warn("Topic deletion is disabled. Kafka topic will persist and KafkaTopic resource will be recreated in the next reconciliation.");
+        } else {
+            LOGGER.error("Topic deletion failed with ({}) error: {}", thrown.getClass(), thrown.getMessage());
+            return Future.failedFuture(thrown);
+        }
+
+        return Future.succeededFuture();
     }
 
     private Future<Void> update2Way(Reconciliation reconciliation, LogContext logContext, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic) {
