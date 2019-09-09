@@ -9,7 +9,7 @@
 [id='assembly-logging-{context}']
 = Logging
 
-Use the `logging.internal` and `logging.external` properties to configure loggers and logger levels.
+Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the loggers and their levels directly (inline) or use a custom (external) ConfigMap.
 
@@ -18,8 +18,6 @@ Here we see examples of `inline` and `external` logging:
 include::snip-configmap-logging-{kind}.adoc[]
 
 include::snip-inline-logging-{kind}.adoc[]
-
-include::ref-loggers-KafkaMirrorMaker.adoc[]
 
 .Additional resources
 

@@ -18,9 +18,9 @@ Use `authentication.type` to set the authentication mechanism, and add additiona
 
 You can use different authentication mechanisms for the Kafka Mirror Maker consumer and producer.
 
-.TLS Client Authentication
+== TLS Client Authentication
 
-Use `type.tls` to configure Kafka Mirror Maker to use TLS authentication.
+Use `type:tls` to configure Kafka Mirror Maker to use TLS authentication.
 
 TLS client authentication uses a TLS certificate to authenticate.
 The certificate is specified in the `certificateAndKey` property and is always loaded from a Kubernetes secret.
@@ -33,9 +33,9 @@ For more information on configuring TLS encryption and authentication, see:
 * xref:proc-configuring-kafka-mirror-maker-tls-{context}[Configuring TLS encryption in Kafka Mirror Maker]
 * xref:proc-configuring-kafka-mirror-maker-authentication-tls-{context}[Configuring TLS client authentication in Kafka Mirror Maker]
 
-.SCRAM-SHA-512 authentication
+== SCRAM-SHA-512 authentication
 
-Use `type.scram-sha-512` to configure Kafka Mirror Maker to use SCRAM-SHA-512 authentication.
+Use `type:scram-sha-512` to configure Kafka Mirror Maker to use SCRAM-SHA-512 authentication.
 
 The broker listener to which clients will connect must also be configured to use SASL SCRAM-SHA-512 authentication.
 This authentication mechanism requires a username and password.
@@ -46,9 +46,9 @@ The `secretName` property contains the name of the `Secret` and the `password` p
 
 For more information on configuring SASL SCRAM-SHA-512 authentication, see xref:proc-configuring-kafka-mirror-maker-authentication-scram-sha-512-{context}[Configuring SCRAM-SHA-512 authentication in Kafka Mirror Maker].
 
-.PLAIN authentication
+== PLAIN authentication
 
-Use `type.plain` to configure Kafka Mirror Maker to use PLAIN authentication.
+Use `type:plain` to configure Kafka Mirror Maker to use PLAIN authentication.
 
 The broker listener to which clients will connect must also be configured to use SASL PLAIN authentication.
 This authentication mechanism requires a username and password.
