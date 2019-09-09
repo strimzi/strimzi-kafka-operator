@@ -2,7 +2,7 @@
 //
 // assembly-evaluation.adoc
 
-[id='proc-install-crds-{context}']
+[id='proc-install-product-{context}']
 = Installing {ProductName}
 
 Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
