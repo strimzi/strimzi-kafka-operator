@@ -55,7 +55,8 @@ EOF
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl get deployments
+kubectl rollout status -w my-cluster
+kubectl describe deployment my-cluster
 ----
 
 . When your cluster is ready, create a topic to publish and subscribe from your external client.

@@ -5,7 +5,7 @@
 [id='proc-install-crds-{context}']
 = Installing {ProductName}
 
-Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) required for deployment.
+Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
 
 .Prerequisites
 

@@ -22,8 +22,8 @@ include::../modules/ref-install-prerequisites.adoc[leveloffset=+1]
 //download the files
 include::../modules/proc-downloading-product.adoc[leveloffset=+1]
 
-//install CRDs
-include::../modules/proc-installing-crds.adoc[leveloffset=+1]
+//install the product
+include::../modules/proc-installing-product.adoc[leveloffset=+1]
 
 //create kafka cluster
 include::../modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
