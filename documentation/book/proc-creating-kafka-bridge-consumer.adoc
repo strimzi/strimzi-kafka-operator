@@ -17,6 +17,7 @@ curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{
     "name": "bridge-quickstart-consumer",
+    "format": "json",
     "auto.offset.reset": "earliest",
     "enable.auto.commit": "false",
     "fetch.min.bytes": "512",
@@ -24,20 +25,24 @@ curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
   }'
 ----
 +
-* In the request body, the consumer is named `bridge-quickstart-consumer` and some basic configuration settings are defined.
-* The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. You will commit the offsets for this consumer manually later in this quickstart.
+* The consumer is named `bridge-quickstart-consumer` and the embedded data format is set as `json`.
+* Some basic configuration settings are defined.
+* The consumer will not commit offsets to the log automatically because the `enable.auto.commit` setting is `false`. You will commit the offsets manually later in this quickstart.
 +
-If the request is successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code:
+If the request is successful, the Kafka Bridge returns the consumer ID (`instance_id`) and base URL (`base_uri`) in the response body, along with a `200` code.
 +
+.Example response
+
 [source,json,subs=attributes+]
 ----
+#...
 {
   "instance_id": "bridge-quickstart-consumer",
   "base_uri":"http://<bridge-name>-bridge-service:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer"
 }
 ----
 
-. Copy the consumer base URL (`base_uri`) contained in the response for use in other operations on this consumer.
+. Copy the base URL (`base_uri`) to use in the other consumer operations in this quick start.
 
 .What to do next
 

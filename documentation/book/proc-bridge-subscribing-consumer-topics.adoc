@@ -9,18 +9,21 @@ After you have created a Kafka Bridge consumer, you can subscribe it to one or m
 
 .Procedure
 
-* Subscribe the consumer to the topic that you created earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:
+* Subscribe the consumer to the `bridge-quickstart-topic` topic that you created earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]:
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/subscription \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/subscription \
   -H 'content-type: application/vnd.kafka.v2+json' \
-  -d '{"topics": ["bridge-quickstart-topic"]}'
+  -d '{
+    "topics":[
+          "bridge-quickstart-topic"
+    ]}'
 ----
 +
 The `topics` array can contain a single topic (as shown here) or multiple topics. If you want to subscribe the consumer to multiple topics that match a regular expression, you can use the `topic_pattern` string instead of the `topics` array. 
 +
-If the request is successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` (No Content) code only.
 
 .What to do next
 

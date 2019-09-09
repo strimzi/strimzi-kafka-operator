@@ -31,16 +31,21 @@ In this quick start, you will produce and consume messages in JSON format, not b
 +
 [source,http,subs=attributes+]
 ----
-Content-Type: application/vnd.kafka.json.v2+json
+content-type: application/vnd.kafka.json.v2+json
 ----
 
-* When creating a Kafka Bridge consumer, an _embedded data format_ of JSON is specified in the request body.
+* When creating a Kafka Bridge consumer, an _embedded data format_ of JSON is specified:
++
+[source,http,subs=attributes+]
+----
+content-type: application/vnd.kafka.v2+json
+----
 
 * When creating a Kafka Bridge consumer and performing consumer operations, the following `Content-Type` header is submitted with the relevant POST requests:
 +
 [source,http,subs=attributes+]
 ----
-Content-Type: application/vnd.kafka.v2+json
+content-type: application/vnd.kafka.v2+json
 ----
 
 For more information, see xref:con-requests-kafka-bridge-kafka-bridge-overview[Requests to the {ProductName} Kafka Bridge].

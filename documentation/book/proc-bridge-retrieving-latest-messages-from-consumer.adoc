@@ -9,7 +9,9 @@ Next, retrieve the latest messages from the Kafka Bridge consumer by requesting 
 
 .Procedure
 
-* Retrieve messages from the Kafka Bridge consumer (you sent these messages to the consumer earlier, in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions]):
+.  Produce some more messages to the Kafka Bridge consumer, as described in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions].
+
+.  Retrieve those messages from the Kafka Bridge consumer:
 +
 [source,curl,subs=attributes+]
 ----
@@ -21,10 +23,28 @@ If the request is successful, the Kafka Bridge returns an array of messages -- d
 +
 [source,json,subs=attributes+]
 ----
-INSERT JSON HERE
+HTTP/1.1 200 OK
+content-type: application/vnd.kafka.json.v2+json
+#...
+[
+  {
+    "topic":"bridge-quickstart-topic",
+    "key":"my-key",
+    "value":"sales-lead-0001",
+    "partition":0,
+    "offset":0
+  },
+  {
+    "topic":"bridge-quickstart-topic",
+    "key":null,
+    "value":"sales-lead-0003",
+    "partition":0,
+    "offset":1
+  },
+#...
 ----
 +
-NOTE: If the response body is empty, produce more records to the consumer as described in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions], and then try retrieving messages again. 
+NOTE: If an empty array is returned, produce more records to the consumer as described in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions], and then try retrieving messages again. 
 
 .What to do next
 
