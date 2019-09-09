@@ -25,7 +25,6 @@ If you encounter any issues while using Strimzi, you can get help using:
 
 - [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
 - [Strimzi Users mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)
-- [Strimzi Dev mailing list](https://lists.cncf.io/g/cncf-strimzi-dev/topics)
 
 ## Contributing
 
@@ -47,7 +46,6 @@ The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) de
 If you want to get in touch with us first before contributing, you can use:
 
 - [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
-- [Strimzi Users mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)
 - [Strimzi Dev mailing list](https://lists.cncf.io/g/cncf-strimzi-dev/topics)
 
 ## License
