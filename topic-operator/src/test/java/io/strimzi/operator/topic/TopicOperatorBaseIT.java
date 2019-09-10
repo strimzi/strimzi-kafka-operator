@@ -25,6 +25,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Timeout;
+import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -186,7 +187,10 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     public void teardown(TestContext context) throws InterruptedException {
         LOGGER.info("Tearing down test");
 
-        if (kubeClient != null) {
+        boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
+                KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "true"));
+
+        if (deletionEnabled && kubeClient != null) {
             List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
 
             // Wait for the operator to delete all the existing topics in Kafka
@@ -197,11 +201,20 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
                 waitForTopicInKafka(context, new TopicName(item).toString(), false);
                 waitForTopicInKube(context, item.getMetadata().getName(), false);
             }
+            Thread.sleep(5_000);
         }
 
-        Thread.sleep(5_000);
-
         stopTopicOperator(context);
+
+        if (!deletionEnabled && kubeClient != null) {
+            List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
+
+            // Wait for the operator to delete all the existing topics in Kafka
+            for (KafkaTopic item : items) {
+                operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                waitForTopicInKube(context, item.getMetadata().getName(), false);
+            }
+        }
 
         adminClient.close();
         if (kafkaCluster != null) {
