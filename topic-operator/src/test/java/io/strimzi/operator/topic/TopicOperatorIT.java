@@ -19,7 +19,6 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,6 +38,11 @@ import static org.junit.Assert.assertTrue;
 public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
+
+    @Override
+    protected int numKafkaBrokers() {
+        return 1;
+    }
 
     @Override
     protected Properties kafkaClusterConfig() {
@@ -81,12 +85,6 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @Test
     public void testTopicNumPartitionsChanged(TestContext context) throws Exception {
         createAndAlterNumPartitions(context, "test-topic-partitions-changed");
-    }
-
-    @Test
-    @Ignore
-    public void testTopicNumReplicasChanged(TestContext context) {
-        context.fail("Implement this");
     }
 
     @Test
