@@ -11,7 +11,7 @@ Configure Kafka Mirror Maker authentication using supported mechanisms:
 * TLS client authentication
 * SASL SCRAM-SHA-512 and PLAIN authentication
 
-For more information on these mechanisms, see xref:assembly-kafka-mirror-maker-authentication-{context}[Authentication].
+For more information on these mechanisms, see xref:con-kafka-mirror-maker-authentication-{context}[Authentication].
 
 include::proc-configuring-kafka-mirror-maker-tls.adoc[leveloffset=+1]
 include::proc-configuring-kafka-mirror-maker-authentication-tls.adoc[leveloffset=+1]

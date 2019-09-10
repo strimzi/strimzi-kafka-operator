@@ -6,7 +6,7 @@
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
 
-[id='assembly-jvm-options-{context}']
+[id='con-jvm-options-{context}']
 
 = JVM Options
 

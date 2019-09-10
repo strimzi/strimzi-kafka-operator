@@ -32,7 +32,7 @@ include::con-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
 
 include::con-resource-limits-and-requests.adoc[leveloffset=+1]
 
-include::ref-loggers-KafkaMirrorMaker.adoc[leveloffset=+1]
+include::con-kafka-mirror-maker-logging.adoc[leveloffset=+1]
 
 include::con-healthchecks.adoc[leveloffset=+1]
 
