@@ -102,7 +102,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
         waitForTopicInKafka(context, topicName, true);
 
         // Delete the k8 KafkaTopic and wait for that to be deleted
-        deleteInKube(topicResource.getMetadata().getName());
+        deleteInKube(context, topicResource.getMetadata().getName());
 
         // trigger an immediate reconcile where, with with delete.topic.enable=false, the K8s KafkaTopic should be recreated
         Future<?> result = session.topicOperator.reconcileAllTopics("periodic");
