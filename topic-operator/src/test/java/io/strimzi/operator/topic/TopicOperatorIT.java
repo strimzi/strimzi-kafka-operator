@@ -17,11 +17,11 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.BaseITST;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.errors.InvalidReplicationFactorException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -62,6 +63,9 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
                 kafkaCluster.deleteDataPriorToStartup(true);
                 kafkaCluster.deleteDataUponShutdown(true);
                 kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
+                Properties p = new Properties();
+                p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+                kafkaCluster.withKafkaConfiguration(p);
                 kafkaCluster.startup();
                 break;
             } catch (kafka.zookeeper.ZooKeeperClientTimeoutException e) {
@@ -92,17 +96,23 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     }
 
     @After
-    public void teardown(TestContext context) {
+    public void teardown(TestContext context) throws InterruptedException {
         LOGGER.info("Tearing down test");
 
         if (kubeClient != null) {
             List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
-            operation().inNamespace(NAMESPACE).delete();
+
             // Wait for the operator to delete all the existing topics in Kafka
             for (KafkaTopic item : items) {
+                LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
+                operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
                 waitForTopicInKafka(context, new TopicName(item).toString(), false);
+                waitForTopicInKube(context, item.getMetadata().getName(), false);
             }
         }
+
+        Thread.sleep(5_000);
 
         stopTopicOperator(context);
 
@@ -161,19 +171,40 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         createKafkaTopicResource(context, topicName);
     }
 
-    @Test
-    public void testKafkaTopicAddedWithHighReplicas(TestContext context) {
-        String topicName = "test-resource-created-with-higher-partition";
-        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+    void createKafkaTopicResourceError(TestContext context, String topicName, Map<String, String> objectObjectMap, int rf,
+                                       String expectedMessage) {
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, objectObjectMap).build();
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
-        kafkaTopic.getSpec().setReplicas(42);
+        kafkaTopic.getSpec().setReplicas(rf);
 
         // Create a Topic Resource
-        try {
-            operation().inNamespace(NAMESPACE).create(kafkaTopic);
-        } catch (InvalidReplicationFactorException e) {
-            assertTrue(e.getMessage().contains("Replication factor: 42 larger than available brokers"));
-        }
+        operation().inNamespace(NAMESPACE).create(kafkaTopic);
+        assertStatusNotReady(context, topicName, expectedMessage);
+    }
+
+    public void testKafkaTopicAddedWithMoreReplicasThanBrokers(TestContext context) {
+        createKafkaTopicResourceError(context, "test-resource-created-with-more-replicas-than-brokers", emptyMap(), 42, "Replication factor: 42 larger than available brokers: 1.");
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithHigherMinIsrThanBrokers(TestContext context) {
+        createKafkaTopicResourceError(context, "test-resource-created-with-higher-min-isr-than-brokers",
+                singletonMap("min.insync.replicas", "42"), 42,
+               "Replication factor: 42 larger than available brokers: 1.");
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithUnknownConfig(TestContext context) {
+        createKafkaTopicResourceError(context, "test-resource-created-with-unknown-config",
+                singletonMap("aardvark", "zebra"), 1,
+               "Unknown topic config name: aardvark");
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithInvalidConfig(TestContext context) {
+        createKafkaTopicResourceError(context, "test-resource-created-with-invalid-config",
+                singletonMap("message.format.version", "zebra"), 1,
+               "Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
     }
 
     @Test
@@ -424,7 +455,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
         // 3. Delete topic B in Kafka, delete topic C in Kubernetes
         deleteTopicInKafka(topicNameB, resourceNameB);
-        deleteInKube(topicNameC);
+        deleteInKube(testContext, topicNameC);
 
         // 3. Create topic X in Kafka, topic Y in Kubernetes
         String topicNameX = "topic-x";

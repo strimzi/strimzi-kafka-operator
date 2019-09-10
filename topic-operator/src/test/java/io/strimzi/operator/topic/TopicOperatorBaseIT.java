@@ -24,6 +24,7 @@ import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.Timeout;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -40,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +51,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,6 +62,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
 
 public class TopicOperatorBaseIT extends BaseITST {
 
@@ -82,7 +87,11 @@ public class TopicOperatorBaseIT extends BaseITST {
             }
         }
     };
-    protected final long timeout = 30_000L;
+    protected final long timeout = 600_000L;
+
+    @Rule
+    public Timeout timeoutRule = new Timeout(10, TimeUnit.MINUTES);
+
 
     protected volatile String deploymentId;
     protected Set<String> preExistingEvents;
@@ -126,7 +135,7 @@ public class TopicOperatorBaseIT extends BaseITST {
     protected void startTopicOperator(TestContext context) {
 
         LOGGER.info("Starting Topic Operator");
-        Map<String, String> m = new HashMap();
+        Map<String, String> m = new HashMap<>();
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
@@ -199,6 +208,31 @@ public class TopicOperatorBaseIT extends BaseITST {
                     if (conditions.stream().anyMatch(condition ->
                             "Ready".equals(condition.getType()) &&
                                     "True".equals(condition.getStatus()))) {
+                        return true;
+                    } else {
+                        LOGGER.info(conditions);
+                    }
+                }
+            } else {
+                LOGGER.info("{} does not exist", topicName);
+            }
+            return false;
+        }, 60000, "status ready for topic " + topicName);
+    }
+
+    protected void assertStatusNotReady(TestContext testContext, String topicName, String message) {
+        waitFor(testContext, () -> {
+            KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
+            if (kafkaTopic != null) {
+                if (kafkaTopic.getStatus() != null
+                        && kafkaTopic.getStatus().getConditions() != null) {
+                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                    testContext.assertTrue(conditions.size() > 0);
+                    Optional<Condition> unreadyCondition = conditions.stream().filter(condition ->
+                            "NotReady".equals(condition.getType()) &&
+                            "True".equals(condition.getStatus())).findFirst();
+                    if (unreadyCondition.isPresent()) {
+                        assertEquals(message, unreadyCondition.get().getMessage());
                         return true;
                     } else {
                         LOGGER.info(conditions);
@@ -406,7 +440,7 @@ public class TopicOperatorBaseIT extends BaseITST {
     }
 
     protected void deleteInKubeAndAwaitReconciliation(TestContext context, String topicName, KafkaTopic topicResource) {
-        deleteInKube(topicResource.getMetadata().getName());
+        deleteInKube(context, topicResource.getMetadata().getName());
 
         // Wait for the topic to be deleted
         waitFor(context, () -> {
@@ -426,9 +460,12 @@ public class TopicOperatorBaseIT extends BaseITST {
         }, timeout, "Expected topic to be deleted by now");
     }
 
-    protected void deleteInKube(String resourceName) {
+    protected void deleteInKube(TestContext context, String resourceName) {
         // can now delete the topicResource
         operation().inNamespace(NAMESPACE).withName(resourceName).delete();
+        waitFor(context, () -> {
+            return operation().inNamespace(NAMESPACE).withName(resourceName).get() == null;
+        }, Long.MAX_VALUE, "verified deletion of KafkaTopic " + resourceName);
     }
 
     protected void awaitTopicConfigInKafka(TestContext context, String topicName, String key, String expectedValue) {

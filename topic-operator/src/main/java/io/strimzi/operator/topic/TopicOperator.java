@@ -433,23 +433,28 @@ class TopicOperator {
                 return waiters + 1;
             }
         });
-        vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
-            if (ar.succeeded()) {
+        vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, lockResult -> {
+            if (lockResult.succeeded()) {
                 LOGGER.debug("{}: Lock acquired", logContext);
                 LOGGER.debug("{}: Executing action {} on topic {}", logContext, action, lockName);
-                action.execute().setHandler(ar2 -> {
+                action.execute().setHandler(actionResult -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
-                    action.result = ar2;
+                    action.result = actionResult;
                     // Update status with lock held so that event is ignored via statusUpdateGeneration
-                    action.updateStatus(logContext).setHandler(ar3 -> {
-                        if (ar3.failed()) {
+                    action.updateStatus(logContext).setHandler(statusResult -> {
+                        if (statusResult.failed()) {
                             LOGGER.error("{}: Error updating KafkaTopic.status for action {}", logContext, action,
-                                    ar3.cause());
+                                    statusResult.cause());
                         }
                         try {
-                            result.handle(ar2);
+                            if (actionResult.failed() && statusResult.failed()) {
+                                actionResult.cause().addSuppressed(statusResult.cause());
+                            }
+                            result.handle(actionResult.failed() ? actionResult : statusResult);
+                        } catch (Throwable t) {
+                            result.fail(t);
                         } finally {
-                            ar.result().release();
+                            lockResult.result().release();
                             LOGGER.debug("{}: Lock released", logContext);
                             inflight.compute(key, decrement);
                         }
@@ -545,7 +550,10 @@ class TopicOperator {
                 // it was deleted in kafka so delete in k8s and privateState
                 LOGGER.debug("{}: topic deleted in kafkas => delete KafkaTopic from k8s and from topicStore", logContext);
                 reconciliationResultHandler = deleteResource(logContext, privateTopic.getOrAsKubeName())
-                        .compose(ignore -> deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName()));
+                        .compose(ignore -> {
+                            reconciliation.observedTopicFuture(null);
+                            return deleteFromTopicStore(logContext, involvedObject, privateTopic.getTopicName());
+                        });
             } else {
                 // all three exist
                 LOGGER.debug("{}: 3 way diff", logContext);
@@ -915,7 +923,7 @@ class TopicOperator {
                     LOGGER.debug("{}: No KafkaTopic to set status", logContext);
                     statusFuture = Future.succeededFuture();
                 }
-                return result.failed() ? Future.failedFuture(result.cause()) : statusFuture;
+                return statusFuture;
             } catch (Throwable t) {
                 LOGGER.error("{}", logContext, t);
                 return Future.failedFuture(t);
@@ -933,7 +941,7 @@ class TopicOperator {
                             .compose(mt ->  {
                                 final Topic k8sTopic;
                                 if (mt != null) {
-                                    observedTopicFuture(mt);
+
                                     Long generation = statusUpdateGeneration.get(mt.getMetadata().getName());
                                     LOGGER.debug("{}: last updated generation={}", logContext, generation);
                                     if (mt.getMetadata() != null
@@ -954,14 +962,13 @@ class TopicOperator {
                                     } else {
                                         LOGGER.debug("{}: modifiedTopic.getMetadata().getGeneration()=null", logContext);
                                     }
-
+                                    observedTopicFuture(mt);
                                     try {
                                         k8sTopic = TopicSerialization.fromTopicResource(mt);
                                     } catch (InvalidTopicException e) {
                                         return Future.failedFuture(e);
                                     }
                                 } else {
-                                    observedTopicFuture(null);
                                     k8sTopic = null;
                                 }
                                 return reconcileOnResourceChange(this, logContext, mt != null ? mt : modifiedTopic, k8sTopic, action == Watcher.Action.MODIFIED);
@@ -1242,21 +1249,25 @@ class TopicOperator {
                             return Future.succeededFuture();
                         }).compose(topic -> {
                             if (topic == null) {
+                                LOGGER.debug("{}: No private topic for topic {} in Kafka -> undetermined", logContext, topicName);
                                 undetermined.add(topicName);
                                 return Future.succeededFuture();
                             } else {
                                 LOGGER.debug("{}: Have private topic for topic {} in Kafka", logContext, topicName);
-                                return reconcileWithPrivateTopic(logContext, topicName, topic, this)
-                                    .otherwise(error -> {
-                                        failed.put(topicName, error);
-                                        return null;
-                                    })
-                                    .map(ignored -> {
-                                        succeeded.add(topicName);
-                                        return null;
-                                    });
+                                Future<Void> map = reconcileWithPrivateTopic(logContext, topicName, topic, this)
+                                        .<Void>map(ignored -> {
+                                            LOGGER.debug("{} reconcile success -> succeeded", topicName);
+                                            succeeded.add(topicName);
+                                            return null;
+                                        }).otherwise(error -> {
+                                            LOGGER.debug("{} reconcile error -> failed", topicName);
+                                            failed.put(topicName, error);
+                                            return null;
+                                        });
+                                return map;
                             }
                         });
+
                     }
                 }));
             }
