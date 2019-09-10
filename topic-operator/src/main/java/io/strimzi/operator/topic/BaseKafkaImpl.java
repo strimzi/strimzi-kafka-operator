@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.Util;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -222,7 +223,20 @@ public abstract class BaseKafkaImpl implements Kafka {
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         queueWork(new UniWork<>("deleteTopic", future, handler));
-        return handler;
+        return handler.compose(ig ->
+                Util.waitFor(vertx, "deleted sync " + topicName, Long.MAX_VALUE, 1000, () -> {
+                    try {
+                        return adminClient.describeTopics(Collections.singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
+                    } catch (ExecutionException e) {
+                        if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                            return true;
+                        }
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+        );
     }
 
     @Override
