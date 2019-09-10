@@ -8,7 +8,7 @@ The goal of Strimzi is to enable the running and operating of Apache Kafka on Ku
 Suggested features that would likely be of interest to Strimzi:
 
 * Operators and/or container images for Apache Kafka components.
-* Support and/or documentation for additional kubernetes distributions.
+* Support and/or documentation for additional Kubernetes distributions.
 * Features to enhance the operation of Kafka on Kubernetes.
 
 Suggested features that may be out of scope of Strimzi:
@@ -19,7 +19,7 @@ Suggested features that may be out of scope of Strimzi:
 
 For some features the decision may be influenced by how well the feature integrates with Kubernetes.
 An example could be a console for monitoring Kafka.
-If this were kubernetes aware then it would be more suitable for Strimzi than if it was not.  
+If this were Kubernetes aware then it would be more suitable for Strimzi than if it was not.  
 
 These are guidelines and the community is free to chose to implement a feature if it feels that it is right for the project.
 Equally, these guidelines can, and will, evolve as the project does.
