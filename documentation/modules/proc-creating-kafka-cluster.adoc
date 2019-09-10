@@ -55,8 +55,7 @@ EOF
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl rollout status -w my-cluster
-kubectl describe deployment my-cluster
+kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n kafka
 ----
 
 . When your cluster is ready, create a topic to publish and subscribe from your external client.
