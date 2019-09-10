@@ -3,7 +3,7 @@
 Strimzi welcomes contributions from the community both in code and defining the direction of the project.
 There are no concrete rules for what features should or should not be added to Strimzi but we expect the community to guide this.
 
-The goal of Strimzi is to enable the Running and operating Kafka on Kubernetes effectively. 
+The goal of Strimzi is to enable the running and operating Kafka on Kubernetes effectively. 
 
 Suggested features that would likely be of interest to Strimzi:
 
