@@ -52,7 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.parseMap;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
@@ -89,8 +88,6 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
-
-    public static final Map<String, String> IMAGE_MAP = parseMap(System.getenv().get("STRIMZI_ZOOKEEPER_IMAGE_MAP"));
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
@@ -181,11 +178,9 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
-        String version = versions.defaultVersion().version();
-
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            image = IMAGE_MAP.get(version);
+            image = System.getenv().get("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE");
         }
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
