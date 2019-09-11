@@ -817,11 +817,7 @@ Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:ty
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
-<<<<<<< HEAD
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-=======
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
->>>>>>> Deal with review comments, move to port 9091 and TLS authentication, handle situations when KE is not enabled and fix the startup script
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -846,24 +842,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |====
 
-<<<<<<< HEAD
-=======
-[id='type-PodDisruptionBudgetTemplate-{context}']
-### `PodDisruptionBudgetTemplate` schema reference
-
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
-|integer
-|====
-
->>>>>>> Add kafka exporter
 [id='type-ZookeeperClusterSpec-{context}']
 ### `ZookeeperClusterSpec` schema reference
 
