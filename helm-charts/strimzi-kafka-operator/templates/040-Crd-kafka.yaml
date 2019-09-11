@@ -124,6 +124,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:
@@ -145,7 +157,6 @@ spec:
                             userNameClaim:
                               type: string
                           required:
-                          - issuerUri
                           - type
                         networkPolicyPeers:
                           type: array
@@ -203,6 +214,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:
@@ -224,7 +247,6 @@ spec:
                             userNameClaim:
                               type: string
                           required:
-                          - issuerUri
                           - type
                         networkPolicyPeers:
                           type: array
@@ -282,6 +304,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:
@@ -303,7 +337,6 @@ spec:
                             userNameClaim:
                               type: string
                           required:
-                          - issuerUri
                           - type
                         class:
                           type: string

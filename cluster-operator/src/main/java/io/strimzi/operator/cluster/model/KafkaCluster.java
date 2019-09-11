@@ -85,6 +85,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 
@@ -135,18 +136,13 @@ public class KafkaCluster extends AbstractModel {
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
 
-    // OAuth configuration options
-    private static final String OAUTH_JWKS_ENDPOINT_URI = "oauth.jwks.endpoint.uri";
-    private static final String OAUTH_JWKS_EXPIRY_SECONDS = "oauth.jwks.expiry.seconds";
-    private static final String OAUTH_JWKS_REFRESH_SECONDS = "oauth.jwks.refresh.seconds";
-    private static final String OAUTH_VALID_ISSUER_URI = "oauth.valid.issuer.uri";
-    private static final String OAUTH_INTROSPECTION_ENDPOINT_URI = "oauth.introspection.endpoint.uri";
-    private static final String OAUTH_USERNAME_CLAIM = "oauth.username.claim";
-
     // OAUTH ENV VARS
     private static final String ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS = "STRIMZI_CLIENT_OAUTH_OPTIONS";
     private static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS = "STRIMZI_CLIENTTLS_OAUTH_OPTIONS";
     private static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS = "STRIMZI_EXTERNAL_OAUTH_OPTIONS";
+    private static final String ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET = "STRIMZI_CLIENT_OAUTH_CLIENT_SECRET";
+    private static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET = "STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET";
+    private static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -1358,8 +1354,13 @@ public class KafkaCluster extends AbstractModel {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuth().getType()));
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getPlain().getAuth().getType())) {
-                        // set OAUHT configuration
-                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth())));
+                        // set OAUTH configuration
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth();
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
+
+                        if (oauth.getClientSecret() != null)    {
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                        }
                     }
                 }
             }
@@ -1372,7 +1373,12 @@ public class KafkaCluster extends AbstractModel {
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getTls().getAuth().getType())) {
                         // set OAUHT configuration
-                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth())));
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth();
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
+
+                        if (oauth.getClientSecret() != null)    {
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                        }
                     }
                 }
             }
@@ -1387,7 +1393,12 @@ public class KafkaCluster extends AbstractModel {
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getExternal().getAuth().getType())) {
                         // set OAUHT configuration
-                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS, getOauthConfiguration((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth())));
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth();
+                        varList.add(buildEnvVar(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
+
+                        if (oauth.getClientSecret() != null)    {
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                        }
                     }
                 }
             }
@@ -1416,12 +1427,13 @@ public class KafkaCluster extends AbstractModel {
     protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
-        if (oauth.getIssuerUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_VALID_ISSUER_URI, oauth.getIssuerUri()));
-        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=%d", OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=%d", OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
-        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
-        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
+        if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
+        if (oauth.getIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getIssuerUri()));
+        if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
+        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=%d", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
+        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=%d", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
+        if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
 
         return String.join(" ", options);
     }

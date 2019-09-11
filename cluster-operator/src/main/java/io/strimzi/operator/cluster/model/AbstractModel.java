@@ -923,6 +923,26 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Build an environment variable instance which will use a value from a secret
+     *
+     * @param name The name of the environment variable
+     * @param secret The name of the secret which should be used
+     * @param key The key under which the value is stored in the secret
+     * @return The environment variable instance
+     */
+    protected static EnvVar buildEnvVarFromSecret(String name, String secret, String key) {
+        return new EnvVarBuilder()
+                .withName(name)
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(secret)
+                        .withKey(key)
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build();
+    }
+
+    /**
      * Build an environment variable instance with the provided name from a field reference
      * using Downward API
      *

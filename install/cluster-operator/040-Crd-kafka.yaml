@@ -119,6 +119,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:
@@ -197,6 +209,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:
@@ -275,6 +299,18 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
                             introspectionEndpointUri:
                               type: string
                             issuerUri:

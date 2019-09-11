@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -26,6 +27,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public static final String TYPE_OAUTH = "oauth";
 
+    private String clientId;
+    private GenericSecretSource clientSecret;
     private String issuerUri;
     private String jwksEndpointUri;
     private int jwksRefreshSeconds;
@@ -37,6 +40,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Override
     public String getType() {
         return TYPE_OAUTH;
+    }
+
+    @Description("OAuth Client ID which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    @Description("OAuth Client secret which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public GenericSecretSource getClientSecret() {
+        return clientSecret;
+    }
+
+    public void setClientSecret(GenericSecretSource clientSecret) {
+        this.clientSecret = clientSecret;
     }
 
     @Description("URI of the token issuer used for authentication.")

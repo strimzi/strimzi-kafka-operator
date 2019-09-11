@@ -245,6 +245,10 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 [options="header"]
 |====
 |Property                         |Description
+|clientId                  1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.
+|string
+|clientSecret              1.2+<.<|OAuth Client secret which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |introspectionEndpointUri  1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
 |issuerUri                 1.2+<.<|URI of the token issuer used for authentication.
@@ -258,6 +262,21 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |type                      1.2+<.<|Must be `oauth`.
 |string
 |userNameClaim             1.2+<.<|Name of the claim from the authentication token which will be used as the user principal. Defaults to `sub`.
+|string
+|====
+
+[id='type-GenericSecretSource-{context}']
+### `GenericSecretSource` schema reference
+
+Used in: xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|key         1.2+<.<|The key under which is the secret value stored in the Kubernetes Secret.
+|string
+|secretName  1.2+<.<|The name of the Kubernetes Secret containing the secret value.
 |string
 |====
 
