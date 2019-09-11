@@ -32,7 +32,7 @@ metadata:
   name: my-cluster
 spec:
   # ...
-KafkaExporter:
+kafkaExporter:
   image: my-org/my-image:latest <1>
   groupRegex: ".*" <2>
   topicRegex: ".*" <3>
@@ -43,10 +43,7 @@ KafkaExporter:
     limits:
       cpu: 500m
       memory: 128Mi
-  logging: <5>
-    type: inline
-    loggers:
-      logger.name: "INFO"
+  logging: debug <5>
   enableSaramaLogging: true <6>
   template: <7>
     pod:
@@ -71,7 +68,7 @@ KafkaExporter:
 <2> A regular expression to specify the consumer groups to include in the metrics.
 <3> A regular expression to specify the topics to include in the metrics.
 <4> xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[CPU and memory resources to reserve].
-<5> xref:assembly-logging-deployment-configuration-kafka[Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above].
+<5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by the Kafka Exporter.
 <7> xref:assembly-customizing-deployments-str[Customization of deployment templates and pods].
 <8> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].

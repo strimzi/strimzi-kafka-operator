@@ -5,8 +5,8 @@
 
 = Kafka Exporter
 
-The Kafka Exporter is provided with {ProductName} for deployment with a Kafka cluster to extract data on Kafka broker offsets.
-The data is used in monitoring to help identify consumer lag and under-replication of brokers.
+The Kafka Exporter is provided with {ProductName} for deployment with a Kafka cluster to extract additional metrics from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
+The data is used in monitoring for example to help identify slow consumers.
 
 Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
 
