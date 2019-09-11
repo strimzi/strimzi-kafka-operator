@@ -29,9 +29,7 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class KafkaExporter extends AbstractModel {
     // Configuration for mounting certificates
@@ -238,23 +236,7 @@ public class KafkaExporter extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaCluster.serviceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
 
-        // Add user defined environment variables to the Kafka broker containers
-        if (templateContainerEnvVars != null) {
-            // Create set of env var names to test if any user defined template env vars will conflict with those set above
-            Set<String> predefinedEnvs = new HashSet<String>();
-            for (EnvVar envVar : varList) {
-                predefinedEnvs.add(envVar.getName());
-            }
-
-            // Set custom env vars from the user defined template
-            for (ContainerEnvVar templateEnvVar : templateContainerEnvVars) {
-                if (predefinedEnvs.contains(templateEnvVar.getName())) {
-                    log.warn("User defined container template environment variable " + templateEnvVar.getName() + " is already in use and will be ignored");
-                } else {
-                    varList.add(buildEnvVar(templateEnvVar.getName(), templateEnvVar.getValue()));
-                }
-            }
-        }
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }
