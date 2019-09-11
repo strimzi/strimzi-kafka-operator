@@ -1,7 +1,7 @@
 // This assembly is included in the following assemblies:
 //
 // assembly-metrics-setup.adoc
-[id='assembly-configuring-grafana-{context}']
+[id='assembly-metrics-grafana-{context}']
 
 = Grafana
 

@@ -59,6 +59,8 @@ include::assembly-tls-sidecar.adoc[leveloffset=+1]
 
 include::assembly-scheduling.adoc[leveloffset=+1]
 
+include::assembly-kafka-exporter-configuration.adoc[leveloffset=+1]
+
 include::proc-manual-rolling-update-kafka.adoc[leveloffset=+1]
 
 include::proc-manual-rolling-update-zookeeper.adoc[leveloffset=+1]
