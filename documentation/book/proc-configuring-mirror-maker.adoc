@@ -2,7 +2,7 @@
 //
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
-[id='configuring-kafka-bridge-{context}']
+[id='configuring-kafka-mirror-maker-{context}']
 = Configuring Kafka Mirror Maker
 
 Use the properties of the `KafkaMirrorMaker` resource to configure your Kafka Mirror Maker deployment.

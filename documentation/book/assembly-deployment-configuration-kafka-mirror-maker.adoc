@@ -19,8 +19,8 @@ This chapter describes how to configure the `KafkaMirrorMaker` resource to suppo
 
 The following procedures show how the resource is configured:
 
-* xref:configuring-kafka-bridge-{context}[Configuring Kafka Mirror Maker]
-* xref:assembly-access-configuration-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker access control]
+* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker]
+* xref:assembly-access-configuration-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker encryption and authentication]
 
 Supported properties are also described in more detail for your reference:
 

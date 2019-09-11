@@ -10,8 +10,8 @@
 
 = JVM Options
 
-Use the `jvmOptions` property to configure supported JVM options for the VM on which the component is running.
+Use the `jvmOptions` property to configure supported options for the JVM on which the component is running.
 
 Supported JVM options help to optimize performance for different platforms and architectures.
 
-For more information on the supported options, see xref:ref-jvm-options-deployment-configuration-kafka[JVM configuration]
+For more information on the supported options, see xref:ref-jvm-options-deployment-configuration-kafka[JVM configuration].
