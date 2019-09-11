@@ -71,7 +71,6 @@ public class KafkaExporterTest {
         zooLogJson.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
     }
 
-    private final String keWatchedNamespace = "my-exporter-namespace";
     private final String keImage = "my-exporter-image";
     private final String groupRegex = "my-group-.*";
     private final String topicRegex = "my-topic-.*";
