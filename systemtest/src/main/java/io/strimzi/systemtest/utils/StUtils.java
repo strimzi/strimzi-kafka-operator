@@ -727,6 +727,12 @@ public class StUtils {
         LOGGER.info("Address {} is reachable", address);
     }
 
+    public static void waitUntilMessageIsInLogs(String podName, String containerName, String message) {
+        LOGGER.info("Waiting for message will be in the log");
+        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
+            () -> kubeClient().logs(podName, containerName).contains(message));
+    }
+
     /**
      * Method for check if test is allowed on current Kubernetes version
      * @param desiredKubernetesVersion kubernetes version which test needs
@@ -738,5 +744,4 @@ public class StUtils {
         }
         return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
     }
-
 }
