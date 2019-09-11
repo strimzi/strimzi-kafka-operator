@@ -1,0 +1,15 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='assembly-kafka-exporter-configuration-{context}']
+
+= Kafka Exporter configuration
+
+You can configure the `Kafka` resource to support a Kafka Exporter deployment in your cluster.
+
+Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to consumer lag.
+
+For information on the Kafka Exporter and why it is important to monitor consumer lag for performance, see xref:assembly-kafka-exporter-str[Kafka Exporter].
+
+include::kafka-exporter/proc-kafka-exporter-configuring.adoc[leveloffset=+1]

@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+[id='assembly-kafka-exporter-{context}']
+
+= Kafka Exporter
+
+The Kafka Exporter is provided with {ProductName} for deployment with a Kafka cluster to extract data on Kafka broker offsets.
+The data is used in monitoring to help identify consumer lag and under-replication of brokers.
+
+Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
+
+.Additional resources
+
+* xref:assembly-kafka-exporter-configuration-deployment-configuration-kafka[Kafka Exporter deployment configuration].
+
+include::kafka-exporter/con-kafka-exporter-lag.adoc[leveloffset=+1]
+include::kafka-exporter/ref-kafka-exporter-metrics.adoc[leveloffset=+1]
+include::kafka-exporter/proc-kafka-exporter-enabling-grafana.adoc[leveloffset=+1]
