@@ -4,40 +4,30 @@
  */
 package io.strimzi.operator.topic;
 
-import io.debezium.kafka.KafkaCluster;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.test.BaseITST;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import kafka.server.KafkaConfig$;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.nio.file.Files;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -50,79 +40,13 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    @Before
-    public void setup(TestContext context) throws Exception {
-        LOGGER.info("Setting up test");
-        kubeCluster().before();
-        Runtime.getRuntime().addShutdownHook(kafkaHook);
-        int counts = 3;
-        do {
-            try {
-                kafkaCluster = new KafkaCluster();
-                kafkaCluster.addBrokers(1);
-                kafkaCluster.deleteDataPriorToStartup(true);
-                kafkaCluster.deleteDataUponShutdown(true);
-                kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-                Properties p = new Properties();
-                p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
-                kafkaCluster.withKafkaConfiguration(p);
-                kafkaCluster.startup();
-                break;
-            } catch (kafka.zookeeper.ZooKeeperClientTimeoutException e) {
-                if (counts == 0) {
-                    throw e;
-                }
-                counts--;
-            }
-        } while (true);
-
+    @Override
+    protected Properties kafkaClusterConfig() {
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
-        adminClient = AdminClient.create(p);
-
-        kubeClient = BaseITST.kubeClient().getClient();
-        Crds.registerCustomKinds();
-        LOGGER.info("Using namespace {}", NAMESPACE);
-        startTopicOperator(context);
-
-        // We can't delete events, so record the events which exist at the start of the test
-        // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().
-                getItems().stream().
-                map(evt -> evt.getMetadata().getUid()).
-                collect(Collectors.toSet());
-
-        LOGGER.info("Finished setting up test");
+        p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+        return p;
     }
 
-    @After
-    public void teardown(TestContext context) throws InterruptedException {
-        LOGGER.info("Tearing down test");
-
-        if (kubeClient != null) {
-            List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
-
-            // Wait for the operator to delete all the existing topics in Kafka
-            for (KafkaTopic item : items) {
-                LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
-                operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
-                LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
-                waitForTopicInKafka(context, new TopicName(item).toString(), false);
-                waitForTopicInKube(context, item.getMetadata().getName(), false);
-            }
-        }
-
-        Thread.sleep(5_000);
-
-        stopTopicOperator(context);
-
-        adminClient.close();
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
-        }
-        Runtime.getRuntime().removeShutdownHook(kafkaHook);
-        LOGGER.info("Finished tearing down test");
-    }
 
     @Test
     public void testTopicAdded(TestContext context) throws Exception {
@@ -500,5 +424,4 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         awaitTopicConfigInKafka(testContext, topicNameZ, "retention.ms", alteredConfigZ);
 
     }
-
 }
