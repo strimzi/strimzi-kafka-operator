@@ -105,10 +105,7 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.setGroupRegex(spec.getGroupRegex());
             kafkaExporter.setTopicRegex(spec.getTopicRegex());
 
-            String image = spec.getImage();
-            if (image == null) {
-                image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE", versions.kafkaImage(image, versions.defaultVersion().version()));
-            }
+            String image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE", versions.kafkaImage(spec.getImage(), versions.defaultVersion().version()));
             kafkaExporter.setImage(image);
 
             kafkaExporter.setLogging(spec.getLogging());
