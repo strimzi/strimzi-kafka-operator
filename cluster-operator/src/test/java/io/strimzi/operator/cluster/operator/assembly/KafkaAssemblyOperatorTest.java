@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
+import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -40,6 +42,7 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
@@ -82,6 +85,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,6 +99,7 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -119,7 +124,17 @@ public class KafkaAssemblyOperatorTest {
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(
+                    "2.0.0  default  2.0  2.0  1234567890abcdef 2.0.x\n" +
+                            "2.0.1           2.0  2.0  1234567890abcdef 2.0.x\n" +
+                            "2.1.0           2.1  2.1  1234567890abcdef 2.1.x\n"),
+            map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
+                    "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
+                    "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
+            singletonMap("2.0.0", "kafka-connect"),
+            singletonMap("2.0.0", "kafka-connect-s2i"),
+            singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
 
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
@@ -350,7 +365,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -441,6 +456,11 @@ public class KafkaAssemblyOperatorTest {
                 KafkaCluster.brokersSecretName(clusterCmName),
                 ZookeeperCluster.nodesSecretName(clusterCmName),
                 ClusterOperator.secretName(clusterCmName));
+
+        if (metrics)    {
+            expectedSecrets.add(KafkaExporter.secretName(clusterCmName));
+        }
+
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (toConfig != null) {
             // it's expected only when the Topic Operator is deployed by the Cluster Operator
@@ -452,12 +472,17 @@ public class KafkaAssemblyOperatorTest {
         }
 
         when(mockDepOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(1);
             Deployment desired = invocation.getArgument(2);
             if (desired != null) {
-                if (topicOperator != null) {
-                    context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), desired.getMetadata().getName());
-                } else if (entityOperator != null) {
-                    context.assertEquals(EntityOperator.entityOperatorName(clusterCmName), desired.getMetadata().getName());
+                if (name.contains("operator")) {
+                    if (topicOperator != null) {
+                        context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), desired.getMetadata().getName());
+                    } else if (entityOperator != null) {
+                        context.assertEquals(EntityOperator.entityOperatorName(clusterCmName), desired.getMetadata().getName());
+                    }
+                } else if (name.contains("exporter"))   {
+                    context.assertTrue(metrics);
                 }
             }
             return Future.succeededFuture(ReconcileResult.created(desired));
@@ -532,6 +557,10 @@ public class KafkaAssemblyOperatorTest {
                     KafkaCluster.serviceName(clusterCmName),
                     KafkaCluster.headlessServiceName(clusterCmName));
 
+            if (metrics)    {
+                expectedServices.add(KafkaExporterResources.serviceName(clusterCmName));
+            }
+
             if (kafkaListeners != null && kafkaListeners.getExternal() != null) {
                 expectedServices.add(KafkaCluster.externalBootstrapServiceName(clusterCmName));
 
@@ -541,7 +570,7 @@ public class KafkaAssemblyOperatorTest {
             }
 
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(expectedServices.size(), capturedServices.size());
+            context.assertEquals(expectedServices.size(), capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()).size());
             context.assertEquals(expectedServices, capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
@@ -591,8 +620,9 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
+        KafkaExporterSpec exporter = metrics ? new KafkaExporterSpec() : null;
 
-        Kafka resource = ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, kafkaStorage, zkStorage, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, null);
+        Kafka resource = ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, kafkaStorage, zkStorage, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, exporter);
 
         Kafka kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -731,10 +761,11 @@ public class KafkaAssemblyOperatorTest {
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(updatedAssembly, VERSIONS);
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly, VERSIONS);
         EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly, VERSIONS);
+        KafkaExporter originalKafkaExporter = KafkaExporter.fromCrd(originalAssembly, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -910,6 +941,21 @@ public class KafkaAssemblyOperatorTest {
             );
         }
 
+        if (metrics) {
+            when(mockDepOps.get(clusterNamespace, KafkaExporter.kafkaExporterName(clusterName))).thenReturn(
+                    originalKafkaExporter.generateDeployment(true, null, null)
+            );
+            when(mockDepOps.getAsync(clusterNamespace, KafkaExporter.kafkaExporterName(clusterName))).thenReturn(
+                    Future.succeededFuture(originalKafkaExporter.generateDeployment(true, null, null))
+            );
+            when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                    Future.succeededFuture()
+            );
+            when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+                    Future.succeededFuture()
+            );
+        }
+
         // Mock CM patch
         Set<String> metricsCms = set();
         doAnswer(invocation -> {
@@ -1024,7 +1070,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -1119,7 +1165,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;

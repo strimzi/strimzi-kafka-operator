@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.map;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,12 +53,18 @@ public class KafkaExporterTest {
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
     private final String exporterOperatorLogging = "debug";
-    private final String version = "2.3.0";
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.2.0 default 2.2 2.2 1234567890abcdef\n" +
-                    "2.3.0         2.3 2.3 1234567890abcdef"),
-            map("2.2.0", "strimzi/kafka:latest-kafka-2.2.0",
-                    "2.3.0", "strimzi/kafka:latest-kafka-2.3.0"), emptyMap(), emptyMap(), emptyMap()) { };
+    private final String version = "2.1.0";
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(
+                    "2.0.0  default  2.0  2.0  1234567890abcdef 2.0.x\n" +
+                            "2.0.1           2.0  2.0  1234567890abcdef 2.0.x\n" +
+                            "2.1.0           2.1  2.1  1234567890abcdef 2.1.x\n"),
+            map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
+                    "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
+                    "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
+            singletonMap("2.0.0", "kafka-connect"),
+            singletonMap("2.0.0", "kafka-connect-s2i"),
+            singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
 
     {
         kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
@@ -106,7 +111,7 @@ public class KafkaExporterTest {
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, new KafkaExporterSpec());
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
-        assertEquals(null, ke.getImage());
+        assertEquals("strimzi/kafka:0.8.0-kafka-2.0.0", ke.getImage());
         assertEquals("info", ke.logging);
         assertEquals(".*", ke.groupRegex);
         assertEquals(".*", ke.topicRegex);

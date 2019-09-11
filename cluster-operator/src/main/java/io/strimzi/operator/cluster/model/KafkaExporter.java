@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Set;
 
 public class KafkaExporter extends AbstractModel {
-    private static final String NAME_SUFFIX = "-kafka-exporter";
-
     // Configuration for mounting certificates
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_NAME = "kafka-exporter-certs";
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_MOUNT = "/etc/kafka-exporter/kafka-exporter-certs/";
@@ -45,7 +43,6 @@ public class KafkaExporter extends AbstractModel {
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
     public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
     protected static final String ENV_VAR_KAFKA_EXPORTER_LOGGING = "KAFKA_EXPORTER_LOGGING";
@@ -110,7 +107,7 @@ public class KafkaExporter extends AbstractModel {
 
             String image = spec.getImage();
             if (image == null) {
-                image = System.getenv().get("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE");
+                image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE", versions.kafkaImage(image, versions.defaultVersion().version()));
             }
             kafkaExporter.setImage(image);
 
@@ -318,10 +315,6 @@ public class KafkaExporter extends AbstractModel {
     @Override
     protected String getServiceAccountName() {
         return KafkaExporterResources.serviceAccountName(cluster);
-    }
-
-    public static String exporterOperatorName(String kafkaCluster) {
-        return kafkaCluster + NAME_SUFFIX;
     }
 
     private void setLogging(String logging) {

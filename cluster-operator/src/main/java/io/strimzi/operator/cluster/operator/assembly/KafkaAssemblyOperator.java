@@ -2694,10 +2694,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     int caCertGeneration = getCaCertGeneration(this.clusterCa);
                     Annotations.annotations(exporterDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                    return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.exporterOperatorName(name), exporterDeployment));
+                    return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment));
                 }).map(i -> this);
             } else  {
-                return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.exporterOperatorName(name), null));
+                return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), null));
             }
         }
 
