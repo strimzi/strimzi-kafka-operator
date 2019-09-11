@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -207,25 +206,27 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testEODeletion() {
-        // Deploy kafka cluster with EO
-        Kafka kafka = testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Get pod name to check termination process
-        Optional<Pod> pod = kubeClient().listPods()
-                .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
-                .findFirst();
+        Pod pod = kubeClient().listPods().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
+                .findAny()
+                .get();
 
-        assertTrue(pod.isPresent(), "EO pod does not exist");
+        assertThat("Entity operator pod does not exist", pod, notNullValue());
 
-        // Remove EO from Kafka DTO
-        kafka.getSpec().setEntityOperator(null);
-        // Replace Kafka configuration with removed EO
-        testMethodResources().kafka(kafka).done();
+        LOGGER.info("Setting entity operator to null");
+
+        replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().setEntityOperator(null);
+        });
 
         // Wait when EO(UO + TO) will be removed
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForPodDeletion(pod.get().getMetadata().getName());
-        LOGGER.info("EO was deleted");
+        StUtils.waitForPodDeletion(pod.getMetadata().getName());
+
+        LOGGER.info("Entity operator was deleted");
     }
 
     @Test
