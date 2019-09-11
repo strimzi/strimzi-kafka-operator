@@ -25,14 +25,15 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod"})
+        "deployment", "pod", "service", "container"})
 @EqualsAndHashCode
 public class KafkaExporterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
     private PodTemplate pod;
-    private ResourceTemplate kafkaExporterService;
+    private ResourceTemplate service;
+    private ContainerTemplate container;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Exporter `Deployment`.")
@@ -57,12 +58,22 @@ public class KafkaExporterTemplate implements Serializable, UnknownPropertyPrese
 
     @Description("Template for Kafka Exporter `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getKafkaExporterService() {
-        return kafkaExporterService;
+    public ResourceTemplate getService() {
+        return service;
     }
 
-    public void setKafkaExporterService(ResourceTemplate kafkaExporterService) {
-        this.kafkaExporterService = kafkaExporterService;
+    public void setService(ResourceTemplate service) {
+        this.service = service;
+    }
+
+    @Description("Template for the Kafka Exporter container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getContainer() {
+        return container;
+    }
+
+    public void setContainer(ContainerTemplate container) {
+        this.container = container;
     }
 
     @Override

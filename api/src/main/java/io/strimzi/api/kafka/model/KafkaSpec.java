@@ -108,7 +108,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
         this.clientsCa = clientsCa;
     }
 
-    @Description("A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
+    @Description("A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
     public List<String> getMaintenanceTimeWindows() {
         return maintenanceTimeWindows;
     }
@@ -117,7 +117,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
         this.maintenanceTimeWindows = maintenanceTimeWindows;
     }
 
-    @Description("Configuration of the Kafka Exporter. Kafka Exporter can gain Kafka specific metrics, for example lag of consumer group at topic/partition.")
+    @Description("Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.")
     public KafkaExporterSpec getKafkaExporter() {
         return kafkaExporter;
     }

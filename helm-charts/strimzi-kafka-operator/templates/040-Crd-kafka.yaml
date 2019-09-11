@@ -3355,7 +3355,7 @@ spec:
                                 type: integer
                               value:
                                 type: string
-                    kafkaExporterService:
+                    service:
                       type: object
                       properties:
                         metadata:
@@ -3365,6 +3365,18 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    container:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                 livenessProbe:
                   type: object
                   properties:

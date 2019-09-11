@@ -35,9 +35,9 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter. Kafka Exporter can gain Kafka specific metrics, for example lag of consumer group at topic/partition.
+|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
-|maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
+|maintenanceTimeWindows  1.2+<.<|A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
 |string array
 |====
 
@@ -80,7 +80,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions           1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources            1.2+<.<|Resource constraints (limits and requests).
+|resources            1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -693,7 +693,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |string (one of [emerg, debug, crit, err, alert, warning, notice, info])
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |====
 
@@ -817,7 +817,11 @@ Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:ty
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
+<<<<<<< HEAD
 Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+=======
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+>>>>>>> Deal with review comments, move to port 9091 and TLS authentication, handle situations when KE is not enabled and fix the startup script
 
 
 [options="header"]
@@ -891,7 +895,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -951,7 +955,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
@@ -1028,7 +1032,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
@@ -1059,7 +1063,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
@@ -1119,21 +1123,21 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Property                    |Description
 |image                1.2+<.<|The docker image for the pods.
 |string
-|groupRegex           1.2+<.<|Regex that determines which consumer groups to collect.
+|groupRegex           1.2+<.<|Regular expression to specify which consumer groups to collect. Default value is `.*`.
 |string
-|topicRegex           1.2+<.<|Regex that determines which topics to collect.
+|topicRegex           1.2+<.<|Regular expression to specify which topics to collect. Default value is `.*`.
 |string
-|resources            1.2+<.<|Resource constraints (limits and requests).
+|resources            1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|logging              1.2+<.<|Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].
+|logging              1.2+<.<|Only log messages with the given severity or above. Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default log level is `info`.
 |string
-|enableSaramaLogging  1.2+<.<|Turn on Sarama logging.
+|enableSaramaLogging  1.2+<.<|Enable Sarama logging, a Go client library used by the Kafka Exporter.
 |boolean
-|template             1.2+<.<|Template for Kafka Exporter resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|template             1.2+<.<|Customization of deployment templates and pods.
 |xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
-|livenessProbe        1.2+<.<|Pod liveness checking.
+|livenessProbe        1.2+<.<|Pod liveness check.
 |xref:type-Probe-{context}[`Probe`]
-|readinessProbe       1.2+<.<|Pod readiness checking.
+|readinessProbe       1.2+<.<|Pod readiness check.
 |xref:type-Probe-{context}[`Probe`]
 |====
 
@@ -1145,13 +1149,15 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 
 [options="header"]
 |====
-|Property                     |Description
-|deployment            1.2+<.<|Template for Kafka Exporter `Deployment`.
+|Property           |Description
+|deployment  1.2+<.<|Template for Kafka Exporter `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                   1.2+<.<|Template for Kafka Exporter `Pods`.
+|pod         1.2+<.<|Template for Kafka Exporter `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|kafkaExporterService  1.2+<.<|Template for Kafka Exporter `Service`.
+|service     1.2+<.<|Template for Kafka Exporter `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|container   1.2+<.<|Template for the Kafka Exporter container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-KafkaStatus-{context}']
@@ -1278,7 +1284,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |map
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|resources              1.2+<.<|Resource constraints (limits and requests).
+|resources              1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                    1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
@@ -1576,7 +1582,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
-|resources                 1.2+<.<|Resource constraints (limits and requests).
+|resources                 1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
@@ -1873,7 +1879,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
 |producer        1.2+<.<|Configuration of target cluster.
 |xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
@@ -2087,7 +2093,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
 |producer          1.2+<.<|Kafka producer related configuration.
 |xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
-|resources         1.2+<.<|Resource constraints (limits and requests).
+|resources         1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]

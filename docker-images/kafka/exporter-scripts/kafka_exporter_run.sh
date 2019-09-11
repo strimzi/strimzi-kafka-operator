@@ -17,24 +17,34 @@ if [ "$KAFKA_EXPORTER_ENABLE_SARAMA" = "true" ]; then
     saramaenable="--log.enable-sarama"
 fi
 
-
 if [ -n "$KAFKA_EXPORTER_LOGGING" ]; then
     loglevel="--log.level=${KAFKA_EXPORTER_LOGGING}"
 fi
 
-version="--kafka.version="$KAFKA_EXPORTER_KAFKA_VERSION
-
+version="--kafka.version=\""$KAFKA_EXPORTER_KAFKA_VERSION"\""
 
 kafkaserver="--kafka.server="$KAFKA_EXPORTER_KAFKA_SERVER
 
 listenaddress="--web.listen-address=:9404"
 
+tls="--tls.enabled --tls.ca-file=/etc/kafka-exporter/cluster-ca-certs/ca.crt --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
+
+sasl="--no-sasl.handshake"
+
 # starting Kafka Exporter with final configuration
-exec $KAFKA_EXPORTER_HOME/kafka_exporter \
+cat <<EOT > /tmp/run.sh
+$KAFKA_EXPORTER_HOME/kafka_exporter \
 $groupregex \
 $topicregex \
+$tls \
 $kafkaserver \
 $saramaenable \
 $listenaddress \
 $loglevel \
+$sasl \
 $version
+EOT
+
+chmod +x /tmp/run.sh
+
+exec /tmp/run.sh

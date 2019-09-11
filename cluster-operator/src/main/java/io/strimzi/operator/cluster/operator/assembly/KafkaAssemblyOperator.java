@@ -302,10 +302,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
-                .compose(state -> state.getExporterOperatorDescription())
-                .compose(state -> state.exporterOperatorServiceAccount())
-                .compose(state -> state.exporterOperatorDeployment())
-                .compose(state -> state.exporterOperatorReady())
+                .compose(state -> state.getKafkaExporterDescription())
+                .compose(state -> state.kafkaExporterServiceAccount())
+                .compose(state -> state.kafkaExporterSecret())
+                .compose(state -> state.kafkaExporterDeployment())
+                .compose(state -> state.kafkaExporterService())
+                .compose(state -> state.kafkaExporterReady())
 
                 .compose(state -> chainFuture.complete(), chainFuture);
 
@@ -361,7 +363,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
 
-        /* test */ KafkaExporter exporterOperator;
+        /* test */ KafkaExporter kafkaExporter;
         /* test */ Deployment exporterDeployment = null;
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
@@ -2649,20 +2651,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return serviceName + "." + namespace + ".svc";
         }
 
-        private final Future<ReconciliationState> getExporterOperatorDescription() {
+        private final Future<ReconciliationState> getKafkaExporterDescription() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        this.exporterOperator = KafkaExporter.fromCrd(kafkaAssembly);
-
-                        if (exporterOperator != null && kafkaAssembly.getSpec().getKafkaExporter() != null) {
-                            this.exporterDeployment = exporterOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-                        } else {
-                            this.exporterOperator = null;
-                            this.exporterDeployment = null;
-                        }
+                        this.kafkaExporter = KafkaExporter.fromCrd(kafkaAssembly, versions);
+                        this.exporterDeployment = kafkaExporter.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
 
                         future.complete(this);
                     } catch (Throwable e) {
@@ -2680,15 +2676,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return fut;
         }
 
-        Future<ReconciliationState> exporterOperatorServiceAccount() {
+        Future<ReconciliationState> kafkaExporterServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(namespace,
                     KafkaExporter.containerServiceAccountName(name),
-                    exporterDeployment != null ? exporterOperator.generateServiceAccount() : null));
+                    exporterDeployment != null ? kafkaExporter.generateServiceAccount() : null));
         }
 
-        Future<ReconciliationState> exporterOperatorDeployment() {
-            if (this.exporterOperator != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.exporterOperator.getName());
+        Future<ReconciliationState> kafkaExporterSecret() {
+            return withVoid(secretOperations.reconcile(namespace, KafkaExporter.secretName(name), kafkaExporter.generateSecret(clusterCa)));
+        }
+
+        Future<ReconciliationState> kafkaExporterDeployment() {
+            if (this.kafkaExporter != null && this.exporterDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.kafkaExporter.getName());
                 return future.compose(dep -> {
                     // getting the current cluster CA generation from the current deployment, if exists
                     int caCertGeneration = getCaCertGeneration(this.clusterCa);
@@ -2701,13 +2701,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        Future<ReconciliationState> exporterOperatorReady() {
-            if (this.exporterOperator != null && exporterDeployment != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.exporterOperator.getName());
+        Future<ReconciliationState> kafkaExporterService() {
+            return withVoid(serviceOperations.reconcile(namespace, this.kafkaExporter.getServiceName(), this.kafkaExporter.generateService()));
+        }
+
+        Future<ReconciliationState> kafkaExporterReady() {
+            if (this.kafkaExporter != null && exporterDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.kafkaExporter.getName());
                 return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(namespace, this.exporterOperator.getName(), 1_000, operationTimeoutMs));
+                    return withVoid(deploymentOperations.waitForObserved(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
                 }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(namespace, this.exporterOperator.getName(), 1_000, operationTimeoutMs));
+                    return withVoid(deploymentOperations.readiness(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
                 }).map(i -> this);
             }
             return withVoid(Future.succeededFuture());

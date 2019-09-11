@@ -31,7 +31,6 @@ import java.util.Map;
         "enableSaramaLogging", "template"})
 @EqualsAndHashCode
 public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializable {
-
     private static final long serialVersionUID = 1L;
 
     private String image;
@@ -41,13 +40,13 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
-    private String logging;
+    private String logging = "info";
     private boolean enableSaramaLogging;
     private KafkaExporterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the pods.")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getImage() {
         return image;
     }
@@ -56,7 +55,9 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.image = image;
     }
 
-    @Description("Regex that determines which consumer groups to collect.")
+    @Description("Regular expression to specify which consumer groups to collect. " +
+            "Default value is `.*`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getGroupRegex() {
         return groupRegex;
     }
@@ -65,7 +66,9 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.groupRegex = groupRegex;
     }
 
-    @Description("Regex that determines which topics to collect.")
+    @Description("Regular expression to specify which topics to collect. " +
+            "Default value is `.*`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getTopicRegex() {
         return topicRegex;
     }
@@ -74,7 +77,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.topicRegex = topicRegex;
     }
 
-    @Description("Turn on Sarama logging.")
+    @Description("Enable Sarama logging, a Go client library used by the Kafka Exporter.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean getEnableSaramaLogging() {
         return enableSaramaLogging;
@@ -84,7 +87,9 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.enableSaramaLogging = enableSaramaLogging;
     }
 
-    @Description("Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal].")
+    @Description("Only log messages with the given severity or above. " +
+            "Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. " +
+            "Default log level is `info`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getLogging() {
         return logging;
@@ -95,7 +100,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("CPU and memory resources to reserve (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -105,7 +110,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("Pod liveness checking.")
+    @Description("Pod liveness check.")
     public Probe getLivenessProbe() {
         return livenessProbe;
     }
@@ -115,7 +120,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("Pod readiness checking.")
+    @Description("Pod readiness check.")
     public Probe getReadinessProbe() {
         return readinessProbe;
     }
@@ -124,8 +129,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
         this.readinessProbe = readinessProbe;
     }
 
-    @Description("Template for Kafka Exporter resources. " +
-            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+    @Description("Customization of deployment templates and pods.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaExporterTemplate getTemplate() {
         return template;
