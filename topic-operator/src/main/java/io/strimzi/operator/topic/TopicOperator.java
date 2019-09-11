@@ -320,37 +320,6 @@ class TopicOperator {
         }
     }
 
-    /** KafkaTopic modified in k8s */
-    class ChangeReplicationFactor implements Handler<Void> {
-
-        private final HasMetadata involvedObject;
-
-        private final Topic topic;
-        private final Handler<AsyncResult<Void>> handler;
-
-        public ChangeReplicationFactor(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
-            this.topic = topic;
-            this.involvedObject = involvedObject;
-            this.handler = handler;
-        }
-
-        @Override
-        public void handle(Void v) throws OperatorException {
-            kafka.changeReplicationFactor(topic).setHandler(ar -> {
-                if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
-                }
-                handler.handle(ar);
-            });
-
-        }
-
-        @Override
-        public String toString() {
-            return "ChangeReplicationFactor(topicName=" + topic.getTopicName() + ")";
-        }
-    }
-
     private Future<Void> deleteKafkaTopic(LogContext logContext, TopicName topicName) {
         Future<Void> result = Future.future();
         enqueue(new DeleteKafkaTopic(logContext, topicName, result));
@@ -655,12 +624,14 @@ class TopicOperator {
                     enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
                     }));
                     reconciliationResultHandler = Future.failedFuture(new Exception(message));
+                } else if (oursK8s.changesReplicationFactor()
+                            && !oursKafka.changesReplicationFactor()) {
+                    reconciliationResultHandler = Future.failedFuture(new Exception(
+                                    "Changing 'spec.replicas' is not supported. " +
+                                            "This KafkaTopic's 'spec.replicas' should be reverted to " +
+                                            kafkaTopic.getNumReplicas() +
+                                            " and then the replication should be changed directly in Kafka."));
                 } else {
-                    if (merged.changesReplicationFactor()) {
-                        LOGGER.error("{}: Changes replication factor", logContext);
-                        enqueue(new ChangeReplicationFactor(result, involvedObject, res -> LOGGER.error(
-                                "Changing replication factor is not supported")));
-                    }
                     // TODO What if we increase min.in.sync.replicas and the number of replicas,
                     // such that the old number of replicas < the new min isr? But likewise
                     // we could decrease, so order of tasks in the queue will need to change

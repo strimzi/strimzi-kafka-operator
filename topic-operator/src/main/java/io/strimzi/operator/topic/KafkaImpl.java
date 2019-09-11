@@ -14,6 +14,8 @@ import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
@@ -33,9 +35,9 @@ import java.util.concurrent.ExecutionException;
  * For example it is anticipated that one subclass will delegate to a "cluster balancer" so that cluster-wide,
  * traffic-aware assignments can be done.
  */
-public abstract class BaseKafkaImpl implements Kafka {
+public class KafkaImpl implements Kafka {
 
-    private final static Logger LOGGER = LogManager.getLogger(BaseKafkaImpl.class);
+    private final static Logger LOGGER = LogManager.getLogger(KafkaImpl.class);
 
     protected final AdminClient adminClient;
 
@@ -43,7 +45,7 @@ public abstract class BaseKafkaImpl implements Kafka {
 
     private volatile boolean stopped = false;
 
-    public BaseKafkaImpl(AdminClient adminClient, Vertx vertx) {
+    public KafkaImpl(AdminClient adminClient, Vertx vertx) {
         this.adminClient = adminClient;
         this.vertx = vertx;
     }
@@ -280,5 +282,31 @@ public abstract class BaseKafkaImpl implements Kafka {
         return handler;
     }
 
+
+    @Override
+    public Future<Void> increasePartitions(Topic topic) {
+        Future<Void> handler = Future.future();
+        final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
+        final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
+        KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName().toString());
+        queueWork(new UniWork<>("increasePartitions", future, handler));
+        return handler;
+    }
+
+    /**
+     * Create a new topic via the Kafka AdminClient API, calling the given handler
+     * (in a different thread) with the result.
+     */
+    @Override
+    public Future<Void> createTopic(Topic topic) {
+        Future<Void> handler = Future.future();
+        NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
+
+        LOGGER.debug("Creating topic {}", newTopic);
+        KafkaFuture<Void> future = adminClient.createTopics(
+                Collections.singleton(newTopic)).values().get(newTopic.name());
+        queueWork(new UniWork<>("createTopic", future, handler));
+        return handler;
+    }
 
 }

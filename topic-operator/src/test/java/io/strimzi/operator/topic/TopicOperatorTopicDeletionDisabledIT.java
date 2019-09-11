@@ -18,6 +18,11 @@ import java.util.Properties;
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
     @Override
+    protected int numKafkaBrokers() {
+        return 1;
+    }
+
+    @Override
     protected Properties kafkaClusterConfig() {
         Properties config = new Properties();
         config.setProperty(KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "false");

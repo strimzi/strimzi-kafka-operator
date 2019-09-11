@@ -67,9 +67,9 @@ public class K8sImpl implements K8s {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
                 LOGGER.debug("KafkaTopic {} updated with version {}->{}",
-                        kafkaTopic.getMetadata().getName(),
+                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getName() : null,
                         topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
-                        kafkaTopic.getMetadata().getResourceVersion());
+                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getResourceVersion() : null);
                 future.complete(kafkaTopic);
             } catch (Exception e) {
                 future.fail(e);

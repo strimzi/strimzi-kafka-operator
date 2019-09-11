@@ -147,7 +147,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         do {
             try {
                 kafkaCluster = new KafkaCluster();
-                kafkaCluster.addBrokers(1);
+                kafkaCluster.addBrokers(numKafkaBrokers());
                 kafkaCluster.deleteDataPriorToStartup(true);
                 kafkaCluster.deleteDataUponShutdown(true);
                 kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
@@ -181,6 +181,14 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         LOGGER.info("Finished setting up test");
     }
 
+    /**
+     * @return The number of Kafka brokers in the Kafka cluster
+     */
+    protected abstract int numKafkaBrokers();
+
+    /**
+     * @return The Kafka broker config to be used for the Kafka cluster.
+     */
     protected abstract Properties kafkaClusterConfig();
 
     @After
@@ -227,13 +235,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     protected void startTopicOperator(TestContext context) {
 
         LOGGER.info("Starting Topic Operator");
-        Map<String, String> m = new HashMap<>();
-        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
-        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
-        m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
-        m.put(Config.NAMESPACE.key, NAMESPACE);
-        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
-        session = new Session(kubeClient, new Config(m));
+        session = new Session(kubeClient, new Config(topicOperatorConfig()));
 
         Async async = context.async();
         vertx.deployVerticle(session, ar -> {
@@ -247,6 +249,17 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         });
         async.await();
         LOGGER.info("Started Topic Operator");
+    }
+
+    protected Map<String, String> topicOperatorConfig() {
+        Map<String, String> m = new HashMap<>();
+        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
+        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
+        m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
+        m.put(Config.NAMESPACE.key, NAMESPACE);
+        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
+        m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
+        return m;
     }
 
     protected static int zkPort(KafkaCluster cluster) {
@@ -343,11 +356,36 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return createKafkaTopicResource(context, topicResource);
     }
 
+    /**
+     * Create a topic in Kafka with a single partition and RF=1.
+     * @param context The test context.
+     * @param topicName The name of the topic.
+     * @return The name of the KafkaTopic resource that was created in Kube.
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
     protected String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        return createTopic(context, topicName, new NewTopic(topicName, 1, (short) 1));
+    }
+
+    /**
+     * Create a topic in Kafka with a single partition and the given replica assignments
+     * @param context The test context.
+     * @param topicName The name of the topic.
+     * @param replicaAssignments The replica assignments.
+     * @return The name of the KafkaTopic resource that was created in Kube.
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    protected String createTopic(TestContext context, String topicName, List<Integer> replicaAssignments) throws InterruptedException, ExecutionException {
+        return createTopic(context, topicName, new NewTopic(topicName, singletonMap(0, replicaAssignments)));
+    }
+
+    private String createTopic(TestContext context, String topicName, NewTopic o) throws InterruptedException, ExecutionException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
         String resourceName = new TopicName(topicName).asKubeName().toString();
-        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
+        CreateTopicsResult crt = adminClient.createTopics(singletonList(o));
         crt.all().get();
 
         // Wait for the resource to be created
