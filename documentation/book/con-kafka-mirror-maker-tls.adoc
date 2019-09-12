@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-mirror-maker.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='con-kafka-mirror-maker-tls-{context}']
+
+= TLS encryption
+
+Use the `consumer.tls` and `producer.tls` properties to configure TLS encryption for the consumer and producer.
+
+By default, Kafka Mirror Maker will try to connect to Kafka brokers in source and target clusters using a plain text connection.
+To use TLS encryption, use the `tls` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
+
+See xref:proc-configuring-kafka-mirror-maker-tls-{context}[Configuring TLS encryption in Kafka Mirror Maker]
