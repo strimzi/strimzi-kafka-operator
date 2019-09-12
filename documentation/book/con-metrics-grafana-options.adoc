@@ -5,7 +5,7 @@
 
 = Grafana configuration
 
-{ProductName} provides xref:ref-metrics-config-files-{context}[example configuration files for Grafana].
+{ProductName} provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
 
 A Grafana docker image is provided for deployment:
 
