@@ -5,8 +5,10 @@
 
 = Kafka Exporter
 
-The Kafka Exporter is provided with {ProductName} for deployment with a Kafka cluster to extract additional metrics from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
-The data is used in monitoring for example to help identify slow consumers.
+{kafka-exporter-project} is an open source project to enhance monitoring of Apache Kafka brokers and clients.
+Kafka Exporter is provided with {ProductName} for deployment with a Kafka cluster to extract additional metrics data from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
+
+The metrics data is used, for example, to help identify slow consumers.
 
 Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
 

@@ -29,6 +29,9 @@
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
+//kafka Exporter links
+:kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
+
 // External links
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
