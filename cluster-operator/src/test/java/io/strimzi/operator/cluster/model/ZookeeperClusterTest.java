@@ -70,8 +70,8 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
-                    "2.1.0         2.1 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
+                    "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
             map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
                     "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
@@ -98,7 +98,7 @@ public class ZookeeperClusterTest {
             .withReadinessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
             .build();
 
-    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson))
+    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson, null))
             .editSpec()
                 .editZookeeper()
                     .withTlsSidecar(tlsSidecar)
@@ -877,6 +877,42 @@ public class ZookeeperClusterTest {
             assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
             assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsWithTemplate() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .withLabels(singletonMap("testLabel", "testValue"))
+                                    .withAnnotations(singletonMap("testAnno", "testValue"))
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                        .withDeleteClaim(false)
+                                        .withId(0)
+                                        .withSize("100Gi")
+                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                        .build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals("testValue", pvc.getMetadata().getLabels().get("testLabel"));
+            assertEquals("testValue", pvc.getMetadata().getAnnotations().get("testAnno"));
         }
     }
 

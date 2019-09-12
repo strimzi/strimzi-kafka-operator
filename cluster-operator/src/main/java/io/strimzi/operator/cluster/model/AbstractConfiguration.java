@@ -94,10 +94,27 @@ public abstract class AbstractConfiguration {
     }
 
     /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
+     *                           these keys will be ignored.
+     * @param exceptions        Exceptions excluded from forbidden options checking
+     * @param defaults          Properties object with default options
+     */
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, List<String> exceptions, Map<String, String> defaults) {
+        options.addMapPairs(defaults);
+        options.addIterablePairs(jsonOptions);
+        filterForbidden(forbiddenOptions, exceptions);
+    }
+
+    /**
      * Filters forbidden values from the configuration.
      *
      * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
      *                          these keys will be ignored.
+     * @param exceptions        Exceptions excluded from forbidden options checking
      */
     private void filterForbidden(List<String> forbiddenOptions, List<String> exceptions)   {
         options.filter(k -> forbiddenOptions.stream().anyMatch(s -> {

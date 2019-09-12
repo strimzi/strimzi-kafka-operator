@@ -19,8 +19,8 @@ The [documentation contributor guide][doc-contrib-guide] describes how to contri
 
 If you want to get in touch with us first before contributing, you can use:
 
-* [Strimzi mailing list][mailinglist]
-* [Strimzi Slack workspace][slack]
+- [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
+- [Strimzi Dev mailing list](https://lists.cncf.io/g/cncf-strimzi-dev/topics)
 
 [issues]: https://github.com/strimzi/strimzi-kafka-operator/issues
 [newbie-issues]: https://github.com/strimzi/strimzi-kafka-operator/labels/good-start
@@ -28,5 +28,3 @@ If you want to get in touch with us first before contributing, you can use:
 [dev-quick-start]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md
 [release-list]: https://github.com/strimzi/strimzi-kafka-operator/blob/master/RELEASE.md
 [doc-contrib-guide]: https://strimzi.io/contributing/guide/
-[mailinglist]: https://www.redhat.com/mailman/listinfo/strimzi 
-[slack]: https://join.slack.com/t/strimzi/shared_invite/enQtMzU2Mjk3NTgxMzE5LTYyMTUwMGNlMDQwMzBhOGI4YmY4MjhiMDgyNjA5OTk2MTFiYjc4M2Q3NGU1YTFjOWRiMzM2NGMwNDUwMjBlNDY

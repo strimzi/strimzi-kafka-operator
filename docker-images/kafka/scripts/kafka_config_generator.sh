@@ -154,7 +154,7 @@ if [ "$KAFKA_AUTHORIZATION_TYPE" = "simple" ]; then
   # Prepare super.users field
   KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
   ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
-  SUPER_USERS="super.users=User:CN=${KAFKA_NAME},O=io.strimzi;User:CN=${ASSEMBLY_NAME}-entity-operator,O=io.strimzi"
+  SUPER_USERS="super.users=User:CN=${KAFKA_NAME},O=io.strimzi;User:CN=${ASSEMBLY_NAME}-entity-operator,O=io.strimzi;User:CN=${ASSEMBLY_NAME}-kafka-exporter,O=io.strimzi"
 
   if [ "$KAFKA_AUTHORIZATION_SUPER_USERS" ]; then
     SUPER_USERS="${SUPER_USERS};${KAFKA_AUTHORIZATION_SUPER_USERS}"

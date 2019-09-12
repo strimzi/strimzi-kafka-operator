@@ -17,7 +17,6 @@ import static java.util.Collections.emptyList;
  * Class for handling Kafka configuration passed by the user
  */
 public class KafkaConfiguration extends AbstractConfiguration {
-
     public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
     public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
 
@@ -26,18 +25,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIXES.split(", "));
-        EXCEPTIONS = asList("zookeeper.connection.timeout.ms");
-    }
-
-    /**
-     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
-     * from the Assembly.
-     *
-     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
-     *                      pairs.
-     */
-    public KafkaConfiguration(String configuration) {
-        this(configuration, FORBIDDEN_OPTIONS);
+        EXCEPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
     }
 
     /**

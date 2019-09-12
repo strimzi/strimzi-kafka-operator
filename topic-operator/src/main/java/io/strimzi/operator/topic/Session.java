@@ -34,7 +34,7 @@ public class Session extends AbstractVerticle {
     private final Config config;
     private final KubernetesClient kubeClient;
 
-    /*test*/ OperatorAssignedKafkaImpl kafka;
+    /*test*/ KafkaImpl kafka;
     private AdminClient adminClient;
     /*test*/ K8sImpl k8s;
     /*test*/ TopicOperator topicOperator;
@@ -140,7 +140,7 @@ public class Session extends AbstractVerticle {
 
         this.adminClient = AdminClient.create(adminClientProps);
         LOGGER.debug("Using AdminClient {}", adminClient);
-        this.kafka = new OperatorAssignedKafkaImpl(adminClient, vertx, config);
+        this.kafka = new KafkaImpl(adminClient, vertx);
         LOGGER.debug("Using Kafka {}", kafka);
         Labels labels = config.get(Config.LABELS);
 

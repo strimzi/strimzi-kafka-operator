@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
+import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -328,7 +329,8 @@ public class ResourceUtils {
                                            Storage kafkaStorage,
                                            SingleVolumeStorage zkStorage,
                                            TopicOperatorSpec topicOperatorSpec,
-                                           Logging kafkaLogging, Logging zkLogging) {
+                                           Logging kafkaLogging, Logging zkLogging,
+                                           KafkaExporterSpec keSpec) {
         Kafka result = new Kafka();
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
@@ -378,6 +380,7 @@ public class ResourceUtils {
         }
 
         spec.setTopicOperator(topicOperatorSpec);
+        spec.setKafkaExporter(keSpec);
 
         spec.setZookeeper(zk);
         result.setSpec(spec);

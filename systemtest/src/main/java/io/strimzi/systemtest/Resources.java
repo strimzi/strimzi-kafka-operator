@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -55,6 +56,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -631,7 +633,7 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-
+        client().getClient().apps().deployments().inNamespace(kafkaMirrorMaker.getMetadata().getNamespace()).withName(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName())).delete();
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
@@ -639,7 +641,7 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(kafkaBridge.getMetadata().getName()).delete();
+        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName())).delete();
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
                 .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
@@ -748,14 +750,14 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, "300000");
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+    public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
-    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -778,7 +780,7 @@ public class Resources extends AbstractResources {
                     envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(operationTimeout);
+                    envVar.setValue(Long.toString(operationTimeout));
                     break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
@@ -790,11 +792,12 @@ public class Resources extends AbstractResources {
                     }
             }
         }
+
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
@@ -803,6 +806,7 @@ public class Resources extends AbstractResources {
                         .editSpec()
                             .editFirstContainer()
                                 .withImage(StUtils.changeOrgAndTag(coImage))
+                                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
                             .endContainer()
                         .endSpec()
                     .endTemplate()
@@ -1045,7 +1049,7 @@ public class Resources extends AbstractResources {
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .withCommand("sleep")
                 .withArgs("infinity")
-                .withImagePullPolicy("IfNotPresent");
+                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";

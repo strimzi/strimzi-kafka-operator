@@ -96,7 +96,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("CPU and memory resources to reserve (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }

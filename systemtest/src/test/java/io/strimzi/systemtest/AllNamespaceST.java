@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -90,6 +91,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testUserInDifferentNamespace() throws Exception {
         String startingNamespace = setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();

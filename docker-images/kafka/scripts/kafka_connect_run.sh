@@ -33,7 +33,12 @@ export LOG_DIR="$KAFKA_HOME"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+fi
+
+# enabling Tracing agent (initializes Jaeger tracing) as Java agent
+if [ "$STRIMZI_TRACING" = "jaeger" ]; then
+  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar)=jaeger"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

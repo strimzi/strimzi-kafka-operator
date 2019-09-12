@@ -35,7 +35,9 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
+|kafkaExporter           1.2+<.<|Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
+|xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
+|maintenanceTimeWindows  1.2+<.<|A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
 |string array
 |====
 
@@ -78,7 +80,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions           1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources            1.2+<.<|Resource constraints (limits and requests).
+|resources            1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -588,7 +590,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -628,7 +630,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 [id='type-ResourceRequirements-{context}']
 ### `ResourceRequirements` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -691,7 +693,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |string (one of [emerg, debug, crit, err, alert, warning, notice, info])
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |====
 
@@ -712,32 +714,34 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |brokersService            1.2+<.<|Template for Kafka broker `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|initContainer             1.2+<.<|Template for the Kafka init container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|persistentVolumeClaim     1.2+<.<|Template for all Kafka `PersistentVolumeClaims`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget       1.2+<.<|Template for Kafka `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|kafkaContainer            1.2+<.<|Template for the Kafka broker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |tlsSidecarContainer       1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -765,7 +769,7 @@ Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTem
 [id='type-PodTemplate-{context}']
 ### `PodTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -795,10 +799,25 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
 |====
 
+[id='type-PodDisruptionBudgetTemplate-{context}']
+### `PodDisruptionBudgetTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Property               |Description
+|metadata        1.2+<.<|Metadata to apply to the `PodDistruptionBugetTemplate` resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
+|integer
+|====
+
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -821,21 +840,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |value  1.2+<.<|The environment variable value.
 |string
-|====
-
-[id='type-PodDisruptionBudgetTemplate-{context}']
-### `PodDisruptionBudgetTemplate` schema reference
-
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
-|integer
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']
@@ -869,7 +873,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -889,20 +893,22 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 [options="header"]
 |====
-|Property                    |Description
-|statefulset          1.2+<.<|Template for Zookeeper `StatefulSet`.
+|Property                      |Description
+|statefulset            1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                  1.2+<.<|Template for Zookeeper `Pods`.
+|pod                    1.2+<.<|Template for Zookeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|clientService        1.2+<.<|Template for Zookeeper client `Service`.
+|clientService          1.2+<.<|Template for Zookeeper client `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|nodesService         1.2+<.<|Template for Zookeeper nodes `Service`.
+|nodesService           1.2+<.<|Template for Zookeeper nodes `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|podDisruptionBudget  1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
+|persistentVolumeClaim  1.2+<.<|Template for all Zookeeper `PersistentVolumeClaims`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget    1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|tlsSidecarContainer  1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|zookeeperContainer     1.2+<.<|Template for the Zookeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|zookeeperContainer   1.2+<.<|Template for the Zookeeper container.
+|tlsSidecarContainer    1.2+<.<|Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
@@ -927,7 +933,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
@@ -1004,7 +1010,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
@@ -1035,7 +1041,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|resources                       1.2+<.<|Resource constraints (limits and requests).
+|resources                       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
@@ -1082,6 +1088,54 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |integer
 |certificateExpirationPolicy   1.2+<.<|How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
 |string (one of [replace-key, renew-certificate])
+|====
+
+[id='type-KafkaExporterSpec-{context}']
+### `KafkaExporterSpec` schema reference
+
+Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|image                1.2+<.<|The docker image for the pods.
+|string
+|groupRegex           1.2+<.<|Regular expression to specify which consumer groups to collect. Default value is `.*`.
+|string
+|topicRegex           1.2+<.<|Regular expression to specify which topics to collect. Default value is `.*`.
+|string
+|resources            1.2+<.<|CPU and memory resources to reserve (limits and requests).
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|logging              1.2+<.<|Only log messages with the given severity or above. Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default log level is `info`.
+|string
+|enableSaramaLogging  1.2+<.<|Enable Sarama logging, a Go client library used by the Kafka Exporter.
+|boolean
+|template             1.2+<.<|Customization of deployment templates and pods.
+|xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+|livenessProbe        1.2+<.<|Pod liveness check.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe       1.2+<.<|Pod readiness check.
+|xref:type-Probe-{context}[`Probe`]
+|====
+
+[id='type-KafkaExporterTemplate-{context}']
+### `KafkaExporterTemplate` schema reference
+
+Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|deployment  1.2+<.<|Template for Kafka Exporter `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for Kafka Exporter `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|service     1.2+<.<|Template for Kafka Exporter `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|container   1.2+<.<|Template for the Kafka Exporter container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-KafkaStatus-{context}']
@@ -1196,21 +1250,38 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication         1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
+|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|resources              1.2+<.<|Resource constraints (limits and requests).
+|resources              1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                    1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|====
+
+[id='type-JaegerTracing-{context}']
+### `JaegerTracing` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `JaegerTracing` from other subtypes which may be added in the future.
+It must have the value `jaeger` for the type `JaegerTracing`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<|Must be `jaeger`.
 |string
 |====
 
@@ -1483,13 +1554,13 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
+|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
 |externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
-|resources                 1.2+<.<|Resource constraints (limits and requests).
+|resources                 1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
@@ -1497,6 +1568,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|tracing                   1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
@@ -1784,7 +1857,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
 |producer        1.2+<.<|Configuration of target cluster.
 |xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
-|resources       1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
@@ -1800,6 +1873,8 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
+|tracing         1.2+<.<|The configuration of tracing in Kafka Mirror Maker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template        1.2+<.<|Template to specify how Kafka Mirror Maker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<|Pod liveness checking.
@@ -1829,7 +1904,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
+|config                1.2+<.<|The Mirror Maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes.
 |map
 |tls                   1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
@@ -1918,7 +1993,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |boolean
 |authentication      1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
-|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+|config              1.2+<.<|The Mirror Maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security., interceptor.classes.
 |map
 |tls                 1.2+<.<|TLS configuration for connecting Mirror Maker to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
@@ -1996,7 +2071,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
 |producer          1.2+<.<|Kafka producer related configuration.
 |xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
-|resources         1.2+<.<|Resource constraints (limits and requests).
+|resources         1.2+<.<|CPU and memory resources to reserve (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]

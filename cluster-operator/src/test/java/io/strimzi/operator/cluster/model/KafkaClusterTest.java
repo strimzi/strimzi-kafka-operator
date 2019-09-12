@@ -99,8 +99,8 @@ import static org.junit.Assert.fail;
 public class KafkaClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
-                    "2.1.0         2.1 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
+                    "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
             map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
                     "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
@@ -1867,6 +1867,52 @@ public class KafkaClusterTest {
             assertTrue(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME));
             assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsJbodWithTemplate() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .withLabels(singletonMap("testLabel", "testValue"))
+                                    .withAnnotations(singletonMap("testAnno", "testValue"))
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new JbodStorageBuilder().withVolumes(
+                            new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                    .withDeleteClaim(false)
+                                    .withId(0)
+                                    .withSize("100Gi")
+                                    .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                    .build(),
+                            new PersistentClaimStorageBuilder()
+                                    .withStorageClass("gp2-st1")
+                                    .withDeleteClaim(true)
+                                    .withId(1)
+                                    .withSize("1000Gi")
+                                    .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-st1-az1").build())
+                                    .build())
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertEquals(6, pvcs.size());
+
+        for (int i = 0; i < 6; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals("testValue", pvc.getMetadata().getLabels().get("testLabel"));
+            assertEquals("testValue", pvc.getMetadata().getAnnotations().get("testAnno"));
         }
     }
 

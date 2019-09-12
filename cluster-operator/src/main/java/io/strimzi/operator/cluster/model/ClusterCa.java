@@ -26,6 +26,7 @@ public class ClusterCa extends Ca {
     private Secret entityOperatorSecret;
     private Secret topicOperatorSecret;
     private Secret clusterOperatorSecret;
+    private Secret kafkaExporterSecret;
 
     private Secret brokersSecret;
     private Secret zkNodesSecret;
@@ -90,6 +91,8 @@ public class ClusterCa extends Ca {
                 zkNodesSecret = secret;
             } else if (ClusterOperator.secretName(clusterName).equals(name)) {
                 clusterOperatorSecret = secret;
+            } else if (KafkaExporter.secretName(clusterName).equals(name)) {
+                kafkaExporterSecret = secret;
             }
         }
     }
@@ -104,6 +107,10 @@ public class ClusterCa extends Ca {
 
     public Secret clusterOperatorSecret() {
         return clusterOperatorSecret;
+    }
+
+    public Secret kafkaExporterSecret() {
+        return kafkaExporterSecret;
     }
 
     public Map<String, CertAndKey> generateZkCerts(Kafka kafka) throws IOException {

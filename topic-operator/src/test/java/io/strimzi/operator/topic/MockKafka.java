@@ -182,20 +182,6 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> changeReplicationFactor(Topic topic) {
-        Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
-        if (event.succeeded()) {
-            Topic t = topics.get(topic.getTopicName());
-            if (t == null) {
-                event = failedFuture("No such topic " + topic.getTopicName());
-            }
-            t = new Topic.Builder(t).withNumReplicas(topic.getNumReplicas()).build();
-            topics.put(topic.getTopicName(), t);
-        }
-        return event;
-    }
-
-    @Override
     public Future<TopicMetadata> topicMetadata(TopicName topicName) {
         return getTopicNameFutureFunction().apply(topicName);
     }
