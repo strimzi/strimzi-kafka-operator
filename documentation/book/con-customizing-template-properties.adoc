@@ -52,6 +52,7 @@ spec:
 `kafkaContainer`:: Configures the container used to run the Kafka broker, including custom environment variables.
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
 `initContainer`:: Configures the container used to initialize the brokers.
+`persistentVolumeClaim`:: Configures the metadata of the Kafka `PersistentVolumeClaims`.
 
 .Additional resources
 
@@ -66,6 +67,7 @@ xref:type-KafkaClusterTemplate-reference[].
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Zookeeper `StatefulSet`.
 `zookeeperContainer`:: Configures the container used to run the Zookeeper Node, including custom environment variables.
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
+`persistentVolumeClaim`:: Configures the metadata of the Zookeeper `PersistentVolumeClaims`.
 
 .Additional resources
 

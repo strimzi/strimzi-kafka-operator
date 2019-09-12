@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNull;
 public class TopicOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
             emptyMap(), emptyMap(), emptyMap()) { };
 
@@ -92,7 +92,7 @@ public class TopicOperatorTest {
             .withTlsSidecar(tlsSidecar)
             .build();
 
-    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson);
+    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson, null);
     private final TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -122,7 +122,7 @@ public class TopicOperatorTest {
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
+                kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson, null);
         TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
         Assert.assertEquals("strimzi/operator:latest", tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());

@@ -94,8 +94,10 @@
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.2.1</quartz.version>
         <debezium.version>0.9.5.Final</debezium.version>
+        <jaeger.version>1.0.0</jaeger.version>
+        <opentracing.version>0.33.0</opentracing.version>
 
-        <jupiter.version>5.5.0-RC1</jupiter.version>
+        <jupiter.version>5.5.1</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>
         <gson.version>2.8.2</gson.version>
         <vertx.kafka.client>3.7.1</vertx.kafka.client>
@@ -115,6 +117,7 @@
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
+        <module>tracing-agent</module>
         <module>test</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>
@@ -385,6 +388,26 @@
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${spotbugs.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.jaegertracing</groupId>
+                <artifactId>jaeger-core</artifactId>
+                <version>${jaeger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentracing</groupId>
+                <artifactId>opentracing-api</artifactId>
+                <version>${opentracing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentracing</groupId>
+                <artifactId>opentracing-util</artifactId>
+                <version>${opentracing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>connect-runtime</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -630,6 +653,7 @@
                                 <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
                                 <ignoredDependency>org.junit.vintage</ignoredDependency>

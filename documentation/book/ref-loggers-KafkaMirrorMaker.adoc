@@ -8,3 +8,5 @@
 Kafka Mirror Maker has its own configurable logger:
 
 * `mirrormaker.root.logger`
+
+include::con-logging.adoc[leveloffset=+1]

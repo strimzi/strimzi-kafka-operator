@@ -77,6 +77,11 @@ kafkaBridge:
     repository: strimzi
     name: kafka-bridge
     tag: latest
+kafkaExporter:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
 resources:
   limits:
     memory: 256Mi

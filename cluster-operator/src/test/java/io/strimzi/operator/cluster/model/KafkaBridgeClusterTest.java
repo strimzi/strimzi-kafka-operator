@@ -49,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 
 public class KafkaBridgeClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
             emptyMap(), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";

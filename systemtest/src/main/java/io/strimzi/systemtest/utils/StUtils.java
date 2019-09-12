@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Date;
@@ -601,14 +602,19 @@ public class StUtils {
         }
     }
 
-    public static void waitForReconciliation(String testClass, String testName, String nameSpace) {
+    public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
         String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Long.parseLong(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS) + 20000,
             () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
                     TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                        "'Triggering periodic reconciliation for namespace " + nameSpace + "'").isEmpty());
+                        "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
         TimeMeasuringSystem.stopOperation(reconciliation);
+    }
+
+    public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
+        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
     }
 
     public static void waitForLoadBalancerService(String serviceName) {
@@ -705,5 +711,37 @@ public class StUtils {
             }
         }
         return currentTag;
+    }
+
+    public static void waitUntilAddressIsReachable(String address) {
+        LOGGER.info("Waiting till address {} is reachable", address);
+        TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    InetAddress.getByName(kubeClient().getService("my-cluster-kafka-external-bootstrap").getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+        LOGGER.info("Address {} is reachable", address);
+    }
+
+    public static void waitUntilMessageIsInLogs(String podName, String containerName, String message) {
+        LOGGER.info("Waiting for message will be in the log");
+        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
+            () -> kubeClient().logs(podName, containerName).contains(message));
+    }
+
+    /**
+     * Method for check if test is allowed on current Kubernetes version
+     * @param desiredKubernetesVersion kubernetes version which test needs
+     * @return true if test is allowed, false if not
+     */
+    public static boolean isAllowedOnCurrentK8sVersion(String desiredKubernetesVersion) {
+        if (desiredKubernetesVersion.equals("latest")) {
+            return true;
+        }
+        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
     }
 }

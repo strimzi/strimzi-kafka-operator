@@ -68,7 +68,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaConnectS2IClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
             emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect-s2i:latest-kafka-2.0.0"),
             emptyMap()) { };
     private final String namespace = "test";
@@ -970,9 +970,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewTemplate()
-                .withConnectContainer(kafkaConnectContainer)
-                .endTemplate()
+                    .withNewTemplate()
+                        .withConnectContainer(kafkaConnectContainer)
+                    .endTemplate()
                 .endSpec()
                 .build();
 
@@ -1008,9 +1008,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewTemplate()
-                .withConnectContainer(kafkaConnectContainer)
-                .endTemplate()
+                    .withNewTemplate()
+                        .withConnectContainer(kafkaConnectContainer)
+                    .endTemplate()
                 .endSpec()
                 .build();
 
@@ -1022,5 +1022,22 @@ public class KafkaConnectS2IClusterTest {
         assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+    }
+
+    @Test
+    public void testTracing() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("jaeger"));
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=io.opentracing.contrib.kafka.TracingConsumerInterceptor"));
+        assertTrue(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=io.opentracing.contrib.kafka.TracingProducerInterceptor"));
     }
 }

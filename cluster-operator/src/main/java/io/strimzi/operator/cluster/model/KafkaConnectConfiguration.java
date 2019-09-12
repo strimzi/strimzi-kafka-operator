@@ -18,10 +18,12 @@ import static java.util.Arrays.asList;
  */
 public class KafkaConnectConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
+    private static final List<String> EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
+        EXCEPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS.split(", "));
 
         DEFAULTS = new HashMap<>();
         DEFAULTS.put("group.id", "connect-cluster");
@@ -33,23 +35,12 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
-     * from the Assembly.
-     *
-     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
-     *                      pairs.
-     */
-    public KafkaConnectConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
-    }
-
-    /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConnectConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS, DEFAULTS);
     }
 }

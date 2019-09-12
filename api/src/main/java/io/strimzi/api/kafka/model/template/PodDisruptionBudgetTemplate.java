@@ -36,7 +36,7 @@ public class PodDisruptionBudgetTemplate implements Serializable, UnknownPropert
     private int maxUnavailable = 1;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.")
+    @Description("Metadata to apply to the `PodDistruptionBugetTemplate` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
@@ -46,9 +46,9 @@ public class PodDisruptionBudgetTemplate implements Serializable, UnknownPropert
         this.metadata = metadata;
     }
 
-    @Description("Maximum number of unavailable pods to allow voluntary Pod eviction. " +
-            "A Pod eviction will only be allowed when \"maxUnavailable\" or fewer pods are unavailable after the eviction. " +
-            "Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. " +
+    @Description("Maximum number of unavailable pods to allow automatic Pod eviction. " +
+            "A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. " +
+            "Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. " +
             "Defaults to 1.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DefaultValue("1")

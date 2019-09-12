@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -33,7 +34,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "template"})
+        "logging", "metrics", "tracing", "template"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -53,6 +54,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics;
+    private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -130,6 +132,16 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.metrics = metrics;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The configuration of tracing in Kafka Mirror Maker.")
+    public Tracing getTracing() {
+        return tracing;
+    }
+
+    public void setTracing(Tracing tracing) {
+        this.tracing = tracing;
+    }
+
     @Description("Logging configuration for Mirror Maker.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
@@ -179,7 +191,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("CPU and memory resources to reserve (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }

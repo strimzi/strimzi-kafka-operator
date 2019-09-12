@@ -30,7 +30,7 @@ git config user.name "Travis CI"
 git config user.email "ci@travis.tld"
 
 git add -A
-git commit -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
+git commit -s -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
 git push origin master
 
 popd

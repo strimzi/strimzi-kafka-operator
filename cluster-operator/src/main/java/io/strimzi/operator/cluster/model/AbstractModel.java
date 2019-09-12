@@ -169,6 +169,8 @@ public abstract class AbstractModel {
     protected List<LocalObjectReference> templateImagePullSecrets;
     protected PodSecurityContext templateSecurityContext;
     protected int templateTerminationGracePeriodSeconds = 30;
+    protected Map<String, String> templatePersistentVolumeClaimLabels;
+    protected Map<String, String> templatePersistentVolumeClaimAnnotations;
     protected Map<String, String> templatePodDisruptionBudgetLabels;
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
@@ -669,8 +671,8 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
-                    .withAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())))
+                    .withLabels(mergeLabelsOrAnnotations(getLabelsWithName(templateStatefulSetLabels), templatePersistentVolumeClaimLabels))
+                    .withAnnotations(mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
                     .withAccessModes("ReadWriteOnce")

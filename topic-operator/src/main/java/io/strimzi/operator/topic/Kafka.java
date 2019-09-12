@@ -55,16 +55,6 @@ public interface Kafka {
     Future<Void> increasePartitions(Topic topic);
 
     /**
-     * Asynchronously change the topic's replication factor in Kafka,
-     * completing the returned Future when the topic has been updated.
-     * If the operation fails the returned Future will be failed with the
-     * KafkaException (not an ExecutionException).
-     * @param topic The topic.
-     * @return A future which is completed once the topic has been updated.
-     */
-    Future<Void> changeReplicationFactor(Topic topic);
-
-    /**
      * Asynchronously fetch the topic metadata in Kafka,
      * completing the returned Future with the requested metadata.
      * If the topic does not exist the returned Future will be completed with null result.

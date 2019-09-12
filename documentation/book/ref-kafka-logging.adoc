@@ -17,6 +17,6 @@ The following logger implementations are used in {ProductName}:
 * xref:ref-loggers-Kafka-deployment-configuration-kafka[Kafka loggers]
 * xref:ref-loggers-KafkaConnect-deployment-configuration-kafka-connect[Kafka Connect loggers]
 * xref:ref-loggers-KafkaConnectS2I-deployment-configuration-kafka-connect-s2i[Kafka Connect with Source2Image loggers]
-* xref:ref-loggers-KafkaMirrorMaker-deployment-configuration-kafka-mirror-maker[Kafka Mirror Maker loggers]
+* xref:con-kafka-mirror-maker-logging-deployment-configuration-kafka-mirror-maker[Kafka Mirror Maker loggers]
 * xref:topic-operator-deployment-configuration-kafka[Topic Operator loggers]
 * xref:user-operator-deployment-configuration-kafka[User Operator loggers]

@@ -53,7 +53,7 @@ public class JbodStorageTest {
     private static final String NAMESPACE = "test-jbod-storage";
     private static final String NAME = "my-kafka";
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
             emptyMap(), emptyMap(), emptyMap()) { };
 

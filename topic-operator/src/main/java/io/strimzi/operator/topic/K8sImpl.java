@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -66,9 +67,9 @@ public class K8sImpl implements K8s {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
                 LOGGER.debug("KafkaTopic {} updated with version {}->{}",
-                        kafkaTopic.getMetadata().getName(),
+                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getName() : null,
                         topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
-                        kafkaTopic.getMetadata().getResourceVersion());
+                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getResourceVersion() : null);
                 future.complete(kafkaTopic);
             } catch (Exception e) {
                 future.fail(e);
@@ -88,9 +89,17 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
-                operation().inNamespace(namespace).withName(resourceName.toString()).delete();
-                LOGGER.debug("KafkaTopic {} deleted", resourceName.toString());
-                future.complete();
+                if (!Boolean.TRUE.equals(operation().inNamespace(namespace).withName(resourceName.toString()).delete())) {
+                    LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
+                    future.complete();
+                } else {
+                    Util.waitFor(vertx, "sync resource deletion " + resourceName, 1000, Long.MAX_VALUE, () -> {
+                        KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
+                        boolean notExists = kafkaTopic == null;
+                        LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);
+                        return notExists;
+                    }).setHandler(future);
+                }
             } catch (Exception e) {
                 future.fail(e);
             }

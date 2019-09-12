@@ -44,9 +44,13 @@ public class TopicST extends AbstractST {
 
         // Checking TO logs
         String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String errorMessage = "Replication factor: 5 larger than available brokers: 3";
+
+        StUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);
+
         String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
 
-        assertThat(tOlogs, containsString("Replication factor: 5 larger than available brokers: 3"));
+        assertThat(tOlogs, containsString(errorMessage));
 
         LOGGER.info("Delete topic {}", topicName);
         cmdKubeClient().deleteByName("kafkatopic", topicName);

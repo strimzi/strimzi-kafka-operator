@@ -51,6 +51,10 @@ public class Environment {
      */
     private static final String KUBERNETES_DOMAIN_ENV = "KUBERNETES_DOMAIN";
     /**
+     * Image pull policy env var
+     */
+    private static final String IMAGE_PULL_POLICY_ENV = "IMAGE_PULL_POLICY";
+    /**
      * CO reconciliation interval.
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -65,6 +69,7 @@ public class Environment {
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
+    private static final String IMAGE_PULL_POLICY_ENV_DEFAULT = "IfNotPresent";
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
@@ -74,7 +79,7 @@ public class Environment {
     static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     static final String KUBERNETES_DOMAIN = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
-    static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
     static final String SKIP_TEARDOWN = System.getenv(SKIP_TEARDOWN_ENV);
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
@@ -82,6 +87,7 @@ public class Environment {
     // variables for kafka bridge image
     private static final String BRIDGET_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka-bridge:" + STRIMZI_TAG_DEFAULT;
     public static final String BRIDGE_IMAGE = System.getenv().getOrDefault(BRIDGE_IMAGE_ENV, BRIDGET_IMAGE_DEFAULT);
+    public static final String IMAGE_PULL_POLICY = System.getenv().getOrDefault(IMAGE_PULL_POLICY_ENV, IMAGE_PULL_POLICY_ENV_DEFAULT);
 
     private Environment() {
     }

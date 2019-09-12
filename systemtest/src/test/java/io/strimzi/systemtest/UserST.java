@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -120,12 +121,14 @@ class UserST extends AbstractST {
     }
 
     @Tag(SCALABILITY)
+    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testBigAmountOfScramShaUsers() {
         createBigAmountOfUsers("SCRAM_SHA");
     }
 
     @Tag(SCALABILITY)
+    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testBigAmountOfTlsUsers() {
         createBigAmountOfUsers("TLS");
