@@ -11,7 +11,7 @@ You can include it in the following resources and properties:
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator`
-* `Kafka.spec.KafkaExporter`
+* `Kafka.spec.kafkaExporter`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 * `KafkaMirrorMakerSpec`
@@ -38,9 +38,7 @@ spec:
     # ...
 ----
 
-.Supported resources in Kafka cluster
-
-When defined in a Kafka cluster, the `template` object can have the following fields:
+== Supported template properties for a Kafka cluster
 
 `statefulset`:: Configures the `StatefulSet` used by the Kafka broker.
 `pod`:: Configures the Kafka broker `Pods` created by the `StatefulSet`.
@@ -55,9 +53,11 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
 `initContainer`:: Configures the container used to initialize the brokers.
 
-.Supported resources in Zookeeper cluster
+.Additional resources
 
-When defined in a Zookeeper cluster, the `template` object can have the following fields:
+xref:type-KafkaClusterTemplate-reference[].
+
+== Supported template properties for a Zookeeper cluster
 
 `statefulset`:: Configures the Zookeeper `StatefulSet`.
 `pod`:: Configures the Zookeeper `Pods` created by the `StatefulSet`.
@@ -67,9 +67,11 @@ When defined in a Zookeeper cluster, the `template` object can have the followin
 `zookeeperContainer`:: Configures the container used to run the Zookeeper Node, including custom environment variables.
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
 
-.Supported resources in Entity Operator
+.Additional resources
 
-When defined in an Entity Operator , the template object can have the following fields:
+See also xref:type-ZookeeperClusterTemplate-reference[].
+
+== Supported template properties for Entity Operator
 
 `deployment`:: Configures the Deployment used by the Entity Operator.
 `pod`:: Configures the Entity Operator `Pod` created by the `Deployment`.
@@ -77,9 +79,22 @@ When defined in an Entity Operator , the template object can have the following 
 `userOperatorContainer`:: Configures the container used to run the User Operator, including custom environment variables.
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
 
-.Supported resources in Kafka Connect and Kafka Connect with Source2Image support
+.Additional resources
 
-When used with Kafka Connect and Kafka Connect with Source2Image support , the template object can have the following fields:
+See also xref:type-EntityOperatorTemplate-reference[].
+
+== Supported template properties for Kafka Exporter
+
+`deployment`:: Configures the Deployment used by the Kafka Exporter.
+`pod`:: Configures the Kafka Exporter `Pod` created by the `Deployment`.
+`services`:: Configures the Kafka Exporter services.
+`container`:: Configures the container used to run the Kafka Exporter, including custom environment variables.
+
+.Additional resources
+
+See also xref:type-KafkaExporterTemplate-reference[].
+
+== Supported template properties for Kafka Connect and Kafka Connect with Source2Image support
 
 `deployment`:: Configures the Kafka Connect `Deployment`.
 `pod`:: Configures the Kafka Connect `Pods` created by the `Deployment`.
@@ -87,11 +102,17 @@ When used with Kafka Connect and Kafka Connect with Source2Image support , the t
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Connect `Deployment`.
 `connectContainer`:: Configures the container used to run Kafka Connect, including custom environment variables.
 
-.Supported resources in Kafka Mirror Maker
+.Additional resources
 
-When used with Kafka Mirror Maker , the template object can have the following fields:
+See also xref:type-KafkaConnectTemplate-reference[].
+
+== Supported template properties for Kafka Mirror Maker
 
 `deployment`:: Configures the Kafka Mirror Maker `Deployment`.
 `pod`:: Configures the Kafka Mirror Maker `Pods` created by the `Deployment`.
 `podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Mirror Maker `Deployment`.
 `mirrorMakerContainer`:: Configures the container used to run Kafka Mirror Maker, including custom environment variables.
+
+.Additional resources
+
+See also xref:type-KafkaMirrorMakerTemplate-reference[].
