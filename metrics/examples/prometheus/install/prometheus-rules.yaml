@@ -75,3 +75,33 @@ spec:
       annotations:
         summary: 'Zookeeper is running out of free disk space'
         description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
+  - name: kafkaExporter
+    rules:
+    - alert: UnderReplicatedPartition
+      expr: kafka_topic_partition_under_replicated_partition > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Topic has under replicated partitions'
+        description: 'Topic  {{ $labels.topic }} has {{ $value }} under replicated partition {{ $labels.partition }}'
+  - name: kafkaExporter
+    rules:
+    - alert: TooLargeConsumerGroupLag
+      expr: kafka_consumergroup_lag > 1000
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Consumer group lag is too large'
+        description: 'Consumer group {{ $labels.consumergroup}} has too large lag ({{ $value }}) on topic {{ $labels.topic }}/partition {{ $labels.partition }}'
+   - name: kafkaExporter
+     rules:
+     - alert: NoMessageForTooLong
+       expr: changes(kafka_topic_partition_current_offset{topic!="__consumer_offsets"}[10m]) == 0
+       for: 10s
+       labels:
+         severity: warning
+        annotations:
+          summary: 'No message for 10 minutes'
+        description: 'There is no messages in topic {{ $labels.topic}}/partition {{ $labels.partition }} for 10 minutes'
