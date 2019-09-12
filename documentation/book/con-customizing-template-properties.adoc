@@ -71,7 +71,7 @@ xref:type-KafkaClusterTemplate-reference[].
 
 .Additional resources
 
-See also xref:type-ZookeeperClusterTemplate-reference[].
+xref:type-ZookeeperClusterTemplate-reference[].
 
 == Supported template properties for Entity Operator
 
@@ -83,7 +83,7 @@ See also xref:type-ZookeeperClusterTemplate-reference[].
 
 .Additional resources
 
-See also xref:type-EntityOperatorTemplate-reference[].
+xref:type-EntityOperatorTemplate-reference[].
 
 == Supported template properties for Kafka Exporter
 
@@ -94,7 +94,7 @@ See also xref:type-EntityOperatorTemplate-reference[].
 
 .Additional resources
 
-See also xref:type-KafkaExporterTemplate-reference[].
+xref:type-KafkaExporterTemplate-reference[].
 
 == Supported template properties for Kafka Connect and Kafka Connect with Source2Image support
 
@@ -106,7 +106,7 @@ See also xref:type-KafkaExporterTemplate-reference[].
 
 .Additional resources
 
-See also xref:type-KafkaConnectTemplate-reference[].
+xref:type-KafkaConnectTemplate-reference[].
 
 == Supported template properties for Kafka Mirror Maker
 
@@ -117,4 +117,4 @@ See also xref:type-KafkaConnectTemplate-reference[].
 
 .Additional resources
 
-See also xref:type-KafkaMirrorMakerTemplate-reference[].
+xref:type-KafkaMirrorMakerTemplate-reference[].

@@ -84,3 +84,7 @@ kubectl apply -f _kafka.yaml_
 .What to do next
 
 After configuring and deploying the Kafka Exporter, you can xref:proc-kafka-exporter-enabling-str[enable Grafana to present the Kafka Exporter dashboards].
+
+.Additional resources
+
+xref:type-KafkaExporterTemplate-reference[].
