@@ -32,36 +32,36 @@ metadata:
   name: my-cluster
 spec:
   # ...
-kafkaExporter:
-  image: my-org/my-image:latest <1>
-  groupRegex: ".*" <2>
-  topicRegex: ".*" <3>
-  resources: <4>
-    requests:
-      cpu: 200m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 128Mi
-  logging: debug <5>
-  enableSaramaLogging: true <6>
-  template: <7>
-    pod:
+  kafkaExporter:
+    image: my-org/my-image:latest <1>
+    groupRegex: ".*" <2>
+    topicRegex: ".*" <3>
+    resources: <4>
+      requests:
+        cpu: 200m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+    logging: debug <5>
+    enableSaramaLogging: true <6>
+    template: <7>
+      pod:
         metadata:
-            labels:
-                label1: value1
+          labels:
+            label1: value1
         imagePullSecrets:
-             - name: my-docker-credentials
+          - name: my-docker-credentials
         securityContext:
-             runAsUser: 1000001
-             fsGroup: 0
+          runAsUser: 1000001
+          fsGroup: 0
         terminationGracePeriodSeconds: 120
-  readinessProbe: <8>
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
-  livenessProbe: <9>
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
+    readinessProbe: <8>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe: <9>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
 # ...
 ----
 <1> ADVANCED OPTION: Container image configuration, which is xref:assembly-configuring-container-images-deployment-configuration-kafka[recommended only in special situations].

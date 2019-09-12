@@ -43,16 +43,16 @@ The following example shows these customized fields on a `template` property:
 ----
 # ...
 template:
-    pod:
-        metadata:
-            labels:
-                label1: value1
-        imagePullSecrets:
-             - name: my-docker-credentials
-        securityContext:
-             runAsUser: 1000001
-             fsGroup: 0
-        terminationGracePeriodSeconds: 120
+  pod:
+    metadata:
+      labels:
+        label1: value1
+    imagePullSecrets:
+      - name: my-docker-credentials
+    securityContext:
+      runAsUser: 1000001
+      fsGroup: 0
+    terminationGracePeriodSeconds: 120
 # ...
 ----
 
