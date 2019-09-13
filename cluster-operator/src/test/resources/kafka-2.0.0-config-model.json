@@ -1,0 +1,808 @@
+{
+  "version" : "2.0.0",
+  "configs" : {
+    "zookeeper.connect" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "advertised.host.name" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "advertised.listeners" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "advertised.port" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "auto.create.topics.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "auto.leader.rebalance.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "background.threads" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "broker.id" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "compression.type" : {
+      "type" : "string",
+      "scope" : "cluster-wide"
+    },
+    "delete.topic.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "host.name" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "leader.imbalance.check.interval.seconds" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "leader.imbalance.per.broker.percentage" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "listeners" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "log.dir" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "log.dirs" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "log.flush.interval.messages" : {
+      "type" : "long",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "log.flush.interval.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.flush.offset.checkpoint.interval.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "log.flush.scheduler.interval.ms" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "log.flush.start.offset.checkpoint.interval.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "log.retention.bytes" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.retention.hours" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "log.retention.minutes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "log.retention.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.roll.hours" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "log.roll.jitter.hours" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "log.roll.jitter.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.roll.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.segment.bytes" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 14
+    },
+    "log.segment.delete.delay.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "message.max.bytes" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "min.insync.replicas" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "num.io.threads" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "num.network.threads" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "num.recovery.threads.per.data.dir" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 1
+    },
+    "num.replica.alter.log.dirs.threads" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "num.replica.fetchers" : {
+      "type" : "int",
+      "scope" : "cluster-wide"
+    },
+    "offset.metadata.max.bytes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "offsets.commit.required.acks" : {
+      "type" : "short",
+      "scope" : "read-only"
+    },
+    "offsets.commit.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.load.buffer.size" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.retention.check.interval.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.retention.minutes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.topic.compression.codec" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "offsets.topic.num.partitions" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.topic.replication.factor" : {
+      "type" : "short",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "offsets.topic.segment.bytes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "port" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "queued.max.requests" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "quota.consumer.default" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "quota.producer.default" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "replica.fetch.min.bytes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "replica.fetch.wait.max.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "replica.high.watermark.checkpoint.interval.ms" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "replica.lag.time.max.ms" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "replica.socket.receive.buffer.bytes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "replica.socket.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "request.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "socket.receive.buffer.bytes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "socket.request.max.bytes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "socket.send.buffer.bytes" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "transaction.max.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.state.log.load.buffer.size" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.state.log.min.isr" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.state.log.num.partitions" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.state.log.replication.factor" : {
+      "type" : "short",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.state.log.segment.bytes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transactional.id.expiration.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "unclean.leader.election.enable" : {
+      "type" : "boolean",
+      "scope" : "cluster-wide"
+    },
+    "zookeeper.connection.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "zookeeper.max.in.flight.requests" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "zookeeper.session.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "zookeeper.set.acl" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "broker.id.generation.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "broker.rack" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "connections.max.idle.ms" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "controlled.shutdown.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "controlled.shutdown.max.retries" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "controlled.shutdown.retry.backoff.ms" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "controller.socket.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "default.replication.factor" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "delegation.token.expiry.time.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "delegation.token.master.key" : {
+      "type" : "password",
+      "scope" : "read-only"
+    },
+    "delegation.token.max.lifetime.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "delete.records.purgatory.purge.interval.requests" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "fetch.purgatory.purge.interval.requests" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "group.initial.rebalance.delay.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "group.max.session.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "group.min.session.timeout.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "inter.broker.listener.name" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "inter.broker.protocol.version" : {
+      "type" : "string",
+      "scope" : "read-only",
+      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E"
+    },
+    "log.cleaner.backoff.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "log.cleaner.dedupe.buffer.size" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.delete.retention.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.enable" : {
+      "type" : "boolean",
+      "scope" : "read-only"
+    },
+    "log.cleaner.io.buffer.load.factor" : {
+      "type" : "double",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.io.buffer.size" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "log.cleaner.io.max.bytes.per.second" : {
+      "type" : "double",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.min.cleanable.ratio" : {
+      "type" : "double",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.min.compaction.lag.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.cleaner.threads" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "log.cleanup.policy" : {
+      "type" : "list",
+      "scope" : "cluster-wide",
+      "items" : [ "compact", "delete" ]
+    },
+    "log.index.interval.bytes" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "log.index.size.max.bytes" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 4
+    },
+    "log.message.format.version" : {
+      "type" : "string",
+      "scope" : "read-only",
+      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E"
+    },
+    "log.message.timestamp.difference.max.ms" : {
+      "type" : "long",
+      "scope" : "cluster-wide"
+    },
+    "log.message.timestamp.type" : {
+      "type" : "string",
+      "scope" : "cluster-wide",
+      "enum" : [ "CreateTime", "LogAppendTime" ]
+    },
+    "log.preallocate" : {
+      "type" : "boolean",
+      "scope" : "cluster-wide"
+    },
+    "log.retention.check.interval.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "max.connections.per.ip" : {
+      "type" : "int",
+      "scope" : "cluster-wide",
+      "minimum" : 0
+    },
+    "max.connections.per.ip.overrides" : {
+      "type" : "string",
+      "scope" : "cluster-wide"
+    },
+    "max.incremental.fetch.session.cache.slots" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "num.partitions" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "password.encoder.old.secret" : {
+      "type" : "password",
+      "scope" : "read-only"
+    },
+    "password.encoder.secret" : {
+      "type" : "password",
+      "scope" : "read-only"
+    },
+    "principal.builder.class" : {
+      "type" : "class",
+      "scope" : "per-broker"
+    },
+    "producer.purgatory.purge.interval.requests" : {
+      "type" : "int",
+      "scope" : "read-only"
+    },
+    "queued.max.request.bytes" : {
+      "type" : "long",
+      "scope" : "read-only"
+    },
+    "replica.fetch.backoff.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "replica.fetch.max.bytes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "replica.fetch.response.max.bytes" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "reserved.broker.max.id" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "sasl.client.callback.handler.class" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "sasl.enabled.mechanisms" : {
+      "type" : "list",
+      "scope" : "per-broker"
+    },
+    "sasl.jaas.config" : {
+      "type" : "password",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.kinit.cmd" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.min.time.before.relogin" : {
+      "type" : "long",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.principal.to.local.rules" : {
+      "type" : "list",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.service.name" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.ticket.renew.jitter" : {
+      "type" : "double",
+      "scope" : "per-broker"
+    },
+    "sasl.kerberos.ticket.renew.window.factor" : {
+      "type" : "double",
+      "scope" : "per-broker"
+    },
+    "sasl.login.callback.handler.class" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "sasl.login.class" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "sasl.login.refresh.buffer.seconds" : {
+      "type" : "short",
+      "scope" : "per-broker"
+    },
+    "sasl.login.refresh.min.period.seconds" : {
+      "type" : "short",
+      "scope" : "per-broker"
+    },
+    "sasl.login.refresh.window.factor" : {
+      "type" : "double",
+      "scope" : "per-broker"
+    },
+    "sasl.login.refresh.window.jitter" : {
+      "type" : "double",
+      "scope" : "per-broker"
+    },
+    "sasl.mechanism.inter.broker.protocol" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "sasl.server.callback.handler.class" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "security.inter.broker.protocol" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "ssl.cipher.suites" : {
+      "type" : "list",
+      "scope" : "per-broker"
+    },
+    "ssl.client.auth" : {
+      "type" : "string",
+      "scope" : "per-broker",
+      "enum" : [ "required", "requested", "none" ]
+    },
+    "ssl.enabled.protocols" : {
+      "type" : "list",
+      "scope" : "per-broker"
+    },
+    "ssl.key.password" : {
+      "type" : "password",
+      "scope" : "per-broker"
+    },
+    "ssl.keymanager.algorithm" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.keystore.location" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.keystore.password" : {
+      "type" : "password",
+      "scope" : "per-broker"
+    },
+    "ssl.keystore.type" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.protocol" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.provider" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.trustmanager.algorithm" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.truststore.location" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.truststore.password" : {
+      "type" : "password",
+      "scope" : "per-broker"
+    },
+    "ssl.truststore.type" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "alter.config.policy.class.name" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "alter.log.dirs.replication.quota.window.num" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "alter.log.dirs.replication.quota.window.size.seconds" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "authorizer.class.name" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "client.quota.callback.class" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "connection.failed.authentication.delay.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 0
+    },
+    "create.topic.policy.class.name" : {
+      "type" : "class",
+      "scope" : "read-only"
+    },
+    "delegation.token.expiry.check.interval.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "kafka.metrics.polling.interval.secs" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "kafka.metrics.reporters" : {
+      "type" : "list",
+      "scope" : "read-only"
+    },
+    "listener.security.protocol.map" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "log.message.downconversion.enable" : {
+      "type" : "boolean",
+      "scope" : "cluster-wide"
+    },
+    "metric.reporters" : {
+      "type" : "list",
+      "scope" : "cluster-wide"
+    },
+    "metrics.num.samples" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "metrics.recording.level" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "metrics.sample.window.ms" : {
+      "type" : "long",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "password.encoder.cipher.algorithm" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "password.encoder.iterations" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1024
+    },
+    "password.encoder.key.length" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 8
+    },
+    "password.encoder.keyfactory.algorithm" : {
+      "type" : "string",
+      "scope" : "read-only"
+    },
+    "quota.window.num" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "quota.window.size.seconds" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "replication.quota.window.num" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "replication.quota.window.size.seconds" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "ssl.endpoint.identification.algorithm" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "ssl.secure.random.implementation" : {
+      "type" : "string",
+      "scope" : "per-broker"
+    },
+    "transaction.abort.timed.out.transaction.cleanup.interval.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "transaction.remove.expired.transaction.cleanup.interval.ms" : {
+      "type" : "int",
+      "scope" : "read-only",
+      "minimum" : 1
+    },
+    "zookeeper.sync.time.ms" : {
+      "type" : "int",
+      "scope" : "read-only"
+    }
+  }
+}

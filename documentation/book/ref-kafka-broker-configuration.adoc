@@ -35,10 +35,6 @@ Specifically, you are prevented from modifying all configuration options with ke
 If the `config` property specifies a restricted option, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other supported options are passed to Kafka.
 
-IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
-If invalid configuration is provided, the Kafka cluster might not start or might become unstable.
-In such cases, you must fix the configuration in the `Kafka.spec.kafka.config` object and the Cluster Operator will roll out the new configuration to all Kafka brokers.
-
 .An example Kafka broker configuration
 [source,yaml,subs="attributes+"]
 ----

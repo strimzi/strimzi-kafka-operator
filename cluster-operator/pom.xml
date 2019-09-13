@@ -23,6 +23,10 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
+            <artifactId>config-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
         </dependency>
         <dependency>
