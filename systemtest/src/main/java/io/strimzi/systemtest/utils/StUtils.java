@@ -720,7 +720,7 @@ public class StUtils {
                 try {
                     InetAddress.getByName(kubeClient().getService("my-cluster-kafka-external-bootstrap").getStatus().getLoadBalancer().getIngress().get(0).getHostname());
                     return true;
-                } catch (Exception e) {
+                } catch (IOException e) {
                     return false;
                 }
             });
