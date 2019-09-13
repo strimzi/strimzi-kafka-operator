@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -219,6 +220,10 @@ class TopicDiff {
      * @return The difference between the source and target.
      */
     public static TopicDiff diff(Topic source, Topic target) {
+        Objects.requireNonNull(source);
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(source.getTopicName());
+        Objects.requireNonNull(target.getTopicName());
         if (!source.getTopicName().equals(target.getTopicName())) {
             throw new IllegalArgumentException();
         }
