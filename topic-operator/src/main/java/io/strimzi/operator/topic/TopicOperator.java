@@ -496,6 +496,10 @@ class TopicOperator {
                     .compose(ignored -> getFromKafka(k8sTopic.getTopicName()))
                     .compose(kafkaTopic2 -> {
                         LOGGER.debug("Post-create kafka {}", kafkaTopic2);
+                        if (kafkaTopic2 == null) {
+                            LOGGER.error("Post-create kafka unexpectedly null");
+                            return Future.succeededFuture();
+                        }
                         return update3Way(reconciliation, logContext, involvedObject, k8sTopic, kafkaTopic2, k8sTopic);
                     });
                     //.compose(createdKafkaTopic -> update3Way(logContext, involvedObject, k8sTopic, createdKafkaTopic, k8sTopic));
