@@ -138,8 +138,6 @@ spec:
                               - secretName
                             introspectionEndpointUri:
                               type: string
-                            issuerUri:
-                              type: string
                             jwksEndpointUri:
                               type: string
                             jwksExpirySeconds:
@@ -155,6 +153,8 @@ spec:
                               - scram-sha-512
                               - oauth
                             userNameClaim:
+                              type: string
+                            validIssuerUri:
                               type: string
                           required:
                           - type
@@ -228,8 +228,6 @@ spec:
                               - secretName
                             introspectionEndpointUri:
                               type: string
-                            issuerUri:
-                              type: string
                             jwksEndpointUri:
                               type: string
                             jwksExpirySeconds:
@@ -245,6 +243,8 @@ spec:
                               - scram-sha-512
                               - oauth
                             userNameClaim:
+                              type: string
+                            validIssuerUri:
                               type: string
                           required:
                           - type
@@ -318,8 +318,6 @@ spec:
                               - secretName
                             introspectionEndpointUri:
                               type: string
-                            issuerUri:
-                              type: string
                             jwksEndpointUri:
                               type: string
                             jwksExpirySeconds:
@@ -335,6 +333,8 @@ spec:
                               - scram-sha-512
                               - oauth
                             userNameClaim:
+                              type: string
+                            validIssuerUri:
                               type: string
                           required:
                           - type

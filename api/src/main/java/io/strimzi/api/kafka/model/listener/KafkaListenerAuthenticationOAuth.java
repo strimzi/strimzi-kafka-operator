@@ -29,7 +29,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     private String clientId;
     private GenericSecretSource clientSecret;
-    private String issuerUri;
+    private String validIssuerUri;
     private String jwksEndpointUri;
     private int jwksRefreshSeconds;
     private int jwksExpirySeconds;
@@ -42,7 +42,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         return TYPE_OAUTH;
     }
 
-    @Description("OAuth Client ID which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.")
+    @Description("OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClientId() {
         return clientId;
@@ -52,7 +52,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.clientId = clientId;
     }
 
-    @Description("OAuth Client secret which the Kafka broker can use to authenticate against the OAuth server and use the introspect endpoint URI.")
+    @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public GenericSecretSource getClientSecret() {
         return clientSecret;
@@ -64,12 +64,12 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("URI of the token issuer used for authentication.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getIssuerUri() {
-        return issuerUri;
+    public String getValidIssuerUri() {
+        return validIssuerUri;
     }
 
-    public void setIssuerUri(String issuerUri) {
-        this.issuerUri = issuerUri;
+    public void setValidIssuerUri(String validIssuerUri) {
+        this.validIssuerUri = validIssuerUri;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")

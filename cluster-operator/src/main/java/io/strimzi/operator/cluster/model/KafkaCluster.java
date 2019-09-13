@@ -1424,11 +1424,18 @@ public class KafkaCluster extends AbstractModel {
         return varList;
     }
 
+    /**
+     * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but as a secret
+     * reference to keep it secure.
+     *
+     * @param oauth     OAuth type autentication object
+     * @return  JAAS configuration string ith the public variables
+     */
     protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-        if (oauth.getIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getIssuerUri()));
+        if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
         if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
         if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=%d", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
         if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=%d", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -59,7 +60,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private List<Toleration> tolerations;
     private String bootstrapServers;
     private KafkaConnectTls tls;
-    private KafkaConnectAuthentication authentication;
+    private KafkaClientAuthentication authentication;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
 
@@ -225,11 +226,11 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     @Description("Authentication configuration for Kafka Connect")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaConnectAuthentication getAuthentication() {
+    public KafkaClientAuthentication getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(KafkaConnectAuthentication authentication) {
+    public void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
     }
 

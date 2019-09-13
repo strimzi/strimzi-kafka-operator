@@ -585,7 +585,7 @@ public abstract class AbstractModel {
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected VolumeMount createVolumeMount(String name, String path) {
+    protected static VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
                 .withMountPath(path)
@@ -728,7 +728,7 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    protected static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;

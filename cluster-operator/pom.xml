@@ -93,6 +93,10 @@
             <artifactId>strimzi-kafka-oauth-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.strimzi.oauth</groupId>
+            <artifactId>strimzi-kafka-oauth-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>

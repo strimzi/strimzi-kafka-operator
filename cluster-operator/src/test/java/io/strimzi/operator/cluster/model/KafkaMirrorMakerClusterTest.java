@@ -21,13 +21,13 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -274,7 +274,7 @@ public class KafkaMirrorMakerClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret-c").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaMirrorMakerAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("user-secret-c")
                                 .withCertificate("user.crt")
@@ -287,7 +287,7 @@ public class KafkaMirrorMakerClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret-p").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaMirrorMakerAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("user-secret-p")
                                 .withCertificate("user.crt")
@@ -332,7 +332,7 @@ public class KafkaMirrorMakerClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret-c").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaMirrorMakerAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("my-secret-c")
                                 .withCertificate("user.crt")
@@ -345,7 +345,7 @@ public class KafkaMirrorMakerClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret-p").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaMirrorMakerAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("my-secret-p")
                                 .withCertificate("user.crt")
@@ -368,22 +368,22 @@ public class KafkaMirrorMakerClusterTest {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                 .editOrNewProducer()
-                    .withNewKafkaMirrorMakerAuthenticationScramSha512()
+                    .withNewKafkaClientAuthenticationScramSha512()
                         .withUsername("producer")
                         .withNewPasswordSecret()
                             .withSecretName("producer-secret")
                             .withPassword("password")
                         .endPasswordSecret()
-                    .endKafkaMirrorMakerAuthenticationScramSha512()
+                    .endKafkaClientAuthenticationScramSha512()
                 .endProducer()
                 .editOrNewConsumer()
-                    .withNewKafkaMirrorMakerAuthenticationScramSha512()
+                    .withNewKafkaClientAuthenticationScramSha512()
                         .withUsername("consumer")
                         .withNewPasswordSecret()
                             .withSecretName("consumer-secret")
                             .withPassword("password")
                         .endPasswordSecret()
-                    .endKafkaMirrorMakerAuthenticationScramSha512()
+                    .endKafkaClientAuthenticationScramSha512()
                 .endConsumer()
                 .endSpec()
                 .build();
@@ -423,22 +423,22 @@ public class KafkaMirrorMakerClusterTest {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                     .editOrNewProducer()
-                        .withNewKafkaMirrorMakerAuthenticationPlain()
+                        .withNewKafkaClientAuthenticationPlain()
                             .withUsername("producer")
                             .withNewPasswordSecret()
                                 .withSecretName("producer-secret")
                                 .withPassword("password")
                             .endPasswordSecret()
-                        .endKafkaMirrorMakerAuthenticationPlain()
+                        .endKafkaClientAuthenticationPlain()
                     .endProducer()
                     .editOrNewConsumer()
-                        .withNewKafkaMirrorMakerAuthenticationPlain()
+                        .withNewKafkaClientAuthenticationPlain()
                             .withUsername("consumer")
                             .withNewPasswordSecret()
                                 .withSecretName("consumer-secret")
                                 .withPassword("password")
                             .endPasswordSecret()
-                        .endKafkaMirrorMakerAuthenticationPlain()
+                        .endKafkaClientAuthenticationPlain()
                     .endConsumer()
                 .endSpec()
                 .build();

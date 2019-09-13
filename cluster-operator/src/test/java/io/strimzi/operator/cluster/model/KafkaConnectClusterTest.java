@@ -27,10 +27,10 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
@@ -273,7 +273,7 @@ public class KafkaConnectClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaConnectAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("user-secret")
                                 .withCertificate("user.crt")
@@ -308,7 +308,7 @@ public class KafkaConnectClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaConnectAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("my-secret")
                                 .withCertificate("user.crt")
@@ -329,13 +329,13 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithScramSha512Auth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                    .withNewKafkaConnectAuthenticationScramSha512()
+                    .withNewKafkaClientAuthenticationScramSha512()
                         .withUsername("user1")
                         .withNewPasswordSecret()
                             .withSecretName("user1-secret")
                             .withPassword("password")
                         .endPasswordSecret()
-                    .endKafkaConnectAuthenticationScramSha512()
+                    .endKafkaClientAuthenticationScramSha512()
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
@@ -360,13 +360,13 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithPlainAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .withNewKafkaConnectAuthenticationPlain()
+                .withNewKafkaClientAuthenticationPlain()
                     .withUsername("user1")
                     .withNewPasswordSecret()
                         .withSecretName("user1-secret")
                         .withPassword("password")
                     .endPasswordSecret()
-                .endKafkaConnectAuthenticationPlain()
+                .endKafkaClientAuthenticationPlain()
             .endSpec()
             .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);

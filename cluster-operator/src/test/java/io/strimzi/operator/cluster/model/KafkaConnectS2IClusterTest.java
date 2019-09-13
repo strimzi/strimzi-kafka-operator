@@ -31,11 +31,11 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
-import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512Builder;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
@@ -359,7 +359,7 @@ public class KafkaConnectS2IClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaConnectAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("user-secret")
                                 .withCertificate("user.crt")
@@ -394,7 +394,7 @@ public class KafkaConnectS2IClusterTest {
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .endTls()
                 .withAuthentication(
-                        new KafkaConnectAuthenticationTlsBuilder()
+                        new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
                                 .withSecretName("my-secret")
                                 .withCertificate("user.crt")
@@ -416,7 +416,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
-                        new KafkaConnectAuthenticationScramSha512Builder()
+                        new KafkaClientAuthenticationScramSha512Builder()
                                 .withUsername("user1")
                                 .withNewPasswordSecret()
                                 .withSecretName("user1-secret")

@@ -28,12 +28,12 @@ fi
 
 # Generate and print the consumer config file
 echo "Kafka Mirror Maker consumer configuration:"
-./kafka_mirror_maker_consumer_config_generator.sh | tee /tmp/strimzi-consumer.properties
+./kafka_mirror_maker_consumer_config_generator.sh | tee /tmp/strimzi-consumer.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g'
 echo ""
 
 # Generate and print the producer config file
 echo "Kafka Mirror Maker producer configuration:"
-./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties
+./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g'
 echo ""
 
 # Disable Kafka's GC logging (which logs to a file)...

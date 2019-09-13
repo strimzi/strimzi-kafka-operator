@@ -72,6 +72,16 @@ spec:
                 authentication:
                   type: object
                   properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
                     certificateAndKey:
                       type: object
                       properties:
@@ -85,6 +95,18 @@ spec:
                       - certificate
                       - key
                       - secretName
+                    clientId:
+                      type: string
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
                     passwordSecret:
                       type: object
                       properties:
@@ -95,12 +117,25 @@ spec:
                       required:
                       - password
                       - secretName
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
+                    tokenEndpointUri:
+                      type: string
                     type:
                       type: string
                       enum:
                       - tls
                       - scram-sha-512
                       - plain
+                      - oauth
                     username:
                       type: string
                   required:
@@ -135,6 +170,16 @@ spec:
                 authentication:
                   type: object
                   properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
                     certificateAndKey:
                       type: object
                       properties:
@@ -148,6 +193,18 @@ spec:
                       - certificate
                       - key
                       - secretName
+                    clientId:
+                      type: string
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
                     passwordSecret:
                       type: object
                       properties:
@@ -158,12 +215,25 @@ spec:
                       required:
                       - password
                       - secretName
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - key
+                      - secretName
+                    tokenEndpointUri:
+                      type: string
                     type:
                       type: string
                       enum:
                       - tls
                       - scram-sha-512
                       - plain
+                      - oauth
                     username:
                       type: string
                   required:

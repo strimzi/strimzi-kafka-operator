@@ -414,6 +414,11 @@
                 <artifactId>strimzi-kafka-oauth-server</artifactId>
                 <version>${strimzi-oauth-callback.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.strimzi.oauth</groupId>
+                <artifactId>strimzi-kafka-oauth-client</artifactId>
+                <version>${strimzi-oauth-callback.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
