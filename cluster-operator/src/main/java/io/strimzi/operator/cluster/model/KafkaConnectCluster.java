@@ -89,6 +89,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET = "KAFKA_CONNECT_OAUTH_CLIENT_SECRET";
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_ACCESS_TOKEN = "KAFKA_CONNECT_OAUTH_ACCESS_TOKEN";
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_REFRESH_TOKEN = "KAFKA_CONNECT_OAUTH_REFRESH_TOKEN";
+    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected String bootstrapServers;
@@ -177,7 +178,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
-        ClientAuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
         kafkaConnect.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -282,7 +283,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -350,7 +351,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT);
 
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
@@ -453,7 +454,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
+        AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
 
         if (tracing != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));

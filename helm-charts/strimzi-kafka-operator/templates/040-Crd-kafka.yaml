@@ -136,6 +136,8 @@ spec:
                               required:
                               - key
                               - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
                             introspectionEndpointUri:
                               type: string
                             jwksEndpointUri:
@@ -146,6 +148,18 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:
@@ -226,6 +240,8 @@ spec:
                               required:
                               - key
                               - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
                             introspectionEndpointUri:
                               type: string
                             jwksEndpointUri:
@@ -236,6 +252,18 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:
@@ -316,6 +344,8 @@ spec:
                               required:
                               - key
                               - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
                             introspectionEndpointUri:
                               type: string
                             jwksEndpointUri:
@@ -326,6 +356,18 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:

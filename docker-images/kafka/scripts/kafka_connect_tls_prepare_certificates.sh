@@ -27,9 +27,22 @@ do
 done
 echo "Preparing truststore is complete"
 
-
 if [ -n "$KAFKA_CONNECT_TLS_AUTH_CERT" ] && [ -n "$KAFKA_CONNECT_TLS_AUTH_KEY" ]; then
     echo "Preparing keystore"
     create_keystore /tmp/kafka/cluster.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_CERT} /opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_KEY} ${KAFKA_CONNECT_TLS_AUTH_CERT}
     echo "Preparing keystore is complete"
+fi
+
+if [ -d /opt/kafka/oauth-certs ]; then
+  echo "Preparing truststore for OAuth"
+  # Add each certificate to the trust store
+  STORE=/tmp/kafka/oauth.truststore.p12
+  declare -i INDEX=0
+  for CRT in /opt/kafka/oauth-certs/**/*; do
+    ALIAS="oauth-${INDEX}"
+    echo "Adding $CRT to truststore $STORE with alias $ALIAS"
+    create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+    INDEX+=1
+  done
+  echo "Preparing truststore for OAuth"
 fi

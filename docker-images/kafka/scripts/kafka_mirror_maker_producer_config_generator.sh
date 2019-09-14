@@ -53,8 +53,12 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
             OAUTH_CLIENT_SECRET="oauth.client.secret=\"$KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER\""
         fi
 
+        if [ -f "/tmp/kafka/producer-oauth.keystore.p12" ]; then
+            OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/producer-oauth.keystore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+        fi
+
         SASL_MECHANISM="OAUTHBEARER"
-        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN};"
+        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_TRUSTSTORE};"
         OAUTH_CALLBACK_CLASS="io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
     fi
 

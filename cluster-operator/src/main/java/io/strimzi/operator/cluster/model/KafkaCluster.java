@@ -166,6 +166,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String CLUSTER_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs";
     protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
+    protected static final String OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/kafka-brokers/";
     protected static final String TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
@@ -1177,6 +1178,35 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
+        if (listeners != null) {
+            if (listeners.getPlain() != null) {
+                if (listeners.getPlain().getAuth() != null) {
+                    if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift);
+                    }
+                }
+            }
+
+            if (listeners.getTls() != null) {
+                if (listeners.getTls().getAuth() != null) {
+                    if (listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift);
+                    }
+                }
+            }
+
+            if (listeners.getExternal() != null) {
+                if (listeners.getExternal().getAuth() != null) {
+                    if (listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift);
+                    }
+                }
+            }
+        }
+
         return volumeList;
     }
 
@@ -1198,6 +1228,35 @@ public class KafkaCluster extends AbstractModel {
 
         if (rack != null || isExposedWithNodePort()) {
             volumeMountList.add(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+        }
+
+        if (listeners != null) {
+            if (listeners.getPlain() != null) {
+                if (listeners.getPlain().getAuth() != null) {
+                    if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/client", true);
+                    }
+                }
+            }
+
+            if (listeners.getTls() != null) {
+                if (listeners.getTls().getAuth() != null) {
+                    if (listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/clienttls", true);
+                    }
+                }
+            }
+
+            if (listeners.getExternal() != null) {
+                if (listeners.getExternal().getAuth() != null) {
+                    if (listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                        KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth();
+                        AuthenticationUtils.configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/external", true);
+                    }
+                }
+            }
         }
 
         return volumeMountList;
@@ -1441,6 +1500,7 @@ public class KafkaCluster extends AbstractModel {
         if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=%d", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
+        if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
 
         return String.join(" ", options);
     }

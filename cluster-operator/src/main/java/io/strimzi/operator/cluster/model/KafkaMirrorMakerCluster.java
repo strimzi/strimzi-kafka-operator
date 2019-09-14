@@ -46,6 +46,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
     protected static final String TLS_CERTS_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-password/";
+    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-oauth-certs/";
+    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-oauth-certs/";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 3;
@@ -148,9 +150,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
 
-            ClientAuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
+            AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
-            ClientAuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
+            AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
             kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
             kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
@@ -261,7 +263,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationVolumes(client.getAuthentication(), volumeList, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(client.getAuthentication(), volumeList, isOpenShift);
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -279,7 +281,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER);
 
         /** consumer auth*/
         if (consumer.getTls() != null && consumer.getTls().getTrustedCertificates() != null && consumer.getTls().getTrustedCertificates().size() > 0) {
@@ -292,7 +294,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER);
 
         return volumeMountList;
     }
@@ -436,7 +438,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationEnvVars(consumer.getAuthentication(), varList, name -> ENV_VAR_PREFIX + name + "_CONSUMER");
+        AuthenticationUtils.configureClientAuthenticationEnvVars(consumer.getAuthentication(), varList, name -> ENV_VAR_PREFIX + name + "_CONSUMER");
     }
 
     /**
@@ -462,7 +464,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
         }
 
-        ClientAuthenticationUtils.configureClientAuthenticationEnvVars(producer.getAuthentication(), varList, name -> ENV_VAR_PREFIX + name + "_PRODUCER");
+        AuthenticationUtils.configureClientAuthenticationEnvVars(producer.getAuthentication(), varList, name -> ENV_VAR_PREFIX + name + "_PRODUCER");
     }
 
     /**

@@ -672,6 +672,8 @@ spec:
                   required:
                   - key
                   - secretName
+                disableTlsHostnameVerification:
+                  type: boolean
                 passwordSecret:
                   type: object
                   properties:
@@ -692,6 +694,18 @@ spec:
                   required:
                   - key
                   - secretName
+                tlsTrustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
                 tokenEndpointUri:
                   type: string
                 type:

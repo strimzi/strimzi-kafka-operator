@@ -5,12 +5,15 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * Configures a listener to use OAuth authentication.
@@ -35,6 +38,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private int jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
+    private List<CertSecretSource> tlsTrustedCertificates;
+    private boolean disableTlsHostnameVerification = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -127,5 +132,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserNameClaim(String userNameClaim) {
         this.userNameClaim = userNameClaim;
+    }
+
+    @Description("Trusted certificates for TLS connection to the OAuth server.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<CertSecretSource> getTlsTrustedCertificates() {
+        return tlsTrustedCertificates;
+    }
+
+    public void setTlsTrustedCertificates(List<CertSecretSource> tlsTrustedCertificates) {
+        this.tlsTrustedCertificates = tlsTrustedCertificates;
+    }
+
+    @Description("Enable or disable TLS hostname verification. " +
+            "Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isDisableTlsHostnameVerification() {
+        return disableTlsHostnameVerification;
+    }
+
+    public void setDisableTlsHostnameVerification(boolean disableTlsHostnameVerification) {
+        this.disableTlsHostnameVerification = disableTlsHostnameVerification;
     }
 }

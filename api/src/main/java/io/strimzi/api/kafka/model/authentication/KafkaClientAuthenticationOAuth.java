@@ -5,10 +5,13 @@
 package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * Configures the Kafka client authentication in client based components
@@ -30,6 +33,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private GenericSecretSource clientSecret;
     private GenericSecretSource accessToken;
     private GenericSecretSource refreshToken;
+    private List<CertSecretSource> tlsTrustedCertificates;
+    private boolean disableTlsHostnameVerification = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -85,5 +90,26 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setRefreshToken(GenericSecretSource refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    @Description("Trusted certificates for TLS connection to the OAuth server.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<CertSecretSource> getTlsTrustedCertificates() {
+        return tlsTrustedCertificates;
+    }
+
+    public void setTlsTrustedCertificates(List<CertSecretSource> tlsTrustedCertificates) {
+        this.tlsTrustedCertificates = tlsTrustedCertificates;
+    }
+
+    @Description("Enable or disable TLS hostname verification. " +
+            "Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isDisableTlsHostnameVerification() {
+        return disableTlsHostnameVerification;
+    }
+
+    public void setDisableTlsHostnameVerification(boolean disableTlsHostnameVerification) {
+        this.disableTlsHostnameVerification = disableTlsHostnameVerification;
     }
 }

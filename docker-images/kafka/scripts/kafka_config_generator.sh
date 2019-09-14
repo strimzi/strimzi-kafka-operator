@@ -37,14 +37,16 @@ EOF
 
     if [ ! -z "$STRIMZI_CLIENT_OAUTH_CLIENT_SECRET" ]; then
       CLIENT_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_CLIENT_OAUTH_CLIENT_SECRET\""
-    else
-      CLIENT_OAUTH_SECRET=""
+    fi
+
+    if [ -f "/tmp/kafka/oauth-client.truststore.p12" ]; then
+      CLIENT_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-client.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
     fi
 
     CLIENT_LISTENER=$(cat <<EOF
 # CLIENT listener authentication
 listener.name.client.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
-listener.name.client.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENT_OAUTH_OPTIONS} ${CLIENT_OAUTH_SECRET};
+listener.name.client.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENT_OAUTH_OPTIONS} ${CLIENT_OAUTH_SECRET} ${CLIENT_OAUTH_TRUSTSTORE};
 listener.name.client.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
@@ -92,11 +94,15 @@ EOF
       CLIENTTLS_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET\""
     fi
 
+    if [ -f "/tmp/kafka/oauth-clienttls.truststore.p12" ]; then
+      CLIENTTLS_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-clienttls.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+    fi
+
     CLIENTTLS_LISTENER=$(cat <<EOF
 $CLIENTTLS_LISTENER
 # CLIENTTLS listener authentication
 listener.name.clienttls.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
-listener.name.clienttls.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENTTLS_OAUTH_OPTIONS} ${CLIENTTLS_OAUTH_SECRET};
+listener.name.clienttls.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENTTLS_OAUTH_OPTIONS} ${CLIENTTLS_OAUTH_SECRET} ${CLIENTTLS_OAUTH_TRUSTSTORE};
 listener.name.clienttls.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
@@ -177,15 +183,17 @@ EOF
 
     if [ ! -z "$STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET" ]; then
       EXTERNAL_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET\""
-    else
-      EXTERNAL_OAUTH_SECRET=""
+    fi
+
+    if [ -f "/tmp/kafka/oauth-external.truststore.p12" ]; then
+      EXTERNAL_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-external.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
     fi
 
     EXTERNAL_LISTENER=$(cat <<EOF
 $EXTERNAL_LISTENER
 # EXTERNAL listener authentication
 listener.name.external.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
-listener.name.external.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="dummyPrincipalName" ${STRIMZI_EXTERNAL_OAUTH_OPTIONS} ${EXTERNAL_OAUTH_SECRET};
+listener.name.external.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="dummyPrincipalName" ${STRIMZI_EXTERNAL_OAUTH_OPTIONS} ${EXTERNAL_OAUTH_SECRET} ${EXTERNAL_OAUTH_TRUSTSTORE};
 listener.name.external.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
