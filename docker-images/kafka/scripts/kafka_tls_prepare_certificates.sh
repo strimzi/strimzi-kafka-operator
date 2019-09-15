@@ -83,7 +83,7 @@ if [ -d /opt/kafka/oauth-certs/client ]; then
     create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
     INDEX+=1
   done
-  echo "Preparing truststore for OAuth on plain listener"
+  echo "Preparing truststore for OAuth on plain listener is complete"
 fi
 
 if [ -d /opt/kafka/oauth-certs/clienttls ]; then
@@ -97,7 +97,7 @@ if [ -d /opt/kafka/oauth-certs/clienttls ]; then
     create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
     INDEX+=1
   done
-  echo "Preparing truststore for OAuth on cienttls listener"
+  echo "Preparing truststore for OAuth on cienttls listener is complete"
 fi
 
 if [ -d /opt/kafka/oauth-certs/external ]; then
@@ -111,5 +111,5 @@ if [ -d /opt/kafka/oauth-certs/external ]; then
     create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
     INDEX+=1
   done
-  echo "Preparing truststore for OAuth on external listener"
+  echo "Preparing truststore for OAuth on external listener is complete"
 fi

@@ -56,5 +56,5 @@ if [ -d $oauth_certs_paths ]; then
     create_truststore "$oauth_keystore_path" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
     INDEX+=1
   done
-  echo "Preparing truststore for OAuth"
+  echo "Preparing truststore for OAuth is complete"
 fi
