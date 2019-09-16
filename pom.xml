@@ -115,6 +115,13 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>oss.sonatype.org-snapshot</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
@@ -410,13 +417,13 @@
                 <version>${kafka.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.strimzi.oauth</groupId>
-                <artifactId>strimzi-kafka-oauth-server</artifactId>
+                <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-server</artifactId>
                 <version>${strimzi-oauth-callback.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.strimzi.oauth</groupId>
-                <artifactId>strimzi-kafka-oauth-client</artifactId>
+                <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-client</artifactId>
                 <version>${strimzi-oauth-callback.version}</version>
             </dependency>
         </dependencies>
