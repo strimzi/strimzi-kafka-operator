@@ -278,7 +278,7 @@ Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenti
 [options="header"]
 |====
 |Property           |Description
-|key         1.2+<.<|The key under which is the secret value stored in the Kubernetes Secret.
+|key         1.2+<.<|The key under which the secret value is stored in the Kubernetes Secret.
 |string
 |secretName  1.2+<.<|The name of the Kubernetes Secret containing the secret value.
 |string
@@ -1471,9 +1471,9 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |Property                               |Description
 |accessToken                     1.2+<.<|Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|clientId                        1.2+<.<|OAuth Client ID which the Kafka Bridge can use to authenticate against the OAuth server and use the token endpoint URI.
+|clientId                        1.2+<.<|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |string
-|clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka Bridge can use to authenticate against the OAuth server and use the token endpoint URI.
+|clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
