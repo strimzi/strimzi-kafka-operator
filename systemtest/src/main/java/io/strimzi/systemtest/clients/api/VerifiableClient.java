@@ -8,10 +8,12 @@ import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 
@@ -106,8 +108,8 @@ public class VerifiableClient {
                 }
             }
             return ret == 0;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (InterruptedException | ExecutionException | IOException e) {
+            e.printStackTrace();
             return false;
         }
     }

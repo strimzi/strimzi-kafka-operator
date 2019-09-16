@@ -176,9 +176,9 @@ public class MessagingBaseST extends AbstractST {
         Matcher current = pattern.matcher(Environment.ST_KAFKA_VERSION);
         Matcher minimal = pattern.matcher(minimalVersion);
         if (current.find() && minimal.find()) {
-            return Integer.valueOf(current.group("major")) >= Integer.valueOf(minimal.group("major"))
-                    && Integer.valueOf(current.group("minor")) >= Integer.valueOf(minimal.group("minor"))
-                    && Integer.valueOf(current.group("micro")) >= Integer.valueOf(minimal.group("micro"));
+            return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
+                    && Integer.parseInt(current.group("minor")) >= Integer.parseInt(minimal.group("minor"))
+                    && Integer.parseInt(current.group("micro")) >= Integer.parseInt(minimal.group("micro"));
         }
         return false;
     }
