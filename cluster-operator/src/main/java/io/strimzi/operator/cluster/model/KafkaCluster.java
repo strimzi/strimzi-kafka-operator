@@ -1431,7 +1431,7 @@ public class KafkaCluster extends AbstractModel {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuth().getType()));
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getTls().getAuth().getType())) {
-                        // set OAUHT configuration
+                        // set OAUTH configuration
                         KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth();
                         varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
 
@@ -1451,7 +1451,7 @@ public class KafkaCluster extends AbstractModel {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getExternal().getAuth().getType())) {
-                        // set OAUHT configuration
+                        // set OAUTH configuration
                         KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth();
                         varList.add(buildEnvVar(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
 

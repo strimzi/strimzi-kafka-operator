@@ -42,7 +42,7 @@ public class GenericSecretSource implements UnknownPropertyPreserving, Serializa
         this.secretName = secretName;
     }
 
-    @Description("The key under which is the secret value stored in the Kubernetes Secret.")
+    @Description("The key under which the secret value is stored in the Kubernetes Secret.")
     @JsonProperty(required = true)
     public String getKey() {
         return key;

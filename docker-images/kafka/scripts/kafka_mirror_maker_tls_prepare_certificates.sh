@@ -26,8 +26,8 @@ tls_auth_key=$3
 truststore_path=$4
 keystore_path=$5
 certs_key_path=$6
-oauth_certs_path=$6
-oauth_keystore_path=$6
+oauth_certs_path=$7
+oauth_keystore_path=$8
 
 if [ -n "$trusted_certs" ]; then
     echo "Preparing truststore"

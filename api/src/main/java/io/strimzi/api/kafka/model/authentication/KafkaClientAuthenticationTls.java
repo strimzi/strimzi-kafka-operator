@@ -11,7 +11,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Configures the Kafka client authentication in client based components
+ * Configures the Kafka client authentication using TLS client authentication in client based components
  */
 @Buildable(
         editableEnabled = false,

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
-    protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
+    protected static final Logger log = LogManager.getLogger(AuthenticationUtils.class.getName());
 
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
@@ -47,14 +47,14 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512)    {
                 KafkaClientAuthenticationScramSha512 auth = (KafkaClientAuthenticationScramSha512) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
+                    log.warn("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
+                    throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("PLAIN authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("PLAIN authentication selected, but no username and password configured.");
+                    log.warn("PLAIN authentication selected, but username or password configuration is missing.");
+                    throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth auth = (KafkaClientAuthenticationOAuth) authentication;
@@ -171,7 +171,7 @@ public class AuthenticationUtils {
                 }
 
                 if (oauth.getAccessToken() != null)    {
-                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKE"), oauth.getAccessToken().getSecretName(), oauth.getClientSecret().getKey()));
+                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getClientSecret().getKey()));
                 }
 
                 if (oauth.getRefreshToken() != null)    {
@@ -187,7 +187,7 @@ public class AuthenticationUtils {
      *
      * @param volumeList    List of volumes where the new volumes will be added
      * @param trustedCertificates   List of certificates which should be mounted
-     * @param isOpenShift   Flag whether we are on OPenShift or not
+     * @param isOpenShift   Flag whether we are on OpenShift or not
      */
     public static void configureOauthCertificateVolumes(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
         if (trustedCertificates != null && trustedCertificates.size() > 0) {

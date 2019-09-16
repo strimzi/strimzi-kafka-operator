@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * Configures the Kafka client authentication in client based components
+ * Configures the Kafka client authentication using SASl OAUTHBEARER mechanism in client based components
  */
 @Buildable(
         editableEnabled = false,
@@ -42,7 +42,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         return TYPE_OAUTH;
     }
 
-    @Description("OAuth Client ID which the Kafka Bridge can use to authenticate against the OAuth server and use the token endpoint URI.")
+    @Description("OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClientId() {
         return clientId;
@@ -62,7 +62,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.tokenEndpointUri = tokenEndpointUri;
     }
 
-    @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka Bridge can use to authenticate against the OAuth server and use the token endpoint URI.")
+    @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public GenericSecretSource getClientSecret() {
         return clientSecret;
