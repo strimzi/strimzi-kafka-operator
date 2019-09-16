@@ -20,9 +20,10 @@ For example:
 +
 [source,yaml,subs="attributes"]
 ----
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 spec:
+  # ...
   template:
     spec:
       serviceAccountName: strimzi-cluster-operator

@@ -24,9 +24,10 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 +
 [source,yaml,subs="attributes"]
 ----
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 spec:
+  # ...
   template:
     spec:
       # ...
