@@ -111,4 +111,8 @@ public interface Constants {
      * Tag for tests, which are using NetworkPolicies.
      */
     String NETWORKPOLICIES_SUPPORTED = "networkpolicies";
+    /**
+     * Tag for Prometheus tests
+     */
+    String PROMETHEUS = "prometheus";
 }
