@@ -83,8 +83,8 @@ spec:
       labels:
         severity: warning
       annotations:
-        summary: 'Topic has under replicated partitions'
-        description: 'Topic  {{ $labels.topic }} has {{ $value }} under replicated partition {{ $labels.partition }}'
+        summary: 'Topic has under-replicated partitions'
+        description: 'Topic  {{ $labels.topic }} has {{ $value }} under-replicated partition {{ $labels.partition }}'
   - name: kafkaExporter
     rules:
     - alert: TooLargeConsumerGroupLag
@@ -93,8 +93,8 @@ spec:
       labels:
         severity: warning
       annotations:
-        summary: 'Consumer group lag is too large'
-        description: 'Consumer group {{ $labels.consumergroup}} has too large lag ({{ $value }}) on topic {{ $labels.topic }}/partition {{ $labels.partition }}'
+        summary: 'Consumer group lag is too big'
+        description: 'Consumer group {{ $labels.consumergroup}} lag is too big ({{ $value }}) on topic {{ $labels.topic }}/partition {{ $labels.partition }}'
    - name: kafkaExporter
      rules:
      - alert: NoMessageForTooLong
