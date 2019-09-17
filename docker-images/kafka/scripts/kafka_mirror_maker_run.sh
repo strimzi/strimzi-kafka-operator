@@ -1,39 +1,42 @@
 #!/usr/bin/env bash
 set +x
 
-if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ] || [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" ]; then
-    # Generate temporary keystore password
-    export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+# Generate temporary keystore password
+export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
 
-    mkdir -p /tmp/kafka
+# Create dir where keystores and truststores will be stored
+mkdir -p /tmp/kafka
 
-    # Import certificates into keystore and truststore
-    # $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
-    ./kafka_mirror_maker_tls_prepare_certificates.sh \
-        "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" \
-        "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" \
-        "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" \
-        "/tmp/kafka/consumer.truststore.p12" \
-        "/tmp/kafka/consumer.keystore.p12" \
-        "/opt/kafka/consumer-certs"
+# Import certificates into keystore and truststore
+# $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
+./kafka_mirror_maker_tls_prepare_certificates.sh \
+    "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" \
+    "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" \
+    "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" \
+    "/tmp/kafka/consumer.truststore.p12" \
+    "/tmp/kafka/consumer.keystore.p12" \
+    "/opt/kafka/consumer-certs" \
+    "/opt/kafka/consumer-oauth-certs" \
+    "/tmp/kafka/consumer-oauth.keystore.p12"
 
-    ./kafka_mirror_maker_tls_prepare_certificates.sh \
-        "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" \
-        "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER" \
-        "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER" \
-        "/tmp/kafka/producer.truststore.p12" \
-        "/tmp/kafka/producer.keystore.p12" \
-        "/opt/kafka/producer-certs"
-fi
+./kafka_mirror_maker_tls_prepare_certificates.sh \
+    "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" \
+    "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER" \
+    "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER" \
+    "/tmp/kafka/producer.truststore.p12" \
+    "/tmp/kafka/producer.keystore.p12" \
+    "/opt/kafka/producer-certs" \
+    "/opt/kafka/producer-oauth-certs" \
+    "/tmp/kafka/producer-oauth.keystore.p12"
 
 # Generate and print the consumer config file
 echo "Kafka Mirror Maker consumer configuration:"
-./kafka_mirror_maker_consumer_config_generator.sh | tee /tmp/strimzi-consumer.properties
+./kafka_mirror_maker_consumer_config_generator.sh | tee /tmp/strimzi-consumer.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g'
 echo ""
 
 # Generate and print the producer config file
 echo "Kafka Mirror Maker producer configuration:"
-./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties
+./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g'
 echo ""
 
 # Disable Kafka's GC logging (which logs to a file)...

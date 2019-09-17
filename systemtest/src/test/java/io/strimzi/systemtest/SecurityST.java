@@ -546,8 +546,8 @@ class SecurityST extends MessagingBaseST {
                     .editKafka()
                         .withNewListeners()
                             .withNewPlain()
-                                .withNewKafkaListenerAuthenticationScramSha512()
-                                .endKafkaListenerAuthenticationScramSha512()
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
                                 .withNetworkPolicyPeers(
                                     new NetworkPolicyPeerBuilder()
                                         .withNewPodSelector()

@@ -15,6 +15,10 @@
         </license>
     </licenses>
 
+    <properties>
+        <strimzi-oauth-callback.version>0.1.0</strimzi-oauth-callback.version>
+    </properties>
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/io.prometheus.jmx/jmx_prometheus_javaagent -->
         <dependency>
@@ -48,6 +52,16 @@
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-kafka-client</artifactId>
             <version>0.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-server</artifactId>
+            <version>${strimzi-oauth-callback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-client</artifactId>
+            <version>${strimzi-oauth-callback.version}</version>
         </dependency>
     </dependencies>
 </project>

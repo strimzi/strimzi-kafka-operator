@@ -11,23 +11,43 @@ function get_address_for_broker {
 }
 
 #####
-# PLAIN listener
+# REPLICATION listener
 #####
 LISTENERS="REPLICATION://0.0.0.0:9091"
 ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091"
 LISTENER_SECURITY_PROTOCOL_MAP="REPLICATION:SSL"
-SASL_ENABLED_MECHANISMS=""
 
+#####
+# PLAIN listener
+#####
 if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
   LISTENERS="${LISTENERS},CLIENT://0.0.0.0:9092"
   ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENT://$(hostname -f):9092"
 
   if [ "$KAFKA_CLIENT_AUTHENTICATION" = "scram-sha-512" ]; then
-    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:SASL_PLAINTEXT"
     CLIENT_LISTENER=$(cat <<EOF
 # CLIENT listener authentication
 listener.name.client.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+listener.name.client.sasl.enabled.mechanisms=SCRAM-SHA-512
+EOF
+)
+  elif [ "$KAFKA_CLIENT_AUTHENTICATION" = "oauth" ]; then
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:SASL_PLAINTEXT"
+
+    if [ ! -z "$STRIMZI_CLIENT_OAUTH_CLIENT_SECRET" ]; then
+      CLIENT_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_CLIENT_OAUTH_CLIENT_SECRET\""
+    fi
+
+    if [ -f "/tmp/kafka/oauth-client.truststore.p12" ]; then
+      CLIENT_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-client.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+    fi
+
+    CLIENT_LISTENER=$(cat <<EOF
+# CLIENT listener authentication
+listener.name.client.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+listener.name.client.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENT_OAUTH_OPTIONS} ${CLIENT_OAUTH_SECRET} ${CLIENT_OAUTH_TRUSTSTORE};
+listener.name.client.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
   else
@@ -59,12 +79,31 @@ EOF
 )
 
   if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "scram-sha-512" ]; then
-    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SASL_SSL"
     CLIENTTLS_LISTENER=$(cat <<EOF
 $CLIENTTLS_LISTENER
 # CLIENTTLS listener authentication
 listener.name.clienttls.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+listener.name.clienttls.sasl.enabled.mechanisms=SCRAM-SHA-512
+EOF
+)
+  elif [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "oauth" ]; then
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SASL_SSL"
+
+    if [ ! -z "$STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET" ]; then
+      CLIENTTLS_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET\""
+    fi
+
+    if [ -f "/tmp/kafka/oauth-clienttls.truststore.p12" ]; then
+      CLIENTTLS_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-clienttls.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+    fi
+
+    CLIENTTLS_LISTENER=$(cat <<EOF
+$CLIENTTLS_LISTENER
+# CLIENTTLS listener authentication
+listener.name.clienttls.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+listener.name.clienttls.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" ${STRIMZI_CLIENTTLS_OAUTH_OPTIONS} ${CLIENTTLS_OAUTH_SECRET} ${CLIENTTLS_OAUTH_TRUSTSTORE};
+listener.name.clienttls.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
   else
@@ -122,8 +161,6 @@ EOF
   fi
 
   if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "scram-sha-512" ]; then
-    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
-
     if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then
       LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_SSL"
     else
@@ -134,6 +171,30 @@ EOF
 $EXTERNAL_LISTENER
 # EXTERNAL listener authentication
 listener.name.external.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+listener.name.external.sasl.enabled.mechanisms=SCRAM-SHA-512
+EOF
+)
+  elif [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "oauth" ]; then
+    if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_SSL"
+    else
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_PLAINTEXT"
+    fi
+
+    if [ ! -z "$STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET" ]; then
+      EXTERNAL_OAUTH_SECRET="oauth.client.secret=\"$STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET\""
+    fi
+
+    if [ -f "/tmp/kafka/oauth-external.truststore.p12" ]; then
+      EXTERNAL_OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth-external.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+    fi
+
+    EXTERNAL_LISTENER=$(cat <<EOF
+$EXTERNAL_LISTENER
+# EXTERNAL listener authentication
+listener.name.external.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+listener.name.external.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="dummyPrincipalName" ${STRIMZI_EXTERNAL_OAUTH_OPTIONS} ${EXTERNAL_OAUTH_SECRET} ${EXTERNAL_OAUTH_TRUSTSTORE};
+listener.name.external.sasl.enabled.mechanisms=OAUTHBEARER
 EOF
 )
   else
@@ -173,6 +234,7 @@ listeners=${LISTENERS}
 advertised.listeners=${ADVERTISED_LISTENERS}
 listener.security.protocol.map=${LISTENER_SECURITY_PROTOCOL_MAP}
 inter.broker.listener.name=REPLICATION
+sasl.enabled.mechanisms=
 
 # Zookeeper
 zookeeper.connect=localhost:2181
@@ -191,8 +253,6 @@ ssl.secure.random.implementation=SHA1PRNG
 listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
-
-sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
 
 ${CLIENT_LISTENER}
 ${CLIENTTLS_LISTENER}

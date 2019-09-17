@@ -2,29 +2,28 @@
 set +x
 
 if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
-export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
+    export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
 fi
 
-if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
-    # Generate temporary keystore password
-    export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+# Generate temporary keystore password
+export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
 
-    mkdir -p /tmp/kafka
+# Create dir where keystores and truststores will be stored
+mkdir -p /tmp/kafka
 
-    # Import certificates into keystore and truststore
-    ./kafka_connect_tls_prepare_certificates.sh
-fi
+# Import certificates into keystore and truststore
+./kafka_connect_tls_prepare_certificates.sh
 
 # Generate and print the config file
 echo "Starting Kafka Connect with configuration:"
-./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties
+./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g'
 echo ""
 
 # Disable Kafka's GC logging (which logs to a file)...
 export GC_LOG_ENABLED="false"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
+    export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a
@@ -33,12 +32,12 @@ export LOG_DIR="$KAFKA_HOME"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+    export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-  export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar)=jaeger"
+    export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent.jar)=jaeger"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

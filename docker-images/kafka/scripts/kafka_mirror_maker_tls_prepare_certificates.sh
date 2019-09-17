@@ -26,6 +26,8 @@ tls_auth_key=$3
 truststore_path=$4
 keystore_path=$5
 certs_key_path=$6
+oauth_certs_path=$7
+oauth_keystore_path=$8
 
 if [ -n "$trusted_certs" ]; then
     echo "Preparing truststore"
@@ -41,4 +43,18 @@ if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
     echo "Preparing keystore"
     create_keystore $keystore_path $CERTS_STORE_PASSWORD $certs_key_path/$tls_auth_cert $certs_key_path/$tls_auth_key $tls_auth_cert
     echo "Preparing keystore is complete"
+fi
+
+if [ -d $oauth_certs_paths ]; then
+  echo "Preparing truststore for OAuth"
+  # Add each certificate to the trust store
+  STORE=/tmp/kafka/oauth.truststore.p12
+  declare -i INDEX=0
+  for CRT in $oauth_certs_path/**/*; do
+    ALIAS="oauth-${INDEX}"
+    echo "Adding $CRT to truststore $oauth_keystore_path with alias $ALIAS"
+    create_truststore "$oauth_keystore_path" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+    INDEX+=1
+  done
+  echo "Preparing truststore for OAuth is complete"
 fi

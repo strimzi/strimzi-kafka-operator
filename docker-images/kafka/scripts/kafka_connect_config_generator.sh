@@ -39,33 +39,55 @@ EOF
     fi
 fi
 
-if [ -n "$KAFKA_CONNECT_SASL_USERNAME" ] && [ -n "$KAFKA_CONNECT_SASL_PASSWORD_FILE" ]; then
+if [ -n "$KAFKA_CONNECT_SASL_MECHANISM" ]; then
     if [ "$SECURITY_PROTOCOL" = "SSL" ]; then
         SECURITY_PROTOCOL="SASL_SSL"
     else
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
     fi
     
-    PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
-
     if [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xplain" ]; then
+        PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
         SASL_MECHANISM="PLAIN"
-        JAAS_SECURITY_MODULE="plain.PlainLoginModule"
+        JAAS_CONFIG="org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${KAFKA_CONNECT_SASL_USERNAME}\" password=\"${PASSWORD}\";"
     elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xscram-sha-512" ]; then
+        PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
         SASL_MECHANISM="SCRAM-SHA-512"
-        JAAS_SECURITY_MODULE="scram.ScramLoginModule"
-    fi
+        JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_CONNECT_SASL_USERNAME}\" password=\"${PASSWORD}\";"
+    elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xoauth" ]; then
+        if [ ! -z "$KAFKA_CONNECT_OAUTH_ACCESS_TOKEN" ]; then
+            OAUTH_ACCESS_TOKEN="oauth.access.token=\"$KAFKA_CONNECT_OAUTH_ACCESS_TOKEN\""
+        fi
 
+        if [ ! -z "$KAFKA_CONNECT_OAUTH_REFRESH_TOKEN" ]; then
+            OAUTH_REFRESH_TOKEN="oauth.refresh.token=\"$KAFKA_CONNECT_OAUTH_REFRESH_TOKEN\""
+        fi
+
+        if [ ! -z "$KAFKA_CONNECT_OAUTH_CLIENT_SECRET" ]; then
+            OAUTH_CLIENT_SECRET="oauth.client.secret=\"$KAFKA_CONNECT_OAUTH_CLIENT_SECRET\""
+        fi
+
+        if [ -f "/tmp/kafka/oauth.truststore.p12" ]; then
+            OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
+        fi
+
+        SASL_MECHANISM="OAUTHBEARER"
+        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_CONNECT_OAUTH_CONFIG} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_TRUSTSTORE};"
+        OAUTH_CALLBACK_CLASS="io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
+    fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
 sasl.mechanism=${SASL_MECHANISM}
-sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+sasl.jaas.config=${JAAS_CONFIG}
+sasl.login.callback.handler.class=${OAUTH_CALLBACK_CLASS}
 
 producer.sasl.mechanism=${SASL_MECHANISM}
-producer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+producer.sasl.jaas.config=${JAAS_CONFIG}
+producer.sasl.login.callback.handler.class=${OAUTH_CALLBACK_CLASS}
 
 consumer.sasl.mechanism=${SASL_MECHANISM}
-consumer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+consumer.sasl.jaas.config=${JAAS_CONFIG}
+consumer.sasl.login.callback.handler.class=${OAUTH_CALLBACK_CLASS}
 
 EOF
 )

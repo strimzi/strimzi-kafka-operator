@@ -2,15 +2,16 @@
  * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Configures the Kafka Bridge authentication
+ * Configures the Kafka client authentication using SASL PLAIN in client based components
  */
 @Buildable(
         editableEnabled = false,
@@ -19,18 +20,18 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaBridgeAuthenticationScramSha512 extends KafkaBridgeAuthentication {
+public class KafkaClientAuthenticationPlain extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_SCRAM_SHA_512 = "scram-sha-512";
+    public static final String TYPE_PLAIN = "plain";
 
     private String username;
     private PasswordSecretSource passwordSecret;
 
-    @Description("Must be `" + TYPE_SCRAM_SHA_512 + "`")
+    @Description("Must be `" + TYPE_PLAIN + "`")
     @Override
     public String getType() {
-        return TYPE_SCRAM_SHA_512;
+        return TYPE_PLAIN;
     }
 
     @Description("Reference to the `Secret` which holds the password.")

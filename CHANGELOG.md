@@ -9,6 +9,7 @@
 * Allow setting labels and annotations for Persistent Volume Claims
 * Add support for Jaeger tracing in Kafka Mirror Maker and Kafka Connect
 * Add support for deploying Kafka Exporter
+* Add initial support for OAuth authentication
 
 ## 0.13.0
 

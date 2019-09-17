@@ -136,10 +136,10 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Deploy http bridge
         testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .editSpec()
-            .withNewKafkaBridgeAuthenticationScramSha512()
+            .withNewKafkaClientAuthenticationScramSha512()
                 .withNewUsername(userName)
                 .withPasswordSecret(passwordSecret)
-            .endKafkaBridgeAuthenticationScramSha512()
+            .endKafkaClientAuthenticationScramSha512()
                 .withNewTls()
                 .withTrustedCertificates(certSecret)
                 .endTls()

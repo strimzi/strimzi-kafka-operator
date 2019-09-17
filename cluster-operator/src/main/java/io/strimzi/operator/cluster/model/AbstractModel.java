@@ -585,7 +585,7 @@ public abstract class AbstractModel {
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected VolumeMount createVolumeMount(String name, String path) {
+    protected static VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
                 .withMountPath(path)
@@ -728,7 +728,7 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    protected static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -920,6 +920,26 @@ public abstract class AbstractModel {
      */
     protected static EnvVar buildEnvVar(String name, String value) {
         return new EnvVarBuilder().withName(name).withValue(value).build();
+    }
+
+    /**
+     * Build an environment variable instance which will use a value from a secret
+     *
+     * @param name The name of the environment variable
+     * @param secret The name of the secret which should be used
+     * @param key The key under which the value is stored in the secret
+     * @return The environment variable instance
+     */
+    protected static EnvVar buildEnvVarFromSecret(String name, String secret, String key) {
+        return new EnvVarBuilder()
+                .withName(name)
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(secret)
+                        .withKey(key)
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build();
     }
 
     /**

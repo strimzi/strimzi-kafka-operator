@@ -262,13 +262,13 @@ class ConnectST extends AbstractST {
                         .endTrustedCertificate()
                     .endTls()
                     .withBootstrapServers(KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9093")
-                    .withNewKafkaConnectAuthenticationTls()
+                    .withNewKafkaClientAuthenticationTls()
                         .withNewCertificateAndKey()
                             .withSecretName("user-example")
                             .withCertificate("user.crt")
                             .withKey("user.key")
                         .endCertificateAndKey()
-                    .endKafkaConnectAuthenticationTls()
+                    .endKafkaClientAuthenticationTls()
                 .endSpec()
                 .done();
 

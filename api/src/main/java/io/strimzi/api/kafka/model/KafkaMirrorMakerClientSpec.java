@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -30,16 +31,16 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
     private String bootstrapServers;
     protected Map<String, Object> config = new HashMap<>(0);
     private KafkaMirrorMakerTls tls;
-    private KafkaMirrorMakerAuthentication authentication;
+    private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication configuration for connecting to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public KafkaMirrorMakerAuthentication getAuthentication() {
+    public KafkaClientAuthentication getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(KafkaMirrorMakerAuthentication authentication) {
+    public void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
     }
 
