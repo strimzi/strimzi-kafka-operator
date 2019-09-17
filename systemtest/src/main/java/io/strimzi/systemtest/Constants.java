@@ -24,7 +24,7 @@ public interface Constants {
     long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
     long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(7).toMillis();
 
-    long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(30).toMillis();
+    long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(60).toMillis();
     long TIMEOUT_AVAILABILITY_TEST = Duration.ofMinutes(1).toMillis();
     long TIMEOUT_SEND_MESSAGES = Duration.ofMinutes(1).toMillis();
     long TIMEOUT_RECV_MESSAGES = Duration.ofMinutes(1).toMillis();
@@ -40,6 +40,9 @@ public interface Constants {
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long CONNECT_STATUS_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
+
+    long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
+    long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
     long CO_OPERATION_TIMEOUT_DEFAULT = TIMEOUT_FOR_RESOURCE_READINESS;
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
