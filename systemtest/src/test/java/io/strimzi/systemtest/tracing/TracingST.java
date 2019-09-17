@@ -35,19 +35,18 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.greaterThan;
 
-@Tag(REGRESSION)
+@Tag(TRACING)
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
-    private static final String JO_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-operator/";
     private static final String JI_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-instance/";
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
@@ -86,13 +85,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -108,7 +107,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
 
@@ -135,13 +134,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -196,7 +195,7 @@ public class TracingST extends AbstractST {
 
         sendMessages(kafkaConnectPodName, CLUSTER_NAME, CLUSTER_NAME + "-connect", TEST_TOPIC_NAME, 10);
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
         verifyServiceIsPresent(JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -221,13 +220,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -250,7 +249,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
 
@@ -258,7 +257,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
 
         given()
                 .when()
@@ -303,13 +302,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -325,7 +324,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
 
@@ -333,7 +332,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_CONSUMER_SERVICE);
 
@@ -360,13 +359,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfSourceKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -390,7 +389,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_PRODUCER_SERVICE);
 
@@ -398,7 +397,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
 
         LOGGER.info("Verifying {} service", JAEGER_CONSUMER_SERVICE);
 
@@ -406,7 +405,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
 
         verifyServiceIsPresent(JAEGER_KAFKA_STREAMS_SERVICE);
 
@@ -438,13 +437,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -456,13 +455,13 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100")
+                            .withNewSize("10")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endZookeeper()
@@ -522,7 +521,7 @@ public class TracingST extends AbstractST {
 
         testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_MIRROR_MAKER_SERVICE);
 
         verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
@@ -651,7 +650,7 @@ public class TracingST extends AbstractST {
 
         sendMessages(kafkaConnectPodName, kafkaClusterTargetName, CLUSTER_NAME + "-connect", TEST_TOPIC_NAME, 10);
 
-        HttpUtils.waitUntilServiceNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
 
         verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_SERVICE,
@@ -716,19 +715,24 @@ public class TracingST extends AbstractST {
         }
     }
 
-    private void installJaeger() {
+    private void deployJaeger() {
         LOGGER.info("=== Applying jaeger operator install files ===");
-        installFiles(JO_INSTALL_DIR);
+        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/crds/jaegertracing_v1_jaeger_crd.yaml", NAMESPACE));
+        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/service_account.yaml", NAMESPACE));
+        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role.yaml", NAMESPACE));
+        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role_binding.yaml", NAMESPACE));
+        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/operator.yaml", NAMESPACE));
 
-        LOGGER.info("=== Applying jaeger instance install files ===");
-        installFiles(JI_INSTALL_DIR);
+        installJaegerInstance();
     }
 
     /**
-     * Perform application of ServiceAccount, Roles and CRDs needed for proper jaeger operator deployment.
+     * Install of Jaeger instance
      */
-    void installFiles(String installDir) {
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(installDir).listFiles())
+    void installJaegerInstance() {
+        LOGGER.info("=== Applying jaeger operator install files ===");
+
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JI_INSTALL_DIR).listFiles())
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
 
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
@@ -739,17 +743,23 @@ public class TracingST extends AbstractST {
     }
 
     /**
-     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
+     * Delete Jaeger instance
      */
-    void deleteInstallFiles() {
+    void deleteJaegerInstance() {
         while (!jaegerConfigs.empty()) {
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).deleteContent(jaegerConfigs.pop());
         }
+        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/crds/jaegertracing_v1_jaeger_crd.yaml", NAMESPACE));
+        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/service_account.yaml", NAMESPACE));
+        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role.yaml", NAMESPACE));
+        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role_binding.yaml", NAMESPACE));
+        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/operator.yaml", NAMESPACE));
+
     }
 
     @AfterEach
     void tearDown() {
-        deleteInstallFiles();
+        deleteJaegerInstance();
     }
 
     @BeforeEach
@@ -757,7 +767,7 @@ public class TracingST extends AbstractST {
         createTestMethodResources();
 
         // deployment of the jaeger
-        installJaeger();
+        deployJaeger();
 
         TestUtils.waitFor("Waiting till route {} is ready", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
             () -> kubeClient(NAMESPACE).getClient().adapt(OpenShiftClient.class).routes().inNamespace(NAMESPACE).list().getItems().get(0).getSpec().getHost() != null);

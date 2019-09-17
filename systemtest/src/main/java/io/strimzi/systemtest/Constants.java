@@ -118,4 +118,8 @@ public interface Constants {
      * Tag for Prometheus tests
      */
     String PROMETHEUS = "prometheus";
+    /**
+     * Tag for Tracing tests
+     */
+    String TRACING = "tracing";
 }

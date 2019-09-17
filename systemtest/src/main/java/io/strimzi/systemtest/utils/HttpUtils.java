@@ -21,9 +21,9 @@ public class HttpUtils {
 
     private HttpUtils() { }
 
-    public static void waitUntilServiceNameIsReady(String baserURI, String serviceName) {
+    public static void waitUntilServiceWithNameIsReady(String baserURI, String serviceName) {
         LOGGER.info("Waiting till service name {} is present in json", serviceName);
-        TestUtils.waitFor("", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        TestUtils.waitFor("Waiting till service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
             () -> {
                 Response response = given()
                         .when()
@@ -37,15 +37,15 @@ public class HttpUtils {
         LOGGER.info("Service name {} is present", serviceName);
     }
 
-    public static void waitUntilServiceNameIsReady(String baserURI, String... serviceNames) {
+    public static void waitUntilServiceWithNameIsReady(String baserURI, String... serviceNames) {
         for (String serviceName : serviceNames) {
-            waitUntilServiceNameIsReady(baserURI, serviceName);
+            waitUntilServiceWithNameIsReady(baserURI, serviceName);
         }
     }
 
     public static void waitUntilServiceHasSomeTraces(String baseURI, String serviceName) {
         LOGGER.info("Waiting till service {} has some traces", serviceName);
-        TestUtils.waitFor("", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
+        TestUtils.waitFor("Waiting till service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, Constants.GLOBAL_TRACING_TIMEOUT,
             () -> {
                 Response response = given()
                             .when()

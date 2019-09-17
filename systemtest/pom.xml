@@ -101,18 +101,18 @@
         <dependency>
             <groupId>net.joshka</groupId>
             <artifactId>junit-json-params</artifactId>
-            <version>5.5.1-r0</version>
+            <version>${junit-json-params.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.json</groupId>
             <artifactId>javax.json-api</artifactId>
-            <version>1.1.4</version>
+            <version>${javax.json-api.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
-            <version>1.1.4</version>
+            <version>${javax.json.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -123,13 +123,13 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>4.1.1</version>
+            <version>${rest-assured.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>json-path</artifactId>
-            <version>4.1.1</version>
+            <version>${json-path.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -276,6 +276,20 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>networkpolicies</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>prometheus</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>prometheus</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>tracing</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>tracing</groups>
             </properties>
         </profile>
     </profiles>
