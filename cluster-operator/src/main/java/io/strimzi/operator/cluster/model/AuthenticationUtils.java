@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
+import io.strimzi.kafka.oauth.server.ServerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -128,7 +129,7 @@ public class AuthenticationUtils {
                 volumeMountList.add(AbstractModel.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), oauthVolumeMount, true);
+                configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), oauthVolumeMount);
             }
         }
     }
@@ -164,6 +165,7 @@ public class AuthenticationUtils {
                 List<String> options = new ArrayList<>(2);
                 if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
                 if (oauth.getTokenEndpointUri() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri()));
+                if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
                 varList.add(AbstractModel.buildEnvVar(envVarNamer.apply("OAUTH_CONFIG"), String.join(" ", options)));
 
                 if (oauth.getClientSecret() != null)    {
@@ -171,11 +173,11 @@ public class AuthenticationUtils {
                 }
 
                 if (oauth.getAccessToken() != null)    {
-                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getClientSecret().getKey()));
+                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
                 }
 
                 if (oauth.getRefreshToken() != null)    {
-                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_REFRESH_TOKEN"), oauth.getRefreshToken().getSecretName(), oauth.getClientSecret().getKey()));
+                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_REFRESH_TOKEN"), oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
                 }
             }
         }
@@ -201,7 +203,7 @@ public class AuthenticationUtils {
                     }
                     volumeList.add(vol);
                 } else {
-                    if (vol.getSecret().getItems().stream().anyMatch(v -> v.getKey().equals(certSecretSource.getCertificate()))) {
+                    if (!vol.getSecret().getItems().stream().anyMatch(v -> v.getKey().equals(certSecretSource.getCertificate()))) {
                         vol.getSecret().getItems().add(new KeyToPathBuilder().withKey(certSecretSource.getCertificate()).withPath(String.format("%s/%s", certSecretSource.getSecretName(), certSecretSource.getCertificate())).build());
                     }
                 }
@@ -216,13 +218,12 @@ public class AuthenticationUtils {
      * @param volumeMountList   List of volume mounts where the new volumes will be added
      * @param trustedCertificates   List of certificates which should be mounted
      * @param baseVolumeMount   The Base volume into which the certificates should be mounted
-     * @param includeMultipleTimes  Flag to indicate whether the same volume should be mounted multiple times
      */
-    public static void configureOauthCertificateVolumeMounts(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String baseVolumeMount, boolean includeMultipleTimes)   {
+    public static void configureOauthCertificateVolumeMounts(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 // skipping if a volume mount with same Secret name was already added
-                if (includeMultipleTimes || !volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
+                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()) && baseVolumeMount.equals(vm.getMountPath()))) {
                     volumeMountList.add(AbstractModel.createVolumeMount(certSecretSource.getSecretName(), baseVolumeMount));
                 }
             }
