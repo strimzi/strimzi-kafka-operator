@@ -96,7 +96,7 @@
         <debezium.version>0.9.5.Final</debezium.version>
         <jaeger.version>1.0.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
-        <strimzi-oauth-callback.version>1.0.0-SNAPSHOT</strimzi-oauth-callback.version>
+        <strimzi-oauth-callback.version>0.1.0</strimzi-oauth-callback.version>
 
         <jupiter.version>5.5.1</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>
@@ -114,13 +114,6 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
-    <repositories>
-        <repository>
-            <id>oss.sonatype.org-snapshot</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-    </repositories>
 
     <modules>
         <module>kafka-agent</module>

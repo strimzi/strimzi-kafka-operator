@@ -16,15 +16,8 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth-callback.version>1.0.0-SNAPSHOT</strimzi-oauth-callback.version>
+        <strimzi-oauth-callback.version>0.1.0</strimzi-oauth-callback.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>oss.sonatype.org-snapshot</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/io.prometheus.jmx/jmx_prometheus_javaagent -->
