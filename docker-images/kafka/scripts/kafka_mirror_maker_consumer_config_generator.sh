@@ -59,13 +59,13 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" ]; then
 
         SASL_MECHANISM="OAUTHBEARER"
         JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_MIRRORMAKER_OAUTH_CONFIG_CONSUMER} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_TRUSTSTORE};"
-        OAUTH_CALLBACK_CLASS="io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
+        OAUTH_CALLBACK_CLASS="sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
     fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
 sasl.mechanism=${SASL_MECHANISM}
 sasl.jaas.config=${JAAS_CONFIG}
-sasl.login.callback.handler.class=${OAUTH_CALLBACK_CLASS}
+${OAUTH_CALLBACK_CLASS}
 EOF
 )
 fi
