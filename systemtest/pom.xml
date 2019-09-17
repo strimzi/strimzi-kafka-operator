@@ -123,13 +123,13 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>4.1.0</version>
+            <version>4.1.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>json-path</artifactId>
-            <version>4.1.0</version>
+            <version>4.1.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
