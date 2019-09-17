@@ -716,7 +716,6 @@ public class TracingST extends AbstractST {
     }
 
     private void deployJaeger() {
-        LOGGER.info("=== Applying jaeger operator install files ===");
         cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/crds/jaegertracing_v1_jaeger_crd.yaml", NAMESPACE));
         cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/service_account.yaml", NAMESPACE));
         cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role.yaml", NAMESPACE));
@@ -730,7 +729,7 @@ public class TracingST extends AbstractST {
      * Install of Jaeger instance
      */
     void installJaegerInstance() {
-        LOGGER.info("=== Applying jaeger operator install files ===");
+        LOGGER.info("=== Applying jaeger instance install files ===");
 
         Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JI_INSTALL_DIR).listFiles())
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
