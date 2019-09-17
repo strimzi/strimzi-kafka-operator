@@ -27,7 +27,7 @@ pod/strimzi-cluster-operator-76bcf9bc76-8dnfm
 +
 [source,shell,subs=attributes+]
 ----
-kubectl port-forward quickstart-bridge-589d78784d-9jcnr 8080 8080
+kubectl port-forward pod/quickstart-bridge-589d78784d-9jcnr 8080:8080 &
 ----
 +
 NOTE: If port 8080 on your local machine is already in use, use an alternative HTTP port, such as `8008`.

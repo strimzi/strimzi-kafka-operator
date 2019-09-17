@@ -42,7 +42,7 @@ kubectl apply -f examples/topic/bridge-quickstart-topic.yaml
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST \
+curl -X POST -v \
   http://localhost:8080/topics/bridge-quickstart-topic \
   -H 'content-type: application/vnd.kafka.json.v2+json' \
   -d '{

@@ -13,12 +13,12 @@ Before you can perform any consumer operations in the Kafka cluster, you must fi
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
+curl -X POST -v http://localhost:8080/consumers/bridge-quickstart-consumer-group \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{
     "name": "bridge-quickstart-consumer",
-    "format": "json",
     "auto.offset.reset": "earliest",
+    "format": "json",
     "enable.auto.commit": "false",
     "fetch.min.bytes": "512",
     "consumer.request.timeout.ms": "30000"
