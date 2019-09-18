@@ -193,7 +193,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, CLUSTER_NAME, CLUSTER_NAME + "-connect", TEST_TOPIC_NAME, 10);
+        sendMessages(kafkaConnectPodName, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -616,7 +616,7 @@ public class TracingST extends AbstractST {
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()
@@ -648,7 +648,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, kafkaClusterTargetName, CLUSTER_NAME + "-connect", TEST_TOPIC_NAME, 10);
+        sendMessages(kafkaConnectPodName, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);

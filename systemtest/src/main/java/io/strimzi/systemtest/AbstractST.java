@@ -301,7 +301,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
+    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
