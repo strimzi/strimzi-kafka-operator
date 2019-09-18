@@ -26,7 +26,8 @@ clean:
 	mvn dependency:copy-dependencies $(MVN_ARGS) -f kafka-thirdparty-libs/$(THIRD_PARTY_LIBS)/pom.xml
 	touch .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp
 
-docker_build: .kafka-agent.tmp .tracing-agent.tmp .mirror-maker-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp
+docker_build: .kafka-agent.tmp .tracing-agent.tmp .mirror-maker-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp docker_build_default
+	# Pull dependencies first
 
 include ../../Makefile.docker
 
