@@ -68,7 +68,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,11 +75,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
 
 public abstract class AbstractModel {
 
@@ -105,7 +100,6 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
-    private static final Pattern LOGGER_PATTERN = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
 
     protected static final String DEFAULT_KAFKA_GC_LOG_ENABLED = String.valueOf(true);
     protected static final String DEFAULT_STRIMZI_GC_LOG_ENABED = String.valueOf(true);
@@ -150,8 +144,6 @@ public abstract class AbstractModel {
     private Affinity userAffinity;
     private List<Toleration> tolerations;
 
-    protected final Map<String, String> validLoggerFields;
-    private final String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
 
@@ -193,7 +185,6 @@ public abstract class AbstractModel {
         this.cluster = cluster;
         this.namespace = namespace;
         this.labels = labels.withCluster(cluster);
-        this.validLoggerFields = getDefaultLogConfig().asMap();
     }
 
     public Labels getLabels() {
@@ -341,57 +332,10 @@ public abstract class AbstractModel {
     /**
      * @param logging The logging to parse.
      * @param externalCm The external ConfigMap.
-     * @return The logging properties as a String in log4j properties file format.
+     * @return The logging properties as a String in log4j/2 properties file format.
      */
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
-            // validate all entries
-            ((InlineLogging) logging).getLoggers().forEach((key, tmpEntry) -> {
-                if (validLoggerFields.containsKey(key)) {
-                    // correct logger, test appender appearance for log4j.rootLogger
-                    String appender = tmpEntry.replaceAll(" ", "");
-                    if (key.equals("log4j.rootLogger") && !appender.contains(",CONSOLE")) {
-                        ((InlineLogging) logging).getLoggers().replace(key, tmpEntry + ", CONSOLE");
-                        log.warn("Appender for {} was not set. Using \"{}: {}, CONSOLE\"", key, key, tmpEntry);
-                    }
-                } else {
-                    // incorrect logger
-                    log.warn(key + " is not a valid logger");
-                    return;
-                }
-                if (key.contains("log4j.appender.CONSOLE")) {
-                    log.warn("You cannot set appender");
-                    return;
-                }
-                if ((asList(validLoggerValues).contains(tmpEntry.replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
-                    // correct value
-                } else {
-                    Matcher m = LOGGER_PATTERN.matcher(tmpEntry);
-
-                    String logger = "";
-                    String value = "";
-                    boolean regexMatch = false;
-                    while (m.find()) {
-                        logger = m.group(1);
-                        value = m.group(2);
-                        regexMatch = true;
-                    }
-                    if (regexMatch) {
-                        if (!validLoggerFields.containsKey(logger)) {
-                            log.warn(logger + " is not a valid logger");
-                            return;
-                        }
-                        if (!value.equals("CONSOLE")) {
-                            log.warn(value + " is not a valid value.");
-                            return;
-                        }
-                    } else {
-                        log.warn(tmpEntry + " is not a valid value. Use one of " + Arrays.toString(validLoggerValues));
-                        return;
-                    }
-                }
-            });
-            // update fields otherwise use default values
             OrderedProperties newSettings = getDefaultLogConfig();
             newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
@@ -404,9 +348,8 @@ public abstract class AbstractModel {
             }
 
         } else {
-            // field is not in the cluster CM
+            log.debug("logging is not set, using default loggers");
             return createPropertiesString(getDefaultLogConfig());
-
         }
     }
 
