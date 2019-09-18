@@ -87,10 +87,10 @@ xref:type-EntityOperatorTemplate-reference[].
 
 == Supported template properties for Kafka Exporter
 
-`deployment`:: Configures the Deployment used by the Kafka Exporter.
+`deployment`:: Configures the Deployment used by Kafka Exporter.
 `pod`:: Configures the Kafka Exporter `Pod` created by the `Deployment`.
 `services`:: Configures the Kafka Exporter services.
-`container`:: Configures the container used to run the Kafka Exporter, including custom environment variables.
+`container`:: Configures the container used to run Kafka Exporter, including custom environment variables.
 
 .Additional resources
 

@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-metrics-grafana.adoc
+// assembly-kafka-exporter.adoc
 [id='con-metrics-kafka-exporter-lag{context}']
 
 = Consumer lag
