@@ -16,11 +16,14 @@ The alert notification rules specific to Kafka Exporter are as follows:
 A planned restart of the Kafka broker may be required to restart the replication process.
 
 `TooLargeConsumerGroupLag`:: An alert to warn that the lag on a consumer group is too big for a specific topic partition.
-The lag might indicate that the number of partitions in the consumer group is insufficient or a crash or an unplanned shutdown has resulted in too much old data being consumed.
+The default configuration is 1000 records.
+A large lag might indicate that consumers are too slow and are falling behind the producers.
 
 `NoMessageForTooLong`:: An alert to warn that a topic has not received messages for a period of time.
 The default configuration for the time period is 10 minutes.
 The delay might be a result of a configuration issue preventing a producer from publishing messages to the topic.
+
+Adapt the default configuration of these rules according to your specific needs.
 
 .Additional resources
 * xref:assembly-metrics-setup-{context}[]
