@@ -48,6 +48,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -168,10 +169,11 @@ class SecurityST extends MessagingBaseST {
         }
     }
 
-    @Test
-    @OpenShiftOnly
-    @Tag(ACCEPTANCE)
-    void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
+    void autoRenewSomeCaCertsTriggeredByAnno(
+            final List<String> secretsToAnnotate,
+            boolean zkShouldRoll,
+            boolean kafkaShouldRoll,
+            boolean eoShouldRoll) throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
@@ -183,36 +185,39 @@ class SecurityST extends MessagingBaseST {
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
-        List<String> secrets = asList(clusterCaCertificateSecretName(CLUSTER_NAME),
-                clientsCaCertificateSecretName(CLUSTER_NAME));
-        for (String secretName : secrets) {
+        for (String secretName : secretsToAnnotate) {
             Secret secret = kubeClient().getSecret(secretName);
             String value = secret.getData().get("ca.crt");
             assertNotNull("ca.crt in " + secretName + " should not be null", value);
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
-                        .addToAnnotations(STRIMZI_IO_FORCE_RENEW, "true")
+                    .addToAnnotations(STRIMZI_IO_FORCE_RENEW, "true")
                     .endMetadata()
-                .build();
+                    .build();
             LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_RENEW);
             kubeClient().patchSecret(secretName, annotated);
         }
 
-        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-
-        LOGGER.info("Wait for zk to rolling restart ...");
-        StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        LOGGER.info("Wait for kafka to rolling restart ...");
-        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        LOGGER.info("Wait for EO to rolling restart ...");
-        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        if (zkShouldRoll) {
+            LOGGER.info("Wait for zk to rolling restart ...");
+            StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        }
+        if (kafkaShouldRoll) {
+            LOGGER.info("Wait for kafka to rolling restart ...");
+            StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        }
+        if (eoShouldRoll) {
+            LOGGER.info("Wait for EO to rolling restart ...");
+            eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        }
 
         LOGGER.info("Checking the certificates have been replaced");
-        for (String secretName : secrets) {
+        for (String secretName : secretsToAnnotate) {
             Secret secret = kubeClient().getSecret(secretName);
             assertNotNull(secret, "Secret " + secretName + " should exist");
             assertNotNull(secret.getData(), "CA cert in " + secretName + " should have non-null 'data'");
@@ -223,22 +228,79 @@ class SecurityST extends MessagingBaseST {
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
 
-        // Finally check a new client (signed by new client key) can consume
+        // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> {
-            return kubeClient().getSecret(bobUserName) != null;
-        },
+        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
+            () -> {
+                return kubeClient().getSecret(bobUserName) != null;
+            },
             () -> {
                 LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets());
             });
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
+
+        if (!zkShouldRoll) {
+            assertEquals(zkPods, StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)),
+                    "ZK pods should not roll, but did.");
+
+        }
+        if (!kafkaShouldRoll) {
+            assertEquals(kafkaPods, StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)),
+                    "Kafka pods should not roll, but did.");
+
+        }
+        if (!eoShouldRoll) {
+            assertEquals(eoPod, StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)),
+                    "EO pod should not roll, but did.");
+        }
     }
 
     @Test
     @OpenShiftOnly
-    void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
+    @Tag(ACCEPTANCE)
+    void testAutoRenewClusterCaCertsTriggeredByAnno() throws Exception {
+        autoRenewSomeCaCertsTriggeredByAnno(asList(
+                clusterCaCertificateSecretName(CLUSTER_NAME)),
+                /* ZK node need new certs */
+                true,
+                /* brokers need new certs */
+                true,
+                /* eo needs new cert */
+                true);
+    }
+
+    @Test
+    @OpenShiftOnly
+    @Tag(ACCEPTANCE)
+    void testAutoRenewClientsCaCertsTriggeredByAnno() throws Exception {
+        autoRenewSomeCaCertsTriggeredByAnno(asList(
+                clientsCaCertificateSecretName(CLUSTER_NAME)),
+                /* no communication between clients and zk, so no need to roll */
+                false,
+                /* brokers need to trust client certs with new cert */
+                true,
+                /* eo needs to generate new client certs */
+                true);
+    }
+
+    @Test
+    @OpenShiftOnly
+    @Tag(ACCEPTANCE)
+    void testAutoRenewAllCaCertsTriggeredByAnno() throws Exception {
+        autoRenewSomeCaCertsTriggeredByAnno(asList(
+                clusterCaCertificateSecretName(CLUSTER_NAME),
+                clientsCaCertificateSecretName(CLUSTER_NAME)),
+                true,
+                true,
+                true);
+    }
+
+    void autoReplaceSomeKeysTriggeredByAnno(final List<String> secrets,
+                                            boolean zkShouldRoll,
+                                            boolean kafkaShouldRoll,
+                                            boolean eoShouldRoll) throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
@@ -255,8 +317,6 @@ class SecurityST extends MessagingBaseST {
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
-        List<String> secrets = asList(clusterCaKeySecretName(CLUSTER_NAME),
-                clientsCaKeySecretName(CLUSTER_NAME));
         for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
             String value = secret.getData().get("ca.key");
@@ -271,19 +331,31 @@ class SecurityST extends MessagingBaseST {
             kubeClient().patchSecret(secretName, annotated);
         }
 
-        LOGGER.info("Wait for zk to rolling restart (1)...");
-        zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        LOGGER.info("Wait for kafka to rolling restart (1)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        LOGGER.info("Wait for EO to rolling restart (1)...");
-        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        if (zkShouldRoll) {
+            LOGGER.info("Wait for zk to rolling restart (1)...");
+            zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        }
+        if (kafkaShouldRoll) {
+            LOGGER.info("Wait for kafka to rolling restart (1)...");
+            kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        }
+        if (eoShouldRoll) {
+            LOGGER.info("Wait for EO to rolling restart (1)...");
+            eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        }
 
-        LOGGER.info("Wait for zk to rolling restart (2)...");
-        zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        LOGGER.info("Wait for kafka to rolling restart (2)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        LOGGER.info("Wait for EO to rolling restart (2)...");
-        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        if (zkShouldRoll) {
+            LOGGER.info("Wait for zk to rolling restart (2)...");
+            zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        }
+        if (kafkaShouldRoll) {
+            LOGGER.info("Wait for kafka to rolling restart (2)...");
+            kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        }
+        if (eoShouldRoll) {
+            LOGGER.info("Wait for EO to rolling restart (2)...");
+            eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        }
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
@@ -306,6 +378,49 @@ class SecurityST extends MessagingBaseST {
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
+
+        if (!zkShouldRoll) {
+            assertEquals(zkPods, StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)),
+                    "ZK pods should not roll, but did.");
+
+        }
+        if (!kafkaShouldRoll) {
+            assertEquals(kafkaPods, StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)),
+                    "Kafka pods should not roll, but did.");
+
+        }
+        if (!eoShouldRoll) {
+            assertEquals(eoPod, StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)),
+                    "EO pod should not roll, but did.");
+        }
+    }
+
+    @Test
+    @OpenShiftOnly
+    void testAutoReplaceClusterCaKeysTriggeredByAnno() throws Exception {
+        autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME)),
+                true,
+                true,
+                true);
+    }
+
+    @Test
+    @OpenShiftOnly
+    void testAutoReplaceClientsCaKeysTriggeredByAnno() throws Exception {
+        autoReplaceSomeKeysTriggeredByAnno(asList(clientsCaKeySecretName(CLUSTER_NAME)),
+                false,
+                true,
+                true);
+    }
+
+    @Test
+    @OpenShiftOnly
+    void testAutoReplaceAllCaKeysTriggeredByAnno() throws Exception {
+        autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME),
+                clientsCaKeySecretName(CLUSTER_NAME)),
+                true,
+                true,
+                true);
     }
 
     private void createClusterWithExternalRoute() {
@@ -361,6 +476,7 @@ class SecurityST extends MessagingBaseST {
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
+    @SuppressWarnings("unchecked")
     private void waitForClusterStability() {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];

@@ -100,6 +100,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -567,21 +568,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
             if (!reason.isEmpty()) {
                 String reasons = reason.stream().collect(Collectors.joining(", "));
-                return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(ss -> {
-                            return zkSetOperations.maybeRollingUpdate(ss, pod -> {
-                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
-                                return true;
-                            },
-                            oldCoSecret);
-                        })
+                Future<Void> zkRollFuture;
+                Predicate<Pod> rollPodAndLogReason = pod -> {
+                    log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
+                    return true;
+                };
+                if (this.clusterCa.keyReplaced()) {
+                    zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(ss -> zkSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                        oldCoSecret));
+                } else {
+                    zkRollFuture = Future.succeededFuture();
+                }
+                return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(ss -> {
-                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
-                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
-                                return true;
-                            });
-                        })
+                        .compose(ss -> kafkaSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason))
                         .compose(i -> deploymentOperations.getAsync(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name)))
                         .compose(dep -> {
                             if (dep != null) {
