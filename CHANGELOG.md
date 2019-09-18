@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.15.0
+
+* Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
+
 ## 0.14.0
 
 * Add support for configuring Ingress class (#1716)
