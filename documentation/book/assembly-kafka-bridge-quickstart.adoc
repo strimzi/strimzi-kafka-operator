@@ -23,6 +23,8 @@ Use this quickstart to try out the {ProductName} Kafka Bridge in your local deve
 
 In this quickstart, HTTP requests are formatted as curl commands that you can copy and paste to your terminal. Access to a Kubernetes cluster is required; to run and manage a local Kubernetes cluster, use a tool such as Minikube, CodeReady Containers, or MiniShift.
 
+Ensure you have the prerequisites and then follow the tasks in the order provided in this chapter.
+
 .About data formats
 
 In this quickstart, you will produce and consume messages in JSON format, not binary. For more information on the data formats and HTTP headers used in the example requests, see xref:con-requests-kafka-bridge-kafka-bridge-overview[].
