@@ -1624,9 +1624,16 @@ public class KafkaCluster extends AbstractModel {
         labelSelector2.setMatchLabels(expressions2);
         entityOperatorPeer.setPodSelector(labelSelector2);
 
+        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector3 = new LabelSelector();
+        Map<String, String> expressions3 = new HashMap<>();
+        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster));
+        labelSelector3.setMatchLabels(expressions3);
+        kafkaExporterPeer.setPodSelector(labelSelector3);
+
         NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
                 .withPorts(replicationPort)
-                .withFrom(kafkaClusterPeer, entityOperatorPeer)
+                .withFrom(kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer)
                 .build();
 
         rules.add(replicationRule);
