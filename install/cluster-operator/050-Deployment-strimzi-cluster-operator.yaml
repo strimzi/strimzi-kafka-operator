@@ -20,7 +20,6 @@ spec:
       containers:
       - name: strimzi-cluster-operator
         image: strimzi/operator:latest
-        imagePullPolicy: IfNotPresent
         args:
         - /opt/strimzi/bin/cluster_operator_run.sh
         env:
