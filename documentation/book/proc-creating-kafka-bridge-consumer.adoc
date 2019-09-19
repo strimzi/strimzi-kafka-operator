@@ -19,9 +19,9 @@ curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
     "name": "bridge-quickstart-consumer",
     "auto.offset.reset": "earliest",
     "format": "json",
-    "enable.auto.commit": "false",
-    "fetch.min.bytes": "512",
-    "consumer.request.timeout.ms": "30000"
+    "enable.auto.commit": false,
+    "fetch.min.bytes": 512,
+    "consumer.request.timeout.ms": 30000
   }'
 ----
 +

@@ -35,7 +35,7 @@ You can:
 
 * Seek on a partition, so that a consumer starts receiving messages from the first or last offset position, or a given offset position.
 
-Similar to a Kafka Connect cluster, you can deploy the Kafka Bridge into your Kubernetes cluster by using the Cluster Operator. For deployment instructions, see xref:deploying-kafka-bridge-str[].
+You deploy the Kafka Bridge into your Kubernetes cluster by using the Cluster Operator. For deployment instructions, see xref:deploying-kafka-bridge-str[].
 
 After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your Kubernetes cluster, each named `strimzi-kafka-bridge` by default.
 
