@@ -23,5 +23,5 @@ Configuration options that cannot be configured relate to:
 These options are automatically configured by {ProductName}.
 
 include::ref-kafka-connect-configuration.adoc[leveloffset=+1]
-
+include::con-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 include::proc-configuring-kafka-connect.adoc[leveloffset=+1]
