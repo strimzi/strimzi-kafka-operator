@@ -28,11 +28,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,11 +44,11 @@ public class KafkaConfigModelGenerator {
     public static void main(String[] args) throws Exception {
 
         String version = kafkaVersion();
-        Map<String, ConfigModel> configToScope = configToScope();
+        List<ConfigModel> configs = configs();
         ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
         ConfigModels root = new ConfigModels();
         root.setVersion(version);
-        root.setConfigs(configToScope);
+        root.setConfigs(configs);
         mapper.writeValue(new File(args[0]), root);
     }
 
@@ -58,7 +60,7 @@ public class KafkaConfigModelGenerator {
         return p.getProperty("version");
     }
 
-    private static Map<String, ConfigModel> configToScope() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private static List<ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         ConfigDef def = brokerConfigs();
         Map<String, String> dynamicUpdates = brokerDynamicUpdates();
         Method getConfigValueMethod = def.getClass().getDeclaredMethod("getConfigValue", ConfigDef.ConfigKey.class, String.class);
@@ -68,12 +70,13 @@ public class KafkaConfigModelGenerator {
         sortedConfigs.setAccessible(true);
 
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
-        Map<String, ConfigModel> configToScope = new TreeMap<>();
+        List<ConfigModel> result = new ArrayList<>();
         for (ConfigDef.ConfigKey key : keys) {
             String configName = String.valueOf(getConfigValueMethod.invoke(def, key, "Name"));
             Type type = parseType(String.valueOf(getConfigValueMethod.invoke(def, key, "Type")));
             Scope scope = parseScope(dynamicUpdates.getOrDefault(key.name, "read-only"));
             ConfigModel descriptor = new ConfigModel();
+            descriptor.setName(configName);
             descriptor.setType(type);
             descriptor.setScope(scope);
 
@@ -97,9 +100,10 @@ public class KafkaConfigModelGenerator {
             } else if (key.validator != null) {
                 throw new IllegalStateException(key.validator.getClass().toString());
             }
-            configToScope.put(configName, descriptor);
+            result.add(descriptor);
         }
-        return configToScope;
+        Collections.sort(result, Comparator.comparing(ConfigModel::getName));
+        return result;
     }
 
     private static Type parseType(String typeStr) {
