@@ -111,13 +111,13 @@ class ConnectST extends AbstractST {
                 .done();
 
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
-                .editMetadata()
-                    .addToLabels("type", "kafka-connect")
-                .endMetadata()
-                .editSpec()
-                    .addToConfig("key.converter.schemas.enable", false)
-                    .addToConfig("value.converter.schemas.enable", false)
-                .endSpec().done();
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+            .endMetadata()
+            .editSpec()
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+            .endSpec().done();
         testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
@@ -142,11 +142,11 @@ class ConnectST extends AbstractST {
         jvmOptionsXX.put("UseG1GC", "true");
 
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
-                .editMetadata()
-                    .addToLabels("type", "kafka-connect")
-                .endMetadata()
-                .editSpec()
-                    .withResources(new ResourceRequirementsBuilder()
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+            .endMetadata()
+            .editSpec()
+                .withResources(new ResourceRequirementsBuilder()
                         .addToLimits("memory", new Quantity("400M"))
                         .addToLimits("cpu", new Quantity("2"))
                         .addToRequests("memory", new Quantity("300M"))
@@ -342,21 +342,21 @@ class ConnectST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewTls()
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endTls()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewTls()
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         final String userName = "user-example-one";
 
