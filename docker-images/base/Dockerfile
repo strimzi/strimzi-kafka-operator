@@ -6,4 +6,4 @@ RUN yum -y update \
     && yum -y clean all
 
 # Set JAVA_HOME env var
-ENV JAVA_HOME /usr/lib/jvm/java
+ENV JAVA_HOME /usr/lib/jvm/jre
