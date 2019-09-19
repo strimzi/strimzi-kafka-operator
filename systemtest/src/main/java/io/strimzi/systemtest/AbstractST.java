@@ -302,16 +302,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
-        LOGGER.info("Sending messages");
-        String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
-
-        LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
-
-        cmdKubeClient().execInPod(podName, "/bin/bash", "-c", command);
-    }
-
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = kubeClient().getPod(podName);
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
