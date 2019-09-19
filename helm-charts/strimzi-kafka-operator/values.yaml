@@ -9,7 +9,6 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-  imagePullPolicy: IfNotPresent
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
