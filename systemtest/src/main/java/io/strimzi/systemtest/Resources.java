@@ -81,10 +81,12 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.AbstractST.CLUSTER_NAME;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -393,7 +395,7 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
+    public DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
         return kafkaConnect(defaultKafkaConnect(name, kafkaConnectReplicas).build());
     }
 
@@ -426,6 +428,46 @@ public class Resources extends AbstractResources {
                     .withResources(new ResourceRequirementsBuilder()
                             .addToRequests("memory", new Quantity("1G")).build())
                 .endSpec();
+    }
+
+    public DoneableKafkaConnect kafkaConnectWithTracing(String name) {
+        Map<String, Object> configOfKafkaConnect = new HashMap<>();
+        configOfKafkaConnect.put("config.storage.replication.factor", "1");
+        configOfKafkaConnect.put("offset.storage.replication.factor", "1");
+        configOfKafkaConnect.put("status.storage.replication.factor", "1");
+        configOfKafkaConnect.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnect.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnect.put("key.converter.schemas.enable", "false");
+        configOfKafkaConnect.put("value.converter.schemas.enable", "false");
+
+        return kafkaConnect(defaultKafkaConnect(name, 1)
+                .editSpec()
+                    .withConfig(configOfKafkaConnect)
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withNewTemplate()
+                        .withNewConnectContainer()
+                            .addNewEnv()
+                                .withName("JAEGER_SERVICE_NAME")
+                                .withValue("my-target-connect")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue("my-jaeger-agent")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue("const")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue("1")
+                            .endEnv()
+                        .endConnectContainer()
+                    .endTemplate()
+                .endSpec()
+                .build());
     }
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
@@ -493,7 +535,7 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+    public DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return kafkaMirrorMaker(defaultMirrorMaker(name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
@@ -1230,4 +1272,216 @@ public class Resources extends AbstractResources {
                     kB));
         });
     }
+
+    public DoneableDeployment consumerWithTracing(String bootstrapServer) {
+        String consumerName = "hello-world-consumer";
+
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", consumerName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(consumerLabels)
+                        .withName(consumerName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(consumerLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(consumerLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(consumerName)
+                                    .withImage("strimzi/" + consumerName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("GROUP_ID")
+                                        .withValue("my-" + consumerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue("1000000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(consumerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
+    public DoneableDeployment producerWithTracing(String bootstrapServer) {
+        String producerName = "hello-world-producer";
+
+        Map<String, String> producerLabels = new HashMap<>();
+        producerLabels.put("app", producerName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(producerLabels)
+                        .withName(producerName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(producerLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(producerLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(producerName)
+                                    .withImage("strimzi/" + producerName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue("1000000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(producerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
+    public DoneableDeployment kafkaStreamsWithTracing(String bootstrapServer) {
+        String kafkaStreamsName = "hello-world-streams";
+
+        Map<String, String> kafkaStreamLabels = new HashMap<>();
+        kafkaStreamLabels.put("app", kafkaStreamsName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(kafkaStreamLabels)
+                        .withName(kafkaStreamsName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(kafkaStreamLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(kafkaStreamLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(kafkaStreamsName)
+                                    .withImage("strimzi/" + kafkaStreamsName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("APPLICATION_ID")
+                                        .withValue(kafkaStreamsName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("SOURCE_TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TARGET_TOPIC")
+                                        .withValue("cipot-ym")
+                                    .endEnv()
+                                      .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(kafkaStreamsName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
 }
