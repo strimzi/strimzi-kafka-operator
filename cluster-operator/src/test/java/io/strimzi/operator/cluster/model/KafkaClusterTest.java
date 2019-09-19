@@ -1306,7 +1306,7 @@ public class KafkaClusterTest {
         // Check Network Policies
         NetworkPolicy np = k.generateNetworkPolicy();
 
-        List<NetworkPolicyIngressRule>  rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertEquals(1, rules.size());
         assertEquals(peer1, rules.get(0).getFrom().get(0));
 
