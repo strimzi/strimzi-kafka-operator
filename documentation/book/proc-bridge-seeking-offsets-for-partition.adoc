@@ -9,18 +9,20 @@ Next, use the link:https://strimzi.io/docs/bridge/latest/#_seek[positions^] endp
 
 .Procedure
 
-. Seek to a specific offset for partition 1 of the `quickstart-bridge-topic` topic:
+. Seek to a specific offset for partition 0 of the `quickstart-bridge-topic` topic:
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST \
-  http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions \
   -H 'content-type: application/vnd.kafka.v2+json' \
-  -d {
-  "offsets" : [ {
-    "topic" : "quickstart-bridge-topic",
-    "partition" : 1,
-    "offset" : 6]
+  -d '{
+    "offsets": [
+        {
+            "topic": "bridge-quickstart-topic",
+            "partition": 0,
+            "offset": 2
+        }
+    ]
 }'
 ----
 +
@@ -30,13 +32,15 @@ If the request is successful, the Kafka Bridge returns a `204` code only.
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST \
-  http://<bridge-address>/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions/end \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/positions/end \
   -H 'content-type: application/vnd.kafka.v2+json' \
-  -d {
-  "partitions" : [ {
-    "topic" : "quickstart-bridge-topic",
-    "partition" : 1,
+  -d '{
+    "partitions": [
+        {
+            "topic": "bridge-quickstart-topic",
+            "partition": 0
+        }
+    ]
 }'
 ----
 +

@@ -25,32 +25,9 @@ In this quickstart, HTTP requests are formatted as curl commands that you can co
 
 .About data formats
 
-In this quick start, you will produce and consume messages in JSON format, not binary.
+In this quickstart, you will produce and consume messages in JSON format, not binary. For more information on the data formats and HTTP headers used in the example requests, see xref:con-requests-kafka-bridge-kafka-bridge-overview[].
 
-* When producing messages to topics and partitions, the following `Content-Type` header is submitted with the POST request:
-+
-[source,http,subs=attributes+]
-----
-content-type: application/vnd.kafka.json.v2+json
-----
-
-* When creating a Kafka Bridge consumer, an _embedded data format_ of JSON is specified:
-+
-[source,http,subs=attributes+]
-----
-content-type: application/vnd.kafka.v2+json
-----
-
-* When creating a Kafka Bridge consumer and performing consumer operations, the following `Content-Type` header is submitted with the relevant POST requests:
-+
-[source,http,subs=attributes+]
-----
-content-type: application/vnd.kafka.v2+json
-----
-
-For more information, see xref:con-requests-kafka-bridge-kafka-bridge-overview[Requests to the {ProductName} Kafka Bridge].
-
-.Prerequisites for the quick start
+.Prerequisites for the quickstart
 
 * Cluster administrator access to a local or remote Kubernetes cluster. 
 * {ProductName} is installed.

@@ -16,9 +16,10 @@ After you have created a Kafka Bridge consumer, subscribe it to one or more topi
 curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer/subscription \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{
-    "topics":[
-          "bridge-quickstart-topic"
-    ]}'
+    "topics": [
+        "bridge-quickstart-topic"
+    ]
+}'
 ----
 +
 The `topics` array can contain a single topic (as shown here) or multiple topics. If you want to subscribe the consumer to multiple topics that match a regular expression, you can use the `topic_pattern` string instead of the `topics` array. 

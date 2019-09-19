@@ -13,7 +13,7 @@ Before you can perform any consumer operations in the Kafka cluster, you must fi
 +
 [source,curl,subs=attributes+]
 ----
-curl -X POST -v http://localhost:8080/consumers/bridge-quickstart-consumer-group \
+curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group \
   -H 'content-type: application/vnd.kafka.v2+json' \
   -d '{
     "name": "bridge-quickstart-consumer",
@@ -42,7 +42,7 @@ If the request is successful, the Kafka Bridge returns the consumer ID (`instanc
 }
 ----
 
-. Copy the base URL (`base_uri`) to use in the other consumer operations in this quick start.
+. Copy the base URL (`base_uri`) to use in the other consumer operations in this quickstart.
 
 .What to do next
 
