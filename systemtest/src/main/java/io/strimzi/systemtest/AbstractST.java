@@ -301,7 +301,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
+    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
@@ -839,12 +839,23 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @throws Exception
      */
     public void waitForClusterAvailability(String namespace, String topicName) throws Exception {
+        waitForClusterAvailability(namespace, CLUSTER_NAME, topicName);
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @throws Exception
+     */
+    public void waitForClusterAvailability(String namespace, String clusterName, String topicName) throws Exception {
         int messageCount = 50;
 
         KafkaClient testClient = new KafkaClient();
         try {
-            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
-            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+            Future producer = testClient.sendMessages(topicName, namespace, clusterName, messageCount);
+            Future consumer = testClient.receiveMessages(topicName, namespace, clusterName, messageCount);
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));

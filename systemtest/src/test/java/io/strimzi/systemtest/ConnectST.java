@@ -113,9 +113,13 @@ class ConnectST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
+
+        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
     }
 
     @Test
@@ -242,7 +246,6 @@ class ConnectST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAuthentication() throws Exception {
         final String userName = "user-example";
-        final String topicName = "topic-example";
 
         testMethodResources().tlsUser(KAFKA_CLUSTER_NAME, userName).done();
 
@@ -272,7 +275,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(KAFKA_CLUSTER_NAME, topicName).done();
+        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -287,7 +290,7 @@ class ConnectST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), topicName, 2);
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
@@ -295,6 +298,10 @@ class ConnectST extends AbstractST {
                 containsString("0\n1\n"));
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, KAFKA_CLUSTER_NAME);
+
+        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
     }
 
     @BeforeEach
