@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
+import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -29,6 +30,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaConnector;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,7 +52,8 @@ public class Crds {
         KafkaTopic.class,
         KafkaUser.class,
         KafkaMirrorMaker.class,
-        KafkaBridge.class
+        KafkaBridge.class,
+        KafkaConnector.class
     };
 
     private Crds() {
@@ -83,6 +86,8 @@ public class Crds {
             version = KafkaMirrorMaker.VERSIONS.get(0);
         } else if (cls.equals(KafkaBridge.class)) {
             version = KafkaBridge.VERSIONS.get(0);
+        } else if (cls.equals(KafkaConnector.class)) {
+            version = KafkaConnector.VERSIONS.get(0);
         } else {
             throw new RuntimeException();
         }
@@ -91,13 +96,7 @@ public class Crds {
     }
 
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
-        String scope;
-        String crdApiVersion;
-        String plural;
-        String singular;
-        String group;
-        String kind;
-        String listKind;
+        String scope, crdApiVersion, plural, singular, group, kind, listKind;
         CustomResourceSubresourceStatus status = null;
 
         if (cls.equals(Kafka.class)) {
@@ -183,6 +182,18 @@ public class Crds {
             if (!KafkaBridge.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
+        } else if (cls.equals(KafkaConnector.class)) {
+            scope = KafkaConnector.SCOPE;
+            crdApiVersion = KafkaConnector.CRD_API_VERSION;
+            plural = KafkaConnector.RESOURCE_PLURAL;
+            singular = KafkaConnector.RESOURCE_SINGULAR;
+            group = KafkaConnector.RESOURCE_GROUP;
+            kind = KafkaConnector.RESOURCE_KIND;
+            listKind = KafkaConnector.RESOURCE_LIST_KIND;
+            status = new CustomResourceSubresourceStatus();
+            if (!KafkaConnector.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else {
             throw new RuntimeException();
         }
@@ -228,6 +239,14 @@ public class Crds {
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
         return client.customResources(kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
+    }
+
+    public static CustomResourceDefinition kafkaConnector() {
+        return crd(KafkaConnector.class);
+    }
+
+    public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorOperation(KubernetesClient client) {
+        return client.customResources(kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class);
     }
 
     public static CustomResourceDefinition kafkaConnectS2I() {

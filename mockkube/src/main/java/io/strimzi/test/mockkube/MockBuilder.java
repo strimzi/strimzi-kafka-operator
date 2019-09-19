@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -27,6 +29,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -77,6 +81,16 @@ class MockBuilder<T extends HasMetadata,
     protected final String resourceType;
     protected final Collection<PredicatedWatcher<T>> watchers = Collections.synchronizedList(new ArrayList<>(2));
     private List<Observer<T>> observers = null;
+
+    public void assertNumWatchers(int expectedNumWatchers) {
+        if (watchers.size() != expectedNumWatchers) {
+            throw new AssertionError("Unclosed watchers " + watchers);
+        }
+    }
+
+    public void assertNoWatchers() {
+        assertNumWatchers(0);
+    }
 
     public MockBuilder(Class<T> resourceTypeClass, Class<L> listClass, Class<D> doneableClass,
                        Class<R> resourceClass, Map<String, T> db) {
@@ -138,7 +152,7 @@ class MockBuilder<T extends HasMetadata,
         when(mixed.watch(any())).thenAnswer(i -> {
             Watcher watcher = i.getArgument(0);
             LOGGER.debug("Watcher {} installed on {}", watcher, mixed);
-            return addWatcher(PredicatedWatcher.watcher(watcher));
+            return addWatcher(PredicatedWatcher.watcher(resourceTypeClass.getName(), watcher));
         });
         when(mixed.create(any())).thenAnswer(i -> {
             T resource = i.getArgument(0);
@@ -169,6 +183,19 @@ class MockBuilder<T extends HasMetadata,
             String label = i.getArgument(0);
             String value = i.getArgument(1);
             return mockWithLabels(singletonMap(label, value));
+        });
+        when(mixed.withLabelSelector(any())).thenAnswer(i -> {
+            LabelSelector labelSelector = i.getArgument(0);
+            Map<String, String> matchLabels = labelSelector.getMatchLabels();
+            List<LabelSelectorRequirement> matchExpressions = labelSelector.getMatchExpressions();
+            if (matchExpressions != null && !matchExpressions.isEmpty()) {
+                throw new RuntimeException("MockKube doesn't support match expressions yet");
+            }
+            return mockWithLabelPredicate(p -> {
+                Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
+                m.keySet().retainAll(matchLabels.keySet());
+                return matchLabels.equals(m);
+            });
         });
         when(mixed.withLabels(any())).thenAnswer(i -> {
             Map<String, String> labels = i.getArgument(0);
@@ -212,7 +239,7 @@ class MockBuilder<T extends HasMetadata,
         });
         when(mixedWithLabels.watch(any())).thenAnswer(i2 -> {
             Watcher watcher = i2.getArgument(0);
-            return addWatcher(PredicatedWatcher.predicatedWatcher("watch on labeled", predicate, watcher));
+            return addWatcher(PredicatedWatcher.predicatedWatcher(resourceTypeClass.getName(), "watch on labeled", predicate, watcher));
         });
         return mixedWithLabels;
     }
@@ -261,6 +288,27 @@ class MockBuilder<T extends HasMetadata,
         if (Readiness.isReadinessApplicable(resourceTypeClass)) {
             mockIsReady(resourceName, resource);
         }
+        try {
+            when(resource.waitUntilCondition(any(), anyLong(), any())).thenAnswer(i -> {
+                Predicate<T> p = i.getArgument(0);
+                T t = resource.get();
+                boolean done = p.test(t);
+                long argument = i.getArgument(1);
+                TimeUnit tu = i.getArgument(2);
+                long deadline = System.currentTimeMillis() + tu.toMillis(argument);
+                while (!done) {
+                    Thread.sleep(1_000);
+                    if (System.currentTimeMillis() > deadline) {
+                        throw new TimeoutException();
+                    }
+                    t = resource.get();
+                    done = p.test(t);
+                }
+                return t;
+            });
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void checkNotExists(String resourceName) {
@@ -285,29 +333,28 @@ class MockBuilder<T extends HasMetadata,
         LOGGER.debug("delete {} {}", resourceType, resourceName);
         T removed = db.remove(resourceName);
         if (removed != null) {
-            fireWatchers(resourceName, removed, Watcher.Action.DELETED);
+            fireWatchers(resourceName, removed, Watcher.Action.DELETED, "delete");
         }
         return removed != null;
     }
 
-
-    protected void fireWatchers(String resourceName, T resource, Watcher.Action action) {
+    protected void fireWatchers(String resourceName, T resource, Watcher.Action action, String cause) {
         if (observers != null) {
             for (Observer<T> observer : observers) {
-                LOGGER.debug("Firing observer.beforeWatcherFire() {} on {} due to {}", observer, resourceName, action);
+                LOGGER.debug("Firing observer.beforeWatcherFire() {} on {} for {} due to {}", observer, resourceName, action, cause);
                 observer.beforeWatcherFire(action, resource);
             }
         }
         LOGGER.debug("Firing watchers on {}", resourceName);
         for (PredicatedWatcher<T> watcher : watchers) {
-            LOGGER.debug("Firing watcher {} on {} due to {}", watcher, resourceName, action);
+            LOGGER.debug("Firing watcher {} on {} for {} due to {}", watcher, resourceName, action, cause);
             watcher.maybeFire(resource, action);
         }
-        LOGGER.debug("Finished firing watchers on {}", resourceName);
+        LOGGER.debug("Finished firing watchers on {} for {} due to {}", resourceName, action, cause);
         if (observers != null) {
             for (int i = observers.size() - 1; i >= 0; i--) {
                 Observer<T> observer = observers.get(i);
-                LOGGER.debug("Firing observer.afterWatcherFire() {} on {} due to {}", observer, resourceName, action);
+                LOGGER.debug("Firing observer.afterWatcherFire() {} on {} for {} due to {}", observer, resourceName, action, cause);
                 observer.afterWatcherFire(action, resource);
             }
         }
@@ -318,8 +365,8 @@ class MockBuilder<T extends HasMetadata,
             checkDoesExist(resourceName);
             T argument = copyResource(invocation.getArgument(0));
             LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
-            db.put(resourceName, argument);
-            fireWatchers(resourceName, argument, Watcher.Action.MODIFIED);
+            db.put(resourceName, incrementGeneration(incrementResourceVersion(argument)));
+            fireWatchers(resourceName, argument, Watcher.Action.MODIFIED, "patch");
             return argument;
         });
     }
@@ -337,7 +384,7 @@ class MockBuilder<T extends HasMetadata,
     private Watch mockedWatcher(String resourceName, InvocationOnMock i) {
         Watcher<T> watcher = i.getArgument(0);
         LOGGER.debug("watch {} {} ", resourceType, watcher);
-        return addWatcher(PredicatedWatcher.namedWatcher(resourceName, watcher));
+        return addWatcher(PredicatedWatcher.namedWatcher(resourceTypeClass.getName(), resourceName, watcher));
     }
 
     private Watch addWatcher(PredicatedWatcher<T> predicatedWatcher) {
@@ -358,9 +405,27 @@ class MockBuilder<T extends HasMetadata,
     private T doCreate(String resourceName, T argument) {
         checkNotExists(resourceName);
         LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-        db.put(resourceName, copyResource(argument));
-        fireWatchers(resourceName, argument, Watcher.Action.ADDED);
+        db.put(resourceName, incrementResourceVersion(copyResource(argument)));
+        fireWatchers(resourceName, argument, Watcher.Action.ADDED, "create");
         return copyResource(argument);
+    }
+
+    protected T incrementResourceVersion(T resource) {
+        String resourceVersion = resource.getMetadata().getResourceVersion();
+        if (resourceVersion == null || resourceVersion.isEmpty()) {
+            resourceVersion = "0";
+        }
+        resource.getMetadata().setResourceVersion(Long.toString(Long.parseLong(resourceVersion) +  1));
+        return resource;
+    }
+
+    protected T incrementGeneration(T resource) {
+        Long generation = resource.getMetadata().getGeneration();
+        if (generation == null) {
+            generation = 0L;
+        }
+        resource.getMetadata().setGeneration(generation + 1);
+        return resource;
     }
 
     protected OngoingStubbing<T> mockGet(String resourceName, R resource) {
@@ -376,5 +441,9 @@ class MockBuilder<T extends HasMetadata,
             LOGGER.debug("{} {} is ready", resourceType, resourceName);
             return Boolean.TRUE;
         });
+    }
+
+    public void updateStatus(String resourceNamespace, String resourceName, T resourceWithStatus) {
+        throw new UnsupportedOperationException();
     }
 }

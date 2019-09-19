@@ -13,6 +13,7 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -22,9 +23,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static io.strimzi.operator.common.Util.async;
 
 /**
  * A base implementation of {@link Operator}.
@@ -48,7 +51,9 @@ public abstract class AbstractOperator<
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
+
     protected static final int LOCK_TIMEOUT_MS = 10000;
+
     protected final Vertx vertx;
     protected final S resourceOperator;
     private final String kind;
@@ -107,58 +112,30 @@ public abstract class AbstractOperator<
      */
     @Override
     public final Future<Void> reconcile(Reconciliation reconciliation) {
-        Future<Void> handler = Future.future();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
-        final String lockName = getLockName(namespace, name);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
-            if (res.succeeded()) {
-                log.debug("{}: Lock {} acquired", reconciliation, lockName);
-                Lock lock = res.result();
-
-                try {
-                    T cr = resourceOperator.get(namespace, name);
-                    if (cr != null) {
-                        validate(cr);
-                        log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
-
-                        createOrUpdate(reconciliation, cr).setHandler(createResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            if (createResult.failed()) {
-                                log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
-                            } else {
-                                handler.handle(createResult);
-                            }
-                        });
-                    } else {
-                        log.info("{}: {} {} should be deleted", reconciliation, kind, name);
-                        delete(reconciliation).setHandler(deleteResult -> {
-                            if (deleteResult.succeeded())   {
-                                if (deleteResult.result()) {
-                                    log.info("{}: {} {} deleted", reconciliation, kind, name);
-                                } else {
-                                    log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
-                                }
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(Future.succeededFuture());
-                            } else {
-                                log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult.cause());
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(Future.failedFuture(deleteResult.cause()));
-                            }
-                        });
-                    }
-                } catch (Throwable ex) {
-                    lock.release();
-                    log.error("{}: Reconciliation failed", reconciliation, ex);
-                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                    handler.handle(Future.failedFuture(ex));
-                }
+        Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
+            T cr = resourceOperator.get(namespace, name);
+            if (cr != null) {
+                validate(cr);
+                log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
+                return createOrUpdate(reconciliation, cr).recover(createResult -> {
+                    log.error("{}: createOrUpdate failed", reconciliation, createResult);
+                    return Future.failedFuture(createResult);
+                });
             } else {
-                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
+                log.info("{}: {} {} should be deleted", reconciliation, kind, name);
+                return delete(reconciliation).map(deleteResult -> {
+                    if (deleteResult) {
+                        log.info("{}: {} {} deleted", reconciliation, kind, name);
+                    } else {
+                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
+                    }
+                    return (Void) null;
+                }).recover(deleteResult -> {
+                    log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
+                    return Future.failedFuture(deleteResult);
+                });
             }
         });
         Future<Void> result = Future.future();
@@ -169,18 +146,48 @@ public abstract class AbstractOperator<
         return result;
     }
 
-    protected <T> Future<T> async(Supplier<T> supplier) {
-        Future<T> result = Future.future();
-        vertx.executeBlocking(
-            future -> {
+    /**
+     * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when
+     * the lock cannot be acquired within the timeout.
+     */
+    static class UnableToAcquireLockException extends TimeoutException { }
+
+    /**
+     * Acquire the lock for the resource implied by the {@code reconciliation}
+     * and call the given {@code callable} with the lock held.
+     * Once the callable returns (or if it throws) release the lock and complete the returned Future.
+     * If the lock cannot be acquired the given {@code callable} is not called and the returned Future is completed with {@link UnableToAcquireLockException}.
+     * @param reconciliation
+     * @param callable
+     * @param <T>
+     * @return
+     */
+    protected final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
+        Future<T> handler = Future.future();
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.name();
+        final String lockName = getLockName(namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs, res -> {
+            if (res.succeeded()) {
+                log.debug("{}: Lock {} acquired", reconciliation, lockName);
+                Lock lock = res.result();
                 try {
-                    future.complete(supplier.get());
-                } catch (Throwable t) {
-                    future.fail(t);
+                    Future<T> result = callable.call();
+                    lock.release();
+                    log.debug("{}: Lock {} released", reconciliation, lockName);
+                    result.setHandler(handler);
+                } catch (Throwable ex) {
+                    lock.release();
+                    log.debug("{}: Lock {} released", reconciliation, lockName);
+                    log.error("{}: Reconciliation failed", reconciliation, ex);
+                    handler.fail(ex);
                 }
-            }, result
-        );
-        return result;
+            } else {
+                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
+                handler.fail(new UnableToAcquireLockException());
+            }
+        });
+        return handler;
     }
 
     /**
@@ -214,7 +221,7 @@ public abstract class AbstractOperator<
     }
 
     /**
-     * Create Kubernetes watch for KafkaUser resources.
+     * Create Kubernetes watch.
      *
      * @param namespace Namespace where to watch for users.
      * @param onClose Callback called when the watch is closed.
@@ -222,7 +229,7 @@ public abstract class AbstractOperator<
      * @return A future which completes when the watcher has been created.
      */
     public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
-        return async(() -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
+        return async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
     }
 
     public Consumer<KubernetesClientException> recreateWatch(String namespace) {

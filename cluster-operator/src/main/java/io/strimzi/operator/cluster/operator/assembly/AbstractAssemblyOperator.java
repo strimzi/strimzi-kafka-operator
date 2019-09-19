@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
@@ -91,20 +90,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.imagePullSecrets = config.getImagePullSecrets();
         this.versions = config.versions();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-    }
-
-    /**
-     * The name of the given {@code resource}, as read from its metadata.
-     * @param resource The resource
-     */
-    protected static String name(HasMetadata resource) {
-        if (resource != null) {
-            ObjectMeta metadata = resource.getMetadata();
-            if (metadata != null) {
-                return metadata.getName();
-            }
-        }
-        return null;
     }
 
     protected Future<Boolean> delete(Reconciliation reconciliation) {

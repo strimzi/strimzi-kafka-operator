@@ -15,15 +15,13 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
-import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -36,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -43,7 +42,7 @@ import java.util.Map;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> {
+public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
@@ -53,16 +52,20 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     /**
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
-     * @param certManager Certificate manager
-     * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                        CertManager certManager, PasswordGenerator passwordGenerator,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, certManager, passwordGenerator, supplier.connectOperator, supplier, config);
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+    }
+
+    public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+                                        ResourceOperatorSupplier supplier,
+                                        ClusterOperatorConfig config,
+                                        Function<Vertx, KafkaConnectApi> connectClientProvider) {
+        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
     }
@@ -74,15 +77,19 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         String name = reconciliation.name();
         KafkaConnectCluster connect;
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
-        if (kafkaConnect.getSpec() == null) {
-            log.error("{} spec cannot be null", kafkaConnect.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
         try {
+            if (kafkaConnect.getSpec() == null) {
+                log.error("{}: Resource lacks spec property", reconciliation, kafkaConnect.getMetadata().getName());
+                throw new InvalidResourceException("spec property is required");
+            }
             connect = KafkaConnectCluster.fromCrd(kafkaConnect, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
-            return updateStatus(kafkaConnect, reconciliation, kafkaConnectStatus);
+            return this.maybeUpdateStatusCommon((CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect>) resourceOperator, kafkaConnect, reconciliation,
+                    KafkaConnect::getStatus, kafkaConnectStatus,
+                (connect1, status) -> {
+                    return new KafkaConnectBuilder(connect1).withStatus(status).build();
+                });
         }
 
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
@@ -103,83 +110,29 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect))
                 .compose(i -> chainFuture.complete(), chainFuture)
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
                     kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
 
-                    updateStatus(kafkaConnect, reconciliation, kafkaConnectStatus).setHandler(statusResult -> {
-                        // If both features succeeded, createOrUpdate succeeded as well
-                        // If one or both of them failed, we prefer the reconciliation failure as the main error
-                        if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                            createOrUpdateFuture.complete();
-                        } else if (reconciliationResult.failed()) {
-                            createOrUpdateFuture.fail(reconciliationResult.cause());
-                        } else {
-                            createOrUpdateFuture.fail(statusResult.cause());
-                        }
-                    });
+                    this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation, KafkaConnect::getStatus, kafkaConnectStatus,
+                        (connect1, status) -> new KafkaConnectBuilder(connect1).withStatus(status).build()).setHandler(statusResult -> {
+                            // If both features succeeded, createOrUpdate succeeded as well
+                            // If one or both of them failed, we prefer the reconciliation failure as the main error
+                            if (reconciliationResult.succeeded() && statusResult.succeeded()) {
+                                createOrUpdateFuture.complete();
+                            } else if (reconciliationResult.failed()) {
+                                createOrUpdateFuture.fail(reconciliationResult.cause());
+                            } else {
+                                createOrUpdateFuture.fail(statusResult.cause());
+                            }
+                        });
                 });
         return createOrUpdateFuture;
     }
 
-    /**
-     * Updates the Status field of the Kafka Connect CR. It diffs the desired status against the current status and calls
-     * the update only when there is any difference in non-timestamp fields.
-     *
-     * @param kafkaConnectAssembly The CR of Kafka Connect
-     * @param reconciliation Reconciliation information
-     * @param desiredStatus The KafkaConnectStatus which should be set
-     *
-     * @return
-     */
-    Future<Void> updateStatus(KafkaConnect kafkaConnectAssembly, Reconciliation reconciliation, KafkaConnectStatus desiredStatus) {
-        Future<Void> updateStatusFuture = Future.future();
-
-        resourceOperator.getAsync(kafkaConnectAssembly.getMetadata().getNamespace(), kafkaConnectAssembly.getMetadata().getName()).setHandler(getRes -> {
-            if (getRes.succeeded()) {
-                KafkaConnect connect = getRes.result();
-
-                if (connect != null) {
-                    if (StatusUtils.isResourceV1alpha1(connect)) {
-                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, connect.getApiVersion());
-                        updateStatusFuture.complete();
-                    } else {
-                        KafkaConnectStatus currentStatus = connect.getStatus();
-
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                        if (!ksDiff.isEmpty()) {
-                            KafkaConnect resourceWithNewStatus = new KafkaConnectBuilder(connect).withStatus(desiredStatus).build();
-
-                            ((CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
-                                if (updateRes.succeeded()) {
-                                    log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusFuture.complete();
-                                } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusFuture.fail(updateRes.cause());
-                                }
-                            });
-                        } else {
-                            log.debug("{}: Status did not change", reconciliation);
-                            updateStatusFuture.complete();
-                        }
-                    }
-                } else {
-                    log.error("{}: Current Kafka Connect resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka Connect resource not found");
-                }
-            } else {
-                log.error("{}: Failed to get the current Kafka Connect resource and its status", reconciliation, getRes.cause());
-                updateStatusFuture.fail(getRes.cause());
-            }
-        });
-
-        return updateStatusFuture;
-    }
-
-    Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
+    private Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
                 KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());

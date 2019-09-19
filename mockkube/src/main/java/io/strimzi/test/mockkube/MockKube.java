@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.mockkube;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.Doneable;
@@ -69,6 +71,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
+import okio.Buffer;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -80,10 +83,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +117,20 @@ public class MockKube {
 
 
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
+    private MockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapMockBuilder;
+    private MockBuilder<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> endpointMockBuilder;
+    private ServiceMockBuilder serviceMockBuilder;
+    private MockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> secretMockBuilder;
+    private MockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> serviceAccountMockBuilder;
+    private MockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> routeMockBuilder;
+    private MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> podDisruptionBudgedMockBuilder;
+    private MockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> roleBindingMockBuilder;
+    private MockBuilder<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> clusterRoleBindingMockBuilder;
+    private MockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> networkPolicyMockBuilder;
+    private MockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> podMockBuilder;
+    private MockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> persistentVolumeClaimMockBuilder;
+    private DeploymentMockBuilder deploymentMockBuilder;
+    private KubernetesClient mockClient;
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -141,18 +164,27 @@ public class MockKube {
 
     private final List<MockedCrd> mockedCrds = new ArrayList<>();
 
-    public class MockedCrd<T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> {
+    public class MockedCrd<T extends CustomResource, L extends KubernetesResourceList<T>,
+            D extends Doneable<T>,
+            S> {
         private final CustomResourceDefinition crd;
         private final Class<T> crClass;
         private final Class<L> crListClass;
         private final Class<D> crDoneableClass;
         private final Map<String, T> instances;
+        private final Function<T, S> getStatus;
+        private final BiConsumer<T, S> setStatus;
 
-        private MockedCrd(CustomResourceDefinition crd, Class<T> crClass, Class<L> crListClass, Class<D> crDoneableClass) {
+        private MockedCrd(CustomResourceDefinition crd,
+                          Class<T> crClass, Class<L> crListClass, Class<D> crDoneableClass,
+                          Function<T, S> getStatus,
+                          BiConsumer<T, S> setStatus) {
             this.crd = crd;
             this.crClass = crClass;
             this.crListClass = crListClass;
             this.crDoneableClass = crDoneableClass;
+            this.getStatus = getStatus;
+            this.setStatus = setStatus;
             instances = db(emptySet(), crClass, crDoneableClass);
         }
 
@@ -176,7 +208,15 @@ public class MockKube {
             return crDoneableClass;
         }
 
-        public MockedCrd<T, L, D> withInitialInstances(Set<T> instances) {
+        Function<T, S> getStatus() {
+            return getStatus;
+        }
+
+        BiConsumer<T, S> setStatus() {
+            return setStatus;
+        }
+
+        public MockedCrd<T, L, D, S> withInitialInstances(Set<T> instances) {
             for (T instance : instances) {
                 this.instances.put(instance.getMetadata().getName(), instance);
             }
@@ -187,39 +227,60 @@ public class MockKube {
         }
     }
 
-    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D>
-            withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
-        MockedCrd<T, L, D> mockedCrd = new MockedCrd<>(crd, instanceClass, instanceListClass, doneableInstanceClass);
+    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>,
+            S> MockedCrd<T, L, D, S>
+            withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass,
+                                         Function<T, S> getStatus,
+                                         BiConsumer<T, S> setStatus) {
+        MockedCrd<T, L, D, S> mockedCrd = new MockedCrd<>(crd, instanceClass, instanceListClass, doneableInstanceClass, getStatus, setStatus);
         this.mockedCrds.add(mockedCrd);
         return mockedCrd;
     }
 
+    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>, S> MockedCrd<T, L, D, S>
+        withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
+        return withCustomResourceDefinition(crd, instanceClass, instanceListClass, doneableInstanceClass, null, null);
+    }
+
+    private final Map<Class<? extends HasMetadata>, MockBuilder<?, ?, ?, ?>> mockBuilders = new HashMap<>();
+    private final Map<String, MockBuilder<?, ?, ?, ?>> mockBuilders2 = new HashMap<>();
+    private final Map<String, Class<? extends HasMetadata>> mockBuilders3 = new HashMap<>();
+
+    <T extends MockBuilder<?, ?, ?, ?>> T addMockBuilder(String plural, T mockBuilder) {
+        mockBuilders.put(mockBuilder.resourceTypeClass, mockBuilder);
+        mockBuilders2.put(plural, mockBuilder);
+        mockBuilders3.put(plural, mockBuilder.resourceTypeClass);
+        return mockBuilder;
+    }
+
     @SuppressWarnings("unchecked")
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public KubernetesClient build() {
+        if (mockClient != null) {
+            return mockClient;
+        }
+        configMapMockBuilder = addMockBuilder("configmaps", new MockBuilder<>(ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, MockBuilder.castClass(Resource.class), cmDb));
+        endpointMockBuilder = addMockBuilder("endpoints", new MockBuilder<>(Endpoints.class, EndpointsList.class, DoneableEndpoints.class, MockBuilder.castClass(Resource.class), endpointDb));
+        serviceMockBuilder = addMockBuilder("services", new ServiceMockBuilder(svcDb, endpointDb));
+        secretMockBuilder = addMockBuilder("secrets", new MockBuilder<>(Secret.class, SecretList.class, DoneableSecret.class, MockBuilder.castClass(Resource.class), secretDb));
+        serviceAccountMockBuilder = addMockBuilder("serviceaccounts", new MockBuilder<>(ServiceAccount.class, ServiceAccountList.class, DoneableServiceAccount.class, MockBuilder.castClass(Resource.class), serviceAccountDb));
+        routeMockBuilder = addMockBuilder("routes", new MockBuilder<>(Route.class, RouteList.class, DoneableRoute.class, MockBuilder.castClass(Resource.class), routeDb));
+        podDisruptionBudgedMockBuilder = addMockBuilder("poddisruptionbudgets", new MockBuilder<>(PodDisruptionBudget.class, PodDisruptionBudgetList.class, DoneablePodDisruptionBudget.class, MockBuilder.castClass(Resource.class), pdbDb));
+        roleBindingMockBuilder = addMockBuilder("rolebindings", new MockBuilder<>(RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, MockBuilder.castClass(Resource.class), pdbRb));
+        clusterRoleBindingMockBuilder = addMockBuilder("clusterrolebindings", new MockBuilder<>(ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class, MockBuilder.castClass(Resource.class), pdbCrb));
+        networkPolicyMockBuilder = addMockBuilder("networkpolicies", new MockBuilder<>(NetworkPolicy.class, NetworkPolicyList.class, DoneableNetworkPolicy.class, MockBuilder.castClass(Resource.class), policyDb));
 
-        MockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapMockBuilder = new MockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, MockBuilder.castClass(Resource.class), cmDb);
-        MockBuilder<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> endpointMockBuilder = new MockBuilder<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>>(Endpoints.class, EndpointsList.class, DoneableEndpoints.class, MockBuilder.castClass(Resource.class), endpointDb);
-        ServiceMockBuilder serviceMockBuilder = new ServiceMockBuilder(svcDb, endpointDb);
-        MockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> secretMockBuilder = new MockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>>(Secret.class, SecretList.class, DoneableSecret.class, MockBuilder.castClass(Resource.class), secretDb);
-        MockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> serviceAccountMockBuilder = new MockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>>(ServiceAccount.class, ServiceAccountList.class, DoneableServiceAccount.class, MockBuilder.castClass(Resource.class), serviceAccountDb);
-        MockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> routeMockBuilder = new MockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>>(Route.class, RouteList.class, DoneableRoute.class, MockBuilder.castClass(Resource.class), routeDb);
-        MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> podDisruptionBudgedMockBuilder = new MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>>(PodDisruptionBudget.class, PodDisruptionBudgetList.class, DoneablePodDisruptionBudget.class, MockBuilder.castClass(Resource.class), pdbDb);
-        MockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> roleBindingMockBuilder = new MockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>>(RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, MockBuilder.castClass(Resource.class), pdbRb);
-        MockBuilder<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> clusterRoleBindingMockBuilder = new MockBuilder<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>>(ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class, MockBuilder.castClass(Resource.class), pdbCrb);
-        MockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> networkPolicyMockBuilder = new MockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>>(NetworkPolicy.class, NetworkPolicyList.class, DoneableNetworkPolicy.class, MockBuilder.castClass(Resource.class), policyDb);
-
-        Map<String, Pod> podDb1 = podDb;
-        MockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> podMockBuilder = new MockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>>(Pod.class, PodList.class, DoneablePod.class, MockBuilder.castClass(PodResource.class), podDb1);
+        podMockBuilder = addMockBuilder("pods", new MockBuilder<>(Pod.class, PodList.class, DoneablePod.class, MockBuilder.castClass(PodResource.class), podDb));
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = podMockBuilder.build();
 
-        MockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> persistentVolumeClaimMockBuilder = new MockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(PersistentVolumeClaim.class, PersistentVolumeClaimList.class, DoneablePersistentVolumeClaim.class, MockBuilder.castClass(Resource.class), pvcDb);
+        persistentVolumeClaimMockBuilder = addMockBuilder("persistentvolumeclaims", new MockBuilder<>(PersistentVolumeClaim.class, PersistentVolumeClaimList.class, DoneablePersistentVolumeClaim.class, MockBuilder.castClass(Resource.class), pvcDb));
         MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPersistentVolumeClaims = persistentVolumeClaimMockBuilder.build();
-        DeploymentMockBuilder mockDep = new DeploymentMockBuilder(depDb, mockPods);
+        deploymentMockBuilder = addMockBuilder("deployments", new DeploymentMockBuilder(depDb, mockPods));
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
                 RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(podMockBuilder, mockPods, mockPersistentVolumeClaims);
 
         // Top level group
-        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mockClient = mock(KubernetesClient.class);
         configMapMockBuilder.build2(mockClient::configMaps);
         serviceMockBuilder.build2(mockClient::services);
         secretMockBuilder.build2(mockClient::secrets);
@@ -232,36 +293,31 @@ public class MockKube {
         AppsAPIGroupDSL api = mock(AppsAPIGroupDSL.class);
         when(mockClient.apps()).thenReturn(api);
         when(api.statefulSets()).thenReturn(mockSs);
-        mockDep.build2(api::deployments);
+        deploymentMockBuilder.build2(api::deployments);
+
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
 
         // Custom Resources
         if (mockedCrds != null && !mockedCrds.isEmpty()) {
             NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition,
-                    Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>>
-                    crds = mock(NonNamespaceOperation.class);
-            for (MockedCrd<?, ?, ?> mockedCrd : this.mockedCrds) {
+                    Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> crds = mock(NonNamespaceOperation.class);
+            for (MockedCrd<?, ?, ?, ?> mockedCrd : this.mockedCrds) {
                 CustomResourceDefinition crd = mockedCrd.crd;
                 Resource crdResource = mock(Resource.class);
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
-                when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class),
-                        any(Class.class))).thenAnswer(invocation -> {
-                            CustomResourceDefinition crdArg = invocation.getArgument(0);
-                            if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
-                                    && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
-                                String key = crdArg.getSpec().getGroup() + "##" + crdArg.getSpec().getVersion();
-                                CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
-                                if (crdMixedOp == null) {
-                                    crdMixedOp = (MixedOperation<CustomResource, ? extends KubernetesResource, Doneable<CustomResource>, Resource<CustomResource, Doneable<CustomResource>>>) new CustomResourceMockBuilder<>((MockedCrd) mockedCrd).build();
-                                    crdMixedOps.put(key, crdMixedOp);
-                                }
-                                return crdMixedOp;
-                            } else {
-                                throw new RuntimeException();
-                            }
-                        });
+                String key = crdKey(crd);
+                CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
+                if (crdMixedOp == null) {
+                    CustomResourceMockBuilder customResourceMockBuilder = addMockBuilder(crd.getSpec().getNames().getPlural(), new CustomResourceMockBuilder<>((MockedCrd) mockedCrd));
+                    crdMixedOp = (MixedOperation<CustomResource, ? extends KubernetesResource, Doneable<CustomResource>, Resource<CustomResource, Doneable<CustomResource>>>) customResourceMockBuilder.build();
+                    crdMixedOps.put(key, crdMixedOp);
+                }
+                when(mockCrds.withName(eq(crd.getMetadata().getName()))).thenReturn(crdResource);
             }
-            when(mockClient.customResourceDefinitions()).thenReturn(crds);
+
+            when(mockClient.customResourceDefinitions()).thenReturn(mockCrds);
+            mockCrs(mockClient);
         }
 
         // Network group
@@ -284,12 +340,44 @@ public class MockKube {
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         routeMockBuilder.build2(mockOpenShiftClient::routes);
+        if (mockedCrds != null && !mockedCrds.isEmpty()) {
+            when(mockOpenShiftClient.customResourceDefinitions()).thenReturn(mockCrds);
+            mockCrs(mockOpenShiftClient);
+        }
 
-        mockHttpClient(mockClient);
+        mockHttpClient();
+
+        doAnswer(i -> {
+            for (MockBuilder<?, ?, ?, ?> a : mockBuilders.values()) {
+                a.assertNoWatchers();
+            }
+            return null;
+        }).when(mockClient).close();
         return mockClient;
     }
 
-    private void mockHttpClient(KubernetesClient mockClient)   {
+    public String crdKey(CustomResourceDefinition crd) {
+        return crd.getSpec().getGroup() + "##" + crd.getSpec().getVersion() + "##" + crd.getSpec().getNames().getKind();
+    }
+
+    @SuppressWarnings("unchecked")
+    public void mockCrs(KubernetesClient mockClient) {
+        when(mockClient.customResources(any(CustomResourceDefinition.class),
+                any(Class.class),
+                any(Class.class),
+                any(Class.class))).thenAnswer(invocation -> {
+                    CustomResourceDefinition crdArg = invocation.getArgument(0);
+                    String key = crdKey(crdArg);
+                    CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
+                    if (createOrReplaceable == null) {
+                        throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
+                    }
+                    return createOrReplaceable;
+                });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockHttpClient()   {
         // The CRD status update is build on the HTTP client directly since it is not supported in Fabric8.
         // We have to mock the HTTP client to make it pass.
         URL fakeUrl = null;
@@ -303,7 +391,29 @@ public class MockKube {
         OkHttpClient mockedOkHttp = mock(OkHttpClient.class);
         when(mockClient.adapt(OkHttpClient.class)).thenReturn(mockedOkHttp);
         Call mockedCall = mock(Call.class);
-        when(mockedOkHttp.newCall(any(Request.class))).thenReturn(mockedCall);
+        when(mockedOkHttp.newCall(any(Request.class))).thenAnswer(i -> {
+            Request request = i.getArgument(0);
+            Pattern p = Pattern.compile("/?apis/(?<apiVersion>[^/]+)/namespaces/(?<namespace>[^/]+)/(?<plural>[^/]+)/(?<name>[^/]+)/status/?");
+            Matcher matcher = p.matcher(request.url().encodedPath());
+
+            if ("PUT".equals(request.method())
+                && matcher.matches()) {
+                String plural = matcher.group("plural");
+                String resourceName = matcher.group("name");
+                String resourceNamespace = matcher.group("namespace");
+                ObjectMapper mapper = new ObjectMapper();
+                Class<? extends HasMetadata> crdClass = mockBuilders3.get(plural);
+                //MixedOperation<?, ?, ?, ?> operation = mockBuilders.get(crdClass).build();
+                Buffer bufferedSink = new Buffer();
+                request.body().writeTo(bufferedSink);
+                String json = bufferedSink.readString(request.body().contentType().charset());
+                HasMetadata resourceWithStatus = mapper.readValue(json, crdClass);
+                //HasMetadata currentResource = (HasMetadata) operation.inNamespace(resourceNamespace).withName(resourceName).get();
+                MockBuilder mockBuilder = mockBuilders2.get(plural);
+                mockBuilder.updateStatus(resourceNamespace, resourceName, resourceWithStatus);
+            }
+            return mockedCall;
+        });
         Response response = new Response.Builder().code(200).request(new Request.Builder().url(fakeUrl).build()).message("HTTP OK").protocol(Protocol.HTTP_1_1).build();
         try {
             when(mockedCall.execute()).thenReturn(response);

@@ -222,6 +222,10 @@ public class PlatformFeaturesAvailability {
         this.apps = apps;
     }
 
+    public boolean supportsS2I() {
+        return hasBuilds() && hasApps() && hasImages();
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +

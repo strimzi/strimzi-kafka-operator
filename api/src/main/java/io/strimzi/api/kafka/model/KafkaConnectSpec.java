@@ -32,7 +32,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image",
+@JsonPropertyOrder({ "replicas", "config", "connectorSelector", "image",
         "livenessProbe", "readinessProbe", "jvmOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing", "template"})
 @EqualsAndHashCode(doNotUseGetters = true)
