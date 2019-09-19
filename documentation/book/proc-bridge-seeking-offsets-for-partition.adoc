@@ -28,7 +28,7 @@ curl -X POST http://localhost:8080/consumers/bridge-quickstart-consumer-group/in
 +
 If the request is successful, the Kafka Bridge returns a `204` code only.
 
-. Submit a `GET` request to the `records` endpoint.
+. Submit a `GET` request to the `records` endpoint:
 +
 [source,curl,subs=attributes+]
 ----
@@ -38,7 +38,7 @@ curl -X GET http://localhost:8080/consumers/bridge-quickstart-consumer-group/ins
 +
 The Kafka Bridge returns messages from the offset that you seeked to.
 
-. Restore the default message retrieval behavior by seeking to the last offset for the same partition. This time, use the link:https://strimzi.io/docs/bridge/latest/#_seektoend[positions/end] endpoint.
+. Restore the default message retrieval behavior by seeking to the last offset for the same partition. This time, use the link:https://strimzi.io/docs/bridge/latest/#_seektoend[positions/end^] endpoint.
 +
 [source,curl,subs=attributes+]
 ----
