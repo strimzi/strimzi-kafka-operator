@@ -107,7 +107,7 @@ class ConnectST extends AbstractST {
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
-                    .endSpec()
+                .endSpec()
                 .done();
 
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
@@ -153,10 +153,10 @@ class ConnectST extends AbstractST {
                         .addToRequests("cpu", new Quantity("1"))
                         .build())
                     .withNewJvmOptions()
-                    .withXmx("200m")
-                    .withXms("200m")
-                    .withServer(true)
-                    .withXx(jvmOptionsXX)
+                        .withXmx("200m")
+                        .withXms("200m")
+                        .withServer(true)
+                        .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endSpec()
                 .done();
