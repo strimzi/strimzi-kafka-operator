@@ -9,6 +9,7 @@ import org.junit.Test;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class KafkaConfigurationTests {
 
@@ -90,5 +91,12 @@ public class KafkaConfigurationTests {
     public void validVersion() {
         assertNoError("inter.broker.protocol.version", "2.3-IV0");
     }
+
+    @Test
+    public void listenerName() {
+        fail("write this test");
+    }
+
+
 
 }

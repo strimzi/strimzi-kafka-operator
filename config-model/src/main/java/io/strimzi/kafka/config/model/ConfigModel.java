@@ -30,6 +30,9 @@ public class ConfigModel {
     private List<String> values;
     private String pattern;
 
+    /**
+     * @return The name of the parameter.
+     */
     public String getName() {
         return name;
     }
@@ -162,7 +165,6 @@ public class ConfigModel {
     }
 
     private List<String> validateList(String value) {
-        // TODO be more careful about whitespace
         List<String> l = asList(value.trim().split(" *, *"));
         if (getItems() != null) {
             HashSet<String> items = new HashSet<>(l);
