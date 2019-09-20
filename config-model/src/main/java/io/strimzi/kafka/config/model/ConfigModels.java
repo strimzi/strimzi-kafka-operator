@@ -4,14 +4,14 @@
  */
 package io.strimzi.kafka.config.model;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * Models all the broker configuration parameters for a given version of the Kafka broker.
  */
 public class ConfigModels {
     private String version;
-    private List<ConfigModel> configs;
+    private Map<String, ConfigModel> configs;
 
     /**
      * @return The version of the Kafka broker.
@@ -27,11 +27,11 @@ public class ConfigModels {
     /**
      * @return A map from configuration parameter name to its model.
      */
-    public List<ConfigModel> getConfigs() {
+    public Map<String, ConfigModel> getConfigs() {
         return configs;
     }
 
-    public void setConfigs(List<ConfigModel> configs) {
+    public void setConfigs(Map<String, ConfigModel> configs) {
         this.configs = configs;
     }
 }

@@ -14,12 +14,13 @@ import io.strimzi.kafka.config.model.Scope;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,22 +78,26 @@ public class KafkaConfiguration extends AbstractConfiguration {
         for (Map.Entry<String, String> entry: asOrderedProperties().asMap().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
+            // TODO, special parsing for "listener.security.protocol.map"
             ConfigModel config = models.get(key);
             if (config == null) {
                 //throw new RuntimeException("Unknown config " + key);
-                // TODO What about "child" configs (e.g. per-listener options)
             } else {
-                errors.addAll(config.validate(value));
+                errors.addAll(config.validate(key, value));
             }
             Pattern compile = Pattern.compile("listener\\.name\\.([^\\.]+)\\.(.+)");
             Matcher matcher = compile.matcher(key);
             if (matcher.matches()) {
-                // TODO check the listener name exists
-                ConfigModel configModel = models.get(matcher.group(2));
-                if (configModel == null) {
-                    // TODO is this possible?
+                Set<String> listenerNames = Arrays.stream(getConfigOption("listener.security.protocol.map",
+                        "PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL").split(" *, *", -1)).map(s -> s.substring(0, s.indexOf(":")).toLowerCase(Locale.ENGLISH)).collect(Collectors.toSet());
+                String listenerName = matcher.group(1);
+                if (listenerNames.contains(listenerName)) {
+                    ConfigModel configModel = models.get(matcher.group(2));
+                    if (configModel != null) {
+                        errors.addAll(configModel.validate(key, value));
+                    }
                 } else {
-                    configModel.validate(value);
+                    errors.add("No listener '" + listenerName + "' defined in 'listener.security.protocol.map'. Known listeners are " + listenerNames);
                 }
             }
         }
@@ -107,7 +112,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
                 if (!kafkaVersion.version().equals(configModels.getVersion())) {
                     throw new RuntimeException("Incorrect version");
                 }
-                return configModels.getConfigs().stream().collect(Collectors.toMap(e -> e.getName(), Function.identity()));
+                return configModels.getConfigs();
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading from classpath resource " + name, e);

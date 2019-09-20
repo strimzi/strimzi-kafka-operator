@@ -6,10 +6,13 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Properties;
+
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class KafkaConfigurationTests {
 
@@ -93,8 +96,25 @@ public class KafkaConfigurationTests {
     }
 
     @Test
-    public void listenerName() {
-        fail("write this test");
+    public void listenerNameInvalidConfig() throws IOException {
+        Properties p = new Properties();
+        p.setProperty("listener.name.plaintext.ssl.client.auth", "foo");
+        StringWriter sw = new StringWriter();
+        p.store(sw, null);
+        KafkaConfiguration kafkaConfiguration = KafkaConfiguration.unvalidated(sw.toString());
+        assertEquals(singletonList("listener.name.plaintext.ssl.client.auth has value 'foo' which is not one of the allowed values: [required, requested, none]"),
+                kafkaConfiguration.validate(kafkaVersion));
+    }
+
+    @Test
+    public void listenerNameUnknown() throws IOException {
+        Properties p = new Properties();
+        p.setProperty("listener.name.bob.ssl.client.auth", "foo");
+        StringWriter sw = new StringWriter();
+        p.store(sw, null);
+        KafkaConfiguration kafkaConfiguration = KafkaConfiguration.unvalidated(sw.toString());
+        assertEquals(singletonList("No listener 'bob' defined in 'listener.security.protocol.map'. Known listeners are [sasl_plaintext, plaintext, sasl_ssl, ssl]"),
+                kafkaConfiguration.validate(kafkaVersion));
     }
 
 

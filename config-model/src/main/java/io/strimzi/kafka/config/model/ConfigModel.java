@@ -20,7 +20,6 @@ import static java.util.Collections.singletonList;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ConfigModel {
-    private String name;
     private Scope scope;
     private Type type;
     private Number minimum;
@@ -29,17 +28,6 @@ public class ConfigModel {
     @JsonProperty("enum")
     private List<String> values;
     private String pattern;
-
-    /**
-     * @return The name of the parameter.
-     */
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     /**
      * @return The scope of the parameter.
@@ -115,164 +103,164 @@ public class ConfigModel {
         this.pattern = pattern;
     }
 
-    public List<String> validate(String value) {
+    public List<String> validate(String configName, String value) {
         switch (getType()) {
             case BOOLEAN:
-                return validateBoolean(value);
+                return validateBoolean(configName, value);
             case STRING:
-                return validateString(value);
+                return validateString(configName, value);
             case INT:
-                return validateInt(value);
+                return validateInt(configName, value);
             case LONG:
-                return validateLong(value);
+                return validateLong(configName, value);
             case DOUBLE:
-                return validateDouble(value);
+                return validateDouble(configName, value);
             case SHORT:
-                return validateShort(value);
+                return validateShort(configName, value);
             case CLASS:
                 return emptyList();
             case PASSWORD:
                 return emptyList();
             case LIST:
-                return validateList(value);
+                return validateList(configName, value);
             default:
                 throw new IllegalStateException("Unsupported type " + getType());
         }
     }
 
-    private List<String> validateString(String value) {
+    private List<String> validateString(String configName, String value) {
         List<String> errors = emptyList();
         if (getValues() != null
                 && !getValues().contains(value)) {
             errors = new ArrayList<>(1);
-            errors.add(getName() + " has value '" + value + "' which is not one of the allowed values: " + getValues());
+            errors.add(configName + " has value '" + value + "' which is not one of the allowed values: " + getValues());
         }
         if (getPattern() != null
                 && !value.matches(getPattern())) {
             if (errors.isEmpty()) {
                 errors = new ArrayList<>(1);
             }
-            errors.add(getName() + " has value '" + value + "' which does not match the required pattern: " + getPattern());
+            errors.add(configName + " has value '" + value + "' which does not match the required pattern: " + getPattern());
         }
         return errors;
     }
 
-    private List<String> validateBoolean(String value) {
+    private List<String> validateBoolean(String configName, String value) {
         if (!value.matches("true|false")) {
-            return singletonList(getName() + " has value '" + value + "' which is not a boolean");
+            return singletonList(configName + " has value '" + value + "' which is not a boolean");
         }
         return emptyList();
     }
 
-    private List<String> validateList(String value) {
-        List<String> l = asList(value.trim().split(" *, *"));
+    private List<String> validateList(String configName, String value) {
+        List<String> l = asList(value.trim().split(" *, *", -1));
         if (getItems() != null) {
             HashSet<String> items = new HashSet<>(l);
             items.removeAll(getItems());
             if (!items.isEmpty()) {
-                return singletonList(getName() + " contains values " + items + " which are not in the allowed items " + getItems());
+                return singletonList(configName + " contains values " + items + " which are not in the allowed items " + getItems());
             }
         }
         return emptyList();
     }
 
-    private List<String> validateDouble(String value) {
+    private List<String> validateDouble(String configName, String value) {
         List<String> errors = emptyList();
         try {
             double i = Double.parseDouble(value);
             if (getMinimum() != null
                     && i < getMinimum().doubleValue()) {
                 errors = new ArrayList<>(1);
-                errors.add(minimumErrorMsg(value));
+                errors.add(minimumErrorMsg(configName, value));
             }
             if (getMaximum() != null
                     && i > getMaximum().doubleValue()) {
                 if (errors.isEmpty()) {
                     errors = new ArrayList<>(1);
                 }
-                errors.add(maximumErrorMsg(value));
+                errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(value, "a double"));
+            errors = singletonList(numFormatMsg(configName, value, "a double"));
         }
         return errors;
     }
 
-    private List<String> validateLong(String value) {
+    private List<String> validateLong(String configName, String value) {
         List<String> errors = emptyList();
         try {
             long i = Long.parseLong(value);
             if (getMinimum() != null
                     && i < getMinimum().longValue()) {
                 errors = new ArrayList<>(1);
-                errors.add(minimumErrorMsg(value));
+                errors.add(minimumErrorMsg(configName, value));
             }
             if (getMaximum() != null
                     && i > getMaximum().longValue()) {
                 if (errors.isEmpty()) {
                     errors = new ArrayList<>(1);
                 }
-                errors.add(maximumErrorMsg(value));
+                errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(value, "a long"));
+            errors = singletonList(numFormatMsg(configName, value, "a long"));
         }
         return errors;
     }
 
-    private List<String> validateShort(String value) {
+    private List<String> validateShort(String configName, String value) {
         List<String> errors = emptyList();
         try {
             short i = Short.parseShort(value);
             if (getMinimum() != null
                     && i < getMinimum().shortValue()) {
                 errors = new ArrayList<>(1);
-                errors.add(minimumErrorMsg(value));
+                errors.add(minimumErrorMsg(configName, value));
             }
             if (getMaximum() != null
                     && i > getMaximum().shortValue()) {
                 if (errors.isEmpty()) {
                     errors = new ArrayList<>(1);
                 }
-                errors.add(maximumErrorMsg(value));
+                errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(value, "a short"));
+            errors = singletonList(numFormatMsg(configName, value, "a short"));
         }
         return errors;
     }
 
-    private List<String> validateInt(String value) {
+    private List<String> validateInt(String configName, String value) {
         List<String> errors = emptyList();
         try {
             int i = Integer.parseInt(value);
             if (getMinimum() != null
                     && i < getMinimum().intValue()) {
                 errors = new ArrayList<>(1);
-                errors.add(minimumErrorMsg(value));
+                errors.add(minimumErrorMsg(configName, value));
             }
             if (getMaximum() != null
                     && i > getMaximum().intValue()) {
                 if (errors.isEmpty()) {
                     errors = new ArrayList<>(1);
                 }
-                errors.add(maximumErrorMsg(value));
+                errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(value, "an int"));
+            errors = singletonList(numFormatMsg(configName, value, "an int"));
         }
         return errors;
     }
 
-    private String minimumErrorMsg(String value) {
-        return getName() + " has value " + value + " which less than the minimum value " + getMinimum();
+    private String minimumErrorMsg(String configName, String value) {
+        return configName + " has value " + value + " which less than the minimum value " + getMinimum();
     }
 
-    private String maximumErrorMsg(String value) {
-        return getName() + " has value " + value + " which greater than the maximum value " + getMaximum();
+    private String maximumErrorMsg(String configName, String value) {
+        return configName + " has value " + value + " which greater than the maximum value " + getMaximum();
     }
 
-    private String numFormatMsg(String value, String typeDescription) {
-        return getName() + " has value '" + value + "' which is not " + typeDescription;
+    private String numFormatMsg(String configName, String value, String typeDescription) {
+        return configName + " has value '" + value + "' which is not " + typeDescription;
     }
 }
