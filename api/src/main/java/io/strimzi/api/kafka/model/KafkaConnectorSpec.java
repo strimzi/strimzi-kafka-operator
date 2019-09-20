@@ -14,6 +14,8 @@ import java.util.List;
 
 @JsonPropertyOrder({"connectCluster", "class", "tasksMax", "topics", "config"})
 public class KafkaConnectorSpec implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private KafkaConnectorSpecCluster connectCluster;
     private String className;
     private Integer tasksMax;
@@ -44,5 +46,25 @@ public class KafkaConnectorSpec implements Serializable {
     @Description("The Config for the Kafka Connector Spec.")
     public List<KafkaConnectorConfig> getConfig() {
         return config;
+    }
+
+    public void setConfig(List<KafkaConnectorConfig> config) {
+        this.config = config;
+    }
+
+    public void setConnectCluster(KafkaConnectorSpecCluster connectCluster) {
+        this.connectCluster = connectCluster;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public void setTasksMax(Integer tasksMax) {
+        this.tasksMax = tasksMax;
+    }
+
+    public void setTopics(List<String> topics) {
+        this.topics = topics;
     }
 }
