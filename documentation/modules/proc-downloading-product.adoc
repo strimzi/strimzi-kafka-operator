@@ -5,7 +5,7 @@
 [id='proc-product-downloads-{context}']
 = Downloading {ProductName}
 
-Download a ZIP file that contains the resources required for installation and examples for configuration.
+Download a ZIP file that contains the resources required for installation along with examples for configuration.
 
 .Prerequisites
 

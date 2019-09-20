@@ -8,6 +8,8 @@
 
 Test your {ProductName} installation by sending and receiving messages outside the cluster from `my-topic`.
 
+Use a terminal to run a Kafka producer and consumer on a local machine.
+
 .Prerequisites
 
 * {ProductName} is installed on the Kubernetes cluster
@@ -20,7 +22,7 @@ Test your {ProductName} installation by sending and receiving messages outside t
 +
 {ApacheKafkaDownload}
 
-. Start the Kafka console producer with the topic `my-topic` and the authentication properties for TLS:
+. Open a terminal and start the Kafka console producer with the topic `my-topic` and the authentication properties for TLS:
 +
 [source,shell,subs=+quotes]
 ----
@@ -33,9 +35,7 @@ Use the xref:proc-enabling-tls-{context}[loadbalancer address and truststore] yo
 
 . Press Enter to send the message.
 
-. Press Ctrl+C to exit the Kafka console producer.
-
-. Start the consumer to receive the messages:
+. Open a new terminal tab or window and start the consumer to receive the messages:
 +
 [source,shell,subs=+quotes]
 ----
