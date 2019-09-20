@@ -14,13 +14,13 @@ import java.util.List;
 
 @JsonPropertyOrder({"connectCluster", "class", "tasksMax", "topics", "config"})
 public class KafkaConnectorSpec implements Serializable {
-    private ConnectCluster connectCluster;
+    private KafkaConnectorSpecCluster connectCluster;
     private String className;
     private Integer tasksMax;
     private List<String> topics;
     private List<KafkaConnectorConfig> config;
 
-    public ConnectCluster getConnectCluster() {
+    public KafkaConnectorSpecCluster getConnectCluster() {
         return connectCluster;
     }
 
@@ -44,13 +44,5 @@ public class KafkaConnectorSpec implements Serializable {
     @Description("The Config for the Kafka Connector Spec.")
     public List<KafkaConnectorConfig> getConfig() {
         return config;
-    }
-
-    public class ConnectCluster {
-        private String url;
-
-        public String getUrl() {
-            return url;
-        }
     }
 }
