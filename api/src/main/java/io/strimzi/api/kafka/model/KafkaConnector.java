@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import io.sundr.builder.annotations.Inline;
@@ -26,19 +27,20 @@ import static java.util.Collections.unmodifiableList;
 )
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 public class KafkaConnector extends CustomResource {
+    private static final long serialVersionUID = 1L;
     public static final String V1ALPHA1 = "v1alpha1";
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String SCOPE = "Namespaced";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1alpha1";
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
-    public static final String RESOURCE_SINGULAR = "kafkaconnectors";
+    public static final String RESOURCE_SINGULAR = "kafkaconnector";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
 
-
     private KafkaConnectorSpec spec;
 
+    @Description("The specification of the Kafka Connector.")
     public KafkaConnectorSpec getSpec() {
         return spec;
     }
