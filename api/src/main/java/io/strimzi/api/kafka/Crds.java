@@ -87,8 +87,7 @@ public class Crds {
         } else if (cls.equals(KafkaBridge.class)) {
             version = KafkaBridge.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnector.class)) {
-            version = KafkaConnector.VERSIONS.stream()
-                    .findFirst().orElseThrow(RuntimeException::new);
+            version = KafkaConnector.VERSIONS.get(0);
         } else {
             throw new RuntimeException();
         }
