@@ -123,7 +123,7 @@ public class TracingST extends AbstractST {
     }
 
     @Test
-    void testConnectService() {
+    void testConnectService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
         configOfKafka.put("transaction.state.log.replication.factor", "1");
@@ -132,6 +132,10 @@ public class TracingST extends AbstractST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
                         .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
@@ -193,7 +197,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -541,7 +545,7 @@ public class TracingST extends AbstractST {
     }
 
     @Test
-    void testProducerConsumerMirrorMakerConnectStreamsService() {
+    void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
         configOfKafka.put("transaction.state.log.replication.factor", "1");
@@ -648,7 +652,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
+        waitForClusterAvailability(NAMESPACE, kafkaClusterSourceName, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
