@@ -15,7 +15,7 @@ RELEASE_VERSION    ?= $(shell cat $(TOPDIR)/release.version)
 
 all: docker_build docker_push
 
-docker_build:
+docker_build_default:
 	# Build Docker image ...
 	docker build $(DOCKER_BUILD_ARGS) --build-arg strimzi_version=$(RELEASE_VERSION) -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
 #   The Dockerfiles all use FROM ...:latest, so it is necessary to tag images with latest (-t above)
@@ -24,10 +24,13 @@ docker_build:
 	# Also tag with $(BUILD_TAG)
 	docker tag strimzi/$(PROJECT_NAME):latest strimzi/$(PROJECT_NAME):$(BUILD_TAG)
 
-docker_tag:
+docker_tag_default:
 	# Tag the $(BUILD_TAG) image we built with the given $(DOCKER_TAG) tag
 	docker tag strimzi/$(PROJECT_NAME):$(BUILD_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
-docker_push: docker_tag
+docker_push_default: docker_tag
 	# Push the $(DOCKER_TAG)-tagged image to the registry
 	docker push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+
+docker_%: docker_%_default
+	@  true
