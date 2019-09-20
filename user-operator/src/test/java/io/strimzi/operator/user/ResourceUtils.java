@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
@@ -67,12 +69,57 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static KafkaUser createKafkaUser(KafkaUserQuotas quotas) {
+        return new KafkaUserBuilder()
+                .withMetadata(
+                        new ObjectMetaBuilder()
+                                .withNamespace(NAMESPACE)
+                                .withName(NAME)
+                                .withLabels(LABELS)
+                                .build()
+                )
+                .withNewSpec()
+                .withQuotas(quotas)
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResource()
+                    .withOperation(AclOperation.READ)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResource()
+                        .withOperation(AclOperation.DESCRIBE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleGroupResource()
+                            .withName("my-group")
+                        .endAclRuleGroupResource()
+                        .withOperation(AclOperation.READ)
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+                .endSpec()
+                .build();
+    }
+
     public static KafkaUser createKafkaUserTls() {
         return createKafkaUser(new KafkaUserTlsClientAuthentication());
     }
 
     public static KafkaUser createKafkaUserScramSha() {
         return createKafkaUser(new KafkaUserScramSha512ClientAuthentication());
+    }
+
+    public static KafkaUser createKafkaUserQuotas() {
+        KafkaUserQuotas kuq = new KafkaUserQuotasBuilder()
+                    .withConsumerByteRate(1000)
+                    .withProducerByteRate(2000)
+                    .withRequestPercentage(42)
+                .build();
+
+        return createKafkaUser(kuq);
     }
 
     public static Secret createClientsCaCertSecret()  {

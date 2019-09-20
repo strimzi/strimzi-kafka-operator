@@ -56,6 +56,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
     private final Optional<LabelSelector> selector;
+    private final KafkaUserQuotasOperator kafkaUserQuotasOperator;
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12);
 
     /**
@@ -65,6 +66,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      * @param labels A selector for which users in the namespace to consider as the operators
      * @param secretOperations For operating on Secrets.
      * @param scramShaCredentialOperator For operating on SCRAM SHA credentials.
+     * @param kafkaUserQuotasOperator For operating on Kafka User quotas.
      * @param aclOperations For operating on ACLs.
      * @param caCertName The name of the Secret containing the clients CA certificate.
      * @param caKeyName The name of the Secret containing the clients CA private key.
@@ -76,6 +78,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                              Labels labels,
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
+                             KafkaUserQuotasOperator kafkaUserQuotasOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
         super(vertx, "User", crdOperator);
         this.certManager = certManager;
@@ -83,6 +86,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
         this.selector = matchLabels.isEmpty() ? Optional.empty() : Optional.of(new LabelSelector(null, matchLabels));
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
+        this.kafkaUserQuotasOperator = kafkaUserQuotasOperator;
         this.aclOperations = aclOperations;
         this.caCertName = caCertName;
         this.caKeyName = caKeyName;
@@ -174,6 +178,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
+                kafkaUserQuotasOperator.reconcile(user.getName(), user.quotasToJson()),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))

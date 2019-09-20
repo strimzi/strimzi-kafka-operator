@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertManager;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaUserModelTest {
     private final KafkaUser tlsUser = ResourceUtils.createKafkaUserTls();
     private final KafkaUser scramShaUser = ResourceUtils.createKafkaUserScramSha();
+    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas();
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
     private final CertManager mockCertManager = new MockCertManager();
@@ -56,6 +58,20 @@ public class KafkaUserModelTest {
 
         assertThat(model.getSimpleAclRules().size(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser).size()));
         assertThat(model.getSimpleAclRules(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser)));
+    }
+
+    @Test
+    public void testQuotasFromCrd()   {
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, quotasUser, clientsCaCert, clientsCaKey, null);
+
+        assertEquals(ResourceUtils.NAMESPACE, model.namespace);
+        assertEquals(ResourceUtils.NAME, model.name);
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND), model.labels);
+
+        KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
+        assertEquals(quotas.getConsumerByteRate(), model.getQuotas().getConsumerByteRate());
+        assertEquals(quotas.getProducerByteRate(), model.getQuotas().getProducerByteRate());
+        assertEquals(quotas.getRequestPercentage(), model.getQuotas().getRequestPercentage());
     }
 
     @Test

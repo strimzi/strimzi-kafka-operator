@@ -107,6 +107,15 @@ spec:
               required:
               - acls
               - type
+            quotas:
+              type: object
+              properties:
+                consumerByteRate:
+                  type: integer
+                producerByteRate:
+                  type: integer
+                requestPercentage:
+                  type: integer
         status:
           type: object
           properties:

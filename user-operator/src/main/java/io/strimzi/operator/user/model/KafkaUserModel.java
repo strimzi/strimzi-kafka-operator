@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
@@ -24,6 +25,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -63,6 +65,8 @@ public class KafkaUserModel {
     private String ownerApiVersion;
     private String ownerKind;
     private String ownerUid;
+
+    private KafkaUserQuotas quotas;
 
     /**
      * Constructor
@@ -117,6 +121,7 @@ public class KafkaUserModel {
             KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
             result.setSimpleAclRules(simple.getAcls());
         }
+        result.setQuotas(kafkaUser.getSpec().getQuotas());
 
         return result;
     }
@@ -388,6 +393,41 @@ public class KafkaUserModel {
      */
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    /**
+     * Sets the authentication method.
+     *
+     * @param quotas KafkaUserQuotas to be set.
+     */
+    public void setQuotas(KafkaUserQuotas quotas) {
+        this.quotas = quotas;
+    }
+
+    public JsonObject quotasToJson() {
+        JsonObject quotasJson = new JsonObject();
+        if (quotas == null) {
+            return quotasJson;
+        }
+        if (quotas.getProducerByteRate() != null) {
+            quotasJson.put("producer_byte_rate", quotas.getProducerByteRate().toString());
+        }
+        if (quotas.getConsumerByteRate() != null) {
+            quotasJson.put("consumer_byte_rate", quotas.getConsumerByteRate().toString());
+        }
+        if (quotas.getRequestPercentage() != null) {
+            quotasJson.put("request_percentage", quotas.getRequestPercentage().toString());
+        }
+        return quotasJson;
+    }
+
+    /**
+     * Gets the quotas.
+     *
+     * @return User Quotas.
+     */
+    public KafkaUserQuotas getQuotas()    {
+        return quotas;
     }
 
     /**

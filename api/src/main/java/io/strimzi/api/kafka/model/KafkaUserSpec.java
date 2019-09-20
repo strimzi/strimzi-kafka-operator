@@ -30,6 +30,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
+    private KafkaUserQuotas quotas;
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
@@ -50,6 +51,16 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     public void setAuthorization(KafkaUserAuthorization authorization) {
         this.authorization = authorization;
+    }
+
+    @Description("Resource quotas.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaUserQuotas getQuotas() {
+        return quotas;
+    }
+
+    public void setQuotas(KafkaUserQuotas kafkaUserQuotas) {
+        this.quotas = kafkaUserQuotas;
     }
 
     @Override
