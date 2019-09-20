@@ -17,7 +17,7 @@ include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
-include::assembly-using-the-kafka-bridge.adoc[leveloffset=+1]
+include::assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
 include::assembly-metrics-setup.adoc[leveloffset=+1]
 

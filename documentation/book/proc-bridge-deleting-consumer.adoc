@@ -1,0 +1,23 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-quickstart.adoc
+
+[id='proc-bridge-deleting-consumer-{context}']
+= Deleting a Kafka Bridge consumer
+
+Finally, delete the Kafa Bridge consumer that you used throughout this quickstart.
+
+.Procedure
+
+* Delete the Kafka Bridge consumer by sending a `DELETE` request to the link:https://strimzi.io/docs/bridge/latest/#_deleteconsumer[instances^] endpoint.
++
+[source,curl,subs=attributes+]
+----
+curl -X DELETE http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
+----
++
+If the request is successful, the Kafka Bridge returns a `204` code only.
+
+.Additional resources
+
+* link:https://strimzi.io/docs/bridge/latest/#_deleteconsumer[DELETE /consumers/{groupid}/instances/{name}^] in the API reference documentation.

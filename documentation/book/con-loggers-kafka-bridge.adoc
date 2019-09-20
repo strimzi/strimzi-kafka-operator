@@ -1,10 +1,10 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-kafka-bridge.adoc
+// assembly-kafka-bridge-overview.adoc
 
 [id='con-loggers-kafka-bridge-{context}']
 
-= Configuring loggers for the {ProductName} Kafka Bridge
+= Configuring loggers for the Kafka Bridge
 
 The {ProductName} Kafka bridge allows you to set a different log level for each operation that is defined by the related OpenAPI specification.
 
