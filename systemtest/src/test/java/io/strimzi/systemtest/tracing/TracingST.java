@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -544,6 +545,7 @@ public class TracingST extends AbstractST {
         StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
@@ -555,7 +557,17 @@ public class TracingST extends AbstractST {
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
         testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
 
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
@@ -652,7 +664,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        waitForClusterAvailability(NAMESPACE, kafkaClusterSourceName, TEST_TOPIC_NAME, 10);
+        waitForClusterAvailability(NAMESPACE, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
