@@ -4,7 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-public class KafkaConnectorConfig {
+import java.io.Serializable;
+
+public class KafkaConnectorConfig implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String name;
     private String value;
 
@@ -14,5 +18,13 @@ public class KafkaConnectorConfig {
 
     public String getValue() {
         return value;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 }
