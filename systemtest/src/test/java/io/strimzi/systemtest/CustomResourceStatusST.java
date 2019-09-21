@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -130,7 +129,6 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
-//    @Disabled("Currently, readiness check for MM is not working correctly so MM status is not set properly when MM config is corrupted by wrong bootstrap server")
     void testKafkaMirrorMakerStatusWrongBootstrap() {
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
         waitForKafkaMirrorMakerStatus("Ready");
@@ -139,7 +137,7 @@ class CustomResourceStatusST extends AbstractST {
         replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(CLUSTER_NAME));
+        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)));
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(3);
     }
@@ -204,15 +202,16 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaTopicStatus() {
-        waitForKafkaTopic("Ready");
-        assertKafkaTopicStatus(1);
+        waitForKafkaTopic("Ready", TOPIC_NAME);
+        assertKafkaTopicStatus(1, TOPIC_NAME);
     }
 
     @Test
-    void testKafkaTopicStatusNotReady() throws Exception {
-        testMethodResources().topic(CLUSTER_NAME, "my-topic", 1, 10).done();
-        waitForKafkaTopic("NotReady");
-        assertKafkaTopicStatus(1);
+    void testKafkaTopicStatusNotReady() {
+        String topicName = "my-topic";
+        testMethodResources().topic(CLUSTER_NAME, topicName, 1, 10).done();
+        waitForKafkaTopic("NotReady", topicName);
+        assertKafkaTopicStatus(1, topicName);
     }
 
     @BeforeAll
@@ -322,14 +321,14 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("Kafka ConnectS2I cluster is in desired state: {}", status);
     }
 
-    void waitForKafkaTopic(String status) {
-        LOGGER.info("Wait until Kafka Topic is in desired state: {}", status);
-        TestUtils.waitFor("Kafka Topic status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = testClassResources().kafkaTopic().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0);
+    void waitForKafkaTopic(String status, String topicName) {
+        LOGGER.info("Wait until Kafka Topic {} is in desired state: {}", topicName, status);
+        TestUtils.waitFor("Kafka Topic " + topicName + " status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = testClassResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0);
             logCurrentStatus(kafkaCondition, KafkaTopic.RESOURCE_KIND);
             return kafkaCondition.getType().equals(status);
         });
-        LOGGER.info("Kafka Topic is in desired state: {}", status);
+        LOGGER.info("Kafka Topic {} is in desired state: {}", topicName, status);
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
@@ -382,8 +381,8 @@ class CustomResourceStatusST extends AbstractST {
         assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
     }
 
-    void assertKafkaTopicStatus(long expectedObservedGeneration) {
-        KafkaTopicStatus kafkaTopicStatus = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus();
+    void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
+        KafkaTopicStatus kafkaTopicStatus = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
         assertThat("Kafka Topic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 }
