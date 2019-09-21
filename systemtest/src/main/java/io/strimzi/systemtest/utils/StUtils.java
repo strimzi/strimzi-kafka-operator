@@ -822,7 +822,14 @@ public class StUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-
+    public static void createFileSinkConnector(String poName, String topicName) {
+        cmdKubeClient().execInPod(poName, "/bin/bash", "-c",
+                "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
+                        "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
+                        "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"/tmp/test-file-sink.txt\" } }' " +
+                        "http://localhost:8083/connectors"
+        );
     }
 }

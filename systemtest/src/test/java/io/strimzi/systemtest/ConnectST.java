@@ -36,7 +36,6 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -49,6 +48,8 @@ class ConnectST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
     public static final String NAMESPACE = "connect-cluster-test";
+
+    private static final String CONNECT_TOPIC_NAME = "connect-topic-example";
 
     @Test
     void testDeployUndeploy() {
@@ -118,20 +119,19 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
             .endSpec().done();
-        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
-        String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
-        cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
-                + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 2);
+        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
+
+        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
-        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
+        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -311,7 +311,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -319,23 +319,20 @@ class ConnectST extends AbstractST {
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
-        String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
-        LOGGER.info("Getting configuration of Connector Sink from {}", pathToConnectorSinkConfig);
+        LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
-        cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
-                + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
+        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 2);
+        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString("0\n1\n"));
 
-        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
+        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -388,7 +385,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -396,23 +393,19 @@ class ConnectST extends AbstractST {
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
-        String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
-        LOGGER.info("Getting configuration of Connector Sink from {}", pathToConnectorSinkConfig);
+        LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
+        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
-        cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
-                + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
-
-        waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 2);
+        waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString("0\n1\n"));
 
-        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
+        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @BeforeEach
