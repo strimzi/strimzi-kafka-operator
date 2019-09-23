@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -123,7 +124,7 @@ public class TracingST extends AbstractST {
     }
 
     @Test
-    void testConnectService() {
+    void testConnectService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
         configOfKafka.put("transaction.state.log.replication.factor", "1");
@@ -132,6 +133,10 @@ public class TracingST extends AbstractST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
                         .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
@@ -193,7 +198,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_CONNECT_SERVICE);
 
@@ -540,8 +545,9 @@ public class TracingST extends AbstractST {
         StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Test
-    void testProducerConsumerMirrorMakerConnectStreamsService() {
+    void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
         configOfKafka.put("transaction.state.log.replication.factor", "1");
@@ -551,7 +557,17 @@ public class TracingST extends AbstractST {
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
         testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
 
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
@@ -648,7 +664,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
+        waitForClusterAvailability(NAMESPACE, kafkaClusterTargetName, TEST_TOPIC_NAME, 10);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE, JAEGER_MIRROR_MAKER_SERVICE);
