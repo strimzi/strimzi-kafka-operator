@@ -3,17 +3,13 @@
 // assembly-name.adoc
 
 [id='proc-configuring-jaeger-tracer-kafka-clients-{context}']
-= Configuring a Jaeger tracer for Kafka clients
+= Initializing a Jaeger tracer for Kafka clients
 
-//In order to instrument an application using OpenTracing specification, a compatible OpenTracing tracer must be deployed. A list of the all the supported tracers is available here. From OpenTracing docs.
-
-You can configure and create a Jaeger tracer by using environment variables.
+Before you can instrument client applications for distributed tracing, you must configure and initialize a Jaeger tracer instance.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* ???
 
 .Procedure
 
@@ -28,7 +24,6 @@ Perform the following steps for every client application that you want to config
     <artifactId>jaeger-client</artifactId>
     <version>$jaegerVersion</version>
 </dependency>
-----[source,xml,subs=attributes+]
 ----
 
 . Define the configuration of the Jaeger tracer by using xref:ref-tracing-environment-variables-{context}[environment variables].
@@ -39,9 +34,11 @@ Perform the following steps for every client application that you want to config
 ----
 Tracer tracer = Configuration.fromEnv().getTracer();
 ----
++
+NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core[Java OpenTracing library^] documentation.
 
-. Register the Jaeger tracer as a global tracer.
+. Register the Jaeger tracer as a global tracer. For more information, see https://github.com/opentracing/opentracing-java[OpenTracing API for Java^]. 
 
 .Additional resources
 
-* For more information about, see .
+* xref:ref-tracing-environment-variables-{context}[Tracing environment variables]
