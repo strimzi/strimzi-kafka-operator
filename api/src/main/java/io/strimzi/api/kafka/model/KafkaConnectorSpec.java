@@ -4,16 +4,30 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = false,
+        builderPackage = "io.fabric8.kubernetes.api.builder"
+)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"connectCluster", "class", "tasksMax", "topics", "config"})
-public class KafkaConnectorSpec implements Serializable {
+@EqualsAndHashCode
+public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private KafkaConnectorSpecCluster connectCluster;
@@ -21,7 +35,9 @@ public class KafkaConnectorSpec implements Serializable {
     private Integer tasksMax;
     private List<String> topics;
     private List<KafkaConnectorConfig> config;
+    private Map<String, Object> additionalProperties;
 
+    @Description("The Kafka Connect cluster within which to create the connector.")
     public KafkaConnectorSpecCluster getConnectCluster() {
         return connectCluster;
     }
@@ -66,5 +82,18 @@ public class KafkaConnectorSpec implements Serializable {
 
     public void setTopics(List<String> topics) {
         this.topics = topics;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
+        this.additionalProperties.put(name, value);
     }
 }
