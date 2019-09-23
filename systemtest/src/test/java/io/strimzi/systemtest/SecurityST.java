@@ -231,13 +231,7 @@ class SecurityST extends MessagingBaseST {
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> {
-                return kubeClient().getSecret(bobUserName) != null;
-            },
-            () -> {
-                LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets());
-            });
+        StUtils.waitForSecretReady(bobUserName);
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
 
