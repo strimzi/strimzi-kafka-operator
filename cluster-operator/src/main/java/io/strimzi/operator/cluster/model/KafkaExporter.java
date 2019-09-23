@@ -20,11 +20,13 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -103,7 +105,11 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.setGroupRegex(spec.getGroupRegex());
             kafkaExporter.setTopicRegex(spec.getTopicRegex());
 
-            String image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE", versions.kafkaImage(spec.getImage(), versions.defaultVersion().version()));
+            String image = spec.getImage();
+            if (image == null) {
+                KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+            }
             kafkaExporter.setImage(image);
 
             kafkaExporter.setLogging(spec.getLogging());
