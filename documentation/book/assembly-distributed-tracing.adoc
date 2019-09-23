@@ -1,0 +1,45 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-distributed-tracing-{context}']
+= Distributed tracing
+
+{ProductName} provides support for the distributed tracing of messages between various components. Messages can be traced:
+
+* From a producer to a Kafka cluster to a consumer.
+* From a Kafka cluster to a Kafka Streams application, and back again.
+* Between a source and a target Kafka cluster through Kafka Mirror Maker.
+* From a Kafka Connect connector (including a Source-to-Image connector) to a Kafka cluster.
+
+You can view and query transactions -- referred to as __traces__ -- in a user interface. Tracing data has many uses, including monitoring the operation of your Kafka cluster and debugging performance issues with target systems and applications.
+
+//screenshot of Jaeger user interface
+
+Producers, consumers, and other Java client applications must be configured for distributed tracing before you can take advantage of distributed tracing in {ProductName}. This process is referred to as __client instrumentation__.
+
+.OpenTracing and Jaeger
+
+Distributed tracing in {ProductName} is based on the emerging {OpenTracingHome} specification and the popular {JaegerHome} tracing system.
+
+* OpenTracing defines APIs that developers can use to __instrument__ their applications -- usually in microservice architectures -- for distributed tracing. It is independent from the tracing system.
+
+* Jaeger, a tracing system, is an implementation of the OpenTracing APIs that developers and administrators can use to visualize, query, filter, and analyze trace data from a distributed system.
+
+{ProductName} uses the `java-kafka-client` OpenTracing library to simplify the instrumentation of Java client applications. This library is an example of a __tracer__.
+
+This chapter describes how to set up distributed tracing in your producers and consumers, Kafka Streams, Kafka Mirror Maker, and Kafka Connect connectors. 
+
+.Prerequisites
+
+It is helpful to understand:
+
+* The basics of OpenTracing, including key concepts such as traces, spans, and tracers. Refer to the {OpenTracingDocs}.
+
+* The components of the {JaegerArch}. 
+
+include::assembly-setting-up-tracing-kafka-clients.adoc[leveloffset=+1]
+
+include::assembly-instrumenting-kafka-clients-tracers.adoc[leveloffset=+1]
+
+include::assembly-setting-up-tracing-mirror-maker-connect.adoc[leveloffset=+1]
