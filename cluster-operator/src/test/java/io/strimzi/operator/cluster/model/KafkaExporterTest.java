@@ -106,7 +106,7 @@ public class KafkaExporterTest {
 
     @Test
     public void testFromConfigMapDefaultConfig() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, null,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, new KafkaExporterSpec());
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
