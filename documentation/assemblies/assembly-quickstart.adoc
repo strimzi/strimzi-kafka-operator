@@ -10,6 +10,7 @@ Use the instructions in this Quick Start Guide to install {ProductName} and star
 
 You will:
 
+* Install and start Minikube
 * Install {ProductName}
 * Create a Kafka cluster
 * Access the Kafka cluster to send and receive messages
@@ -27,9 +28,6 @@ include::../modules/proc-installing-product.adoc[leveloffset=+1]
 
 //create kafka cluster
 include::../modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
-
-//enable TLS security
-include::../modules/proc-enabling-tls.adoc[leveloffset=+1]
 
 //send and receive messages from a topic
 include::../modules/proc-sending-messages.adoc[leveloffset=+1]

@@ -7,6 +7,9 @@
 
 Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
 
+In this task you create namespaces in the cluster for your deployment.
+It is good practice to use namespaces to separate functions.
+
 .Prerequisites
 
 * Installation requires a Kubernetes account with cluster admin credentials.
@@ -15,7 +18,14 @@ Using the xref:proc-product-downloads-{context}[download files], install {Produc
 
 . Log in to the Kubernetes cluster with cluster admin privileges.
 
-. Modify the installation files to reference a new `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
+. Create a new `kafka` namespace for the {ProductName} Kafka Cluster Operator.
++
+[source, shell, subs=+quotes ]
+----
+kubectl create ns kafka
+----
+
+. Modify the installation files to reference the `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
 +
 NOTE: By default, the files work in the `myproject` namespace.
 +
@@ -34,11 +44,22 @@ sed -i 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBindin
 sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
 ----
 
-. Create the new `kafka` namespace.
+. Create a new `my-kafka-project` namespace where you will deploy your Kafka cluster.
 +
 [source, shell, subs=+quotes ]
 ----
-kubectl create ns kafka
+kubectl create ns my-kafka-project
+----
+
+. Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
++
+[source, yaml, subs=+quotes ]
+----
+# ...
+env:
+- name: STRIMZI_NAMESPACE
+  value: my-kafka-project
+# ...
 ----
 
 . Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
@@ -48,16 +69,7 @@ kubectl create ns kafka
 kubectl apply -f install/cluster-operator/ -n kafka
 ----
 
-. Create the `my-kafka-project` namespace where you will deploy your Kafka cluster.
-+
-[source, shell, subs=+quotes ]
-----
-kubectl create ns my-kafka-project
-----
-+
-It is best practice to use namespaces to separate functions.
-
-. Enable the Cluster Operator to watch that namespace.
+. Give permission to the Cluster Operator to watch the `my-kafka-project` namespace.
 +
 --
 [source, shell, subs=+quotes]
@@ -74,4 +86,4 @@ kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operat
 ----
 --
 +
-The commands create role bindings that grant permission for the Cluster Operator to access the Kafka cluster. 
+The commands create role bindings that grant permission for the Cluster Operator to access the Kafka cluster.
