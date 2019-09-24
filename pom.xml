@@ -81,10 +81,10 @@
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
-        <fasterxml.jackson-core.version>2.9.9</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.9.9.2</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.9.9</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.9.8</fasterxml.jackson-annotations.version>
+        <fasterxml.jackson-core.version>2.9.10</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.9.10</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.9.10</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.9.10</fasterxml.jackson-annotations.version>
         <kafka.version>2.3.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.8</scala-library.version>
