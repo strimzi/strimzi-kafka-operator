@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -195,7 +196,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();
                 if (image == null) {
-                    image = System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/operator:latest");
+                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "strimzi/operator:latest");
                 }
                 result.setImage(image);
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);

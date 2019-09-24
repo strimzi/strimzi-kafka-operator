@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -180,7 +181,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            image = System.getenv().get("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE");
+            image = System.getenv().get(ClusterOperatorConfig.STRIMZI_DEFAULT_ZOOKEEPER_IMAGE);
         }
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -235,10 +236,14 @@ public class ZookeeperCluster extends AbstractModel {
         if (tlsSidecar == null) {
             tlsSidecar = new TlsSidecar();
         }
-        if (tlsSidecar.getImage() == null) {
+
+        String tlsSideCarImage = tlsSidecar.getImage();
+        if (tlsSideCarImage == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+            tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
         }
+        tlsSidecar.setImage(tlsSideCarImage);
+
         zk.setTlsSidecar(tlsSidecar);
 
         if (zookeeperClusterSpec.getTemplate() != null) {
