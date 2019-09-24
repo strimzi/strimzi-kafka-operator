@@ -17,6 +17,19 @@ Intro
 
 . Step
 
+
+* Add the `opentracing-kafka-streams` dependency to Kafka Streams applications:
++
+[source,java,subs=attributes+]
+----
+<dependency>
+    <groupId>io.opentracing.contrib</groupId>
+    <artifactId>opentracing-kafka-streams</artifactId>
+    <version>VERSION</version>
+</dependency>
+----
+
+
 . Step
 
 . Step

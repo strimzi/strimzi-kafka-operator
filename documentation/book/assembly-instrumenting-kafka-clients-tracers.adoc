@@ -6,7 +6,7 @@
 
 Intro
 
-include::proc-instrumenting-producers-consumers-with-tracers.adoc[leveloffset=+1]
+include::proc-instrumenting-producers-consumers-opentracing.adoc[leveloffset=+1]
 
 include::proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
 

@@ -1,0 +1,98 @@
+// Module included in the following assemblies:
+//
+// assembly-instrumenting-kafka-clients-tracers.adoc
+
+[id='proc-instrumenting-producers-consumers-for-opentracing-{context}']
+= Instrumenting producers and consumers for OpenTracing
+
+Intro
+
+.Prerequisites
+
+* ???
+
+.Procedure
+
+Perform the following steps for all producers and consumers that you want to configure for distributed tracing.
+
+. Add the `opentracing-kafka-client` Maven dependency for OpenTracing to the pom.xml file for the client application.
++
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.opentracing.contrib</groupId>
+    <artifactId>opentracing-kafka-client</artifactId>
+    <version>VERSION</version>
+</dependency>
+----
+
+. If you want to instrument the producer or consumer by using a Decorator pattern, use the following code examples. If you want to use Interceptors instead of Decorators, see the next step.
++
+[source,java,subs=attributes+]
+----
+// Instantiate the KafkaProducer
+KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
+
+//Decorate the KafkaProducer with TracingKafkaProducer
+TracingKafkaProducer<Integer, String> tracingProducer = new TracingKafkaProducer<>(producer, 
+        tracer);
+
+// Send
+tracingProducer.send(...);
+
+// Instantiate the KafkaConsumer
+KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
+
+// Decorate the KafkaConsumer with TracingKafkaConsumer
+TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer<>(consumer, 
+        tracer);
+
+//Subscribe
+tracingConsumer.subscribe(Collections.singletonList("messages"));
+
+// Get records
+ConsumerRecords<Integer, String> records = tracingConsumer.poll(1000);
+
+// Retrieve SpanContext from polled record (consumer side)
+ConsumerRecord<Integer, String> record = ...
+SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
+----
+
+. If you want to instrument the producer or consumer by using Interceptors, use the following code examples.
++
+[source,java,subs=attributes+]
+----
+// Register the tracer with GlobalTracer:
+GlobalTracer.register(tracer);
+
+// Add the TracingProducerInterceptor class to the sender properties:
+senderProps.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, 
+          TracingProducerInterceptor.class.getName());
+
+// Instantiate the KafkaProducer
+KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
+
+// Send
+producer.send(...);
+
+// Add the TracingConsumerInterceptor class to the consumer properties:
+consumerProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+          TracingConsumerInterceptor.class.getName());
+
+// Instantiate the KafkaConsumer
+KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
+
+//Subscribe
+consumer.subscribe(Collections.singletonList("messages"));
+
+// Get records
+ConsumerRecords<Integer, String> records = consumer.poll(1000);
+
+// Retrieve SpanContext from polled record (consumer side)
+ConsumerRecord<Integer, String> record = ...
+SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
+----
+
+.Additional resources
+
+* For more information about, see .

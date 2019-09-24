@@ -24,9 +24,9 @@ Distributed tracing in {ProductName} is based on the emerging {OpenTracingHome} 
 
 * OpenTracing defines APIs that developers can use to __instrument__ their applications -- usually in microservice architectures -- for distributed tracing. It is independent from the tracing system.
 
-* Jaeger, a tracing system, is an implementation of the OpenTracing APIs that developers and administrators can use to visualize, query, filter, and analyze trace data from a distributed system.
+* Jaeger is an open source distributed tracing system used for monitoring and troubleshooting microservices-based distributed systems. Jaeger is an implementation of the OpenTracing APIs that developers and administrators can use to visualize, query, filter, and analyze trace data.
 
-{ProductName} uses the `java-kafka-client` Java OpenTracing library to simplify the instrumentation of Java client applications. This library is an example of a __tracer__.
+{ProductName} uses the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library, which simplifies the instrumentation of Kafka clients for OpenTracing. This library is an example of a __tracer__.
 
 This chapter describes how to set up distributed tracing in your producers and consumers, Kafka Streams, Kafka Mirror Maker, and Kafka Connect connectors. 
 

@@ -15,7 +15,7 @@ Before you can instrument client applications for distributed tracing, you must 
 
 Perform the following steps for every client application that you want to configure for distributed tracing.
 
-. Add dependencies for Jaeger and OpenTracing to the Maven project for the client application. For example:
+. Add Maven dependencies for Jaeger to the pom.xml file for the client application. For example:
 +
 [source,xml,subs=attributes+]
 ----
@@ -37,7 +37,14 @@ Tracer tracer = Configuration.fromEnv().getTracer();
 +
 NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core[Java OpenTracing library^] documentation.
 
-. Register the Jaeger tracer as a global tracer. For more information, see https://github.com/opentracing/opentracing-java[OpenTracing API for Java^]. 
+. Register the Jaeger tracer as a global tracer:
++
+[source,java,subs=attributes+]
+----
+GlobalTracer.register(tracer);
+----
++
+For more information, see the https://github.com/opentracing/opentracing-java[OpenTracing API for Java^]. 
 
 .Additional resources
 
