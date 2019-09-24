@@ -3,24 +3,21 @@
 // assembly-instrumenting-kafka-clients-tracers.adoc
 
 [id='proc-instrumenting-kafka-streams-with-tracers-{context}']
-= Instrumenting Kafka Streams with tracers
+= Instrumenting Kafka Streams for OpenTracing
 
 Intro
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* ???
 
 .Procedure
 
-. Step
+Perform the following steps for all Kafka Streams applications that you want to instrument for OpenTracing.
 
-
-* Add the `opentracing-kafka-streams` dependency to Kafka Streams applications:
+. Add the `opentracing-kafka-streams` dependency to the pom.xml file for your Kafka Streams application:
 +
-[source,java,subs=attributes+]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
@@ -29,16 +26,20 @@ Intro
 </dependency>
 ----
 
+. Instantiate the `TracingKafkaClientSupplier` supplier interface:
++
+[source,java,subs=attributes+]
+----
+KafkaClientSupplier supplier = new TracingKafkaClientSupplier(tracer);
+----
 
-. Step
-
-. Step
-
-. Step
-
-. Step
-
-. Step
+. Provide the supplier to `KafkaStreams`:
++
+[source,java,subs=attributes+]
+----
+KafkaStreams streams = new KafkaStreams(builder.build(), new StreamsConfig(config), supplier);
+streams.start();
+----
 
 .Additional resources
 

@@ -5,28 +5,72 @@
 [id='proc-enabling-tracing-in-connect-mirror-maker-resources-{context}']
 = Enabling tracing in the KafkaConnect, KafkaConnectS2I and KafkaMirrorMaker custom resources
 
-Intro
+Configure a Jaeger tracer in the `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMirrorMaker` custom resources by using environment variables. When the resource is updated in your Kubernetes cluster, the Java interceptors for the consumers and producers within Mirror Maker or Kafka Connect are updated. Additionally, the tracing agent initializes the Jaeger tracer based on the environment variables.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* ???
 
 .Procedure
 
-. Step
+. Use xref:con-customizing-containers-{context}[template configuration properties] to configure the Jaeger tracer. Define the configuration by using the xref:ref-tracing-environment-variables-{context}[tracing environment variables]. For example:
++
+.Jaeger tracer configuration for Kafka Connect
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  template:
+    connectContainer:
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+#...
+----
++
+.Jaeger tracer configuration for Mirror Maker
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  #...
+  template:
+    mirrorMakerContainer:
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+#...
+----
 
-. Step
+. Set the `tracing.type` property in the `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` resource to `jaeger`. For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  tracing:
+    type: jaeger
+----
 
-. Step
+. Create or update the resource:
+[source,shell,subs=attributes+]
+----
+kubectl apply -f _your-file_
+----
 
-. Step
-
-. Step
-
-. Step
 
 .Additional resources
 
-* For more information about, see .
+* xref:con-customizing-containers-{context}[]
+* xref:con-customizing-template-properties-{context}[]
