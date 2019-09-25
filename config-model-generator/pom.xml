@@ -13,6 +13,7 @@
 
     <properties>
         <kafka-metadata-version>${kafka.version}</kafka-metadata-version>
+        <config-model-file>../cluster-operator/src/main/resources/kafka-${kafka-metadata-version}-config-model.json</config-model-file>
     </properties>
 
     <dependencies>
@@ -49,7 +50,7 @@
                 <configuration>
                     <mainClass>io.strimzi.build.kafka.metadata.KafkaConfigModelGenerator</mainClass>
                     <arguments>
-                        <argument>../cluster-operator/src/main/resources/kafka-${kafka-metadata-version}-config-model.json</argument>
+                        <argument>${config-model-file}</argument>
                     </arguments>
                 </configuration>
             </plugin>
