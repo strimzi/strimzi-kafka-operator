@@ -47,10 +47,12 @@ Consult the product documentation for the authorization server for information o
 +
 --
 * Kafka
-* Kafka brokers
+* Kafka broker
 * Kafka client producer
 * Kafka client consumer
 --
++
+Enable the clients and ensure each has a unique client ID.
 
 .What to do next
-After deploying the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].
+After deploying and configuring the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].
