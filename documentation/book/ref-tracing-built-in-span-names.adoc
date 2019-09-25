@@ -1,8 +1,0 @@
-// Module included in the following assemblies:
-//
-// assembly-instrumenting-kafka-clients-tracers.adoc
-
-[id='ref-tracing-built-in-span-names-{context}']
-= Built-in span names
-
-Text goes here

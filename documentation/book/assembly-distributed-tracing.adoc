@@ -5,6 +5,17 @@
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing
 
+{ProductName} provides support for the distributed tracing of transactions between the various components of a typical Kafka architecture. When distributed tracing is set up, producing and consuming messages to and from a Kafka cluster generates __traces__ for different events. For example, traces can be generated when a message is consumed by a consumer and when an offset is written to the consumer offsets log.  
+
+
+
+these transactions, known as __traces__, are generated at the different stages that are involved in processing messages 
+
+
+Messages can be traced:
+
+
+
 {ProductName} provides support for the distributed tracing of messages between various components. Messages can be traced:
 
 * From a producer to a Kafka cluster to a consumer.
@@ -28,11 +39,21 @@ Distributed tracing in {ProductName} is based on the emerging {OpenTracingHome} 
 
 {ProductName} uses the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library, which simplifies the instrumentation of Kafka clients for OpenTracing. This library is an example of a __tracer__.
 
-This chapter describes how to set up distributed tracing in your producers and consumers, Kafka Streams, Kafka Mirror Maker, and Kafka Connect connectors. 
+Setting up distributed tracing within {ProductName} consists of several related procedures.
+
+* Initialize a Jaeger tracer in Kafka client applications.
+
+* Instrument producers and consumers for OpenTracing.
+
+* Instrument Kafka Streams for OpenTracing.
+
+* Set up distributed tracing for Mirror Maker and Kafka Connect.
+
+Setting up distributed tracing across process boundaries is outside the scope of this chapter. For more information on this subject, see the https://opentracing.io/guides/java/inject-extract/[OpenTracing documentation].
 
 .Prerequisites
 
-It is helpful to understand:
+Before you set up distributed tracing, it is helpful to understand:
 
 * The basics of OpenTracing, including key concepts such as traces, spans, and tracers. Refer to the {OpenTracingDocs}.
 

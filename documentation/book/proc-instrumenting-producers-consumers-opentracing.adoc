@@ -35,7 +35,7 @@ Perform the following steps for all producers and consumers that you want to con
 // Create an instance of the KafkaProducer:
 KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
 
-//Create an instance of the TracingKafkaProducer:
+// Create an instance of the TracingKafkaProducer:
 TracingKafkaProducer<Integer, String> tracingProducer = new TracingKafkaProducer<>(producer, 
         tracer);
 
@@ -49,10 +49,10 @@ KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
 TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer<>(consumer, 
         tracer);
 
-//Subscribe:
+// Subscribe:
 tracingConsumer.subscribe(Collections.singletonList("messages"));
 
-// Get records:
+// Get messages:
 ConsumerRecords<Integer, String> records = tracingConsumer.poll(1000);
 
 // Retrieve SpanContext from polled record (consumer side):
@@ -61,41 +61,41 @@ SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(),
 ----
 +
 NOTE: You can define custom span names as described in #[link].
-
-//CODE SAMPLE FOR INTERCEPTORS IS MESSED UP
-. If you want to instrument the producer or consumer by using Interceptors, use the following code examples.
++
+. If you want to use Interceptors, instrument your client code as shown in the following example.
 +
 [source,java,subs=attributes+]
 ----
 // Register the tracer with GlobalTracer:
 GlobalTracer.register(tracer);
 
-// Add the TracingProducerInterceptor class to the sender properties:
+// Add the TracingProducerInterceptor to the sender properties:
 senderProps.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, 
-          TracingProducerInterceDefinining cptor.class.getName());
-Definining c
-// Create an instance of the KafDefinining ckaProducer
-KafkaInstantiateProducer<IntegerDefinining c, String> producer = new KafkaProducer<>(senderProps);
-InstantiateDefinining c
-// SendDefinining c
-producer.send(...);Definining c
-Definining c
-// Add the TracingConsumerIntercDefinining ceptor class to the consumer properties:
-consumerProps.put(ConsumerConfigDefinining c.INTERCEPTOR_CLASSES_CONFIG,
-          TracingConsumerInterceDefinining cptor.class.getName());
-Definining c
-// Create an instance of the KafkaConsumer
+          TracingProducerInterceptor.class.getName());
+
+// Create an instance of the KafkaProducer:
+KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
+
+// Send:
+producer.send(...);
+
+// Add the TracingConsumerInterceptor to the consumer properties:
+consumerProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+          TracingConsumerInterceptor.class.getName());
+
+// Create an instance of the KafkaConsumer:
 KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
 
-//Subscribe
+// Subscribe:
 consumer.subscribe(Collections.singletonList("messages"));
 
-// Get records
+// Get messages:
 ConsumerRecords<Integer, String> records = consumer.poll(1000);
 
-// Retrieve SpanContext from polled record (consumer side)
+// Retrieve the SpanContext from a polled message (consumer side):
 ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
+
 ----
 
 == Custom span names in a Decorator pattern
