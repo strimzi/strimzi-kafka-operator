@@ -4,7 +4,8 @@ set -e
 
 if [ $1 = "build" ]
 then
-    # Always delete existing files
+    # Always delete existing files so when kafka-versions changes we remove
+    # models for unsupported versions
     rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
     for kversion in $(sed -E -e '/^(#.*|[[:space:]]*)$/d' -e 's/^([0-9.]+)[[:space:]]+.*[[:space:]]+([[:alnum:]]+)[[:space:]]+.*$/\1/g' ../kafka-versions)
     do
