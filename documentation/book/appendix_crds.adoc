@@ -255,7 +255,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |jwksEndpointUri                 1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
 |string
-|jwksExpirySeconds               1.2+<.<|Configures how often are the JWKS certificates considered valid. Defaults to 360 seconds.
+|jwksExpirySeconds               1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
 |integer
 |jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. Defaults to 300 seconds.
 |integer
