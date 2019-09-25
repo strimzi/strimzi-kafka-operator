@@ -6,10 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.Properties;
-
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
