@@ -78,27 +78,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
         for (Map.Entry<String, String> entry: asOrderedProperties().asMap().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            // TODO, special parsing for "listener.security.protocol.map"
             ConfigModel config = models.get(key);
             if (config == null) {
                 //throw new RuntimeException("Unknown config " + key);
             } else {
                 errors.addAll(config.validate(key, value));
-            }
-            Pattern compile = Pattern.compile("listener\\.name\\.([^\\.]+)\\.(.+)");
-            Matcher matcher = compile.matcher(key);
-            if (matcher.matches()) {
-                Set<String> listenerNames = Arrays.stream(getConfigOption("listener.security.protocol.map",
-                        "PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL").split(" *, *", -1)).map(s -> s.substring(0, s.indexOf(":")).toLowerCase(Locale.ENGLISH)).collect(Collectors.toSet());
-                String listenerName = matcher.group(1);
-                if (listenerNames.contains(listenerName)) {
-                    ConfigModel configModel = models.get(matcher.group(2));
-                    if (configModel != null) {
-                        errors.addAll(configModel.validate(key, value));
-                    }
-                } else {
-                    errors.add("No listener '" + listenerName + "' defined in 'listener.security.protocol.map'. Known listeners are " + listenerNames);
-                }
             }
         }
         return errors;

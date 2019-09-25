@@ -94,29 +94,4 @@ public class KafkaConfigurationTests {
     public void validVersion() {
         assertNoError("inter.broker.protocol.version", "2.3-IV0");
     }
-
-    @Test
-    public void listenerNameInvalidConfig() throws IOException {
-        Properties p = new Properties();
-        p.setProperty("listener.name.plaintext.ssl.client.auth", "foo");
-        StringWriter sw = new StringWriter();
-        p.store(sw, null);
-        KafkaConfiguration kafkaConfiguration = KafkaConfiguration.unvalidated(sw.toString());
-        assertEquals(singletonList("listener.name.plaintext.ssl.client.auth has value 'foo' which is not one of the allowed values: [required, requested, none]"),
-                kafkaConfiguration.validate(kafkaVersion));
-    }
-
-    @Test
-    public void listenerNameUnknown() throws IOException {
-        Properties p = new Properties();
-        p.setProperty("listener.name.bob.ssl.client.auth", "foo");
-        StringWriter sw = new StringWriter();
-        p.store(sw, null);
-        KafkaConfiguration kafkaConfiguration = KafkaConfiguration.unvalidated(sw.toString());
-        assertEquals(singletonList("No listener 'bob' defined in 'listener.security.protocol.map'. Known listeners are [sasl_plaintext, plaintext, sasl_ssl, ssl]"),
-                kafkaConfiguration.validate(kafkaVersion));
-    }
-
-
-
 }
