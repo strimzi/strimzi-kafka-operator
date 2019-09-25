@@ -8,7 +8,9 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -406,6 +409,85 @@ class ConnectST extends AbstractST {
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
         StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
+    }
+
+    @Test
+    void testCustomAndUpdatedValues() {
+        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
+        envVarGeneral.put("TEST_ENV_1", "test.env.one");
+        envVarGeneral.put("TEST_ENV_2", "test.env.two");
+
+        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
+        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
+        envVarUpdated.put("TEST_ENV_3", "test.env.three");
+
+        Map<String, Object> connectConfig = new HashMap<>();
+        connectConfig.put("config.storage.replication.factor", "1");
+        connectConfig.put("offset.storage.replication.factor", "1");
+        connectConfig.put("status.storage.replication.factor", "1");
+
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withConnectContainer(
+                        new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build()
+                    )
+                .endTemplate()
+                .withNewReadinessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endReadinessProbe()
+                .withNewLivenessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endLivenessProbe()
+            .endSpec().done();
+
+        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Verify values before update");
+        checkReadinessLivenessProbe(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkContainerConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarGeneral);
+
+        replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+            kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            kc.getSpec().setConfig(connectConfig);
+            kc.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kc.getSpec().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kc.getSpec().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kc.getSpec().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kc.getSpec().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kc.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kc.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kc.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+        });
+
+        StUtils.waitTillDepHasRolled(KafkaConnectResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
+
+        LOGGER.info("Verify values after update");
+        checkReadinessLivenessProbe(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkContainerConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarUpdated);
+        checkContainerConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), "KAFKA_CONNECT_CONFIGURATION", connectConfig);
     }
 
     @BeforeEach

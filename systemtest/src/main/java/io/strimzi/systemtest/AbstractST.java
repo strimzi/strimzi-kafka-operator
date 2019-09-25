@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -214,7 +215,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
     }
 
-    void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
+    protected void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
         replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
     }
 
@@ -1023,7 +1024,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param configKey Expected configuration key
      * @param config Expected configuration
      */
-    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+    protected void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
@@ -1032,8 +1033,78 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             pods.forEach(pod -> {
                 pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
                         .forEach(container -> {
+                            List list = container.getEnv().stream().map((Function<EnvVar, Object>) EnvVar::getName).collect(Collectors.toList());
+                            assertTrue(list.contains(configKey));
+
                             container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey))
-                                    .forEach(envVar -> assertEquals(config, envVar.getValue()));
+                                    .forEach(envVar -> {
+                                        LOGGER.info("Check specific configuration: {}", envVar.getName());
+                                        for (Map.Entry<String,Object> entry : config.entrySet()) {
+                                            LOGGER.info("Expected: {}", entry.getKey() + "=" + entry.getValue());
+                                            LOGGER.info("Values: {}", envVar.getValue());
+                                            assertThat(entry.getKey() + "=" + entry.getValue() + "\n", is(envVar.getValue()));
+                                        }
+                                    });
+                        });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies container configuration by environment key
+     * @param podNamePrefix Name of pod where container is located
+     * @param containerName The container where verifying is expected
+     * @param config Expected configuration
+     */
+    protected void checkContainerConfiguration(String podNamePrefix, String containerName, Map<String, String> config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing EnvVars configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                        .forEach(container -> {
+                            container.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName()))
+                                    .forEach(envVar -> {
+                                        assertEquals(config.get(envVar.getName()), envVar.getValue());
+                                    });
+                        });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies readinessProbe and livenessProbe properties in expected container
+     * @param podNamePrefix Prefix of pod name where container is located
+     * @param containerName The container where verifying is expected
+     * @param initialDelaySeconds expected value for property initialDelaySeconds
+     * @param timeoutSeconds expected value for property timeoutSeconds
+     */
+    protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+                                     int periodSeconds, int successThreshold, int failureThreshold) {
+        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing Readiness and Liveness configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                        .forEach(container -> {
+                            assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                            assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                            assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                            assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                            assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                            assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                            assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                            assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                            assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                            assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
                         });
             });
         } else {

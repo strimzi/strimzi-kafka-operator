@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
@@ -36,6 +38,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -895,5 +898,16 @@ public class StUtils {
                         "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"/tmp/test-file-sink.txt\" } }' " +
                         "http://localhost:8083/connectors"
         );
+    }
+
+    public static List<ContainerEnvVar> createContainerEnvVarsFromMap(Map<String, String> envVars) {
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        for (Map.Entry<String,String> entry : envVars.entrySet()) {
+            testEnvs.add(new ContainerEnvVarBuilder()
+                    .withName(entry.getKey())
+                    .withValue(entry.getValue()).build());
+        }
+
+        return testEnvs;
     }
 }
