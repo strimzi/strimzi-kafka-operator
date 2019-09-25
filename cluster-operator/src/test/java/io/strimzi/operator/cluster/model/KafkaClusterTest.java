@@ -2693,7 +2693,7 @@ public class KafkaClusterTest {
 
         assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
         assertEquals(
-                String.format("%s=\"%s\" %s=\"%s\" %s=%s %s=%s %s=\"%s\"",
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
                         ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
                         ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint",
                         ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50,
