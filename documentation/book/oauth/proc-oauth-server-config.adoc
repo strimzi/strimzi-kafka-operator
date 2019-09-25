@@ -5,19 +5,27 @@
 [id='proc-oauth-server-config-{context}']
 = Deploying an {oauth} authorization server
 
-This procedure describes how to deploy an authorization server and configure it for integration with Strimzi.
+This procedure describes how to deploy an authorization server and configure it for integration with {ProductName}.
 
-User credentials are managed by an authorization server using realms, which describe security policies.
+Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to configure authentication credentials for:
 
-To use {oauth} with Strimzi, you need a deployment of an authorization server to be able to create and manage authentication realms.
+* Configure brokers
+* Configure and authorize clients
+* Configure users
+* Obtain access and refresh tokens
+
+User credentials are managed by an authorization server using a _realm_, which describes security policies.
+The realm is the authentication provider for clients.
+
+To use {oauth} with {ProductName}, you need a deployment of an authorization server to be able to create and manage authentication realms.
 
 NOTE: If you already have an authorization server deployed, you can skip the deployment step and use your current deployment.
 
 .Prerequisites
 
-* Strimzi and Kafka is running
+* {ProductName} and Kafka is running
 
-For the OAuth deployment:
+For the authorization server deployment:
 
 * Check the supported configuration for the authorization server
 * Installation requires a user with cluster-admin role, such as system:admin
@@ -25,23 +33,24 @@ For the OAuth deployment:
 .Procedure
 
 . Deploy the authorization server to your cluster.
-. Use the authorization server to configure authentication credentials for:
+. Access the CLI or admin console for the authorization server to create the {oauth} policies for {ProductName}.
++
+Consult the product documentation for the authorization server for information on creating the policies.
+
+. Create a _realm_.
++
+* Enable the realm
+* Set SSL as `external`
+* Set session and token timeouts
+
+. Create the following _clients_ and configure their authentication credentials:
 +
 --
-.. Kafka brokers
-.. Each of your client applications
+* Kafka
+* Kafka brokers
+* Kafka client producer
+* Kafka client consumer
 --
-+
-The steps are dependent on the authorization server.
-+
-Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to:
-+
-* Configure brokers
-* Configure and authorize clients
-* Configure users
-* Obtain access and refresh tokens
-+
-Consult the product documentation for the authorization server you choose.
 
 .What to do next
 After deploying the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].

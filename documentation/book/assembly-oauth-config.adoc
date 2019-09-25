@@ -7,7 +7,7 @@
 
 {oauth} is used for interaction between Kafka clients and {ProductName} components.
 
-In order to use {oauth} for Strimzi, you must:
+In order to use {oauth} for {ProductName}, you must:
 
 . xref:proc-oauth-server-config-{context}[Deploy an authorization server and configure the deployment to integrate with Strimzi]
 . xref:proc-oauth-broker-config-{context}[Deploy or redeploy the Kafka cluster with Kafka broker listeners configured to use {oauth}]
