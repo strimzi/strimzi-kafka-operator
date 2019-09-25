@@ -75,9 +75,9 @@ public class KafkaConfiguration extends AbstractConfiguration {
             String key = entry.getKey();
             String value = entry.getValue();
             ConfigModel config = models.get(key);
-            if (config == null) {
-                //throw new RuntimeException("Unknown config " + key);
-            } else {
+            if (config != null) {
+                // It's not an error if config _is_ null because extra configs
+                // might be intended for plugins
                 errors.addAll(config.validate(key, value));
             }
         }
