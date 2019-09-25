@@ -46,10 +46,10 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
-elif [ -z "$DOCKER_PASS" ]; then
+elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
     make docu_html
     make docu_htmlnoheader
-    echo "Probably building in fork because some secrets are present. Will not attempt to push anything."
+    echo "Building in a fork and not in a Strimzi repository. Will not attempt to push anything."
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_html
     make docu_htmlnoheader
