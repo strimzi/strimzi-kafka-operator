@@ -55,7 +55,7 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    if [ "${MAIN_BUILD}" = "TRUE" ]; then
+    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS
 
