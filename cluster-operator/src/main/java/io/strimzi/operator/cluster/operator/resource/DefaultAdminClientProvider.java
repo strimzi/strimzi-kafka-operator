@@ -58,6 +58,7 @@ class DefaultAdminClientProvider implements AdminClientProvider {
                 p.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, keystoreFile.getAbsolutePath());
                 p.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keyStorePassword);
                 p.setProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, keyStorePassword);
+                p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
                 ac = AdminClient.create(p);
             } finally {
                 if (!keystoreFile.delete()) {
