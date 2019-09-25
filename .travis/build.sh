@@ -46,12 +46,16 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
+elif [ "${TRAVIS_SECURE_ENV_VARS}" = "false" ]; then
+    make docu_html
+    make docu_htmlnoheader
+    echo "Probably building in fork because no secrets are present. Will not attempt to push anything."
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_html
     make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
+    if [ "${MAIN_BUILD}" = "TRUE" ]; then
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS
 
