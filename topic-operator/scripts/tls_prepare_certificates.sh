@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set +x
 
 # Parameters:
 # $1: Path to the new truststore
