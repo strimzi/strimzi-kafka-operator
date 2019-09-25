@@ -153,7 +153,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         if (kafkaBridge.getSpec().getReadinessProbe() != null) {
-            kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getReadinessProbe());
+            kafkaBridgeCluster.setReadinessProbe(kafkaBridge.getSpec().getReadinessProbe());
         }
 
         Map<String, Object> metrics = spec.getMetrics();
@@ -203,11 +203,14 @@ public class KafkaBridgeCluster extends AbstractModel {
     
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(3);
+
         int port = DEFAULT_REST_API_PORT;
         if (http != null) {
             port = http.getPort();
         }
+
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
+
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
@@ -217,7 +220,14 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
-        portList.add(createContainerPort(REST_API_PORT_NAME, DEFAULT_REST_API_PORT, "TCP"));
+
+        int port = DEFAULT_REST_API_PORT;
+        if (http != null) {
+            port = http.getPort();
+        }
+
+        portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
+
         if (isMetricsEnabled) {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }

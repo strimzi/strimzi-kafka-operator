@@ -846,4 +846,66 @@ public class KafkaBridgeClusterTest {
         assertEquals("tls.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
         assertEquals("second-certificate/tls.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
     }
+
+    @Test
+    public void testDifferentHttpPort()   {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewHttp(1874)
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+
+        // Check ports in container
+        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME), cont.getLivenessProbe().getHttpGet().getPort());
+        assertEquals(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME), cont.getReadinessProbe().getHttpGet().getPort());
+        assertEquals(new Integer(1874), cont.getPorts().get(0).getContainerPort());
+        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
+        assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
+
+        // Check ports on Service
+        Service svc = kb.generateService();
+
+        assertEquals("ClusterIP", svc.getSpec().getType());
+        assertEquals(expectedLabels(kb.getServiceName()), svc.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
+        assertEquals(new Integer(1874), svc.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
+        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(emptyMap(), svc.getMetadata().getAnnotations());
+        checkOwnerReference(kbc.createOwnerReference(), svc);
+    }
+
+    @Test
+    public void testProbeConfiguration()   {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(20)
+                        .withPeriodSeconds(21)
+                        .withTimeoutSeconds(22)
+                    .endLivenessProbe()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(30)
+                        .withPeriodSeconds(31)
+                        .withTimeoutSeconds(32)
+                    .endReadinessProbe()
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new HashMap<String, String>(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals(new Integer(20), cont.getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(21), cont.getLivenessProbe().getPeriodSeconds());
+        assertEquals(new Integer(22), cont.getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(30), cont.getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(31), cont.getReadinessProbe().getPeriodSeconds());
+        assertEquals(new Integer(32), cont.getReadinessProbe().getTimeoutSeconds());
+    }
 }
