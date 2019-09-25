@@ -46,10 +46,10 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
-elif [ "${TRAVIS_SECURE_ENV_VARS}" = "false" ]; then
+elif [ -z "$DOCKER_PASS" ]; then
     make docu_html
     make docu_htmlnoheader
-    echo "Probably building in fork because no secrets are present. Will not attempt to push anything."
+    echo "Probably building in fork because some secrets are present. Will not attempt to push anything."
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_html
     make docu_htmlnoheader
