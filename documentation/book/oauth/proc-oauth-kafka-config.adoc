@@ -1,0 +1,84 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth-strimzi-config.adoc
+
+[id='proc-oauth-kafka-config-{context}']
+= Configuring OAuth for Kafka components
+
+This procedure describes how to configure Kafka components to use {oauth} authentication using an authorization server.
+
+You can configure authentication for:
+
+* Kafka Connect
+* Kafka Mirror Maker
+* Kafka Bridge
+
+In this scenario, the Kafka component and the authorization server are running in the same cluster.
+
+.Prerequisites
+
+* AMQ Streams and Kafka is running
+* {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
+* Kafka brokers are configured for {oauth}
+
+.Procedure
+
+. Create an OpenShift client Secret and mount it to the component as an environment variable.
++
+For example, here we are creating a client Secret for the Kafka Bridge:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Secret
+metadata:
+ name: my-bridge-oauth
+type: Opaque
+data:
+ clientSecret: MGQ1OTRmMzYtZTllZS00MDY2LWI5OGEtMTM5MzM2NjdlZjQw
+----
++
+Create or edit the resource for the Kafka component so that {oauth} authentication is configured for the authentication property.
++
+For example, here {oauth} is assigned to the Kafka Bridge client:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  authentication:
+   type: oauth <1>
+   tokenEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/token <2>
+   clientId: kafka-bridge
+   clientSecret:
+     secretName: my-bridge-oauth
+     key: clientSecret
+   tlsTrustedCertificates: <3>
+     - secretName: oauth-server-cert
+     certificate: tls.crt
+----
+<1> Authentication type set to `oauth`.
+<2> URI of the token endpoint for authentication.
+<3> Trusted certificates for TLS connection to the authorization server.
+
+
+. Apply the changes to the deployment of your Kafka resource.
++
+[source,yaml,subs="+quotes,attributes"]
+----
+oc apply -f your-file
+----
+
+. Check the update in the logs or by watching the pod state transitions:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+kubectl logs -f ${POD_NAME} ${CONTAINER_NAME}
+kubectl get po -w
+----
++
+The rolling updates configure the component for interaction with Kafka brokers using {oauth} authentication.

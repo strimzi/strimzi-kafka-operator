@@ -1,0 +1,47 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth-strimzi-config.adoc
+
+[id='proc-oauth-server-config-{context}']
+= Deploying an {oauth} authorization server
+
+This procedure describes how to deploy an authorization server and configure it for integration with Strimzi.
+
+User credentials are managed by an authorization server using realms, which describe security policies.
+
+To use {oauth} with Strimzi, you need a deployment of an authorization server to be able to create and manage authentication realms.
+
+NOTE: If you already have an authorization server deployed, you can skip the deployment step and use your current deployment.
+
+.Prerequisites
+
+* Strimzi and Kafka is running
+
+For the OAuth deployment:
+
+* Check the supported configuration for the authorization server
+* Installation requires a user with cluster-admin role, such as system:admin
+
+.Procedure
+
+. Deploy the authorization server to your cluster.
+. Use the authorization server to configure authentication credentials for:
++
+--
+.. Kafka brokers
+.. Each of your client applications
+--
++
+The steps are dependent on the authorization server.
++
+Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to:
++
+* Configure brokers
+* Configure and authorize clients
+* Configure users
+* Obtain access and refresh tokens
++
+Consult the product documentation for the authorization server you choose.
+
+.What to do next
+After deploying the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].

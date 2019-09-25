@@ -1,0 +1,53 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth.adoc
+
+[id='con-oauth-authentication-client-options-{context}']
+= {oauth} client authentication options
+
+Authentication options for {oauth} interaction between the Kafka broker and Kafka client:
+
+* xref:oauth-introspection-endpoint[Authorization server authentication using an introspection endpoint]
+* xref:oauth-jwt[Authorization server authentication using a local JWT token signature validation]
+* xref:oauth-token-endpoint[Authentication using a long-lived access token and introspection endpoint]
+* xref:oauth-token-jwt[Authentication using a long-lived token and a local JWT token signature validation]
+
+[id='oauth-introspection-endpoint']
+== Authorization server authentication using an introspection endpoint
+
+image:oauth-introspection-endpoint.png[Authorization server authentication using an introspection endpoint]
+
+. Kafka client authenticates with the authorization server using a client ID and secret.
+. An access token is returned by the authorization server.
+. Kafka client authenticates with the Kafka broker using the access token.
+. Kafka broker validates the access token by calling a token introspection endpoint provided by the authorization server
+. Kafka client session is established.
+
+[id='oauth-jwt']
+== Authorization server authentication using a local JWT token signature validation
+
+image:oauth-jwt-signature.png[Authorization server authentication using a local JWT token signature]
+
+. Kafka client authenticates with the authorization server using a client ID, an authentication secret and a refresh token.
+. An access token is returned by the authorization server.
+. Client authenticates with the Kafka broker using the access token.
+. Kafka broker validates the access token locally using a JWT token signature and the Kafka client session is established.
+
+[id='oauth-token-endpoint']
+== Authentication using a long-lived access token and introspection endpoint
+
+image:oauth-introspection-endpoint-long-token.png[Authentication using a long-lived access token and introspection endpoint]
+
+. Kafka client authenticates with the Kafka Broker using a long-lived access token.
+. Kafka broker validates the access token by calling a token introspection endpoint provided by the authorization server
+. Kafka client session is established.
+
+[id='oauth-token-jwt']
+== Authentication using a short-lived token and a local JWT token signature validation
+
+image:oauth-jwt-signature-token.png[Authentication using a long-lived access token and introspection endpoint]
+
+. Kafka client authenticates with the Kafka broker using the access token.
+. Kafka broker validates the access token locally using a JWT token signature and the client session is established.
+
+WARNING: JWT token signature validation is fast, but suitable only for short-lived tokens as there is no check with the authorization server that a token has been revoked. Token expiration is written into the token, so revocation is not accounted for.

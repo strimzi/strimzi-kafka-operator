@@ -1,0 +1,54 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth-strimzi-config.adoc
+
+[id='proc-oauth-client-config-{context}']
+= Configuring Kafka clients to use {oauth}
+
+This procedure describes how to configure Java-based Kafka clients to use {oauth} for interaction with Kafka brokers.
+
+Add a client callback plugin to your _pom.xml_ file, and configure the system properties.
+
+.Prerequisites
+
+* AMQ Streams and Kafka is running
+* {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
+* Kafka brokers are configured for {oauth}
+
+.Procedure
+
+. Add the client callback plugin to the `pom.xml` file for the Kafka client:
++
+[source,xml]
+----
+<dependency>
+ <groupId>io.strimzi</groupId>
+ <artifactId>kafka-oauth-client</artifactId>
+ <version>0.1.0.redhat-00001</version>
+</dependency>
+----
+
+. Configure the system properties for the callback:
++
+[source,xml]
+----
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/token”);
+System.setProperty(Config.OAUTH_CLIENT_ID, "kafka-producer-client");
+System.setProperty(Config.OAUTH_CLIENT_SECRET, "kafka-producer-client-secret");
+----
+
+. Enable SASL OAUTHBEARER and TLS in the Kafka client configuration:
++
+[source,xml]
+----
+props.put("sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;");
+props.put("security.protocol", "SASL_SSL");
+props.put("sasl.mechanism", "OAUTHBEARER");
+props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
+----
+
+. Verify that the Kafka client can access the Kafka brokers.
+
+.What to do next
+
+* xref:proc-oauth-kafka-config-{context}[Configure Kafka components to use {oauth}]

@@ -1,0 +1,108 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth-strimzi-config.adoc
+
+[id='proc-oauth-broker-config-{context}']
+= Configuring {oauth} support for Kafka brokers
+
+This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
+
+In this scenario, {ProductName} and the authorization server are running in the same cluster.
+
+If the authorization server is using self-signed certificates with valid hostnames, TLS connection works out of box.
+Otherwise, you have two connection options for your external listener configuration:
+
+. TLS connection to the authorization server with trusted certificates
+. Direct connection using an introspection endpoint configuration
+
+Both options are described in this procedure.
+
+
+.Before you start
+
+For more information on the configuration and authentication of Kafka broker listeners, see:
+
+* xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
+* xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[Authentication and Authorization]
+
+.Prerequisites
+
+* {ProductName} and Kafka is running
+* {oauth} authorization server is deployed
+
+.Procedure
+
+. Update the Kafka broker configuration (`Kafka.spec.kafka`) of your `kafka` resource in an editor.
++
+[source,shell]
+----
+kubectl edit kafka my-cluster
+----
+
+. Configure the Kafka broker listener configuration
++
+For example:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+listeners:
+ plain:
+   authentication:
+     type: oauth <1>
+     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/demo <2>
+     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs <3>
+     userNameClaim: preferred_username <4>
+ tls:
+   authentication:
+     type: oauth
+     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/demo
+     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs
+     userNameClaim: preferred_username
+ external:
+   type: {external-type}
+   //Option 1
+   authentication: <5>
+     type: oauth
+     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/external
+     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs
+     userNameClaim: preferred_username
+     tlsTrustedCertificates: <6>
+     - secretName: oauth-server-cert
+       certificate: ca.crt
+   disableTlsHostnameVerification: true <7>
+
+   //Option 2
+   authentication: <8>
+     type: oauth
+     validIssuerUri: https://sso.myproject.svc:8443/auth/realms/internal
+     introspectionEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token/introspect
+     clientId: kafka-broker
+     clientSecret:
+       secretName: my-cluster-oauth
+       key: clientSecret
+
+----
+<1> Listener type set to `oauth`.
+<2> URI of the token issuer used for authentication.
+<3> URI of the JWKS certificate endpoint used for local JWT validation.
+<4> The user name profile claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
+<5> OPTION 1: TLS connection to the authorization server.
+<6> (Optional) Trusted certificates for TLS connection to the authorization server.
+<7> Enable TLS hostname verification. Default is `false`.
+<8> OPTION 2: Introspection endpoint to connect directly to the authorization server.
+
+. Save and exit the editor, then wait for rolling updates to complete.
+
+. Check the update in the logs or by watching the pod state transitions:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl logs -f ${POD_NAME} ${CONTAINER_NAME}
+kubectl get po -w
+----
++
+The rolling updates configure the brokers to send messages using {oauth} authentication.
+
+.What to do next
+
+* xref:proc-oauth-client-config-{context}[Configure your Kafka clients to use {oauth}]
