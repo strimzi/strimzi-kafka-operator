@@ -7,6 +7,8 @@
 
 Intro
 
+You can instrument producers and consumers by using a Decorator pattern or Interceptors.
+
 .Prerequisites
 
 * ???
@@ -15,7 +17,7 @@ Intro
 
 Perform the following steps for all producers and consumers that you want to configure for distributed tracing.
 
-. Add the `opentracing-kafka-client` Maven dependency for OpenTracing to the pom.xml file for the client application.
+. Add the `opentracing-kafka-client` Maven dependency for OpenTracing to the producer or consumer's pom.xml file.
 +
 [source,xml,subs=attributes+]
 ----
@@ -26,38 +28,41 @@ Perform the following steps for all producers and consumers that you want to con
 </dependency>
 ----
 
-. If you want to instrument the producer or consumer by using a Decorator pattern, use the following code examples. If you want to use Interceptors instead of Decorators, see the next step.
+. If you want to use a Decorator pattern, instrument your client code as shown in the following example. If you prefer to use Interceptors, go to the next step.
 +
 [source,java,subs=attributes+]
 ----
-// Instantiate the KafkaProducer
+// Create an instance of the KafkaProducer:
 KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
 
-//Decorate the KafkaProducer with TracingKafkaProducer
+//Create an instance of the TracingKafkaProducer:
 TracingKafkaProducer<Integer, String> tracingProducer = new TracingKafkaProducer<>(producer, 
         tracer);
 
-// Send
+// Send:
 tracingProducer.send(...);
 
-// Instantiate the KafkaConsumer
+// Create an instance of the KafkaConsumer:
 KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
 
-// Decorate the KafkaConsumer with TracingKafkaConsumer
+// Create an instance of the TracingKafkaConsumer:
 TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer<>(consumer, 
         tracer);
 
-//Subscribe
+//Subscribe:
 tracingConsumer.subscribe(Collections.singletonList("messages"));
 
-// Get records
+// Get records:
 ConsumerRecords<Integer, String> records = tracingConsumer.poll(1000);
 
-// Retrieve SpanContext from polled record (consumer side)
+// Retrieve SpanContext from polled record (consumer side):
 ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
++
+NOTE: You can define custom span names as described in #[link].
 
+//CODE SAMPLE FOR INTERCEPTORS IS MESSED UP
 . If you want to instrument the producer or consumer by using Interceptors, use the following code examples.
 +
 [source,java,subs=attributes+]
@@ -67,19 +72,19 @@ GlobalTracer.register(tracer);
 
 // Add the TracingProducerInterceptor class to the sender properties:
 senderProps.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, 
-          TracingProducerInterceptor.class.getName());
-
-// Instantiate the KafkaProducer
-KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
-
-// Send
-producer.send(...);
-
-// Add the TracingConsumerInterceptor class to the consumer properties:
-consumerProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-          TracingConsumerInterceptor.class.getName());
-
-// Instantiate the KafkaConsumer
+          TracingProducerInterceDefinining cptor.class.getName());
+Definining c
+// Create an instance of the KafDefinining ckaProducer
+KafkaInstantiateProducer<IntegerDefinining c, String> producer = new KafkaProducer<>(senderProps);
+InstantiateDefinining c
+// SendDefinining c
+producer.send(...);Definining c
+Definining c
+// Add the TracingConsumerIntercDefinining ceptor class to the consumer properties:
+consumerProps.put(ConsumerConfigDefinining c.INTERCEPTOR_CLASSES_CONFIG,
+          TracingConsumerInterceDefinining cptor.class.getName());
+Definining c
+// Create an instance of the KafkaConsumer
 KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
 
 //Subscribe
@@ -92,6 +97,79 @@ ConsumerRecords<Integer, String> records = consumer.poll(1000);
 ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
+
+== Custom span names in a Decorator pattern
+
+A __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
+
+If you use a Decorator pattern to instrument your producers and consumers, you can define custom span names by passing a BiFunction object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several pre-built span names.
+
+To use custom span names as part of a Decorator pattern, instrument your client code as shown in the following example:
+
+[source,java,subs=attributes+]
+----
+// Create a BiFunction for the KafkaProducer that operates on (String operationName, ProducerRecord consumerRecord) and returns a String to be used as the name:
+
+BiFunction<String, ProducerRecord, String> producerSpanNameProvider =
+    (operationName, producerRecord) -> "CUSTOM_PRODUCER_NAME";
+
+// Create an instance of the KafkaProducer:
+KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
+
+// Create an instance of the TracingKafkaProducer
+TracingKafkaProducer<Integer, String> tracingProducer = new TracingKafkaProducer<>(producer, 
+        tracer,
+        producerSpanNameProvider);
+
+// Spans created by the tracingProducer will now have "CUSTOM_PRODUCER_NAME" as the span name.
+
+// Create a BiFunction for the KafkaConsumer that operates on (String operationName, ConsumerRecord consumerRecord) and returns a String to be used as the name:
+
+BiFunction<String, ConsumerRecord, String> consumerSpanNameProvider =
+    (operationName, consumerRecord) -> operationName.toUpperCase();
+
+// Create an instance of the KafkaConsumer:
+KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
+
+// Create an instance of the TracingKafkaConsumer, passing in the consumerSpanNameProvider BiFunction:
+
+TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer<>(consumer, 
+        tracer,
+        consumerSpanNameProvider);
+
+// Spans created by the tracingConsumer will have the operation name as the span name, in upper-case.
+// "receive" -> "RECEIVE"
+----
+
+== Built-in span names
+
+When defining custom span names, you can use the following BiFunctions in the ClientSpanNameProvider class. If no spanNameProvider is specified, `CONSUMER_OPERATION_NAME` and `PRODUCER_OPERATION_NAME` are used.
+
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
+
+¦BiFunction
+¦Description
+
+m¦CONSUMER_OPERATION_NAME, PRODUCER_OPERATION_NAME
+¦Returns the `operationName` as the span name: "receive" for consumers and "send" for producers.
+
+m¦CONSUMER_PREFIXED_OPERATION_NAME(String prefix), PRODUCER_PREFIXED_OPERATION_NAME(String prefix)
+¦Returns a String concatenation of `prefix` and `operationName`.
+
+m¦CONSUMER_TOPIC, PRODUCER_TOPIC
+¦Returns the name of the topic that the message was sent to or retrieved from in the format `(record.topic())`.
+
+m¦PREFIXED_CONSUMER_TOPIC(String prefix), PREFIXED_PRODUCER_TOPIC(String prefix)
+¦Returns a String concatenation of `prefix` and the topic name in the format `(record.topic())`.
+
+m¦CONSUMER_OPERATION_NAME_TOPIC, PRODUCER_OPERATION_NAME_TOPIC
+¦Returns `"operationName - record.topic()"`.
+
+m¦CONSUMER_PREFIXED_OPERATION_NAME_TOPIC(String prefix), PRODUCER_PREFIXED_OPERATION_NAME_TOPIC(String prefix)
+¦Returns a String concatenation of `prefix` and `"operationName - record.topic()"`.
+
+|===
 
 .Additional resources
 

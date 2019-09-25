@@ -4,6 +4,8 @@
 [id='assembly-setting-up-tracing-mirror-maker-connect-{context}']
 = Setting up tracing for Mirror Maker and Kafka Connect
 
-Distributed tracing is supported for Mirror Maker and Kafka Connect (including Kafka Connect with Source2Image support). Messages produced and consumed by Kafka Connect itself are traced. Tracing of messages sent to and from external systems to kafka Connect must be configured in the external connectors.
+Distributed tracing is supported for Mirror Maker and Kafka Connect (including Kafka Connect with Source2Image support). 
+
+Only messages produced and consumed by Kafka Connect itself are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems.
 
 include::proc-enabling-tracing-in-connect-mirror-maker-resources.adoc[leveloffset=+1]

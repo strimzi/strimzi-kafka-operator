@@ -3,9 +3,13 @@
 // assembly-setting-up-tracing-mirror-maker-connect.adoc
 
 [id='proc-enabling-tracing-in-connect-mirror-maker-resources-{context}']
-= Enabling tracing in the KafkaConnect, KafkaConnectS2I and KafkaMirrorMaker custom resources
+= Enabling tracing in the KafkaMirrorMaker, KafkaConnect, and KafkaConnectS2I custom resources
 
-Configure a Jaeger tracer in the `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMirrorMaker` custom resources by using environment variables. When the resource is updated in your Kubernetes cluster, the Java interceptors for the consumers and producers within Mirror Maker or Kafka Connect are updated. Additionally, the tracing agent initializes the Jaeger tracer based on the environment variables.
+Update the configuration of the `KafkaMirrorMaker`, `KafkaConnect`, and `KafkaConnectS2I` custom resources to specify and configure a Jaeger tracer service. When a tracing-enabled resource is updated in your Kubernetes cluster, two actions are triggered:
+
+* The Java interceptors for the consumers and producers that are integrated into Mirror Maker or Kafka Connect are updated.
+
+* The tracing agent initializes a Jaeger tracer based on the tracing configuration in the resource.
 
 .Prerequisites
 
@@ -13,7 +17,9 @@ Configure a Jaeger tracer in the `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMi
 
 .Procedure
 
-. Use xref:con-customizing-containers-{context}[template configuration properties] to configure the Jaeger tracer. Define the configuration by using the xref:ref-tracing-environment-variables-{context}[tracing environment variables]. For example:
+Perform these steps for every `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMirrorMaker` resource.
+
+. Configure the Jaeger tracer service in the `spec.template` property of the custom resource. Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties. For example:
 +
 .Jaeger tracer configuration for Kafka Connect
 [source,yaml,subs=attributes+]
@@ -48,8 +54,10 @@ spec:
           value: my-jaeger-service
 #...
 ----
++
+NOTE: For more information, see xref:con-customizing-containers-{context}[].
 
-. Set the `tracing.type` property in the `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` resource to `jaeger`. For example:
+. Set the `spec.tracing.type` property to `jaeger`. For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -64,11 +72,11 @@ spec:
 ----
 
 . Create or update the resource:
++
 [source,shell,subs=attributes+]
 ----
-kubectl apply -f _your-file_
+kubectl apply -f your-file
 ----
-
 
 .Additional resources
 
