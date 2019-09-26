@@ -53,6 +53,7 @@ import java.util.zip.ZipInputStream;
 
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.BaseITST.kubeClient;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StUtils {
 
@@ -194,11 +195,11 @@ public class StUtils {
         LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
         LabelSelector selector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         Map<String, String> map = podSnapshot(selector);
-        LOGGER.info("Current  snapshot: {}", new TreeMap<>(map));
+        LOGGER.debug("Current  snapshot: {}", new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
         if (current == snapshot.size() && map.isEmpty()) {
-            LOGGER.debug("All pods seem to have rolled");
+            LOGGER.info("All pods seem to have rolled");
             return true;
         } else {
             LOGGER.debug("Some pods still to roll: {}", map);
@@ -465,11 +466,11 @@ public class StUtils {
         LOGGER.info("Waiting for Deployment Config {}", name);
         TestUtils.waitFor("deployment config "  + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentConfigStatus(name));
-        LOGGER.debug("Deployment Config {} is ready", name);
+        LOGGER.info("Deployment Config {} is ready", name);
         LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
         waitForPodsReady(deploymentConfigSelector, expectedPods, true);
         String clusterOperatorPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
-        String log = "BuildConfigOperator:191 - BuildConfig " + name + " in namespace " + kubeClient().getNamespace() + " has been created";
+        String log = "BuildConfig " + name + " in namespace " + kubeClient().getNamespace() + " has been created";
 
         TestUtils.waitFor("build config creation " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().logs(clusterOperatorPodName).contains(log));
@@ -902,12 +903,19 @@ public class StUtils {
 
     public static List<ContainerEnvVar> createContainerEnvVarsFromMap(Map<String, String> envVars) {
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        for (Map.Entry<String,String> entry : envVars.entrySet()) {
+        for (Map.Entry<String, String> entry : envVars.entrySet()) {
             testEnvs.add(new ContainerEnvVarBuilder()
                     .withName(entry.getKey())
                     .withValue(entry.getValue()).build());
         }
 
         return testEnvs;
+    }
+
+    public static void checkCOlogForUsedVariable(String varName) {
+        LOGGER.info("Check if ClusterOperator logs already defined variable occurrence");
+        String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
+        assertTrue(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"));
+        LOGGER.info("ClusterOperator logs contains proper warning");
     }
 }

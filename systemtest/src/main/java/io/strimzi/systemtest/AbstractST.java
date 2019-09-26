@@ -1039,9 +1039,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                             container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey))
                                     .forEach(envVar -> {
                                         LOGGER.info("Check specific configuration: {}", envVar.getName());
-                                        for (Map.Entry<String,Object> entry : config.entrySet()) {
-                                            LOGGER.info("Expected: {}", entry.getKey() + "=" + entry.getValue());
-                                            LOGGER.info("Values: {}", envVar.getValue());
+                                        for (Map.Entry<String, Object> entry : config.entrySet()) {
                                             assertThat(entry.getKey() + "=" + entry.getValue() + "\n", is(envVar.getValue()));
                                         }
                                     });

@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -413,9 +412,12 @@ class ConnectST extends AbstractST {
 
     @Test
     void testCustomAndUpdatedValues() {
+        String usedVariable = "KAFKA_CONNECT_CONFIGURATION";
+
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
 
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
@@ -441,9 +443,9 @@ class ConnectST extends AbstractST {
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewTemplate()
-                    .withConnectContainer(
-                        new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build()
-                    )
+                    .withNewConnectContainer()
+                        .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                    .endConnectContainer()
                 .endTemplate()
                 .withNewReadinessProbe()
                     .withInitialDelaySeconds(initialDelaySeconds)
@@ -463,11 +465,16 @@ class ConnectST extends AbstractST {
 
         Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
         LOGGER.info("Verify values before update");
         checkReadinessLivenessProbe(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), envVarGeneral);
 
+        StUtils.checkCOlogForUsedVariable(usedVariable);
+
+        LOGGER.info("Updating values in MirrorMaker container");
         replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kc.getSpec().setConfig(connectConfig);

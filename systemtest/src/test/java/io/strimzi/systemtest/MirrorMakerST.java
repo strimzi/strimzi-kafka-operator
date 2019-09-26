@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -13,7 +14,6 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
-import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
@@ -363,9 +363,12 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endEntityOperator()
                 .endSpec().done();
 
+        String usedVariable = "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER";
+
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
 
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
@@ -396,9 +399,9 @@ public class MirrorMakerST extends MessagingBaseST {
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
                     .withNewTemplate()
-                        .withMirrorMakerContainer(
-                            new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build()
-                        )
+                        .withNewMirrorMakerContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endMirrorMakerContainer()
                     .endTemplate()
                     .withNewReadinessProbe()
                         .withInitialDelaySeconds(initialDelaySeconds)
@@ -419,6 +422,8 @@ public class MirrorMakerST extends MessagingBaseST {
 
         Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
 
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
         LOGGER.info("Verify values before update");
         checkReadinessLivenessProbe(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
@@ -426,6 +431,9 @@ public class MirrorMakerST extends MessagingBaseST {
         checkContainerConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
         checkContainerConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
+        StUtils.checkCOlogForUsedVariable(usedVariable);
+
+        LOGGER.info("Updating values in MirrorMaker container");
         replaceMirrorMakerResource(CLUSTER_NAME, kmm -> {
             kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
@@ -469,7 +477,16 @@ public class MirrorMakerST extends MessagingBaseST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE)
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(new EnvVarBuilder().withName("TEST_ENV_3").withValue("test.value").build())
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec().done();
     }
 
     @AfterAll

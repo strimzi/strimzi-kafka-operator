@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -31,8 +30,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -90,7 +87,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -357,8 +353,12 @@ class KafkaST extends MessagingBaseST {
                     .endLivenessProbe()
                     .withConfig(kafkaConfig)
                     .withNewTemplate()
-                        .withKafkaContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
-                        .withTlsSidecarContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
+                        .withNewKafkaContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endKafkaContainer()
+                        .withNewTlsSidecarContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endTlsSidecarContainer()
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
@@ -389,15 +389,25 @@ class KafkaST extends MessagingBaseST {
                     .endLivenessProbe()
                     .withConfig(zookeeperConfig)
                     .withNewTemplate()
-                        .withZookeeperContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
-                        .withTlsSidecarContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
+                        .withNewZookeeperContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endZookeeperContainer()
+                        .withNewTlsSidecarContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endTlsSidecarContainer()
                     .endTemplate()
                 .endZookeeper()
                 .editEntityOperator()
                     .withNewTemplate()
-                        .withTopicOperatorContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
-                        .withUserOperatorContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
-                        .withTlsSidecarContainer(new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build())
+                        .withNewTopicOperatorContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endTopicOperatorContainer()
+                        .withNewUserOperatorContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endUserOperatorContainer()
+                        .withNewTlsSidecarContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endTlsSidecarContainer()
                     .endTemplate()
                     .editUserOperator()
                         .withNewReadinessProbe()

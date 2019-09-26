@@ -6,6 +6,8 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +18,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -25,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
+@OpenShiftOnly
 @Tag(REGRESSION)
 class ConnectS2IST extends AbstractST {
 
@@ -33,7 +39,6 @@ class ConnectS2IST extends AbstractST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
-    @OpenShiftOnly
     @Tag(ACCEPTANCE)
     void testDeployS2IWithMongoDBPlugin() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
@@ -47,6 +52,8 @@ class ConnectS2IST extends AbstractST {
             .done();
 
         Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+    void testDeployS2IWithMongoDBPlugin() throws IOException {
+        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(CONNECT_DEPLOYMENT_NAME);
 
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
 
@@ -55,13 +62,13 @@ class ConnectS2IST extends AbstractST {
         // Wait for rolling update connect pods
         StUtils.waitTillDepConfigHasRolled(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), 1, connectSnapshot);
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
     }
 
     @Test
-    @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
@@ -85,7 +92,7 @@ class ConnectS2IST extends AbstractST {
         final String userName = "user-example-one";
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        testClassResources().scramShaUser(CLUSTER_NAME, userName).done();
+        testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
 
         StUtils.waitForSecretReady(userName);
 
@@ -132,9 +139,63 @@ class ConnectS2IST extends AbstractST {
                 containsString("0\n1\n"));
     }
 
+    @Test
+    void testCustomAndUpdatedValues() {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
+        envVarGeneral.put("TEST_ENV_1", "test.env.one");
+        envVarGeneral.put("TEST_ENV_2", "test.env.two");
+
+        testMethodResources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1, CLUSTER_NAME)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+            .endMetadata()
+            .editSpec()
+                .withNewTemplate()
+                    .withNewConnectContainer()
+                        .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                    .endConnectContainer()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
+        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
+        envVarUpdated.put("TEST_ENV_3", "test.env.three");
+
+        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(CONNECT_DEPLOYMENT_NAME);
+
+        LOGGER.info("Verify values before update");
+
+        LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors("my-connect-cluster-connect")).build();
+        String connectPodName = kubeClient().listPods(deploymentConfigSelector).get(0).getMetadata().getName();
+
+        checkContainerConfiguration(connectPodName, CONNECT_DEPLOYMENT_NAME, envVarGeneral);
+
+        LOGGER.info("Updating values in ConnectS2I container");
+        replaceConnectS2IResource(CONNECT_CLUSTER_NAME, kc -> {
+            kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+        });
+
+        StUtils.waitTillDepConfigHasRolled(CONNECT_DEPLOYMENT_NAME, 1, connectSnapshot);
+
+        deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors("my-connect-cluster-connect")).build();
+        connectPodName = kubeClient().listPods(deploymentConfigSelector).get(0).getMetadata().getName();
+
+        LOGGER.info("Verify values after update");
+        checkContainerConfiguration(connectPodName, CONNECT_DEPLOYMENT_NAME, envVarUpdated);
+    }
+
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
+    }
+
+    @AfterEach
+    void deleteTestResources() {
+        deleteTestMethodResources();
     }
 
     @BeforeAll

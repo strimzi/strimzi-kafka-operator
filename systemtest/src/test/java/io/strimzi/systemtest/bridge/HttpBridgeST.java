@@ -6,7 +6,6 @@ package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
 import io.strimzi.systemtest.utils.StUtils;
@@ -102,9 +101,11 @@ class HttpBridgeST extends HttpBridgeBaseST {
     void testCustomAndUpdatedValues() {
         createTestMethodResources();
         String bridgeName = "custom-bridge";
+        String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
 
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
@@ -129,9 +130,9 @@ class HttpBridgeST extends HttpBridgeBaseST {
         testMethodResources().kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, 8080)
                 .editSpec()
                     .withNewTemplate()
-                        .withBridgeContainer(
-                                new ContainerTemplateBuilder().withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral)).build()
-                        )
+                        .withNewBridgeContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endBridgeContainer()
                     .endTemplate()
                     .withNewProducer()
                     .endProducer()
@@ -155,11 +156,16 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
         Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
         LOGGER.info("Verify values before update");
         checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkContainerConfiguration(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
+        StUtils.checkCOlogForUsedVariable(usedVariable);
+
+        LOGGER.info("Updating values in Bridge container");
         replaceBridgeResource(bridgeName, kb -> {
             kb.getSpec().getTemplate().getBridgeContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kb.getSpec().getProducer().setConfig(producerConfig);
@@ -177,7 +183,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         StUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
-        checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(CLUSTER_NAME), KafkaBridgeResources.deploymentName(CLUSTER_NAME), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+        checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkContainerConfiguration(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarUpdated);
         checkContainerConfiguration(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
