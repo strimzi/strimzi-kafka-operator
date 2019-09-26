@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -43,14 +45,14 @@ class ConnectS2IST extends AbstractST {
             .endMetadata()
             .done();
 
-        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(CLUSTER_NAME + "-connect");
+        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME));
 
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
 
         // Start a new image build using the plugins directory
-        cmdKubeClient().exec("oc", "start-build", CLUSTER_NAME + "-connect", "--from-dir", dir.getAbsolutePath(), "-n", NAMESPACE);
+        cmdKubeClient().exec("oc", "start-build", KafkaConnectS2IResources.deploymentName(CLUSTER_NAME), "--from-dir", dir.getAbsolutePath(), "-n", NAMESPACE);
         // Wait for rolling update connect pods
-        StUtils.waitTillDepConfigHasRolled(CLUSTER_NAME + "-connect", 1, connectSnapshot);
+        StUtils.waitTillDepConfigHasRolled(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
@@ -93,11 +95,11 @@ class ConnectS2IST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .withNewTls()
                         .addNewTrustedCertificate()
-                            .withSecretName(CLUSTER_NAME + "-cluster-ca-cert")
+                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
                             .withCertificate("ca.crt")
                         .endTrustedCertificate()
                     .endTls()
-                    .withBootstrapServers(CLUSTER_NAME + "-kafka-bootstrap:9093")
+                    .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                     .withNewKafkaClientAuthenticationScramSha512()
                         .withUsername(userName)
                         .withNewPasswordSecret()
