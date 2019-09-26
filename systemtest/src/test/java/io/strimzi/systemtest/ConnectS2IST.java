@@ -58,6 +58,7 @@ class ConnectS2IST extends AbstractST {
     }
 
     @Test
+    @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
