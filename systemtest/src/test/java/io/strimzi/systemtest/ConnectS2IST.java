@@ -64,7 +64,7 @@ class ConnectS2IST extends AbstractST {
     @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
-            testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -89,7 +89,7 @@ class ConnectS2IST extends AbstractST {
 
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME,1)
+        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()
