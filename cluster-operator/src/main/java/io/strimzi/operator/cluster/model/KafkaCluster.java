@@ -352,7 +352,7 @@ public class KafkaCluster extends AbstractModel {
         return fromCrd(kafkaAssembly, versions, null);
     }
 
-    @SuppressWarnings("checkstyle:MethodLength")
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
@@ -389,7 +389,21 @@ public class KafkaCluster extends AbstractModel {
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
-        result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
+        KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
+        List<String> errorsInConfig = configuration.validate(versions.version(kafkaClusterSpec.getVersion()));
+        if (!errorsInConfig.isEmpty()) {
+            for (String error : errorsInConfig) {
+                log.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
+                        kafkaAssembly.getMetadata().getNamespace(),
+                        kafkaAssembly.getMetadata().getName(),
+                        error);
+            }
+            throw new InvalidResourceException("Kafka " +
+                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
+                    " has invalid spec.kafka.config: " +
+                    String.join(", ", errorsInConfig));
+        }
+        result.setConfiguration(configuration);
 
         Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null) {
