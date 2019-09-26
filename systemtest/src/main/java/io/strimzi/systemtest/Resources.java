@@ -493,17 +493,16 @@ public class Resources extends AbstractResources {
 
     /**
      * Method to create Kafka Connect S2I using OpenShift client. This method can only be used if you run system tests on the OpenShift platform because of adapting fabric8 client to ({@link OpenShiftClient}) on waiting stage.
-     * @param name Kafka Connect S2I name
      * @param kafkaConnectS2IReplicas the number of replicas
      * @return Kafka Connect S2I
      */
-    DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
-        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaConnectS2IReplicas, kafkaClusterName).build());
+    DoneableKafkaConnectS2I kafkaConnectS2I(String kafkaClusterName, int kafkaConnectS2IReplicas) {
+        return kafkaConnectS2I(defaultKafkaConnectS2I(kafkaClusterName, kafkaConnectS2IReplicas).build());
     }
 
-    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
+    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String kafkaClusterName, int kafkaConnectS2IReplicas) {
         return new KafkaConnectS2IBuilder()
-            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withMetadata(new ObjectMetaBuilder().withName(kafkaClusterName).withNamespace(client().getNamespace()).build())
             .withNewSpec()
                 .withVersion(KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
