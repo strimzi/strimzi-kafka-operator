@@ -11,7 +11,7 @@ Depending on the chosen xref:con-oauth-authentication-client-options-{context}[a
 
 * Configure authentication for Kafka brokers
 * Configure and authorize clients
-* Configure users
+* Configure users and roles
 * Obtain access and refresh tokens
 
 User credentials are managed by an authorization server using a _realm_, which describes security policies.
