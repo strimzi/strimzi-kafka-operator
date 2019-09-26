@@ -15,6 +15,8 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -423,7 +425,9 @@ public class KafkaRoller2 {
     int controller(AdminClient ac, long timeout, TimeUnit unit) throws ControllerError, InterruptedException, TimeoutException {
         Node controllerNode = null;
         try {
-            controllerNode = ac.describeCluster().controller().get(timeout, unit);
+            DescribeClusterResult describeClusterResult = ac.describeCluster();
+            KafkaFuture<Node> controller = describeClusterResult.controller();
+            controllerNode = controller.get(timeout, unit);
         } catch (ExecutionException e) {
             throw new ControllerError(e.getCause());
         }
