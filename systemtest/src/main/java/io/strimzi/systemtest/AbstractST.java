@@ -655,9 +655,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
+     * This method is {@Deprecated} and it should be removed in the future. Instead of use this method, you should use method {@link io.strimzi.systemtest.utils.StUtils#waitForPodDeletion(String)}
+     * which should be used by default in deletion process for all components (it force pod deletion via executor instead of fabric8 client, which seems to be unstable).
      * @param time timeout in miliseconds
      * @throws Exception exception
      */
+    @Deprecated
     void waitForDeletion(long time) throws Exception {
         List<Pod> pods = kubeClient().listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());

@@ -73,4 +73,19 @@ public class LogCollector {
             writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
         });
     }
+
+    public void collectDeployments() {
+        LOGGER.info("Collecting Deployments in namespaces {}", namespace);
+        writeFile(logDir + "/deployments.log", cmdKubeClient().list("deployment").toString());
+    }
+
+    public void collectStatefulSets() {
+        LOGGER.info("Collecting StatefulSets in namespaces {}", namespace);
+        writeFile(logDir + "/statefulsets.log", cmdKubeClient().list("statefulset").toString());
+    }
+
+    public void collectReplicaSets() {
+        LOGGER.info("Collecting ReplicaSet in namespaces {}", namespace);
+        writeFile(logDir + "/replicasets.log", cmdKubeClient().list("replicaset").toString());
+    }
 }
