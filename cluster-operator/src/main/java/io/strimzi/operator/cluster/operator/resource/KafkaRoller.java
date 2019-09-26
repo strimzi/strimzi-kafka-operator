@@ -72,7 +72,7 @@ public class KafkaRoller {
     private final String cluster;
     private final Secret clusterCaCertSecret;
     private final Secret coKeySecret;
-    private final PriorityQueue<Monitor> queue = new PriorityQueue<>();
+    private final PriorityQueue<RestartAttempt> queue = new PriorityQueue<>();
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
 
@@ -116,9 +116,10 @@ public class KafkaRoller {
 
     /**
      * Perform a rolling restart of the pods in the given StatefulSet.
-     * Pods will be tested for whether the really need rolling using the given {@code podNeedsRestart}.
-     * If a pod does indeed need restarting {@link #postRestartBarrier(Pod)} is called afterwards.
-     * The returned Future is completed when the rolling restart is completed.
+     * Pods will be tested for whether they really need rolling using the given {@code podNeedsRestart}.
+     * If a pod does indeed need restarting {@link #postRestartBarrier(Pod)} is called afterwards
+     * (meaning we wait for the rolled pod to be ready).
+     * The returned Future is completed when the rolling restart is finished.
      * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
      * @return A future which completes when all the required pods have been restarted.
      */
@@ -127,7 +128,7 @@ public class KafkaRoller {
         Function<Void, Future<KafkaRoller>> x = new Function<Void, Future<KafkaRoller>>() {
             @Override
             public Future<KafkaRoller> apply(Void ignored) {
-                return KafkaRoller.this.next(podNeedsRestart).compose(podId -> {
+                return next(podNeedsRestart).compose(podId -> {
                     if (podId == null) {
                         log.debug("No more pods to restart");
                         return Future.succeededFuture();
@@ -206,25 +207,35 @@ public class KafkaRoller {
         return deleteFinished;
     }
 
-    protected static class Monitor implements Comparable<Monitor> {
+    /**
+     * Represents the restarting of a particular pod at a given time called its deadline.
+     * {@code RestartAttempts} are stored in the {@link #queue} ordered by next deadline.
+     * If a pod cannot be restarted it's can be given a new deadline ({@link #backoffAndRetry()}).
+     */
+    protected static class RestartAttempt implements Comparable<RestartAttempt> {
         protected final int podId;
         private long nextDeadline;
         private final BackOff backOff;
-        public Monitor(int podId, BackOff backOff) {
+        public RestartAttempt(int podId, BackOff backOff) {
             this.podId = podId;
             this.backOff = backOff;
             this.nextDeadline = 0;
         }
 
-        private Monitor backoffAndRetry(Logger logger) {
+        /**
+         * Give this restart attempt a new deadline, or throw.
+         * @return This instance.
+         * @throws MaxAttemptsExceededException if the next attempt would exceed the configured number of attempts.
+         */
+        private RestartAttempt backoffAndRetry() {
             long delayMs = backOff.delayMs();
-            logger.debug("Will retry pod {} in {}ms", podId, delayMs);
+            log.debug("Will retry pod {} in {}ms", podId, delayMs);
             nextDeadline = System.currentTimeMillis() + delayMs;
             return this;
         }
 
         @Override
-        public int compareTo(Monitor other) {
+        public int compareTo(RestartAttempt other) {
             int cmp = Long.compare(this.nextDeadline, other.nextDeadline);
             if (cmp == 0) {
                 cmp = Integer.compare(this.podId, other.podId);
@@ -236,9 +247,9 @@ public class KafkaRoller {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Monitor monitor = (Monitor) o;
-            return podId == monitor.podId &&
-                    nextDeadline == monitor.nextDeadline;
+            RestartAttempt restartAttempt = (RestartAttempt) o;
+            return podId == restartAttempt.podId &&
+                    nextDeadline == restartAttempt.nextDeadline;
         }
 
         @Override
@@ -248,7 +259,7 @@ public class KafkaRoller {
 
         @Override
         public String toString() {
-            return "Monitor{" +
+            return "RestartAttempt{" +
                     "podId=" + podId +
                     ", nextDeadline=" + nextDeadline +
                     '}';
@@ -285,28 +296,37 @@ public class KafkaRoller {
         return result;
     }
 
+    /**
+     * 1. Wait for the head of the queue is scheduled to be restarted.
+     * 2. Obtain an admin client
+     * 3. Determine {@linkplain #checkRollability(Predicate, RestartAttempt, AdminClient) whether the pod can be rolled right now}.
+     * If the head pod is rollable complete the returned future with its id.
+     * If the head pod is not rollable
+     * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
+     * @return
+     */
     protected Future<Integer> findNextRollable(Predicate<Pod> podNeedsRestart) {
         Future<Integer> result = Future.future();
         pollAwait().setHandler(pollResult -> {
             if (pollResult.succeeded()) {
-                Monitor monitor = pollResult.result();
-                adminClient(monitor.podId).setHandler(acResult -> {
+                RestartAttempt restartAttempt = pollResult.result();
+                adminClient(restartAttempt.podId).setHandler(acResult -> {
                     if (acResult.succeeded()) {
                         AdminClient adminClient = acResult.result();
-                        checkRollability(podNeedsRestart, monitor, adminClient).recover(error -> {
+                        checkRollability(podNeedsRestart, restartAttempt, adminClient).recover(error -> {
                             if (error instanceof AbortRollException) {
                                 log.warn("Aborting roll: {}", error.toString());
                                 return Future.failedFuture(error);
                             } else {
                                 log.warn("Non-abortive error when determining next pod to roll " +
                                         "(next pod to be rolled might not be ideal)", error);
-                                return Future.succeededFuture(monitor.podId);
+                                return Future.succeededFuture(restartAttempt.podId);
                             }
                         }).setHandler(xx -> close(adminClient, xx, result));
                     } else {
                         // error opening admin client
                         log.warn("Error opening AdminClient, using first pod", acResult.cause());
-                        result.complete(monitor.podId);
+                        result.complete(restartAttempt.podId);
                     }
                 });
             } else {
@@ -317,14 +337,28 @@ public class KafkaRoller {
         return result;
     }
 
-    private Future<Integer> checkRollability(Predicate<Pod> podNeedsRestart, Monitor monitor, AdminClient adminClient) {
+    /**
+     * Return a Future which completes with the pod id of the next<emph>rollable</emph> pod.
+     * A pod is rollable if:
+     * <ul>
+     *     <li>it is not the controller, or if it is the last pod to be rolled, and</li>
+     *     <li>rolling it would not affect client {@link #availability}.</li>
+     * </ul>
+     * If the the pod is not rollable it is requeued for reconsideration later.
+     * @param podNeedsRestart
+     * @param restartAttempt
+     * @param adminClient
+     * @return
+     */
+    // TODO why does this take a restartAttempt if it can return a different pod?
+    private Future<Integer> checkRollability(Predicate<Pod> podNeedsRestart, RestartAttempt restartAttempt, AdminClient adminClient) {
         return controller(adminClient)
             .compose(controller -> {
-                Integer podId = monitor.podId;
+                Integer podId = restartAttempt.podId;
                 if (podId.equals(controller) && !isEmpty()) {
                     // Arrange to do the controller last when there are other brokers to be rolled
                     log.debug("Pod {} is the controller: Will roll other pods first", podId);
-                    return requeueOrAbort(podNeedsRestart, monitor);
+                    return requeueOrAbort(podNeedsRestart, restartAttempt);
                 } else {
                     return availability(adminClient).canRoll(podId).compose(canRoll -> {
                         if (canRoll) {
@@ -333,7 +367,7 @@ public class KafkaRoller {
                             return Future.succeededFuture(podId);
                         } else {
                             log.debug("Cannot roll pod {} right now (would affect availability): Will roll other pods first", podId);
-                            return requeueOrAbort(podNeedsRestart, monitor);
+                            return requeueOrAbort(podNeedsRestart, restartAttempt);
                         }
                     });
                 }
@@ -408,7 +442,7 @@ public class KafkaRoller {
 
     protected void initPods(List<Integer> pods, Supplier<BackOff> backOffSupplier) {
         for (Integer po : pods) {
-            this.queue.add(new Monitor(po, backOffSupplier.get()));
+            this.queue.add(new RestartAttempt(po, backOffSupplier.get()));
         }
     }
 
@@ -416,38 +450,48 @@ public class KafkaRoller {
      * Re-queue for retry, completing the returned future after a delay, or failing
      * it if it's already been retried too many times.
      * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
-     * @param monitor The monitor
-     * @return A future.
+     * @param restartAttempt The restart attempt.
+     * @return A Future completed with the next pod to roll, or failing with
+     * {@code AbortRollException} if the given restart attempt has already been retired too many times.
      */
-    protected Future<Integer> requeueOrAbort(Predicate<Pod> podNeedsRestart, Monitor monitor) {
+    protected Future<Integer> requeueOrAbort(Predicate<Pod> podNeedsRestart, RestartAttempt restartAttempt) {
         try {
-            log.debug("Deferring restart of pod {}", monitor.podId);
-            queue.add(monitor.backoffAndRetry(log));
+            log.debug("Deferring restart of pod {}", restartAttempt.podId);
+            queue.add(restartAttempt.backoffAndRetry());
             return filterAndFindNextRollable(podNeedsRestart);
         } catch (MaxAttemptsExceededException e) {
-            return Future.failedFuture(new AbortRollException("Pod " + monitor.podId + " is still not rollable after " + monitor.backOff.maxAttempts() + " times of asking: Aborting"));
+            return Future.failedFuture(new AbortRollException("Pod " + restartAttempt.podId + " is still not rollable after " + restartAttempt.backOff.maxAttempts() + " times of asking: Aborting"));
         }
     }
 
     /**
      * If there is no next pod then return a completed Future with null result.
      * Otherwise asynchronously get the next pod, test it with the given {@code podNeedsRestart}
-     * and if that pod needs a restart then complete the returned future with it.
+     * and if that pod needs a restart then complete the returned future with it,
+     * leaving it's RestartAttempt at the head of the queue.
      * If that pod didn't need a restart then remove the pod from the list of unrolled pods and recurse.
+     *
+     * When the returned Future completes successfully either:
+     * <ul>
+     *     <li>The queue is empty</li>
+     *     <li>The head of the queue is a RestartAttempt whose pod needs to be rolled.</li>
+     * </ul>
+     *
+     * If there is an error getting the pod or applying the {@code podNeedsRestart} then return a failed future.
      */
     protected final Future<Integer> filterPods(Predicate<Pod> podNeedsRestart) {
-        Monitor monitor = queue.peek();
-        if (monitor == null) {
+        RestartAttempt restartAttempt = queue.peek();
+        if (restartAttempt == null) {
             return Future.succeededFuture(null);
         } else {
-            log.debug("Checking whether pod {} needs to be restarted", monitor.podId);
-            return podOperations.getAsync(this.namespace, podName(monitor.podId)).compose(pod -> {
+            log.debug("Checking whether pod {} needs to be restarted", restartAttempt.podId);
+            return podOperations.getAsync(this.namespace, podName(restartAttempt.podId)).compose(pod -> {
                 if (podNeedsRestart.test(pod)) {
-                    log.debug("Pod {} needs to be restarted", monitor.podId);
-                    return Future.succeededFuture(monitor.podId);
+                    log.debug("Pod {} needs to be restarted", restartAttempt.podId);
+                    return Future.succeededFuture(restartAttempt.podId);
                 } else {
                     // remove from pods and try next pod
-                    log.debug("Pod {} does not need to be restarted", monitor.podId);
+                    log.debug("Pod {} does not need to be restarted", restartAttempt.podId);
                     this.queue.remove();
                     return filterPods(podNeedsRestart);
                 }
@@ -469,18 +513,18 @@ public class KafkaRoller {
                 });
     }
 
-    protected Future<Monitor> pollAwait() {
-        Monitor monitor = this.queue.poll();
-        long delay = monitor.nextDeadline - System.currentTimeMillis();
+    protected Future<RestartAttempt> pollAwait() {
+        RestartAttempt restartAttempt = this.queue.poll();
+        long delay = restartAttempt.nextDeadline - System.currentTimeMillis();
         if (delay <= 0L) {
-            log.debug("Proceeding with pod {}", monitor.podId);
-            return Future.succeededFuture(monitor);
+            log.debug("Proceeding with pod {}", restartAttempt.podId);
+            return Future.succeededFuture(restartAttempt);
         } else {
-            Future<Monitor> f = Future.future();
-            log.debug("Waiting {}ms before proceeding with pod {}", delay, monitor.podId);
+            Future<RestartAttempt> f = Future.future();
+            log.debug("Waiting {}ms before proceeding with pod {}", delay, restartAttempt.podId);
             vertx.setTimer(delay, timerId -> {
-                log.debug("Proceeding with pod {}", monitor.podId);
-                f.complete(monitor);
+                log.debug("Proceeding with pod {}", restartAttempt.podId);
+                f.complete(restartAttempt);
             });
             return f;
         }

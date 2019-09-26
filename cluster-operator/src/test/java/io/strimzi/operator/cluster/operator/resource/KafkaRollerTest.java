@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -66,7 +67,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 1);
         // What does/did the ZK algo do?
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                TimeoutException.class);
+                KafkaRoller2.ReadinessException.class);
     }
 
     @Test
@@ -155,7 +156,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
                             : Future.succeededFuture(true),
             2);
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                AbortRollException.class);
+                KafkaRoller2.NotRollableException.class);
     }
 
     @Test
@@ -170,7 +171,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
                             : Future.succeededFuture(true),
             2);
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                AbortRollException.class);
+                KafkaRoller2.NotRollableException.class);
     }
 
     TestingKafkaRoller rollerWithControllers(StatefulSet ss, PodOperator podOps, int... controllers) {
@@ -218,11 +219,11 @@ public class KafkaRollerTest extends AbstractRollerTest {
         return "c-kafka";
     }
 
-    private class TestingKafkaRoller extends KafkaRoller {
+    private class TestingKafkaRoller extends KafkaRoller2 {
 
         int controllerCall;
         private final IdentityHashMap<AdminClient, Throwable> unclosedAdminClients;
-        private final Throwable acOpenException;
+        private final RuntimeException acOpenException;
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
         private final Throwable controllerException;
@@ -230,7 +231,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
         public TestingKafkaRoller(StatefulSet ss, Secret clusterCaCertSecret, Secret coKeySecret,
                                   PodOperator podOps,
-                                  Throwable acOpenException, Throwable acCloseException,
+                                  RuntimeException acOpenException, Throwable acCloseException,
                                   Throwable controllerException,
                                   Function<Integer, Future<Boolean>> canRollFn,
                                   int... controllers) {
@@ -247,9 +248,9 @@ public class KafkaRollerTest extends AbstractRollerTest {
         }
 
         @Override
-        protected Future<AdminClient> adminClient(Integer podId) {
+        protected AdminClient adminClient(Integer podId) throws AdminClientException {
             if (acOpenException != null) {
-                return Future.failedFuture(acOpenException);
+                throw new AdminClientException(acOpenException);
             }
             AdminClient ac = mock(AdminClient.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
@@ -262,7 +263,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
                 throw new RuntimeException("Not mocked " + invocation.getMethod());
             });
             unclosedAdminClients.put(ac, new Throwable("Pod " + podId));
-            return Future.succeededFuture(ac);
+            return ac;
         }
 
         @Override
@@ -286,23 +287,19 @@ public class KafkaRollerTest extends AbstractRollerTest {
         }
 
         @Override
-        Future<Integer> controller(AdminClient ac) {
-            Future<Integer> result = Future.future();
-            vertx.runOnContext(ignored -> {
-                if (controllerException != null) {
-                    result.fail(controllerException);
+        int controller(AdminClient ac, long timeout, TimeUnit unit) throws ControllerError {
+            if (controllerException != null) {
+                throw new ControllerError(controllerException);
+            } else {
+                int index;
+                if (controllerCall < controllers.length) {
+                    index = controllerCall;
                 } else {
-                    int index;
-                    if (controllerCall < controllers.length) {
-                        index = controllerCall;
-                    } else {
-                        index = controllers.length - 1;
-                    }
-                    controllerCall++;
-                    result.complete(controllers[index]);
+                    index = controllers.length - 1;
                 }
-            });
-            return result;
+                controllerCall++;
+                return controllers[index];
+            }
         }
 
         @Override

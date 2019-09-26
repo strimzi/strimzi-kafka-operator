@@ -47,13 +47,13 @@ public abstract class AbstractRollerTest {
 
     PodOperator mockPodOps(Future<Void> readiness) {
         PodOperator podOps = mock(PodOperator.class);
-        when(podOps.getAsync(any(), any())).thenAnswer(
-            invocation -> Future.succeededFuture(new PodBuilder()
+        when(podOps.get(any(), any())).thenAnswer(
+            invocation -> new PodBuilder()
                     .withNewMetadata()
                         .withNamespace(invocation.getArgument(0))
                         .withName(invocation.getArgument(1))
                     .endMetadata()
-                .build())
+                .build()
         );
         when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(readiness);
         return podOps;

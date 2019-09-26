@@ -27,7 +27,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaSetOperatorTest {
 
-
     public static final InlineLogging KAFKA_LOG_CONFIG = new InlineLogging();
     public static final InlineLogging ZOOKEEPER_LOG_CONFIG = new InlineLogging();
     static {

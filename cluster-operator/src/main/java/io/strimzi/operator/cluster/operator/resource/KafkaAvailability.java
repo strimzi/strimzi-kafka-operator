@@ -28,6 +28,10 @@ import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 
+/**
+ * Determines whether the given broker can be rolled without affecting
+ * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
+ */
 class KafkaAvailability {
 
     private static final Logger log = LogManager.getLogger(KafkaAvailability.class.getName());
