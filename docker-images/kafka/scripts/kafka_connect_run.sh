@@ -16,7 +16,7 @@ mkdir -p /tmp/kafka
 
 # Generate and print the config file
 echo "Starting Kafka Connect with configuration:"
-./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' | sed 's/password=.*/password=[hidden]/g'
+./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 # Disable Kafka's GC logging (which logs to a file)...

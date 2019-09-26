@@ -49,7 +49,7 @@ mkdir -p /tmp/kafka
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
-./kafka_config_generator.sh | tee /tmp/strimzi.properties | sed 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' | sed 's/password=.*/password=[hidden]/g'
+./kafka_config_generator.sh | tee /tmp/strimzi.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
