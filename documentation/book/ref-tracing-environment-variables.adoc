@@ -5,9 +5,9 @@
 [id='ref-tracing-environment-variables-{context}']
 = Tracing environment variables
 
-//Table template - 4 columns, one header row, one row in monospace
+Use these environment variables to configure a Jaeger tracer for Kafka client applications.
 
-[cols="3*",options="header",stripes="none",separator=¦]
+[%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
 |===
 
 ¦Property
@@ -77,3 +77,7 @@ m¦JAEGER_TAGS
 The value can also refer to an environment variable using the format `${envVarName:default}`. `:default` is optional and identifies a value to use if the environment variable cannot be found.
  
 |===
+
+.Additional resources
+
+* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]

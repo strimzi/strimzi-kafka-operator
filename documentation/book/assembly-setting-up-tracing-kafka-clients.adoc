@@ -4,7 +4,7 @@
 [id='assembly-setting-up-tracing-kafka-clients-{context}']
 = Setting up tracing for Kafka clients
 
-Intro
+This section describes how to initialize a Jaeger tracer. This allows you to instrument your client applications for distributed tracing.
 
 include::proc-configuring-jaeger-tracer-kafka-clients.adoc[leveloffset=+1]
 

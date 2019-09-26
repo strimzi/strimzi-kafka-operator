@@ -5,17 +5,11 @@
 [id='proc-instrumenting-producers-consumers-for-opentracing-{context}']
 = Instrumenting producers and consumers for OpenTracing
 
-Intro
-
-You can instrument producers and consumers by using a Decorator pattern or Interceptors.
-
-.Prerequisites
-
-* ???
+Use a Decorator pattern or Interceptors to instrument your producer and consumer code for distributed tracing.
 
 .Procedure
 
-Perform the following steps for all producers and consumers that you want to configure for distributed tracing.
+Perform the following steps for each producer and consumer.
 
 . Add the `opentracing-kafka-client` Maven dependency for OpenTracing to the producer or consumer's pom.xml file.
 +
@@ -60,8 +54,6 @@ ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
 +
-NOTE: You can define custom span names as described in #[link].
-+
 . If you want to use Interceptors, instrument your client code as shown in the following example.
 +
 [source,java,subs=attributes+]
@@ -102,7 +94,7 @@ SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(),
 
 A __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
 
-If you use a Decorator pattern to instrument your producers and consumers, you can define custom span names by passing a BiFunction object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several pre-built span names.
+If you use a Decorator pattern to instrument your producers and consumers, you can define custom span names by passing a BiFunction object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several built-in span names, which are described below.
 
 To use custom span names as part of a Decorator pattern, instrument your client code as shown in the following example:
 
@@ -145,7 +137,7 @@ TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer
 
 When defining custom span names, you can use the following BiFunctions in the ClientSpanNameProvider class. If no spanNameProvider is specified, `CONSUMER_OPERATION_NAME` and `PRODUCER_OPERATION_NAME` are used.
 
-[cols="2*",options="header",stripes="none",separator=¦]
+[%autowidth,cols="2*",options="header",stripes="none",separator=¦]
 |===
 
 ¦BiFunction
@@ -170,7 +162,3 @@ m¦CONSUMER_PREFIXED_OPERATION_NAME_TOPIC(String prefix), PRODUCER_PREFIXED_OPER
 ¦Returns a String concatenation of `prefix` and `"operationName - record.topic()"`.
 
 |===
-
-.Additional resources
-
-* For more information about, see .

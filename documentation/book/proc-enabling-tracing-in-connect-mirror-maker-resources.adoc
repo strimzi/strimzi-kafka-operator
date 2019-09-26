@@ -7,19 +7,15 @@
 
 Update the configuration of the `KafkaMirrorMaker`, `KafkaConnect`, and `KafkaConnectS2I` custom resources to specify and configure a Jaeger tracer service. When a tracing-enabled resource is updated in your Kubernetes cluster, two actions are triggered:
 
-* The Java interceptors for the consumers and producers that are integrated into Mirror Maker or Kafka Connect are updated.
+* The Interceptors for the consumers and producers that are integrated into Mirror Maker or Kafka Connect are updated.
 
 * The tracing agent initializes a Jaeger tracer based on the tracing configuration in the resource.
 
-.Prerequisites
-
-* ???
-
 .Procedure
 
-Perform these steps for every `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMirrorMaker` resource.
+Perform these steps for each `KafkaConnect`, `KafkaConnectS2I`, and `KafkaMirrorMaker` resource.
 
-. Configure the Jaeger tracer service in the `spec.template` property of the custom resource. Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties. For example:
+. In the `spec.template` property, configure the Jaeger tracer service. Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties. For example:
 +
 .Jaeger tracer configuration for Kafka Connect
 [source,yaml,subs=attributes+]
