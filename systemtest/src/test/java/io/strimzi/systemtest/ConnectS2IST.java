@@ -115,7 +115,7 @@ class ConnectS2IST extends AbstractST {
 
         StUtils.waitForSecretReady(USERNAME);
 
-        testClassResources().kafkaConnectS2I(CLUSTER_NAME,1)
+        testClassResources().kafkaConnectS2I(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()

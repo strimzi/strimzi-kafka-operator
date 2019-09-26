@@ -184,7 +184,7 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaConnectS2IStatus() {
         String connectS2IUrl = "http://my-cluster-s2i-connect-api.status-cluster-test.svc:8083";
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
-        testMethodResources().kafkaConnectS2I(CLUSTER_NAME,1).done();
+        testMethodResources().kafkaConnectS2I(CLUSTER_NAME, 1).done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
 
