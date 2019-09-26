@@ -211,59 +211,6 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    void testForUpdateValuesInConnectCM() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
-                .editSpec()
-                    .withNewReadinessProbe()
-                        .withInitialDelaySeconds(15)
-                        .withTimeoutSeconds(5)
-                    .endReadinessProbe()
-                    .withNewLivenessProbe()
-                        .withInitialDelaySeconds(15)
-                        .withTimeoutSeconds(5)
-                    .endLivenessProbe()
-                .endSpec()
-                .done();
-
-        List<String> connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
-
-        String connectConfig = "{\n" +
-                "      \"config.storage.replication.factor\": \"1\",\n" +
-                "      \"offset.storage.replication.factor\": \"1\",\n" +
-                "      \"status.storage.replication.factor\": \"1\"\n" +
-                "    }";
-        replaceKafkaConnectResource(CLUSTER_NAME, c -> {
-            c.getSpec().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME));
-            c.getSpec().setConfig(TestUtils.fromJson(connectConfig, Map.class));
-            c.getSpec().getLivenessProbe().setInitialDelaySeconds(61);
-            c.getSpec().getReadinessProbe().setInitialDelaySeconds(61);
-            c.getSpec().getLivenessProbe().setTimeoutSeconds(6);
-            c.getSpec().getReadinessProbe().setTimeoutSeconds(6);
-        });
-
-        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME), 1);
-        for (String connectPod : connectPods) {
-            StUtils.waitForPodDeletion(connectPod);
-        }
-        LOGGER.info("Verify values after update");
-        connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
-        for (String connectPod : connectPods) {
-            String connectPodJson = TestUtils.toJsonString(kubeClient().getPod(connectPod));
-            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.initialDelaySeconds", hasItem(61)));
-            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.timeoutSeconds", hasItem(6)));
-            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(61)));
-            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(6)));
-            assertThat(connectPodJson, containsString("config.storage.replication.factor=1"));
-            assertThat(connectPodJson, containsString("offset.storage.replication.factor=1"));
-            assertThat(connectPodJson, containsString("status.storage.replication.factor=1"));
-            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].env[?(@.name=='KAFKA_CONNECT_BOOTSTRAP_SERVERS')].value",
-                    hasItem(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))));
-        }
-    }
-
-    @Test
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)

@@ -1040,7 +1040,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                                     .forEach(envVar -> {
                                         LOGGER.info("Check specific configuration: {}", envVar.getName());
                                         for (Map.Entry<String, Object> entry : config.entrySet()) {
-                                            assertThat(entry.getKey() + "=" + entry.getValue() + "\n", is(envVar.getValue()));
+                                            assertThat(envVar.getValue().contains(entry.getKey() + "=" + entry.getValue() + "\n"), is(true));
                                         }
                                     });
                         });
