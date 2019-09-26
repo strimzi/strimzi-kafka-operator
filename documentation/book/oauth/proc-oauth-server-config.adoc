@@ -7,9 +7,9 @@
 
 This procedure describes how to deploy an authorization server and configure it for integration with {ProductName}.
 
-Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to configure authentication credentials for:
+Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to:
 
-* Configure brokers
+* Configure authentication for Kafka brokers
 * Configure and authorize clients
 * Configure users
 * Obtain access and refresh tokens
