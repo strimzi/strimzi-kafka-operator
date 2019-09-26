@@ -88,6 +88,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("Configures how often are the JWKS certificates refreshed. " +
+            "The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. " +
             "Defaults to 300 seconds.")
     @Minimum(1)
     @DefaultValue("300")
