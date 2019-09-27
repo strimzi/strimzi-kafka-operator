@@ -7,9 +7,7 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
 
-In this scenario, {ProductName} and the authorization server are running in the same cluster.
-
-If the authorization server is using self-signed certificates with valid hostnames, TLS connection works out of box.
+If the authorization server is using certificates signed by trusted CA and matching the {oauth} server hostname, TLS connection works out of box
 Otherwise, you have two connection options for your external listener configuration:
 
 . TLS connection to the authorization server with trusted certificates
@@ -41,6 +39,8 @@ kubectl edit kafka my-cluster
 
 . Configure the Kafka broker listener configuration
 +
+The configuration for each listener does not have to be the same, as they are independent.
++
 For example:
 +
 [source,yaml,subs="+quotes,attributes"]
@@ -49,22 +49,22 @@ listeners:
  plain:
    authentication:
      type: oauth <1>
-     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/demo <2>
-     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs <3>
+     validIssuerUri: https://<authorization-server-address>/auth/realms/demo <2>
+     jwksEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs <3>
      userNameClaim: preferred_username <4>
  tls:
    authentication:
      type: oauth
-     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/demo
-     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs
+     validIssuerUri: https://<authorization-server-address>/auth/realms/demo
+     jwksEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs
      userNameClaim: preferred_username
  external:
    type: {external-type}
    //Option 1
    authentication: <5>
      type: oauth
-     validIssuerUri: http://<authorization-server-address>.nip.io/auth/realms/external
-     jwksEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/certs
+     validIssuerUri: https://<authorization-server-address>/auth/realms/external
+     jwksEndpointUri: https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs
      userNameClaim: preferred_username
      tlsTrustedCertificates: <6>
      - secretName: oauth-server-cert
@@ -74,8 +74,8 @@ listeners:
    //Option 2
    authentication: <8>
      type: oauth
-     validIssuerUri: https://sso.myproject.svc:8443/auth/realms/internal
-     introspectionEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token/introspect
+     validIssuerUri: https://<authorization-server-address>/auth/realms/external
+     introspectionEndpointUri: https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect
      clientId: kafka-broker
      clientSecret:
        secretName: my-cluster-oauth
@@ -97,7 +97,7 @@ listeners:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl logs -f ${POD_NAME} ${CONTAINER_NAME}
+kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
 kubectl get po -w
 ----
 +

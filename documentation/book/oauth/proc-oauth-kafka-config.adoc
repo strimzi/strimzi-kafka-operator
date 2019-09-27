@@ -35,10 +35,11 @@ metadata:
  name: my-bridge-oauth
 type: Opaque
 data:
- clientSecret: MGQ1OTRmMzYtZTllZS00MDY2LWI5OGEtMTM5MzM2NjdlZjQw
+ clientSecret: MGQ1OTRmMzYtZTllZS00MDY2LWI5OGEtMTM5MzM2NjdlZjQw <1>
 ----
-+
-Create or edit the resource for the Kafka component so that {oauth} authentication is configured for the authentication property.
+<1> The `clientSecret` key must be in base64 format.
+
+. Create or edit the resource for the Kafka component so that {oauth} authentication is configured for the authentication property.
 +
 For example, here {oauth} is assigned to the Kafka Bridge client:
 +
@@ -52,12 +53,12 @@ spec:
   # ...
   authentication:
    type: oauth <1>
-   tokenEndpointUri: http://<authorization-server-address>.nip.io/auth/realms/demo/protocol/openid-connect/token <2>
+   tokenEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token <2>
    clientId: kafka-bridge
    clientSecret:
      secretName: my-bridge-oauth
-     key: clientSecret
-   tlsTrustedCertificates: <3>
+     key: clientSecret <3>
+   tlsTrustedCertificates: <4>
      - secretName: oauth-server-cert
      certificate: tls.crt
 ----
@@ -77,8 +78,8 @@ oc apply -f your-file
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-kubectl logs -f ${POD_NAME} ${CONTAINER_NAME}
-kubectl get po -w
+kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
+kubectl get pod -w
 ----
 +
 The rolling updates configure the component for interaction with Kafka brokers using {oauth} authentication.

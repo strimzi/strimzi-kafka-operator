@@ -10,7 +10,7 @@
 In order to use {oauth} for {ProductName}, you must:
 
 . xref:proc-oauth-server-config-{context}[Deploy an authorization server and configure the deployment to integrate with Strimzi]
-. xref:proc-oauth-broker-config-{context}[Deploy or redeploy the Kafka cluster with Kafka broker listeners configured to use {oauth}]
+. xref:proc-oauth-broker-config-{context}[Deploy or update the Kafka cluster with Kafka broker listeners configured to use {oauth}]
 . xref:proc-oauth-client-config-{context}[Update your Java-based Kafka clients to use {oauth}]
 . xref:proc-oauth-kafka-config-{context}[Update Kafka component clients to use {oauth}]
 

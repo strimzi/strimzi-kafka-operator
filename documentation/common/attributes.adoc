@@ -36,6 +36,7 @@
 //OAuth attributes and links
 :external-type: loadbalancer
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
+:oauth-artifact-version: 0.1.0
 
 // External links
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]

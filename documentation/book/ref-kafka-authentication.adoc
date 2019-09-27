@@ -17,8 +17,6 @@ Supported authentication mechanisms:
 * SASL SCRAM-SHA-512
 * xref:assembly-oauth-str[{oauth} token based authentication]
 
-
-
 == TLS client authentication
 
 TLS Client authentication is enabled by specifying the `type` as `tls`.

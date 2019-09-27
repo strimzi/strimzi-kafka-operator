@@ -3,9 +3,9 @@
 // assembly-oauth-strimzi-config.adoc
 
 [id='proc-oauth-server-config-{context}']
-= Deploying an {oauth} authorization server
+= Configuring an {oauth} authorization server
 
-This procedure describes how to deploy an authorization server and configure it for integration with {ProductName}.
+This procedure describes how to configure an authorization server for integration with {ProductName}.
 
 Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use the authorization server to:
 
@@ -25,7 +25,7 @@ NOTE: If you already have an authorization server deployed, you can skip the dep
 
 * {ProductName} and Kafka is running
 
-For the authorization server deployment:
+For an authorization server deployment:
 
 * Check the supported configuration for the authorization server
 * Installation requires a user with cluster-admin role, such as system:admin
@@ -40,17 +40,9 @@ Consult the product documentation for the authorization server for information o
 . Create a _realm_.
 +
 * Enable the realm
-* Set SSL as `external`
 * Set session and token timeouts
 
-. Create the following _clients_ and configure their authentication credentials:
-+
---
-* Kafka
-* Kafka broker
-* Kafka client producer
-* Kafka client consumer
---
+. Create the _clients_ and configure their authentication credentials:
 +
 Enable the clients and ensure each has a unique client ID.
 
