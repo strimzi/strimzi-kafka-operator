@@ -5,7 +5,7 @@
 [id='proc-kafka-exporter-configuring-{context}']
 = Configuring Kafka Exporter
 
-Configure the Kafka Exporter in the `Kafka` resource through `KafkaExporter` properties.
+Configure Kafka Exporter in the `Kafka` resource through `KafkaExporter` properties.
 
 Refer to the xref:ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration] for an overview of the `Kafka` resource and its properties.
 
@@ -69,7 +69,7 @@ spec:
 <3> A regular expression to specify the topics to include in the metrics.
 <4> xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[CPU and memory resources to reserve].
 <5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
-<6> Boolean to enable Sarama logging, a Go client library used by the Kafka Exporter.
+<6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
 <7> xref:assembly-customizing-deployments-str[Customization of deployment templates and pods].
 <8> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
 <9> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
@@ -83,7 +83,7 @@ kubectl apply -f _kafka.yaml_
 
 .What to do next
 
-After configuring and deploying the Kafka Exporter, you can xref:proc-kafka-exporter-enabling-str[enable Grafana to present the Kafka Exporter dashboards].
+After configuring and deploying Kafka Exporter, you can xref:proc-kafka-exporter-enabling-str[enable Grafana to present the Kafka Exporter dashboards].
 
 .Additional resources
 

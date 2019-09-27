@@ -17,5 +17,6 @@ Lag data is exposed as Prometheus metrics, which can then be presented in Grafan
 * xref:assembly-kafka-exporter-configuration-deployment-configuration-kafka[Kafka Exporter deployment configuration].
 
 include::kafka-exporter/con-kafka-exporter-lag.adoc[leveloffset=+1]
+include::kafka-exporter/con-kafka-exporter-alerts.adoc[leveloffset=+1]
 include::kafka-exporter/ref-kafka-exporter-metrics.adoc[leveloffset=+1]
 include::kafka-exporter/proc-kafka-exporter-enabling-grafana.adoc[leveloffset=+1]

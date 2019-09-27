@@ -7,6 +7,10 @@
 
 If you deployed Kafka Exporter with your Kafka cluster, you can enable Grafana to present the metrics data it exposes.
 
+A Kafka Exporter dashboard is provided in the `examples/metrics` directory as a JSON file:
+
+* `strimzi-kafka-exporter.json`
+
 .Prerequisites
 
 * Kafka cluster is deployed with xref:proc-kafka-exporter-configuring-deployment-configuration-kafka[Kafka Exporter metrics configuration]

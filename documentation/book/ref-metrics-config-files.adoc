@@ -17,25 +17,27 @@ metrics
 │   ├── strimzi-kafka-connect.json
 │   ├── strimzi-kafka.json
 │   └── strimzi-zookeeper.json
-├── kafka-connect-metrics.yaml <3>
-├── kafka-metrics.yaml <4>
+│   └── strimzi-kafka-exporter.json <3>
+├── kafka-connect-metrics.yaml <4>
+├── kafka-metrics.yaml <5>
 ├── prometheus-additional-properties
-│   └── prometheus-additional.yaml <5>
+│   └── prometheus-additional.yaml <6>
 ├── prometheus-alertmanager-config
-│   └── alert-manager-config.yaml <6>
+│   └── alert-manager-config.yaml <7>
 └── prometheus-install
-    ├── alert-manager.yaml <7>
-    ├── prometheus-rules.yaml <8>
-    ├── prometheus.yaml <9>
-    └── strimzi-service-monitor.yaml <10>
+    ├── alert-manager.yaml <8>
+    ├── prometheus-rules.yaml <9>
+    ├── prometheus.yaml <10>
+    └── strimzi-service-monitor.yaml <11>
 --
 <1> Installation file for the Grafana image
 <2> Grafana dashboard configuration
-<3> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
-<4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and Zookeeper
-<5> Configuration to add roles for service monitoring
-<6> Hook definitions for sending notifications through Alertmanager
-<7> Resources for deploying and configuring Alertmanager
-<8> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
-<9> Installation file for the Prometheus image
-<10> Prometheus job definitions to scrape metrics data
+<3> Grafana dashboard configuration specific to xref:assembly-kafka-exporter-{context}[Kafka Exporter]
+<4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
+<5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and Zookeeper
+<6> Configuration to add roles for service monitoring
+<7> Hook definitions for sending notifications through Alertmanager
+<8> Resources for deploying and configuring Alertmanager
+<9> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
+<10> Installation file for the Prometheus image
+<11> Prometheus job definitions to scrape metrics data
