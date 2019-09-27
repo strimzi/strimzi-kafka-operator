@@ -18,7 +18,9 @@ import org.junit.BeforeClass;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -35,6 +37,10 @@ public abstract class AbstractRollerTest {
         vertx = Vertx.vertx();
     }
 
+    public List<Integer> restarted() {
+        return restarted.stream().map(AbstractRollerTest::podName2Number).collect(Collectors.toList());
+    }
+
     @AfterClass
     public static void stopVertx() {
         vertx.close();
@@ -45,7 +51,7 @@ public abstract class AbstractRollerTest {
         restarted = new ArrayList<>();
     }
 
-    PodOperator mockPodOps(Future<Void> readiness) {
+    PodOperator mockPodOps(Function<Integer, Future<Void>> readiness) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
             invocation -> new PodBuilder()
@@ -55,8 +61,16 @@ public abstract class AbstractRollerTest {
                     .endMetadata()
                 .build()
         );
-        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(readiness);
+        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenAnswer(
+            invocationOnMock ->  {
+                String podName = invocationOnMock.getArgument(1);
+                return readiness.apply(podName2Number(podName));
+            });
         return podOps;
+    }
+
+    static int podName2Number(String podName) {
+        return Integer.parseInt(podName.substring(ssName().length() + 1));
     }
 
     StatefulSet buildStatefulSet() {
@@ -72,13 +86,15 @@ public abstract class AbstractRollerTest {
                 .build();
     }
 
-    final String clusterName() {
+    static final String clusterName() {
         return "c";
     }
 
-    abstract String ssName();
+    static String ssName() {
+        return "c-kafka";
+    }
 
-    final String ssNamespace() {
+    static final String ssNamespace() {
         return "ns";
     };
 }

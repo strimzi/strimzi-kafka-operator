@@ -10,23 +10,28 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 
 
@@ -35,7 +40,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void controllerless(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, -1);
         doSuccessfulRollingRestart(testContext, ss, kafkaRoller,
@@ -44,7 +49,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void pod2IsController(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
         doSuccessfulRollingRestart(testContext, ss, kafkaRoller,
@@ -53,7 +58,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void controllerChangesDuringRoll(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 0, 1);
         doSuccessfulRollingRestart(testContext, ss, kafkaRoller,
@@ -61,18 +66,83 @@ public class KafkaRollerTest extends AbstractRollerTest {
     }
 
     @Test
-    public void podNotReadyAfterRolling(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.failedFuture(new TimeoutException("Timeout")));
+    public void pod0NotReadyAfterRolling(TestContext testContext) {
+        PodOperator podOps = mockPodOps(podId ->
+            podId == 0 ? Future.failedFuture(new TimeoutException("Timeout")) : Future.succeededFuture()
+        );
         StatefulSet ss = buildStatefulSet();
-        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 1);
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
         // What does/did the ZK algo do?
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                KafkaRoller2.ReadinessException.class);
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(0));
+        // TODO assert subsequent rolls
+    }
+
+    @Test
+    public void pod1NotReadyAfterRolling(TestContext testContext) {
+        PodOperator podOps = mockPodOps(podId ->
+                podId == 1 ? Future.failedFuture(new TimeoutException("Timeout")) : Future.succeededFuture()
+        );
+        StatefulSet ss = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        // On the first reconciliation we expect it to abort when it gets to pod 1
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(0, 1));
+        // On the next reconciliation only pod 2 (controller) would need rolling, and we expect it to fail in the same way
+
+        kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(2, 3, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(2));
+    }
+
+    @Test
+    public void pod3NotReadyAfterRolling(TestContext testContext) {
+        PodOperator podOps = mockPodOps(podId ->
+                podId == 3 ? Future.failedFuture(new TimeoutException("Timeout")) : Future.succeededFuture()
+        );
+        StatefulSet ss = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        // On the first reconciliation we expect it to abort when it gets to pod 3 (but not 2, which is controller)
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(0, 1, 3));
+        // On the next reconciliation only pod 2 (controller) would need rolling, and we expect it to fail in the same way
+        kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(2, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(4, 2));
+    }
+
+    @Test
+    public void controllerNotReadyAfterRolling(TestContext testContext) {
+        PodOperator podOps = mockPodOps(podId ->
+                podId == 2 ? Future.failedFuture(new TimeoutException("Timeout")) : Future.succeededFuture()
+        );
+        StatefulSet ss = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        // On the first reconciliation we expect it to fail when rolling the controller (i.e. as rolling all the rest)
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(0, 1, 3, 4, 2));
+        // On the next reconciliation only pod 2 would need rolling, and we expect it to fail in the same way
+        doFailingRollingRestart(testContext, ss, kafkaRoller,
+                asList(2),
+                KafkaRoller2.FatalException.class, "An error while waiting for a pod to become ready",
+                asList(2));
     }
 
     @Test
     public void errorWhenOpeningAdminClient(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture(null));
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
             new RuntimeException("Test Exception"),
@@ -87,7 +157,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void errorWhenGettingController(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture(null));
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
             null, null,
@@ -102,7 +172,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void errorWhenClosingAdminClient(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
             null,
@@ -117,7 +187,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void nonControllerNotInitiallyRollable(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(3);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
@@ -132,7 +202,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void controllerNotInitiallyRollable(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(3);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
@@ -147,7 +217,7 @@ public class KafkaRollerTest extends AbstractRollerTest {
 
     @Test
     public void nonControllerNeverRollable(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null, podOps,
             null, null, null,
@@ -156,12 +226,16 @@ public class KafkaRollerTest extends AbstractRollerTest {
                             : Future.succeededFuture(true),
             2);
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                KafkaRoller2.NotRollableException.class);
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.UnforceableException.class, "The pod currently is not rollable",
+                // Controller last, broker 1 never restarted
+                asList(0, 3, 4, 2));
+        // TODO assert subsequent rolls
     }
 
     @Test
     public void controllerNeverRollable(TestContext testContext) {
-        PodOperator podOps = mockPodOps(Future.succeededFuture());
+        PodOperator podOps = mockPodOps(podId -> Future.succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(ss, null, null,
                 podOps,
@@ -171,7 +245,11 @@ public class KafkaRollerTest extends AbstractRollerTest {
                             : Future.succeededFuture(true),
             2);
         doFailingRollingRestart(testContext, ss, kafkaRoller,
-                KafkaRoller2.NotRollableException.class);
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller2.UnforceableException.class, "The pod currently is not rollable",
+                // We expect all non-controller pods to be rolled
+                asList(0, 1, 3, 4));
+        // TODO assert subsequent rolls
     }
 
     TestingKafkaRoller rollerWithControllers(StatefulSet ss, PodOperator podOps, int... controllers) {
@@ -201,22 +279,31 @@ public class KafkaRollerTest extends AbstractRollerTest {
         }
     }
 
-    void doFailingRollingRestart(TestContext testContext, StatefulSet ss, TestingKafkaRoller kafkaRoller, Class<? extends Throwable> exception) {
+    void doFailingRollingRestart(TestContext testContext, StatefulSet ss, TestingKafkaRoller kafkaRoller,
+                                 Collection<Integer> podsToRestart,
+                                 Class<? extends Throwable> exception, String message,
+                                 List<Integer> expectedRestart) {
         Async async = testContext.async();
-        kafkaRoller.rollingRestart(pod -> true).setHandler(ar -> {
-            if (ar.succeeded()) {
-                testContext.fail(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
-            }
-            testContext.assertTrue(exception.isAssignableFrom(ar.cause().getClass()),
-                    ar.cause().getClass().getName() + " is not a subclass of " + exception.getName());
-            assertNoUnclosedAdminClient(testContext, kafkaRoller);
-            async.complete();
-        });
-    }
+        AtomicReference<AsyncResult<Void>> arReference = new AtomicReference<>();
+        kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
+            .setHandler(ar -> {
+                    arReference.set(ar);
+                    async.complete();
+                }
+            );
+        async.await();
+        AsyncResult<Void> ar = arReference.get();
+        testContext.assertEquals(expectedRestart, restarted(),
+                "The restarted pods were not as expected");
+        if (ar.succeeded()) {
+            testContext.fail(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
+        }
+        testContext.assertTrue(exception.isAssignableFrom(ar.cause().getClass()),
+                ar.cause().getClass().getName() + " is not a subclass of " + exception.getName());
+        testContext.assertEquals(message, ar.cause().getMessage(),
+                "The exception message was not as expected");
 
-    @Override
-    String ssName() {
-        return "c-kafka";
+        assertNoUnclosedAdminClient(testContext, kafkaRoller);
     }
 
     private class TestingKafkaRoller extends KafkaRoller2 {
@@ -248,9 +335,9 @@ public class KafkaRollerTest extends AbstractRollerTest {
         }
 
         @Override
-        protected AdminClient adminClient(Integer podId) throws AdminClientException {
+        protected AdminClient adminClient(Integer podId) throws ForceableException {
             if (acOpenException != null) {
-                throw new AdminClientException(acOpenException);
+                throw new ForceableException("An error while try to create the admin client", acOpenException);
             }
             AdminClient ac = mock(AdminClient.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
@@ -287,9 +374,9 @@ public class KafkaRollerTest extends AbstractRollerTest {
         }
 
         @Override
-        int controller(AdminClient ac, long timeout, TimeUnit unit) throws ControllerError {
+        int controller(AdminClient ac, long timeout, TimeUnit unit) throws ForceableException {
             if (controllerException != null) {
-                throw new ControllerError(controllerException);
+                throw new ForceableException("An error while trying to determine the cluster controller", controllerException);
             } else {
                 int index;
                 if (controllerCall < controllers.length) {
