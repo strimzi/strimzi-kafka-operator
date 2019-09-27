@@ -5,11 +5,11 @@
 
 = Kafka Exporter metrics
 
-Lag information is exposed by the Kafka Exporter as Prometheus metrics for presentation in Grafana.
+Lag information is exposed by Kafka Exporter as Prometheus metrics for presentation in Grafana.
 
 Kafka Exporter exposes metrics data for brokers, topics and consumer groups.
 
-The data extracted as well as the Grafana dashboard that uses the data are described here.
+The data extracted is described here.
 
 .Broker metrics output
 
