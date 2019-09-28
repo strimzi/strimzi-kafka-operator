@@ -395,6 +395,15 @@ public class Resources extends AbstractResources {
         });
     }
 
+    public Kafka deployUnsupportedKafka(Kafka kafka) {
+        kafka().inNamespace(client().getNamespace()).createOrReplace(kafka);
+        return kafka;
+    }
+
+    public void deleteUnsupportedKafka(Kafka kafka) {
+        kafka().inNamespace(client().getNamespace()).delete(kafka);
+    }
+
     public DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
         return kafkaConnect(defaultKafkaConnect(name, kafkaConnectReplicas).build());
     }
