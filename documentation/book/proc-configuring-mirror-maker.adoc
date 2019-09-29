@@ -10,8 +10,6 @@ Use the properties of the `KafkaMirrorMaker` resource to configure your Kafka Mi
 You can configure access control for producers and consumers using TLS or SASL authentication.
 This procedure shows a configuration that uses TLS encryption and authentication on the consumer and producer side.
 
-For more information on configuring access control for Kafka Mirror Maker, see xref:assembly-access-configuration-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker access control].
-
 .Prerequisites
 
 * xref:cluster-operator-str[{ProductName} and Kafka is deployed]
@@ -117,8 +115,8 @@ spec:
 <3> Group ID for the consumer.
 <4> The number of consumer streams.
 <5> The offset auto-commit interval in milliseconds.
-<6> TLS encryption with key names under which TLS certificates are stored in X.509 format for consumer or producer.
-<7> Authentication for consumer or producer, using the TLS mechanism, as shown here, or a SASL-based SCRAM-SHA-512 or PLAIN mechanism.
+<6> TLS encryption with key names under which TLS certificates are stored in X.509 format for consumer or producer. For more details see xref:type-KafkaMirrorMakerTls-reference[`KafkaMirrorMakerTls` schema reference].
+<7> Authentication for consumer or producer, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 <8> Kafka configuration options for consumer and producer.
 <9> If set to `true`, Kafka Mirror Maker will exit and the container will restart following a send failure for a message.
 <10> Topics mirrored from source to target Kafka cluster.

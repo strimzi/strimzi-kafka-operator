@@ -9,11 +9,15 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -272,8 +276,27 @@ public class DocGenerator {
     }
 
     private void appendDescription(Class<?> cls) throws IOException {
+        DescriptionFile descriptionFile = cls.getAnnotation(DescriptionFile.class);
         Description description = cls.getAnnotation(Description.class);
-        if (description != null) {
+
+        if (descriptionFile != null)    {
+            String filename = "descriptions/" + cls.getCanonicalName() + ".adoc";
+            InputStream is = cls.getClassLoader().getResourceAsStream(filename);
+
+            if (is == null) {
+                throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+            reader.lines().forEach(line -> {
+                try {
+                    out.append(line.subSequence(0, line.length())).append(NL);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else if (description != null) {
             out.append(getDescription(cls, description)).append(NL);
         }
         out.append(NL);
