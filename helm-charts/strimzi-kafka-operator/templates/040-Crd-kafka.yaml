@@ -933,6 +933,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -1753,6 +1760,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -2869,6 +2883,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -3250,6 +3271,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
