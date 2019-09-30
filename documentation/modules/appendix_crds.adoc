@@ -1755,7 +1755,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
-|quotas          1.2+<.<|Resource quotas.
+|quotas          1.2+<.<|Sets quotas on requests to control the broker resources used by clients.
 |xref:type-KafkaUserQuotas-{context}[`KafkaUserQuotas`]
 |====
 
@@ -1906,11 +1906,11 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 [options="header"]
 |====
 |Property                  |Description
-|consumerByteRate   1.2+<.<|Consumer byte rate.
+|consumerByteRate   1.2+<.<|Sets a quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.
 |integer
-|producerByteRate   1.2+<.<|Producer byte rate.
+|producerByteRate   1.2+<.<|Sets a quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.
 |integer
-|requestPercentage  1.2+<.<|Request percentage.
+|requestPercentage  1.2+<.<|Sets a quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
 |integer
 |====
 

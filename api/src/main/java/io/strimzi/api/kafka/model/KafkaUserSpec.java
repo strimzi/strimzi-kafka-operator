@@ -53,7 +53,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
         this.authorization = authorization;
     }
 
-    @Description("Resource quotas.")
+    @Description("Sets quotas on requests to control the broker resources used by clients.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaUserQuotas getQuotas() {
         return quotas;

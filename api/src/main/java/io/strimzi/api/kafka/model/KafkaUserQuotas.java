@@ -35,7 +35,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
 
     private Map<String, Object> additionalProperties;
 
-    @Description("Producer byte rate")
+    @Description("Sets a quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.")
     public Integer getProducerByteRate() {
         return producerByteRate;
     }
@@ -44,7 +44,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
         this.producerByteRate = producerByteRate;
     }
 
-    @Description("Consumer byte rate")
+    @Description("Sets a quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.")
     public Integer getConsumerByteRate() {
         return consumerByteRate;
     }
@@ -53,7 +53,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
         this.consumerByteRate = consumerByteRate;
     }
 
-    @Description("Request percentage")
+    @Description("Sets a quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.")
     public Integer getRequestPercentage() {
         return requestPercentage;
     }
