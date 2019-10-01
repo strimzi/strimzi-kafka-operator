@@ -1,6 +1,6 @@
-// Module included in the following assemblies:
+// Module included in the following module:
 //
-// assembly-oauth-strimzi-config.adoc
+// con-oauth-config.adoc
 
 [id='proc-oauth-client-config-{context}']
 = Configuring Kafka Java clients to use {oauth}

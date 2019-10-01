@@ -1,6 +1,6 @@
-// Module included in the following assemblies:
+// Module included in the following module:
 //
-// assembly-oauth-strimzi-config.adoc
+// con-oauth-config.adoc
 
 [id='proc-oauth-broker-config-{context}']
 = Configuring {oauth} support for Kafka brokers

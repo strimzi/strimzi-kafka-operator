@@ -1,8 +1,8 @@
-// This assembly is included in the following assemblies:
+// Module included in the following assemblies:
 //
-// master.adoc
+// assembly-oauth.adoc
 
-[id='assembly-oauth-strimzi-config-{context}']
+[id='con-oauth-strimzi-config-{context}']
 = Configuring {oauth} authentication
 
 {oauth} is used for interaction between Kafka clients and {ProductName} components.
