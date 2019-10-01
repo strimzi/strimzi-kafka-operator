@@ -395,12 +395,23 @@ public class Resources extends AbstractResources {
         });
     }
 
-    public Kafka deployUnsupportedKafka(Kafka kafka) {
+    /**
+     * This method is used for deploy specific Kafka cluster without wait for all resources.
+     * It can be use for example for deploy Kafka cluster with unsupported Kafka version.
+     * @param kafka kafka cluster specification
+     * @return kafka cluster specification
+     */
+    public Kafka kafkaWithoutWait(Kafka kafka) {
         kafka().inNamespace(client().getNamespace()).createOrReplace(kafka);
         return kafka;
     }
 
-    public void deleteUnsupportedKafka(Kafka kafka) {
+    /**
+     * This method is used for delete specific Kafka cluster without wait for all resources deletion.
+     * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
+     * @param kafka kafka cluster specification
+     */
+    public void deleteKafkaWithoutWait(Kafka kafka) {
         kafka().inNamespace(client().getNamespace()).delete(kafka);
     }
 

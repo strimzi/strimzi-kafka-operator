@@ -114,7 +114,7 @@ public class SpecificST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
-        Kafka unsupportedKafka = testMethodResources().deployUnsupportedKafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
+        Kafka unsupportedKafka = testMethodResources().kafkaWithoutWait(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion("6.6.6")
@@ -130,7 +130,7 @@ public class SpecificST extends MessagingBaseST {
         StUtils.waitUntilMessageIsInLogs(coPodName, "strimzi-cluster-operator", expectedLog);
         LOGGER.info("Warning is present in Cluster Operator log, going to teardown Created Kafka");
 
-        testMethodResources().deleteUnsupportedKafka(unsupportedKafka);
+        testMethodResources().deleteKafkaWithoutWait(unsupportedKafka);
         assertThat(kubeClient().logs(coPodName), not(containsString("NullPointer")));
     }
 
