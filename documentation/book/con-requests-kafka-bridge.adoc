@@ -11,7 +11,7 @@ Specify data formats and HTTP headers to ensure valid requests are submitted to 
 
 API request and response bodies are always encoded as JSON.
 
-* When performing consumer operations, `POST` requests must provide the following `Content-Type` header:
+* When performing consumer operations, `POST` requests must provide the following `Content-Type` header if there is a non empty body:
 +
 [source,http,subs=+quotes]
 ----
@@ -35,6 +35,9 @@ m¦Content-Type: application/vnd.kafka.binary.v2+json
 |===
 
 You set the embedded data format when creating a consumer using the `consumers/_groupid_` endpoint--for more information, see the next section.
+
+The `Content-Type` must not be set if the `POST` request has an empty body.
+It could be the case of the consumer creation operation when no configuration is provided in the body in order to create the consumer with the default values.
 
 == Embedded data format
 
