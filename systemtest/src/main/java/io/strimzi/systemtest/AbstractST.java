@@ -72,7 +72,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,6 +83,7 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -1018,13 +1018,13 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Verifies container configuration by environment key
+     * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
      * @param configKey Expected configuration key
-     * @param config Expected configuration
+     * @param config Expected component configuration
      */
-    protected void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
+    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
@@ -1032,18 +1032,17 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             LOGGER.info("Testing configuration for container {}", containerName);
             pods.forEach(pod -> {
                 pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                        .forEach(container -> {
-                            List list = container.getEnv().stream().map((Function<EnvVar, Object>) EnvVar::getName).collect(Collectors.toList());
-                            assertTrue(list.contains(configKey));
+                    .forEach(container -> {
+                        List<EnvVar> envVarList = container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey)).collect(Collectors.toList());
+                        assertThat(envVarList.size(), greaterThan(0));
 
-                            container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey))
-                                    .forEach(envVar -> {
-                                        LOGGER.info("Check specific configuration: {}", envVar.getName());
-                                        for (Map.Entry<String, Object> entry : config.entrySet()) {
-                                            assertThat(envVar.getValue().contains(entry.getKey() + "=" + entry.getValue() + "\n"), is(true));
-                                        }
-                                    });
+                        envVarList.forEach(envVar -> {
+                            LOGGER.info("Check specific configuration: {}", envVar.getName());
+                            for (Map.Entry<String, Object> entry : config.entrySet()) {
+                                assertThat(envVar.getValue().contains(entry.getKey() + "=" + entry.getValue() + "\n"), is(true));
+                            }
                         });
+                    });
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
@@ -1051,12 +1050,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Verifies container configuration by environment key
+     * Verifies container environment variables passed as a map.
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
-     * @param config Expected configuration
+     * @param config Expected environment variables with values
      */
-    protected void checkContainerConfiguration(String podNamePrefix, String containerName, Map<String, String> config) {
+    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, Map<String, String> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
@@ -1064,12 +1063,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             LOGGER.info("Testing EnvVars configuration for container {}", containerName);
             pods.forEach(pod -> {
                 pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                        .forEach(container -> {
-                            container.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName()))
-                                    .forEach(envVar -> {
-                                        assertEquals(config.get(envVar.getName()), envVar.getValue());
-                                    });
-                        });
+                    .forEach(container -> {
+                        container.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName()))
+                            .forEach(envVar -> {
+                                assertEquals(config.get(envVar.getName()), envVar.getValue());
+                            });
+                    });
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
@@ -1082,6 +1081,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param containerName The container where verifying is expected
      * @param initialDelaySeconds expected value for property initialDelaySeconds
      * @param timeoutSeconds expected value for property timeoutSeconds
+     * @param periodSeconds expected value for property periodSeconds
+     * @param successThreshold expected value for property successThreshold
+     * @param failureThreshold expected value for property failureThreshold
      */
     protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
                                      int periodSeconds, int successThreshold, int failureThreshold) {
@@ -1092,18 +1094,18 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             LOGGER.info("Testing Readiness and Liveness configuration for container {}", containerName);
             pods.forEach(pod -> {
                 pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                        .forEach(container -> {
-                            assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
-                            assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
-                            assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
-                            assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
-                            assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
-                            assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
-                            assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
-                            assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
-                            assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
-                            assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
-                        });
+                    .forEach(container -> {
+                        assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                        assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                        assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                        assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                        assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                        assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                        assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                        assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                        assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                        assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
+                    });
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");

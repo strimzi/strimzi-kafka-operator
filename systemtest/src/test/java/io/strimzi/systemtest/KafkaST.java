@@ -468,31 +468,31 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verify values before update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION", kafkaConfig);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarGeneral);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION", kafkaConfig);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarGeneral);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Testing Zookeepers");
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarGeneral);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarGeneral);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Checking configuration of TO and UO");
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", envVarGeneral);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", envVarGeneral);
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", envVarGeneral);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", envVarGeneral);
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Updating configuration of Kafka cluster");
         replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -574,31 +574,31 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION", updatedKafkaConfig);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarUpdated);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION", updatedKafkaConfig);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarUpdated);
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
+        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
 
         LOGGER.info("Testing Zookeepers");
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarUpdated);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", envVarUpdated);
         checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
+        checkSpecificVariablesInContainer(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", envVarUpdated);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", envVarUpdated);
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", envVarUpdated);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", envVarUpdated);
         checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkContainerConfiguration(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
+        checkSpecificVariablesInContainer(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
     }
 
     /**
