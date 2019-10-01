@@ -330,6 +330,7 @@ public abstract class Ca {
                 CertAndKey k = generateSignedCert(subject,
                         brokerCsrFile, brokerKeyFile, brokerCertFile);
                 certs.put(podName, k);
+                this.renewalType = RenewalType.RENEW_CERT;
             }
         }
 
