@@ -1,4 +1,4 @@
-# Strimzi: Kafka as a Service
+# Strimzi: Apache Kafka running on Kubernetes
 
 Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
