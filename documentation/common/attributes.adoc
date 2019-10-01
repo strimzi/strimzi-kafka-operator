@@ -34,7 +34,6 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
-:external-type: loadbalancer
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
 :oauth-artifact-version: 0.1.0
 

@@ -59,7 +59,7 @@ listeners:
      jwksEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs
      userNameClaim: preferred_username
  external:
-   type: {external-type}
+   type: loadbalancer
    //Option 1
    authentication: <5>
      type: oauth
