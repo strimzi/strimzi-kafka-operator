@@ -6,11 +6,12 @@
 = Using {oauth} token based authentication
 
 {ProductName} supports the use of {oauth} authentication using the _SASL OAUTHBEARER_ mechanism.
-{oauth} enables standardized token based authentication and authorization between applications by way of a central {oauth} authorization server that issues tokens that grant limited access to resources.
-{oauth} authentication is currently not supported.
+
+{oauth} enables standardized token based authentication and authorization between applications, using a central {oauth} authorization server to issue tokens that grant limited access to resources.
+{oauth} authorization is currently not supported.
 
 Using {oauth} token based authentication, application clients can access resources on application servers (called ‘resource servers’) without exposing account credentials.
-Rather, they present an access token as a means of authenticating, which application servers can also use to find more information about the level of access granted.
+The client presents an access token as a means of authenticating, which application servers can also use to find more information about the level of access granted.
 The authorization server handles the granting of access and inquiries about access.
 
 In the context of {ProductName}:
@@ -31,4 +32,4 @@ For a deployment of {ProductName}, {oauth} integration provides:
 
 include::oauth/con-oauth-authentication-flow.adoc[leveloffset=+1]
 include::oauth/con-oauth-authentication-client-options.adoc[leveloffset=+1]
-include::assembly-oauth-config.adoc[leveloffset=+1]
+include::oauth/con-oauth-config.adoc[leveloffset=+1]

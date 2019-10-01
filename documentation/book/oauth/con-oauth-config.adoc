@@ -14,7 +14,7 @@ In order to use {oauth} for {ProductName}, you must:
 . xref:proc-oauth-client-config-{context}[Update your Java-based Kafka clients to use {oauth}]
 . xref:proc-oauth-kafka-config-{context}[Update Kafka component clients to use {oauth}]
 
-include::oauth/proc-oauth-server-config.adoc[leveloffset=+1]
-include::oauth/proc-oauth-broker-config.adoc[leveloffset=+1]
-include::oauth/proc-oauth-client-config.adoc[leveloffset=+1]
-include::oauth/proc-oauth-kafka-config.adoc[leveloffset=+1]
+include::proc-oauth-server-config.adoc[leveloffset=+1]
+include::proc-oauth-broker-config.adoc[leveloffset=+1]
+include::proc-oauth-client-config.adoc[leveloffset=+1]
+include::proc-oauth-kafka-config.adoc[leveloffset=+1]

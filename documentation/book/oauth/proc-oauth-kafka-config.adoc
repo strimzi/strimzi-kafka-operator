@@ -23,7 +23,7 @@ In this scenario, the Kafka component and the authorization server are running i
 
 .Procedure
 
-. Create an OpenShift client Secret and mount it to the component as an environment variable.
+. Create an OpenShift client secret and mount it to the component as an environment variable.
 +
 For example, here we are creating a client Secret for the Kafka Bridge:
 +
@@ -57,8 +57,8 @@ spec:
    clientId: kafka-bridge
    clientSecret:
      secretName: my-bridge-oauth
-     key: clientSecret <3>
-   tlsTrustedCertificates: <4>
+     key: clientSecret
+   tlsTrustedCertificates: <3>
      - secretName: oauth-server-cert
      certificate: tls.crt
 ----

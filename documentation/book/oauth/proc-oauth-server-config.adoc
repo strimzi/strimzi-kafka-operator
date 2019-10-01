@@ -15,7 +15,7 @@ Depending on the chosen xref:con-oauth-authentication-client-options-{context}[a
 * Obtain access and refresh tokens
 
 User credentials are managed by an authorization server using a _realm_, which describes security policies.
-The realm is the authentication provider for clients.
+The _realm_ is the authentication provider for clients.
 
 To use {oauth} with {ProductName}, you need a deployment of an authorization server to be able to create and manage authentication realms.
 
@@ -28,23 +28,34 @@ NOTE: If you already have an authorization server deployed, you can skip the dep
 For an authorization server deployment:
 
 * Check the supported configuration for the authorization server
-* Installation requires a user with cluster-admin role, such as system:admin
+* Installation requires a user with a cluster-admin role, such as system:admin
 
 .Procedure
 
 . Deploy the authorization server to your cluster.
 . Access the CLI or admin console for the authorization server to create the {oauth} policies for {ProductName}.
 +
-Consult the product documentation for the authorization server for information on creating the policies.
+Consult the product documentation for the authorization server for information on creating policies.
 
-. Create a _realm_.
-+
-* Enable the realm
-* Set session and token timeouts
+. Create and enable a _realm_.
 
-. Create the _clients_ and configure their authentication credentials:
+. Adjust the session and token timeouts for the _realm_, if required.
+
+. Create a _client_ called `kafka-broker`.
 +
-Enable the clients and ensure each has a unique client ID.
+--
+* Set the client type to `confidential`
+* Enable client OpenID Connect (OIDC) authorization
+* Disable client OpenID Connect (OIDC) authentication
+--
+
+. Take a note of the _client_ secret for using in your {ProductName} Kafka cluster configuration.
+
+. Repeat the _client_ creation steps for any application client that will connect to your Kafka brokers.
++
+Create a definition for each new _client_.
++
+You will use the names as client IDs in your configuration.
 
 .What to do next
 After deploying and configuring the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].
