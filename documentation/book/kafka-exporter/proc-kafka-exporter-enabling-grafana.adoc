@@ -1,4 +1,4 @@
-// This assembly is included in the following assemblies:
+// Module included in the following assemblies:
 //
 // assembly-kafka-exporter.adoc
 [id='proc-kafka-exporter-enabling-{context}']
@@ -30,11 +30,12 @@ When metrics data has been collected for some time, the Kafka Exporter charts ar
 
 .Kafka Exporter Grafana charts
 
+From the metrics, you can create charts to display:
+
 * Message in per second (from topics)
 * Message in per minute (from topics)
 * Lag by consumer group
-* Message consume per minute (by consumer groups)
-
+* Messages consumed per minute (by consumer groups)
 
 Use the Grafana charts to analyze lag and to check if actions to reduce lag are having an impact on an affected consumer group.
-If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Message consume per minute_ chart going up.
+If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Messages consumed per minute_ chart going up.

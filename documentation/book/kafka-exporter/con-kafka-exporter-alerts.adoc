@@ -1,7 +1,7 @@
-// This assembly is included in the following assemblies:
+// Module included in the following assemblies:
 //
 // assembly-kafka-exporter.adoc
-[id='con-metrics-kafka-exporter-alerts{context}']
+[id='con-metrics-kafka-exporter-alerts-{context}']
 
 = Kafka Exporter alerting rule examples
 

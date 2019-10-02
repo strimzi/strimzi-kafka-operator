@@ -1,12 +1,12 @@
-// This assembly is included in the following assemblies:
+// Modulke included in the following assemblies:
 //
 // assembly-kafka-exporter.adoc
-[id='con-metrics-kafka-exporter-lag{context}']
+[id='con-metrics-kafka-exporter-lag-{context}']
 
 = Consumer lag
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
-Specifically, consumer lag indicates the delay between a Kafka broker writing a message created by a producer and the rate in which it is picked up by a consumer.
+Specifically, consumer lag indicates the delay between a Kafka broker writing a message created by a producer and the rate at which it is consumed up by a consumer.
 
 This difference is sometimes referred to as the _delta_ between the producer offset and consumer offset, the read and write positions in the Kafka broker topic partitions.
 
@@ -15,9 +15,9 @@ Suppose a topic streams 100 messages a second. A lag of 1000 messages between th
 .The importance of monitoring consumer lag
 
 For applications that rely on the processing of (near) real-time data, it is critical to monitor consumer lag to check that it does not become too big.
-The bigger the lag becomes, the further the process moves from the real-time processing objective.
+The greater the lag becomes, the further the process moves from the real-time processing objective.
 
-The lag, for example, might be a result of consuming too much old data that has not been purged, or through unplanned shutdowns.
+Consumer lag, for example, might be a result of consuming too much old data that has not been purged, or through unplanned shutdowns.
 
 .Reducing consumer lag
 
@@ -29,5 +29,5 @@ Typical actions to reduce lag include:
 * Dropping messages
 
 Actions to reduce consumer lag depend on the underlying infrastructure and the use cases {ProductName} is supporting.
-For instance, the potential impact of lag on broker performance can determine whether consumers are configured to use a disk cache or read from an actual disk.
+For instance, the potential impact of lag on broker performance can determine whether consumers are configured to use a disk cache or read from a physical disk.
 And in certain cases, it might be acceptable to automatically drop messages until a consumer has caught up.
