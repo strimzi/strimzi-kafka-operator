@@ -1,4 +1,4 @@
-// Modulke included in the following assemblies:
+// Module included in the following assemblies:
 //
 // assembly-kafka-exporter.adoc
 [id='con-metrics-kafka-exporter-lag-{context}']
