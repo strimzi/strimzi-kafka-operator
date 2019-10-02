@@ -47,7 +47,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -169,7 +168,6 @@ public class Resources extends AbstractResources {
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    client().deleteDeployment(resource.getMetadata().getName());
                     waitForDeletion((Deployment) resource);
                 });
                 break;
@@ -637,31 +635,43 @@ public class Resources extends AbstractResources {
     }
 
     private void waitForDeletion(Kafka kafka) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
+        String kafkaClusterName = kafka.getMetadata().getName();
+        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafkaClusterName);
+
+        StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+
+        StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+                StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+
+        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
+        StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
 
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
 
-        // client().deleteDeploymentConfig(KafkaConnectS2IResources.buildConfigName(kafkaConnectS2I.getMetadata().getName()));
+        StUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains("-connect-"))
@@ -673,28 +683,37 @@ public class Resources extends AbstractResources {
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-        client().getClient().apps().deployments().inNamespace(kafkaMirrorMaker.getMetadata().getNamespace()).withName(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName())).delete();
+
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName())).delete();
+
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(Deployment deployment) {
         LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
 
+        StUtils.waitForDeploymentDeletion(deployment.getMetadata().getName());
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
+    @Deprecated
     private void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} in namespace {} will be deleted", name, client().getNamespace());
 
