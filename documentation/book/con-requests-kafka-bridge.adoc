@@ -37,7 +37,7 @@ m¦Content-Type: application/vnd.kafka.binary.v2+json
 You set the embedded data format when creating a consumer using the `consumers/_groupid_` endpoint--for more information, see the next section.
 
 The `Content-Type` must not be set if the `POST` request has an empty body.
-It could be the case of the consumer creation operation when no configuration is provided in the body in order to create the consumer with the default values.
+An empty body can be used to create a consumer with the default values.
 
 == Embedded data format
 
