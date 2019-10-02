@@ -404,10 +404,18 @@ public class StUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentDeletion(String name) {
-        LOGGER.info("Waiting for Deployment deletion {}", name);
-        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getDeploymentStatus(name));
-        LOGGER.info("Deployment {} was deleted", name);
+        LOGGER.debug("Waiting for Deployment {} deletion", name);
+        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getDeployment(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("Deployment {} is not deleted!", name);
+                    kubeClient().deleteDeployment(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("Deployment {} was deleted", name);
     }
 
     /**
@@ -466,14 +474,41 @@ public class StUtils {
     }
 
     /**
+     * Wait until the given DeploymentConfig has been deleted.
+     * @param name The name of the DeploymentConfig.
+     */
+    public static void waitForDeploymentConfigDeletion(String name) {
+        LOGGER.debug("Waiting for DeploymentConfig {} deletion", name);
+        TestUtils.waitFor("DeploymentConfig " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getDeploymentConfig(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("Deployment {} is not deleted!", name);
+                    kubeClient().deleteDeploymentConfig(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("Deployment {} was deleted", name);
+    }
+
+    /**
      * Wait until the given StatefulSet has been deleted.
      * @param name The name of the StatefulSet.
      */
     public static void waitForStatefulSetDeletion(String name) {
-        LOGGER.info("Waiting for StatefulSet deletion {}", name);
-        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getStatefulSetStatus(name));
-        LOGGER.info("StatefulSet {} was deleted", name);
+        LOGGER.debug("Waiting for StatefulSet {} deletion", name);
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getStatefulSet(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("StatefulSet {} is not deleted!", name);
+                    kubeClient().deleteStatefulSet(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("StatefulSet {} was deleted", name);
     }
 
     /**
@@ -485,6 +520,26 @@ public class StUtils {
         TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
         LOGGER.info("StatefulSet {} was recovered", name);
+    }
+
+    /**
+     * Wait until the given ReplicaSet has been deleted.
+     * @param name The name of the ReplicaSet
+     */
+    public static void waitForReplicaSetDeletion(String name) {
+        LOGGER.debug("Waiting for deletion of ReplicaSet of Deployment {}", name);
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (!kubeClient().replicaSetExists(name)) {
+                    return true;
+                } else {
+                    String rsName = kubeClient().getReplicaSetNameByPrefix(name);
+                    LOGGER.warn("ReplicaSet {} is not deleted yet!", rsName);
+                    kubeClient().deleteReplicaSet(rsName);
+                    return false;
+                }
+            });
+        LOGGER.debug("ReplicaSet of Deployment {} was deleted", name);
     }
 
     /**
@@ -569,8 +624,17 @@ public class StUtils {
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getPod(name) == null);
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                Pod pod = kubeClient().getPod(name);
+                if (pod == null) {
+                    return true;
+                } else {
+                    LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                    cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                    return false;
+                }
+            });
     }
 
     public static void waitForNamespaceDeletion(String name) {

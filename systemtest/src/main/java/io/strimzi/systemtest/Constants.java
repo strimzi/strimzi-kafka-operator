@@ -14,6 +14,8 @@ public interface Constants {
     long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_SECRET_CREATION = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(14).toMillis();
+    long TIMEOUT_FOR_RESOURCE_DELETION = Duration.ofMinutes(1).toMillis();
+    long TIMEOUT_FOR_POD_DELETION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_CR_CREATION = Duration.ofMinutes(3).toMillis();
     long TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP = Duration.ofMinutes(2).toMillis();
@@ -21,6 +23,7 @@ public interface Constants {
     long TIMEOUT_FOR_LOG = Duration.ofSeconds(30).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
+    long POLL_INTERVAL_FOR_RESOURCE_DELETION = Duration.ofSeconds(5).toMillis();
     long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
     long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(7).toMillis();
 
