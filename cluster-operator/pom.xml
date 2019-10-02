@@ -66,6 +66,11 @@
             <artifactId>vertx-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <version>3.7.1</version>
+        </dependency>
+        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>certificate-manager</artifactId>
         </dependency>
