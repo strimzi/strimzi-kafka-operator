@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -114,7 +114,7 @@ public class SpecificST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
-        Kafka unsupportedKafka = testMethodResources().kafkaWithoutWait(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
+        testMethodResources().kafkaWithoutWait(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion("6.6.6")
@@ -130,8 +130,15 @@ public class SpecificST extends MessagingBaseST {
         StUtils.waitUntilMessageIsInLogs(coPodName, "strimzi-cluster-operator", expectedLog);
         LOGGER.info("Warning is present in Cluster Operator log, going to teardown Created Kafka");
 
-        testMethodResources().deleteKafkaWithoutWait(unsupportedKafka);
         assertThat(kubeClient().logs(coPodName), not(containsString("NullPointer")));
+        assertKafkaStatus("NotReady", "Version 6.6.6 is not supported");
+    }
+
+    // This should be moved to StUtils in the futures
+    void assertKafkaStatus(String status, String message) {
+        KafkaStatus kafkaStatus = testMethodResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        assertThat("Kafka Kafka cluster status should be " + status, kafkaStatus.getConditions().get(0).getType(), is(status));
+        assertThat("Kafka cluster status message should be different", kafkaStatus.getConditions().get(0).getMessage(), containsString(message));
     }
 
     @BeforeEach
