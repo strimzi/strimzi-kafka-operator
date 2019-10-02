@@ -5,7 +5,7 @@ include::common/attributes.adoc[]
 
 = Using {ProductLongName}
 
-include::assembly-overview.adoc[leveloffset=+1]
+include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
 include::getting-started.adoc[leveloffset=+1]
 
