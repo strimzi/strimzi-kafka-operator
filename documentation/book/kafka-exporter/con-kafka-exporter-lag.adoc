@@ -6,7 +6,7 @@
 = Consumer lag
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
-Specifically, consumer lag indicates the delay between a Kafka broker writing a message created by a producer and the rate at which it is consumed up by a consumer.
+Specifically, the lag for a given message and consumer is the delay between a Kafka broker writing the message to its log and the time a consumer offset is incremented past that message offset.
 
 This difference is sometimes referred to as the _delta_ between the producer offset and consumer offset, the read and write positions in the Kafka broker topic partitions.
 
@@ -29,5 +29,5 @@ Typical actions to reduce lag include:
 * Dropping messages
 
 Actions to reduce consumer lag depend on the underlying infrastructure and the use cases {ProductName} is supporting.
-For instance, the potential impact of lag on broker performance can determine whether consumers are configured to use a disk cache or read from a physical disk.
+For instance, a lagging consumer is less likely to benefit from the broker being able to service a fetch request from its disk cache.
 And in certain cases, it might be acceptable to automatically drop messages until a consumer has caught up.
