@@ -158,6 +158,16 @@ public abstract class Ca {
             public String postDescription(String keySecretName, String certSecretName) {
                 return "CA key (in " + keySecretName + ") replaced";
             }
+        },
+        REGENERATED_CERT_INFO() {
+            @Override
+            public String preDescription(String keySecretName, String certSecretName) {
+                return "CA info (in " + keySecretName + ") needs to be changed";
+            }
+            @Override
+            public String postDescription(String keySecretName, String certSecretName) {
+                return "CA info (in " + keySecretName + ") replaced";
+            }
         };
 
         RenewalType() {
@@ -330,7 +340,7 @@ public abstract class Ca {
                 CertAndKey k = generateSignedCert(subject,
                         brokerCsrFile, brokerKeyFile, brokerCertFile);
                 certs.put(podName, k);
-                this.renewalType = RenewalType.RENEW_CERT;
+                this.renewalType = RenewalType.REGENERATED_CERT_INFO;
             }
         }
 
@@ -536,6 +546,9 @@ public abstract class Ca {
             case NOOP:
                 log.debug("{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
                 break;
+            case REGENERATED_CERT_INFO:
+                log.debug("{}: The CA certificate in secret {} already exists however it does need update info", this, caCertSecretName);
+                break;
         }
         if (!generateCa) {
             if (renewalType == RenewalType.RENEW_CERT) {
@@ -613,7 +626,15 @@ public abstract class Ca {
      * @return Whether the certificate was renewed.
      */
     public boolean certRenewed() {
-        return renewalType == RenewalType.RENEW_CERT || renewalType == RenewalType.REPLACE_KEY;
+        return renewalType == RenewalType.RENEW_CERT || renewalType == RenewalType.REPLACE_KEY || certInfoChanged();
+    }
+
+    /**
+     * True if the certificate metadata has changed
+     * @return Whether the certificate was metadata has changed.
+     */
+    public boolean certInfoChanged() {
+        return  renewalType == RenewalType.REGENERATED_CERT_INFO;
     }
 
     /**
