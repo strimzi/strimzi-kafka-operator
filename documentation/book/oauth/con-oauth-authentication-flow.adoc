@@ -7,24 +7,29 @@
 
 Support for {oauth} is based on the Kafka _SASL OAUTHBEARER_ mechanism, which is used to establish authenticated sessions with a Kafka broker.
 
-A Kafka client initiates a session with the Kafka broker using the _SASL OAUTHBEARER_ mechanism for credentials exchange.
+A Kafka client initiates a session with the Kafka broker using the _SASL OAUTHBEARER_ mechanism for credentials exchange, where credentials take the form of an access token.
 
-For {oauth}, credentials are exchanged in the form of an access token.
-
-Kafka brokers and clients need to be configured to support {oauth}.
+Kafka brokers and clients need to be configured to use {oauth}.
 
 .Kafka broker configuration
 The Kafka broker must be configured to validate the token received during session initiation.
-The recommended approach is to create and configure a _client_ for the Kafka broker in an authorization server with:
+The recommended approach is to create a _client_ definition in an authorization server with:
 
-* An ID of `kafka-broker`
-* Client ID and secret for authentication
+* Client ID of `kafka-broker`
+* Client ID and secret as the authentication mechanism
 
 .Kafka client configuration
-Kafka clients also use a client ID and secret for authentication, but they can also employ more complex mechanisms for authenticating.
+A Kafka client is configured with either:
 
-For example, authentication might involve generating and packaging a long-lived refresh token with a deployment of a Kafka client application.
-Or an access token might be generated that entirely obviates the need for the Kafka client application to contact an authorization server during Kafka session initiation.
+* Credentials required to obtain a valid access token from an authorization server
+* A valid long-lived access, obtained using tools provided by an authorization server
+
+Credentials are never sent to the Kafka broker.
+The only information ever sent to the Kafka broker is an access token. 
+When a client obtains an access token, no further communication with the authorization server is needed.
+
+The simplest mechanism, which requires no additional usage of authorization server tools, is authentication with a client ID and secret.
+Using a long-lived access token, or a long-lived refresh token, is more complicated.
 
 NOTE: If you are using long-lived access tokens, configure _realm_ policy settings in the authorization server to increase the maximum lifetime of the token.
 

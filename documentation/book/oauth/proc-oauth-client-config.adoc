@@ -30,12 +30,17 @@ Add a client callback plugin to your _pom.xml_ file, and configure the system pr
 
 . Configure the system properties for the callback:
 +
+For example:
++
 [source,xml, subs="+quotes,attributes"]
 ----
-System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token”);
-System.setProperty(Config.OAUTH_CLIENT_ID, "kafka-producer-client");
-System.setProperty(Config.OAUTH_CLIENT_SECRET, "<client-secret>");
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token_”); <1>
+System.setProperty(Config.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
+System.setProperty(Config.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
 ----
+<1> URI of the authorization server token endpoint
+<2> Client ID, which is the name used when creating the _client_ in the authorization server.
+<3> Client secret created when creating the _client_ in the authorization server.
 
 . Enable the _SASL OAUTHBEARER_ mechanism on a TLS encrypted connection in the Kafka client configuration:
 +

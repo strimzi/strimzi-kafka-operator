@@ -3,18 +3,19 @@
 // assembly-oauth.adoc
 
 [id='con-oauth-authentication-client-options-{context}']
-= {oauth} client authentication options
+= {oauth} client authentication flow
 
-In this section, we outline configuration options for Kafka clients and Kafka brokers using {oauth} token based authentication when establishing a session with a Kafka broker.
+In this section, we explain and visualize the communication flow between Kafka client, Kafka broker, and authorization server during Kafka session initiation.
+The flow depends on client and server configuration.
 
-When a Kafka client sends an access token as credentials to a Kafka broker (the resource server), the token needs to be validated.
+When a Kafka client sends an access token as credentials to a Kafka broker, the token needs to be validated.
 
 Depending on the authorization server used, and the configuration options available, you may prefer to use:
 
-* Signed JWT tokens that are validated without contacting the authorization server
-* Fast local token validation without checking with the authorization server
+* Fast local token validation based on JWT signature checking and local token introspection, without contacting the authorization server
+* An {oauth} introspection endpoint provided by authorization server
 
-Using JWT access tokens requires the authorization server to provide a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
+Using fast local token validation requires the authorization server to provide a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
 
 NOTE: An authorization server might only allow the use of opaque access tokens, which means that local token validation is not possible.
 
@@ -26,7 +27,7 @@ Kafka client credentials can also be configured for:
 * Direct local access using a previously generated long-lived access token
 * Contact with the authorization server for a new access token to be issued and sent to the Kafka broker
 
-== Client authentication flows
+== Example client authentication flows
 
 Here you can see example flows using the following {oauth} client authentication options.
 
@@ -74,4 +75,5 @@ image:oauth-jwt-signature-token.png[Authentication using a long-lived access tok
 . Kafka broker validates the access token locally using a JWT token signature and the client session is established.
 
 WARNING: Fast local JWT token signature validation is suitable only for short-lived tokens as there is no check with the authorization server that a token has been revoked.
-Token expiration is written into the token, so revocation is not accounted for. Any issued token would be considered valid until it expires.
+Token expiration is written into the token, but revocation can happen at any time, so can not be accounted for without contacting the authorization server.
+Any issued token would be considered valid until it expires.

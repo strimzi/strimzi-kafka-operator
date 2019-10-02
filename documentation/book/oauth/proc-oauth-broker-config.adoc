@@ -49,22 +49,23 @@ listeners:
  plain:
    authentication:
      type: oauth <1>
-     validIssuerUri: https://<authorization-server-address>/auth/realms/demo <2>
-     jwksEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs <3>
+     validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_ <2>
+     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs_ <3>
      userNameClaim: preferred_username <4>
  tls:
    authentication:
      type: oauth
-     validIssuerUri: https://<authorization-server-address>/auth/realms/demo
-     jwksEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs
+     validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_
+     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs_
      userNameClaim: preferred_username
  external:
    type: loadbalancer
+
    //Option 1
    authentication: <5>
      type: oauth
-     validIssuerUri: https://<authorization-server-address>/auth/realms/external
-     jwksEndpointUri: https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs
+     validIssuerUri: _https://<authorization-server-address>/auth/realms/external_
+     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs_
      userNameClaim: preferred_username
      tlsTrustedCertificates: <6>
      - secretName: oauth-server-cert
@@ -74,8 +75,8 @@ listeners:
    //Option 2
    authentication: <8>
      type: oauth
-     validIssuerUri: https://<authorization-server-address>/auth/realms/external
-     introspectionEndpointUri: https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect
+     validIssuerUri: _https://<authorization-server-address>/auth/realms/external_
+     introspectionEndpointUri: _https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect_
      clientId: kafka-broker
      clientSecret:
        secretName: my-cluster-oauth
