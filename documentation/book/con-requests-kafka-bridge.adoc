@@ -11,7 +11,7 @@ Specify data formats and HTTP headers to ensure valid requests are submitted to 
 
 API request and response bodies are always encoded as JSON.
 
-* When performing consumer operations, `POST` requests must provide the following `Content-Type` header if there is a non empty body:
+* When performing consumer operations, `POST` requests must provide the following `Content-Type` header if there is a non-empty body:
 +
 [source,http,subs=+quotes]
 ----
