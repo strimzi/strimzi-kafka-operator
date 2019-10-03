@@ -142,7 +142,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
-        kafkaConnect.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaConnect.tracing = spec.getTracing();
 
         KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
