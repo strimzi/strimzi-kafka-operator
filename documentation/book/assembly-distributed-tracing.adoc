@@ -5,39 +5,13 @@
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing
 
-{ProductName} provides support for the distributed tracing of transactions within a typical Kafka architecture. When Kafka client applications are instrumented for distributed tracing, {ProductName} generates __traces__ for transactions such as producing and consuming messages, or writing offsets to the consumer offsets log.
+This chapter provides an overview of the support for distributed tracing in {ProductName}. It includes procedures for configuring distributed tracing in {ProductName} components and instrumenting client applications.
 
-A sample of the total number of traces is visualized in a user interface using Jaeger. You can use this trace data to monitor the operation of your Kafka cluster from end-to-end, and debug performance issues with target systems and applications. Trace data complements the metrics available to view in Grafana dashboards -- for more information, see xref:assembly-metrics-setup-{context}[]. 
-
-.Components supported for tracing
-
-{ProductName} supports distributed tracing in the following components:
-
-* Producers and consumers
-* Kafka clusters
-* Kafka Streams applications
-* Mirror Maker
-* Kafka Connect, including Kafka Connect with Source2Image support
-
-Only Java client applications are supported. 
-
-The procedures in this chapter describe how to instrument your client applications for distributed tracing.
-
-.Overview of OpenTracing and Jaeger
-
-Distributed tracing in {ProductName} is implemented using the open source {OpenTracingHome} and {JaegerHome} projects.
-
-* An emerging specification, OpenTracing defines APIs that developers can use to instrument their applications -- often in microservice architectures -- for distributed tracing. It is independent from the tracing system.
-+
-NOTE: The OpenTracing project is currently merging with the OpenCensus project. The new combined project is named {OpenTelemetryHome}. OpenTelemetry will provide compatibility for applications that are instrumented using the OpenTracing APIs.
-
-* Jaeger is a popular tracing system used for monitoring and troubleshooting microservices-based distributed systems. Jaeger is an implementation of the OpenTracing APIs that developers and administrators can use to visualize, query, filter, and analyze trace data.
-
-{ProductName} uses the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library, which simplifies the instrumentation of Kafka clients for OpenTracing. This library is an example of a __tracer__.
+include::con-overview-distributed-tracing.adoc[leveloffset=+1]
 
 .Summary
 
-Setting up distributed tracing within {ProductName} involves several procedures.
+Setting up distributed tracing for {ProductName} involves the following procedures.
 
 * xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]
 
