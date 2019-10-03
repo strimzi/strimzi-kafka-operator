@@ -500,4 +500,13 @@ public class KubeClient {
         VersionInfo versionInfo = new DefaultKubernetesClient().getVersion();
         return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
+
+    /**
+     * Method which return name of cluster operator pod
+     * @return cluster operator pod name
+     */
+    public String getClusterOperatorPodName() {
+        LabelSelector selector = kubeClient().getDeploymentSelectors("strimzi-cluster-operator");
+        return kubeClient().listPods(selector).get(0).getMetadata().getName();
+    }
 }
