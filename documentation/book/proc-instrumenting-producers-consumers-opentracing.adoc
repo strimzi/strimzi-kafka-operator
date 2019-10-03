@@ -3,22 +3,22 @@
 // assembly-instrumenting-kafka-clients-tracers.adoc
 
 [id='proc-instrumenting-producers-consumers-for-opentracing-{context}']
-= Instrumenting producers and consumers for OpenTracing
+= Instrumenting producers and consumers for tracing
 
-Use a Decorator pattern or Interceptors to instrument your producer and consumer code for distributed tracing.
+Use a Decorator pattern or Interceptors to instrument your Java producer and consumer code for distributed tracing.
 
 .Procedure
 
-Perform the following steps for each producer and consumer.
+Perform the following steps in the application code of each producer and consumer.
 
-. Add the `opentracing-kafka-client` Maven dependency for OpenTracing to the producer or consumer's pom.xml file.
+. Add the Maven dependency for OpenTracing to the producer or consumer's pom.xml file.
 +
-[source,xml,subs=attributes+]
+[source,xml,subs="+quotes,attributes+"]
 ----
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-kafka-client</artifactId>
-    <version>VERSION</version>
+    <version><version></version>
 </dependency>
 ----
 

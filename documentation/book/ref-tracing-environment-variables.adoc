@@ -5,7 +5,11 @@
 [id='ref-tracing-environment-variables-{context}']
 = Tracing environment variables
 
-Use these environment variables to configure a Jaeger tracer for Kafka client applications.
+Use these environment variables to configure a Jaeger tracer for client applications.
+
+NOTE: The tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
+
+// We should make clear that these are not our variables but Jaegers and they are subject to change by Jaeger and ideally add a link to their docs for the description in case they change.
 
 [%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
 |===
@@ -16,7 +20,7 @@ Use these environment variables to configure a Jaeger tracer for Kafka client ap
 
 m¦JAEGER_SERVICE_NAME
 ¦Yes
-¦The name of the Jaeger Tracer service.
+¦The name of the Jaeger tracer service.
 
 m¦JAEGER_AGENT_HOST
 ¦No
@@ -52,7 +56,7 @@ m¦JAEGER_REPORTER_LOG_SPANS
 
 m¦JAEGER_REPORTER_MAX_QUEUE_SIZE
 ¦No
-¦The reporter's maximum queue size
+¦The reporter's maximum queue size.
 
 m¦JAEGER_REPORTER_FLUSH_INTERVAL
 ¦No
@@ -60,15 +64,19 @@ m¦JAEGER_REPORTER_FLUSH_INTERVAL
 
 m¦JAEGER_SAMPLER_TYPE
 ¦No
-¦The type of sampling to use for client traces: Constant, Probabilistic, Rate Limiting, or Remote (the default type). For more information, see the https://www.jaegertracing.io/docs/1.14/sampling/#client-sampling-configuration[Jaeger documentation^].
+¦The sampling strategy to use for client traces: Constant, Probabilistic, Rate Limiting, or Remote (the default type). 
+
+To sample all traces, use the Constant sampling strategy with a parameter of 1.
+
+For more information, see the https://www.jaegertracing.io/docs/1.14/sampling/#client-sampling-configuration[Jaeger documentation^].
 
 m¦JAEGER_SAMPLER_PARAM
 ¦No
-¦The sampler parameter (number)
+¦The sampler parameter (number).
 
 m¦JAEGER_SAMPLER_MANAGER_HOST_PORT
 ¦No
-¦The host name and port to use if Remote sampling is selected.
+¦The host name and port to use if a Remote sampling strategy is selected.
 
 m¦JAEGER_TAGS
 ¦No

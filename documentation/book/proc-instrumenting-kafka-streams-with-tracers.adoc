@@ -3,7 +3,7 @@
 // assembly-instrumenting-kafka-clients-tracers.adoc
 
 [id='proc-instrumenting-kafka-streams-with-tracers-{context}']
-= Instrumenting Kafka Streams for OpenTracing
+= Instrumenting Kafka Streams for tracing
 
 This section describes how to instrument Kafka Streams applications for distributed tracing.
 

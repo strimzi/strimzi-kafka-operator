@@ -5,11 +5,11 @@
 [id='proc-configuring-jaeger-tracer-kafka-clients-{context}']
 = Initializing a Jaeger tracer for Kafka clients
 
-Configure and initialize a Jaeger tracer instance by using a set of tracing environment variables.
+Configure and initialize a Jaeger tracer by using a set of tracing environment variables.
 
 .Procedure
 
-Perform the following steps for each Java client application, such as producers and consumers.
+Perform the following steps for each client application.
 
 . Add Maven dependencies for Jaeger to the `pom.xml` file for the client application. For example:
 +
@@ -39,3 +39,5 @@ NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github
 ----
 GlobalTracer.register(tracer);
 ----
+
+A Jaeger tracer is now initialized for the client application.

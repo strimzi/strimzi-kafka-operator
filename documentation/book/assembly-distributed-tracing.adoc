@@ -5,22 +5,23 @@
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing
 
-This chapter provides an overview of the support for distributed tracing in {ProductName}. It includes procedures for configuring distributed tracing in {ProductName} components and instrumenting client applications.
+This chapter provides an overview of distributed tracing in {ProductName}. It includes procedures for configuring distributed tracing in Kafka Connect and Mirror Maker, and for instrumenting client applications for tracing.
 
 include::con-overview-distributed-tracing.adoc[leveloffset=+1]
 
-.Summary
+.Outline
 
-Setting up distributed tracing for {ProductName} involves the following procedures.
+To set up distributed tracing for {ProductName}, you must:
 
-* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]
+* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
 
-* xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[]
+* xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument producers and consumers for tracing]
 
-* xref:proc-instrumenting-kafka-streams-with-tracers-{context}[]
+* xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams for tracing]
 
-* xref:assembly-setting-up-tracing-mirror-maker-connect-{context}[]
+* xref:assembly-setting-up-tracing-mirror-maker-connect-{context}[Set up tracing for Mirror Maker and Kafka Connect]
 
+//Need to reword
 Setting up distributed tracing across process boundaries is outside the scope of this documentation. For more information on this subject, see the {OpenTracingDocs} and search for "inject and extract".
 
 .Prerequisites
