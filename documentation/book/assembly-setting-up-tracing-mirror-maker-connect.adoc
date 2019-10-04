@@ -6,6 +6,8 @@
 
 Distributed tracing is supported for Mirror Maker and Kafka Connect (including Kafka Connect with Source2Image support). 
 
+For Mirror Maker, messages are traced from the source cluster to the target cluster. The trace data for Mirror Maker visualize messages entering and leaving Mirror Maker.
+
 Only messages produced and consumed by Kafka Connect itself are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems.
 
 include::proc-enabling-tracing-in-connect-mirror-maker-resources.adoc[leveloffset=+1]

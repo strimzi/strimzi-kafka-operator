@@ -18,7 +18,7 @@ Perform the following steps in the application code of each producer and consume
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-kafka-client</artifactId>
-    <version><version></version>
+    <version>{0.1.5}</version>
 </dependency>
 ----
 

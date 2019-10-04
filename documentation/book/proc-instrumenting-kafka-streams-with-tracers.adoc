@@ -13,12 +13,12 @@ Perform the following steps for each Kafka Streams application.
 
 . Add the `opentracing-kafka-streams` dependency to the pom.xml file for your Kafka Streams application:
 +
-[source,xml,subs=attributes+]
+[source,xml,subs="+quotes,attributes+"]
 ----
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-kafka-streams</artifactId>
-    <version>VERSION</version>
+    <version>{0.1.5}</version>
 </dependency>
 ----
 
