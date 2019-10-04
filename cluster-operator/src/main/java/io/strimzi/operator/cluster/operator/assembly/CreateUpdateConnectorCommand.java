@@ -4,7 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.vertx.core.AbstractVerticle;
+import io.strimzi.api.kafka.model.KafkaConnector;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicateResult;
@@ -14,10 +17,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.Function;
 
-public class CreateUpdateConnectorCommand extends AbstractVerticle {
-    private static final Logger log = LogManager.getLogger(KafkaConnectorAssemblyOperator.class.getName());
+public class CreateUpdateConnectorCommand {
+    private static final Logger log = LogManager.getLogger(CreateUpdateConnectorCommand.class.getName());
 
-    Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate = resp -> {
+    private Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate = resp -> {
         int statusCode = resp.statusCode();
         if (statusCode == 200 || statusCode == 201) {
             return ResponsePredicateResult.success();
@@ -25,23 +28,32 @@ public class CreateUpdateConnectorCommand extends AbstractVerticle {
         return ResponsePredicateResult.failure("Does not work");
     };
 
-    @Override
-    public void start() {
+    public Future<Void> run(int port, String ip, String path, KafkaConnector kafkaConnector, String name, Vertx vertx) {
+        Future<Void> updateRun = Future.future();
+        log.info("Calling Kafka Connect API");
+        JsonObject connectorConfigJson = new JsonObject().put("connector.class", kafkaConnector.getSpec().getClassName())
+                .put("tasks.max", kafkaConnector.getSpec().getTasksMax())
+                .put("topics", kafkaConnector.getSpec().getTopics());
+        kafkaConnector.getSpec().getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
+        
         WebClient.create(vertx)
-                .put(config().getInteger("port"), config().getString("ip"), config().getString("path") + "/"
-                        + config().getJsonObject("connector").getString("name") + "/config")
+                .put(port, ip, path + "/" + name + "/config")
                 .as(BodyCodec.jsonObject())
                 .putHeader("Accept", "application/json")
                 .putHeader("Content-Type", "application/json")
                 .expect(methodsPredicate)
-                .sendJson(config().getJsonObject("connector").getJsonObject("config"), asyncResult -> {
+                .sendJson(connectorConfigJson, asyncResult -> {
                     if (asyncResult.succeeded()) {
+                        log.info("PUT - Kafka Connector Success");
                         log.info(asyncResult.result().body());
+                        updateRun.complete();
                     } else if (asyncResult.failed()) {
+                        log.error("PUT - Kafka Connector Error");
                         log.error(asyncResult.cause().getMessage());
+                        updateRun.fail(asyncResult.cause());
                     }
                 });
+
+        return updateRun;
     }
-
-
 }

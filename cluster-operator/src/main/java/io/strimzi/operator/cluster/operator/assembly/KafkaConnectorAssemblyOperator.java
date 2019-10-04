@@ -21,10 +21,8 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,29 +60,22 @@ public class KafkaConnectorAssemblyOperator extends
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnector assemblyResource) {
         Future<Void> createOrUpdateFuture = Future.future();
+        CreateUpdateConnectorCommand createUpdateConnectorCommand = new CreateUpdateConnectorCommand();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
         log.debug("{}: Creating/Updating Kafka Connector", reconciliation, name, namespace);
-
-        JsonObject connectorConfigJson = new JsonObject().put("connector.class", assemblyResource.getSpec().getClassName())
-                .put("tasks.max", assemblyResource.getSpec().getTasksMax())
-                .put("topics", assemblyResource.getSpec().getTopics());
-        assemblyResource.getSpec().getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
-
-        JsonObject connectorJson = new JsonObject().put("name", name).put("config", connectorConfigJson);
-        JsonObject config = new JsonObject().put("ip", "my-connect-cluster-connect-api").put("port", 8083).put("path", "/connectors").put("connector", connectorJson);
-
-        vertx.deployVerticle(new CreateUpdateConnectorCommand(), new DeploymentOptions().setConfig(config), ar -> {
-            if (ar.succeeded()) {
-                String id = ar.result();
-                log.info("Successfully create update connector verticle deployed {}", id);
-                createOrUpdateFuture.complete();
-            } else {
-                log.error("Error while deploying", ar.cause());
-                createOrUpdateFuture.fail(ar.cause());
-            }
-        });
+        kafkaConnectorServiceAccount(namespace)
+                .compose(p -> createUpdateConnectorCommand.run(8083, "my-connect-cluster-connect-api", "/connectors", assemblyResource, name, vertx))
+                .setHandler(getRes -> {
+                    if (getRes.succeeded()) {
+                        log.info("Kafka Connector Create/Update Successfully");
+                        createOrUpdateFuture.complete();
+                    } else {
+                        log.error("Kafka Connector Create/Update Failed!", getRes.cause());
+                        createOrUpdateFuture.fail(getRes.cause());
+                    }
+                });
 
         return createOrUpdateFuture;
     }
@@ -145,15 +136,27 @@ public class KafkaConnectorAssemblyOperator extends
 //                bridge.generateServiceAccount());
 //    }
 
-    Future<ReconcileResult<ServiceAccount>> kafkaConnectorServiceAccount(String namespace, String serviceAccountName) {
+//    Future<ReconcileResult<ServiceAccount>> kafkaConnectorServiceAccount(String namespace, String serviceAccountName) {
+//        ServiceAccount desiredServiceAccount = new ServiceAccountBuilder()
+//                .withNewMetadata()
+//                .withName(serviceAccountName)
+//                .withNamespace(namespace)
+////                     .withOwnerReferences(createOwnerReference())
+//                // .withLabels(labels.toMap())
+//                .endMetadata()
+//                .build();
+//        return serviceAccountOperations.reconcile(namespace, serviceAccountName, desiredServiceAccount);
+//    }
+
+    Future<ReconcileResult<ServiceAccount>> kafkaConnectorServiceAccount(String namespace) {
         ServiceAccount desiredServiceAccount = new ServiceAccountBuilder()
                 .withNewMetadata()
-                .withName(serviceAccountName)
+                .withName("strimzi-cluster-operator")
                 .withNamespace(namespace)
-//                     .withOwnerReferences(createOwnerReference())
-                // .withLabels(labels.toMap())
+//                .withOwnerReferences(createOwnerReference())
+//                .withLabels(labels.toMap())
                 .endMetadata()
                 .build();
-        return serviceAccountOperations.reconcile(namespace, serviceAccountName, desiredServiceAccount);
+        return serviceAccountOperations.reconcile(namespace, "strimzi-cluster-operator", desiredServiceAccount);
     }
 }
