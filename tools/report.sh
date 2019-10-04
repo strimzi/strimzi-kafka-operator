@@ -145,7 +145,7 @@ for pod in $pods; do
 	  $platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-zookeeper.log
 
 	  $platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties > $direct/reports/configs/"$pod".cfg
-	else
+	elif [[ $pod == *"-kafka-exporter-"* || $pod == *"-connect-"* || $pod == *"-bridge-"* || $pod == *"-mirror-maker-"* ]]; then
 	  $platform logs $pod -n $namespace > $direct/reports/podLogs/"$pod".log
 	  $platform logs $pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod".log
 	fi
