@@ -5,7 +5,7 @@
 
 . $(dirname $0)/../multi-platform-support.sh
 
-FILE=$1
+FILE="$1"
 cat <<EOF
 // This assembly is included in the following assemblies:
 //
@@ -16,13 +16,27 @@ cat <<EOF
 |=================
 |Kafka version |Interbroker protocol version |Log message format version| Zookeeper version
 EOF
-for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
+
+finished=0
+counter=0
+while [ $finished -lt 1 ] 
+do
+    version=$(yq read "$FILE" "[${counter}].version")
+
+    if [ "$version" = "null" ]
+    then
+        finished=1
+    else
+
+        protocol=$(yq read "$FILE" "[${counter}].protocol")
+        message_format=$(yq read "$FILE" "[${counter}].format")
     
-    for y in $(echo $x | $SED -E -e 's/[|]default//g' | cut -d "|" -f 1,2,3 | $SED -E -e 's/[|]/ /g' ); do
-        echo -n "|$y "
-    done
-    echo "|3.4.13"
+        echo "| $version | $protocol | $message_format | 3.4.13"
+
+        counter=$((counter + 1))
+    fi
 done
+
 cat <<EOF
 |=================
 EOF

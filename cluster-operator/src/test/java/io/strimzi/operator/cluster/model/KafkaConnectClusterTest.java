@@ -67,8 +67,13 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
-            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
+                    "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
+            emptyMap(), singletonMap("2.3.0", "strimzi/kafka-connect:latest-kafka-2.3.0"), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 2;
@@ -145,7 +150,7 @@ public class KafkaConnectClusterTest {
     public void testDefaultValues() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster), VERSIONS);
 
-        assertEquals("strimzi/kafka-connect:latest-kafka-2.0.0", kc.image);
+        assertEquals("strimzi/kafka-connect:latest-kafka-2.3.0", kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessProbeOptions.getTimeoutSeconds());

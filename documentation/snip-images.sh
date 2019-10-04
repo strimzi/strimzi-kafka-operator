@@ -6,6 +6,24 @@
 . $(dirname $0)/../multi-platform-support.sh
 
 FILE=$1
+
+# Read the kafka versions file and create an array of version strings
+declare -a versions
+finished=0
+counter=0
+while [ $finished -lt 1 ] 
+do
+    version=$(yq read "$FILE" "[${counter}].version")
+
+    if [ "$version" = "null" ]
+    then
+        finished=1
+    else
+        versions+=("$version")
+        counter=$((counter + 1))
+    fi 
+done
+
 cat <<EOF
 // Auto generated content - DO NOT EDIT BY HAND
 // Edit documentation/snip-images.sh instead
@@ -16,7 +34,8 @@ cat <<EOF
 |Kafka
 a|
 EOF
-for kafka_version in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/^ *([0-9.]+) .*$/\1/g'); do
+for kafka_version in "${versions[@]}" 
+do
 echo "* {DockerOrg}/kafka:{DockerTag}-kafka-${kafka_version}"
 done
 cat <<EOF

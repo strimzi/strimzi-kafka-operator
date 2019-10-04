@@ -88,8 +88,13 @@ public class KafkaAssemblyOperatorMockTest {
     private static final String CLUSTER_NAME = "my-cluster";
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
-            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
+            "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
+            singletonMap("2.3.0", "strimzi/kafka:latest-kafka-2.3.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 

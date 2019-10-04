@@ -64,9 +64,24 @@ public class KafkaUpdateTest {
 
     private final KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
             new StringReader(
-                    "2.0.0  default  2.0  2.0  1234567890abcdef 2.0.x\n" +
-                    "2.0.1           2.0  2.0  1234567890abcdef 2.0.x\n" +
-                    "2.1.0           2.1  2.1  1234567890abcdef 2.1.x\n"),
+                    "- version: 2.0.0\n" +
+                            "  format: 2.0\n" +
+                            "  protocol: 2.0\n" +
+                            "  checksum: ABCDE1234\n" +
+                            "  third-party-libs: 2.0.x\n" +
+                            "  default: false\n" +
+                            "- version: 2.0.1\n" +
+                            "  format: 2.0\n" +
+                            "  protocol: 2.0\n" +
+                            "  checksum: ABCDE1234\n" +
+                            "  third-party-libs: 2.0.x\n" +
+                            "  default: false\n" +
+                            "- version: 2.1.0\n" +
+                            "  format: 2.1\n" +
+                            "  protocol: 2.1\n" +
+                            "  checksum: ABCDE1234\n" +
+                            "  third-party-libs: 2.1.x\n" +
+                            "  default: true"),
             map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
                     "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
                     "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),

@@ -59,9 +59,14 @@ import static org.junit.Assert.assertTrue;
 
 public class KafkaMirrorMakerClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
+            "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
             emptyMap(), emptyMap(), emptyMap(),
-            singletonMap("2.0.0", "strimzi/kafka-mirror-maker:latest-kafka-2.0.0")) { };
+            singletonMap("2.3.0", "strimzi/kafka-mirror-maker:latest-kafka-2.3.0")) { };
     private final String namespace = "test";
     private final String cluster = "mirror";
     private final int replicas = 2;
@@ -177,7 +182,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
-        assertEquals("strimzi/kafka-mirror-maker:latest-kafka-2.0.0", mm.image);
+        assertEquals("strimzi/kafka-mirror-maker:latest-kafka-2.3.0", mm.image);
         assertEquals(defaultConsumerConfiguration,
                 new KafkaMirrorMakerConsumerConfiguration(mm.consumer.getConfig().entrySet()).getConfiguration());
         assertEquals(defaultProducerConfiguration,

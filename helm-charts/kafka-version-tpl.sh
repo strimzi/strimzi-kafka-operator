@@ -1,8 +1,27 @@
 #!/usr/bin/env bash
 
 out="$1"
-default_version=$(grep -E '^([0-9.]+)[[:space:]]+default' ../kafka-versions | cut -d ' ' -f 1)
-for version in $(sed -E -e '/^(#.*|[[:space:]]*)$/d' -e 's/^([0-9.]+)[[:space:]]+.*$/\1/g' ../kafka-versions); do
+
+# Read the kafka versions file and create an array of version strings
+versions=()
+finished=0
+counter=0
+while [ $finished -lt 1 ] 
+do
+    version=$(yq read ../kafka-versions.yaml "[${counter}].version")
+
+    if [ "$version" = "null" ]
+    then
+        finished=1
+    else
+        versions+=("$version")
+        counter=$((counter + 1))
+    fi 
+done
+
+for version in "${versions[@]}"
+do
+    echo "Processing kafka version $version"
     zookeeper_version="{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     zookeeper_tls_sidecar_version="{{ default .Values.tlsSidecarZookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarZookeeper.image.name }}:{{ default .Values.tlsSidecarZookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_tls_sidecar_version="{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
@@ -19,6 +38,7 @@ ${version}={{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRep
     kafka_exporter_versions="${kafka_exporter_versions}
 ${version}={{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
 done
+
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')
 kafka_connect_versions=$(echo "$kafka_connect_versions" | sed 's/^/                /g')
 kafka_connect_s2i_versions=$(echo "$kafka_connect_s2i_versions" | sed 's/^/                /g')

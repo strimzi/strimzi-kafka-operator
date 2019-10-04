@@ -71,10 +71,20 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
-                    "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
-            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
-                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
+            "- version: 2.2.1\n" +
+                    "  format: 2.2\n" +
+                    "  protocol: 2.2\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.2.x\n" +
+                    "  default: false\n" +
+                    "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
+            map("2.2.1", "strimzi/kafka:latest-kafka-2.2.1",
+                    "2.3.0", "strimzi/kafka:latest-kafka-2.3.0"), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -599,12 +609,12 @@ public class ZookeeperClusterTest {
                         .endTlsSidecar()
                     .endZookeeper()
                     .editKafka()
-                        .withVersion("2.0.0")
+                        .withVersion("2.2.1")
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals("strimzi/kafka:latest-kafka-2.3.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -615,12 +625,12 @@ public class ZookeeperClusterTest {
                         .endTlsSidecar()
                     .endZookeeper()
                     .editKafka()
-                        .withVersion("2.1.0")
+                        .withVersion("2.3.0")
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals("strimzi/kafka:latest-kafka-2.3.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
     }
 
     @Test

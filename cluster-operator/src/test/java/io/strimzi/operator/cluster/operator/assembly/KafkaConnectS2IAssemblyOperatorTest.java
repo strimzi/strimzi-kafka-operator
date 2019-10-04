@@ -71,8 +71,13 @@ import static org.mockito.Mockito.when;
 public class KafkaConnectS2IAssemblyOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
-            emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"),
+            "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
+            emptyMap(), emptyMap(), singletonMap("2.3.0", "strimzi/kafka-connect:latest-kafka-2.3.0"),
             emptyMap()) { };
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";

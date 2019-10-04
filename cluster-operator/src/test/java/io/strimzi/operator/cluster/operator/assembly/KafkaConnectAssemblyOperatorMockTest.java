@@ -46,8 +46,13 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectAssemblyOperatorMockTest.class);
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x"),
-            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
+            "- version: 2.3.0\n" +
+                    "  format: 2.3\n" +
+                    "  protocol: 2.3\n" +
+                    "  checksum: ABCDE1234\n" +
+                    "  third-party-libs: 2.3.x\n" +
+                    "  default: true"),
+            emptyMap(), singletonMap("2.3.0", "strimzi/kafka-connect:latest-kafka-2.3.0"), emptyMap(), emptyMap()) { };
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-connect-cluster";

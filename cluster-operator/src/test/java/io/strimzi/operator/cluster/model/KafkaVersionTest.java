@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
-import java.io.LineNumberReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class KafkaVersionTest {
 
     @Test
-    public void load() {
+    public void loadVersionsFileTest() {
         KafkaVersion.Lookup loaded = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
         assertTrue(loaded.supportedVersions().contains("2.2.1"));
         assertTrue(loaded.supportedVersions().contains("2.3.0"));
@@ -31,21 +31,79 @@ public class KafkaVersionTest {
     }
 
     @Test
-    public void parse() throws Exception {
+    public void parsingTest() throws Exception {
         Map<String, KafkaVersion> map = new HashMap<>();
-        KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(new LineNumberReader(new StringReader(
-                "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
-                        "2.0.1  2.0 2.0 1234567890abcdef 2.0.x")), map);
-        assertEquals("2.0.0", defaultVersion.version());
+        KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(
+                new StringReader(
+                        "- version: 2.2.1\n" +
+                           "  format: 2.2\n" +
+                           "  protocol: 2.2\n" +
+                           "  checksum: ABCDE1234\n" +
+                           "  third-party-libs: 2.2.x\n" +
+                           "  default: false\n" +
+                           "- version: 2.3.0\n" +
+                           "  format: 2.3\n" +
+                           "  protocol: 2.3\n" +
+                           "  checksum: ABCDE1234\n" +
+                           "  third-party-libs: 2.3.x\n" +
+                           "  default: true"
+                ), map);
+        assertEquals("2.3.0", defaultVersion.version());
         assertEquals(2, map.size());
-        assertTrue(map.containsKey("2.0.0"));
-        assertEquals("2.0.0", map.get("2.0.0").version());
-        assertEquals("2.0", map.get("2.0.0").protocolVersion());
-        assertEquals("2.0", map.get("2.0.0").messageVersion());
-        assertTrue(map.containsKey("2.0.1"));
-        assertEquals("2.0.1", map.get("2.0.1").version());
-        assertEquals("2.0", map.get("2.0.1").protocolVersion());
-        assertEquals("2.0", map.get("2.0.1").messageVersion());
+        assertTrue(map.containsKey("2.3.0"));
+        assertEquals("2.3.0", map.get("2.3.0").version());
+        assertEquals("2.3", map.get("2.3.0").protocolVersion());
+        assertEquals("2.3", map.get("2.3.0").messageVersion());
+        assertTrue(map.containsKey("2.2.1"));
+        assertEquals("2.2.1", map.get("2.2.1").version());
+        assertEquals("2.2", map.get("2.2.1").protocolVersion());
+        assertEquals("2.2", map.get("2.2.1").messageVersion());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void duplicateVersionTest() throws IOException {
+        Map<String, KafkaVersion> map = new HashMap<>();
+        KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(
+                new StringReader(
+                        "- version: 2.2.1\n" +
+                                "  format: 2.2\n" +
+                                "  protocol: 2.2\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.2.x\n" +
+                                "  default: false\n" +
+                                "- version: 2.2.1\n" +
+                                "  format: 2.2\n" +
+                                "  protocol: 2.2\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.2.x\n" +
+                                "  default: false\n" +
+                                "- version: 2.3.0\n" +
+                                "  format: 2.3\n" +
+                                "  protocol: 2.3\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.3.x\n" +
+                                "  default: true"
+                ), map);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void noDefaultTest() throws IOException {
+        Map<String, KafkaVersion> map = new HashMap<>();
+        KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(
+                new StringReader(
+                        "- version: 2.2.1\n" +
+                                "  format: 2.2\n" +
+                                "  protocol: 2.2\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.2.x\n" +
+                                "  default: false\n" +
+                                "- version: 2.3.0\n" +
+                                "  format: 2.3\n" +
+                                "  protocol: 2.3\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.3.x\n" +
+                                "  default: false"
+                ), map);
     }
 
     @Test
