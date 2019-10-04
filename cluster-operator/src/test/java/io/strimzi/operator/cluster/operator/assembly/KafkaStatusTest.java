@@ -19,7 +19,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
@@ -126,7 +125,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertTrue(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());
@@ -190,7 +189,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertTrue(res.succeeded());
             // The status should not change => we test that updateStatusAsync was not called
             assertEquals(0, kafkaCaptor.getAllValues().size());
@@ -226,7 +225,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertFalse(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());
@@ -291,7 +290,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertFalse(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());

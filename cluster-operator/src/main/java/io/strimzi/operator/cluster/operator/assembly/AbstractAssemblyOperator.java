@@ -29,7 +29,6 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -74,7 +73,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected final Vertx vertx;
     protected final PlatformFeaturesAvailability pfa;
-    protected final ResourceType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
@@ -93,21 +91,20 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * @param vertx The Vertx instance
      * @param pfa Properties with features availability
-     * @param assemblyType Assembly type
+     * @param kind The kind of watched resource
      * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
-    protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, ResourceType assemblyType,
+    protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         this.vertx = vertx;
         this.pfa = pfa;
-        this.assemblyType = assemblyType;
-        this.kind = assemblyType.name;
+        this.kind = kind;
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
         this.secretOperations = supplier.secretOperations;
@@ -126,12 +123,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Gets the name of the lock to be used for operating on the given {@code assemblyType}, {@code namespace} and
      * cluster {@code name}
-     * @param assemblyType The type of cluster
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    protected final String getLockName(ResourceType assemblyType, String namespace, String name) {
-        return "lock::" + namespace + "::" + assemblyType + "::" + name;
+    protected final String getLockName(String namespace, String name) {
+        return "lock::" + namespace + "::" + kind + "::" + name;
     }
 
     /**
@@ -172,7 +168,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.name();
-        final String lockName = getLockName(assemblyType, namespace, assemblyName);
+        final String lockName = getLockName(namespace, assemblyName);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
             if (res.succeeded()) {
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
@@ -249,14 +245,14 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         Set<NamespaceAndName> desiredNames = desiredResources.stream()
                 .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
                 .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
+        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", kind, trigger, Labels.EMPTY, desiredNames);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit
         CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
         for (NamespaceAndName name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, name.getNamespace(), name.getName());
+            Reconciliation reconciliation = new Reconciliation(trigger, kind, name.getNamespace(), name.getName());
             reconcileAssembly(reconciliation, result -> {
                 handleResult(reconciliation, result);
                 latch.countDown();
@@ -286,7 +282,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, resourceNamespace, name);
+                                Reconciliation reconciliation = new Reconciliation("watch", kind, resourceNamespace, name);
                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, resourceNamespace, action);
                                 reconcileAssembly(reconciliation, result -> {
                                     handleResult(reconciliation, result);

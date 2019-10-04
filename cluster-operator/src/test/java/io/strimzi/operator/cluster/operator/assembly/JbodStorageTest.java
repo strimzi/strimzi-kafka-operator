@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
@@ -122,7 +121,7 @@ public class JbodStorageTest {
         this.init();
 
         Async async = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
 
             List<PersistentVolumeClaim> pvcs = getPvcs(NAMESPACE, NAME);
@@ -154,7 +153,7 @@ public class JbodStorageTest {
 
         // first reconcile for cluster creation
         Async createAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             createAsync.complete();
         });
@@ -179,7 +178,7 @@ public class JbodStorageTest {
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
         Async updateAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             List<PersistentVolumeClaim> pvcs = getPvcs(NAMESPACE, NAME);
             Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
@@ -195,7 +194,7 @@ public class JbodStorageTest {
 
         // first reconcile for cluster creation
         Async createAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             createAsync.complete();
         });
@@ -217,7 +216,7 @@ public class JbodStorageTest {
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
         Async updateAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             Set<String> pvcsNames = getPvcs(NAMESPACE, NAME).stream()
                     .map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
@@ -233,7 +232,7 @@ public class JbodStorageTest {
 
         // first reconcile for cluster creation
         Async createAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             createAsync.complete();
         });
@@ -255,7 +254,7 @@ public class JbodStorageTest {
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
         Async updateAsync = context.async();
-        this.kao.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME), ar -> {
+        this.kao.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME), ar -> {
             context.assertTrue(ar.succeeded());
             Set<String> pvcsNames = getPvcs(NAMESPACE, NAME).stream()
                     .map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());

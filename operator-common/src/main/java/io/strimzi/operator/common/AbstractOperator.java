@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018, Strimzi authors.
+ * Copyright 2017-2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.common;
@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -37,12 +36,10 @@ public abstract class AbstractOperator<C extends KubernetesClient,
     protected final Vertx vertx;
     protected final CrdOperator<C, T, L, D> crdOperator;
     private final String kind;
-    private final ResourceType resourceType;
 
-    public AbstractOperator(Vertx vertx, ResourceType resourceType, CrdOperator<C, T, L, D> crdOperator) {
+    public AbstractOperator(Vertx vertx, String kind, CrdOperator<C, T, L, D> crdOperator) {
         this.vertx = vertx;
-        this.kind = resourceType.name;
-        this.resourceType = resourceType;
+        this.kind = kind;
         this.crdOperator = crdOperator;
     }
 
@@ -143,7 +140,7 @@ public abstract class AbstractOperator<C extends KubernetesClient,
                 AtomicInteger counter = new AtomicInteger(desiredNames.size());
 
                 for (String name : desiredNames) {
-                    Reconciliation reconciliation = new Reconciliation(trigger, ResourceType.USER, namespace, name);
+                    Reconciliation reconciliation = new Reconciliation(trigger, "User", namespace, name);
                     reconcile(reconciliation).setHandler(result -> {
                         handleResult(reconciliation, result);
                         if (counter.getAndDecrement() == 0) {
@@ -184,7 +181,7 @@ public abstract class AbstractOperator<C extends KubernetesClient,
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", resourceType, namespace, name);
+                                Reconciliation reconciliation = new Reconciliation("watch", kind, namespace, name);
                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
                                 reconcile(reconciliation).setHandler(result -> {
                                     handleResult(reconciliation, result);

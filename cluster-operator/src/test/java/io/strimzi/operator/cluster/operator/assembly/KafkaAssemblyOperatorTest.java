@@ -55,7 +55,6 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -540,7 +539,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -1037,7 +1036,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName) {
+        ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName) {
 
         }, updatedAssembly).setHandler(createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();

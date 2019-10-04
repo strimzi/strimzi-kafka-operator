@@ -23,7 +23,6 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -137,7 +136,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 VERSIONS);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -233,7 +232,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -341,7 +340,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(clusterCm,
@@ -440,7 +439,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -493,7 +492,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
@@ -548,7 +547,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, bridge.getName(), scaleTo);
@@ -661,7 +660,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKABRIDGE, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             // Verify status

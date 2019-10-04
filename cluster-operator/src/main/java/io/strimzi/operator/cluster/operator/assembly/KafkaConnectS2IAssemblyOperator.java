@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
@@ -69,7 +68,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            CertManager certManager,
                                            ResourceOperatorSupplier supplier,
                                            ClusterOperatorConfig config) {
-        super(vertx, pfa, ResourceType.CONNECT_S2I, certManager, supplier.connectS2IOperator, supplier, config);
+        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, certManager, supplier.connectS2IOperator, supplier, config);
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;

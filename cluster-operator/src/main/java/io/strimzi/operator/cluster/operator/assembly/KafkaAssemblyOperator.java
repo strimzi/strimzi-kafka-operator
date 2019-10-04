@@ -69,7 +69,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -153,7 +152,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier,
                                  ClusterOperatorConfig config) {
-        super(vertx, pfa, ResourceType.KAFKA, certManager,
+        super(vertx, pfa, Kafka.RESOURCE_KIND, certManager,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.routeOperations = supplier.routeOperations;
@@ -438,8 +437,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * and the current key is stored under the key {@code ca.key}.
          */
         Future<ReconciliationState> reconcileCas(Supplier<Date> dateSupplier) {
-            Labels selectorLabels = Labels.EMPTY.withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
-            Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
+            Labels selectorLabels = Labels.EMPTY.withKind(reconciliation.kind()).withCluster(reconciliation.name());
+            Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.kind()).withCluster(reconciliation.name());
             Future<ReconciliationState> result = Future.future();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
@@ -2556,7 +2555,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> clusterOperatorSecret() {
             oldCoSecret = clusterCa.clusterOperatorSecret();
 
-            Labels labels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
+            Labels labels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.kind()).withCluster(reconciliation.name());
 
             OwnerReference ownerRef = new OwnerReferenceBuilder()
                     .withApiVersion(kafkaAssembly.getApiVersion())

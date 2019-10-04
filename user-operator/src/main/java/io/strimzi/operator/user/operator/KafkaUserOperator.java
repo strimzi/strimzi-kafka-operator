@@ -16,7 +16,6 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -32,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Operator for a Kafka Users.
@@ -70,7 +70,7 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
-        super(vertx, ResourceType.USER, crdOperator);
+        super(vertx, "User", crdOperator);
         this.certManager = certManager;
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
@@ -82,15 +82,28 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
 
     @Override
     protected Future<Set<String>> allResourceNames(String namespace, Labels selector) {
-        return super.allResourceNames(namespace, selector).map(allKnownUsers -> {
-            // Add to all the KafkaUser resource names all the users with ACLs in Kafka
-            // and all the Users with Scram SHA credentials
-            // This is so that reconcile all can correctly delete orphan ACLs and credentials
-            // TODO this should be done in a worker thread.
-            allKnownUsers.addAll(aclOperations.getUsersWithAcls());
-            allKnownUsers.addAll(scramShaCredentialOperator.list());
-            return allKnownUsers;
-        });
+        return CompositeFuture.join(super.allResourceNames(namespace, selector),
+                invokeAsync(aclOperations::getUsersWithAcls),
+                invokeAsync(scramShaCredentialOperator::list)).map(compositeFuture -> {
+                    Set<String> names = compositeFuture.resultAt(0);
+                    names.addAll(compositeFuture.resultAt(1));
+                    names.addAll(compositeFuture.resultAt(2));
+                    return names;
+                });
+    }
+
+    private <T> Future<T> invokeAsync(Supplier<T> getter) {
+        Future<T> result = Future.future();
+        vertx.createSharedWorkerExecutor("zookeeper-ops-pool").executeBlocking(future -> {
+            try {
+                future.complete(getter.get());
+            } catch (Throwable t) {
+                future.fail(t);
+            }
+        },
+            true,
+            result);
+        return result;
     }
 
     /**
