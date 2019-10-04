@@ -1,6 +1,6 @@
-// This assembly is included in the following assemblies:
+// Module included in the following assemblies:
 //
-// assembly-metrics-grafana.adoc
+// assembly-kafka-exporter.adoc
 [id='ref-metrics-kafka-exporter-{context}']
 
 = Kafka Exporter metrics
@@ -54,5 +54,5 @@ The data extracted is described here.
 |`kafka_consumergroup_current_offset`
 |Current topic partition offset for a consumer group
 |`kafka_consumergroup_lag`
-|Current approximate lag for a ConsumerGroup at a topic partition
+|Current approximate lag for a consumer group at a topic partition
 |===
