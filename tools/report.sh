@@ -131,9 +131,6 @@ for pod in $pods; do
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c topic-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-topic-operator.log
 	  $platform logs $pod -p -c user-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-user-operator.log
-  #elif [[ $pod == *"-kafka-exporter"* ]]; then
-	#  $platform logs $pod -n $namespace > $direct/reports/podLogs/"$pod".log
-	#  $platform logs $pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod".log
 	elif [[ $pod =~ .*-kafka-[0-9]+ ]]; then
 	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
 	  $platform logs $pod -c kafka -n $namespace > $direct/reports/podLogs/"$pod"-kafka.log
