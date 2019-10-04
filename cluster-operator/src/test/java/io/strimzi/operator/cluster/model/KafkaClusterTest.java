@@ -164,11 +164,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateService() {
         Service headful = kc.generateService();
-        checkService(headful);
-        checkOwnerReference(kc.createOwnerReference(), headful);
-    }
 
-    private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(4, headful.getSpec().getPorts().size());
@@ -183,8 +179,42 @@ public class KafkaClusterTest {
         assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
         assertEquals(AbstractModel.METRICS_PORT_NAME, headful.getSpec().getPorts().get(3).getName());
         assertEquals(new Integer(KafkaCluster.METRICS_PORT), headful.getSpec().getPorts().get(3).getPort());
-        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
+        assertEquals("TCP", headful.getSpec().getPorts().get(3).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
+
+        checkOwnerReference(kc.createOwnerReference(), headful);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withMetrics(null)
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafka, VERSIONS);
+        Service headful = kc.generateService();
+
+        assertEquals("ClusterIP", headful.getSpec().getType());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
+        assertEquals(3, headful.getSpec().getPorts().size());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_TLS_PORT_NAME, headful.getSpec().getPorts().get(2).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_TLS_PORT), headful.getSpec().getPorts().get(2).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
+
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"));
+
+        checkOwnerReference(kc.createOwnerReference(), headful);
     }
 
     @Test

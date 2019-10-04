@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
@@ -196,6 +197,34 @@ public class KafkaMirrorMakerClusterTest {
     @Test
     public void testEnvVars()   {
         assertEquals(getExpectedEnvVars(), mm.getEnvVars());
+    }
+
+    @Test
+    public void testGenerateService()   {
+        Service svc = mm.generateService();
+
+        assertEquals("ClusterIP", svc.getSpec().getType());
+        assertEquals(expectedLabels(mm.getServiceName()), svc.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
+        assertEquals(1, svc.getSpec().getPorts().size());
+        assertEquals(AbstractModel.METRICS_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.METRICS_PORT), svc.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(mm.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+
+        checkOwnerReference(mm.createOwnerReference(), svc);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics()   {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withMetrics(null)
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        assertNull(mm.generateService());
     }
 
     @Test

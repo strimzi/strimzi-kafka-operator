@@ -7,6 +7,9 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -22,6 +25,8 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -92,6 +97,26 @@ public class KafkaExporterTest {
                     .endSpec()
                     .build();
     private final KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
+
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
+
+    private Map<String, String> expectedLabels(String name)    {
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
+                Labels.STRIMZI_NAME_LABEL, name);
+    }
+
+    private Map<String, String> expectedSelectorLabels()    {
+        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+    }
+
+    private Map<String, String> expectedLabels()    {
+        return expectedLabels(KafkaExporterResources.deploymentName(cluster));
+    }
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -275,6 +300,32 @@ public class KafkaExporterTest {
         assertNull(ke.generateDeployment(true, null, null));
         assertNull(ke.generateService());
         assertNull(ke.generateSecret(null));
+    }
+
+    @Test
+    public void testGenerateService()   {
+        Service svc = ke.generateService();
+
+        assertEquals("ClusterIP", svc.getSpec().getType());
+        assertEquals(expectedLabels(ke.getServiceName()), svc.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
+        assertEquals(1, svc.getSpec().getPorts().size());
+        assertEquals(AbstractModel.METRICS_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.METRICS_PORT), svc.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(ke.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+
+        checkOwnerReference(ke.createOwnerReference(), svc);
+    }
+
+    @Test
+    public void testGenerateServiceWhenDisabled()   {
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null);
+        KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
+
+        assertNull(ke.generateService());
     }
 
     @AfterClass

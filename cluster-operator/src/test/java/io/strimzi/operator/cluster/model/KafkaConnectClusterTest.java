@@ -182,7 +182,36 @@ public class KafkaConnectClusterTest {
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(AbstractModel.METRICS_PORT_NAME, svc.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.METRICS_PORT), svc.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", svc.getSpec().getPorts().get(1).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+
+        checkOwnerReference(kc.createOwnerReference(), svc);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics()   {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withMetrics(null)
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Service svc = kc.generateService();
+
+        assertEquals("ClusterIP", svc.getSpec().getType());
+        assertEquals(expectedLabels(kc.getServiceName()), svc.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
+        assertEquals(1, svc.getSpec().getPorts().size());
+        assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
+        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+
+        assertFalse(svc.getMetadata().getAnnotations().containsKey("prometheus.io/port"));
+        assertFalse(svc.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"));
+        assertFalse(svc.getMetadata().getAnnotations().containsKey("prometheus.io/path"));
+
         checkOwnerReference(kc.createOwnerReference(), svc);
     }
 

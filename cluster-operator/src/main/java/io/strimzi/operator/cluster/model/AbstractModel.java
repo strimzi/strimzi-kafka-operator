@@ -1101,12 +1101,17 @@ public abstract class AbstractModel {
      * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
      */
     protected Map<String, String> getPrometheusAnnotations()    {
-        Map<String, String> annotations = new HashMap<String, String>(3);
-        annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
-        annotations.put("prometheus.io/scrape", "true");
-        annotations.put("prometheus.io/path", "/metrics");
+        if (isMetricsEnabled) {
+            Map<String, String> annotations = new HashMap<String, String>(3);
 
-        return annotations;
+            annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
+            annotations.put("prometheus.io/scrape", "true");
+            annotations.put("prometheus.io/path", "/metrics");
+
+            return annotations;
+        } else {
+            return null;
+        }
     }
 
     /**
