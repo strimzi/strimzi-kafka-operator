@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -392,8 +393,9 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static KafkaConnectS2I createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                       String image, int healthDelay, int healthTimeout, String metricsCmJson,
-                                                                       String connectConfig, boolean insecureSourceRepo, String bootstrapServers) {
+                                                               String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                               String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
+                                                               ResourceRequirements builResourceRequirements) {
 
         return new KafkaConnectS2IBuilder(createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName))
                 .withNewSpec()
@@ -405,6 +407,7 @@ public class ResourceUtils {
                     .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
                     .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
                     .withInsecureSourceRepository(insecureSourceRepo)
+                    .withBuildResources(builResourceRequirements)
                 .endSpec().build();
     }
 

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReference;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
@@ -43,6 +44,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     protected String sourceImageTag;
     protected String tag = "latest";
     protected boolean insecureSourceRepository = false;
+    protected ResourceRequirements buildRequirements;
 
     /**
      * Constructor
@@ -62,6 +64,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         cluster.setOwnerReference(kafkaConnectS2I);
         cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
+        cluster.setBuildResourceRequirements(spec.getBuildResources());
 
         return cluster;
     }
@@ -251,6 +254,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withTriggers(triggerConfigChange, triggerImageChange)
                     .withSuccessfulBuildsHistoryLimit(5)
                     .withFailedBuildsHistoryLimit(5)
+                    .withResources(buildRequirements)
                 .endSpec()
                 .build();
 
@@ -278,5 +282,14 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     public void setInsecureSourceRepository(boolean insecureSourceRepository) {
         this.insecureSourceRepository = insecureSourceRepository;
+    }
+
+    /**
+     * Set resources requirements for the build
+     *
+     * @param buildRequirements requirements for the build
+     */
+    public void setBuildResourceRequirements(ResourceRequirements buildRequirements) {
+        this.buildRequirements = buildRequirements;
     }
 }

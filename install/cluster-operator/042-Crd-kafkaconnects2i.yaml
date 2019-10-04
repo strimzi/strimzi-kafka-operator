@@ -39,6 +39,13 @@ spec:
               type: integer
             image:
               type: string
+            buildResources:
+              type: object
+              properties:
+                limits:
+                  type: object
+                requests:
+                  type: object
             livenessProbe:
               type: object
               properties:

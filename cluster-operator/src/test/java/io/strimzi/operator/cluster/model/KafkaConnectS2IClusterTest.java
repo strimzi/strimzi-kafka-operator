@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -92,10 +93,14 @@ public class KafkaConnectS2IClusterTest {
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
     private final boolean insecureSourceRepo = false;
+    private final ResourceRequirements buildResourceRequirements = new ResourceRequirementsBuilder()
+            .withLimits(Collections.singletonMap("cpu", new Quantity("42")))
+            .withRequests(Collections.singletonMap("mem", new Quantity("4Gi")))
+            .build();
 
 
     private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers);
+            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
 
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
@@ -279,6 +284,8 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(new ImageChangeTrigger(), bc.getSpec().getTriggers().get(1).getImageChange());
         assertEquals(new Integer(5), bc.getSpec().getSuccessfulBuildsHistoryLimit());
         assertEquals(new Integer(5), bc.getSpec().getFailedBuildsHistoryLimit());
+        assertEquals("42", bc.getSpec().getResources().getLimits().get("cpu").getAmount());
+        assertEquals("4Gi", bc.getSpec().getResources().getRequests().get("mem").getAmount());
         checkOwnerReference(kc.createOwnerReference(), bc);
     }
 
@@ -302,7 +309,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers), VERSIONS);
+                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
 
         assertTrue(kc.isInsecureSourceRepository());
 
