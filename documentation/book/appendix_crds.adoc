@@ -1376,23 +1376,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
-To use TLS client authentication, set the `type` property to the value `tls`.
-TLS client authentication uses a TLS certificate to authenticate.
-The certificate is specified in the `certificateAndKey` property and is always loaded from a Kubernetes secret.
-In the secret, the certificate must be stored in X509 format under two different keys: public and private.
-
-NOTE: TLS client authentication can only be used with TLS connections.
-
-.An example TLS client authentication configuration
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: tls
-  certificateAndKey:
-    secretName: my-secret
-    certificate: public.crt
-    key: private.key
-----
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationTls` from xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
@@ -1427,25 +1411,7 @@ Used in: xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthentica
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
-To configure SASL-based SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
-The SCRAM-SHA-512 authentication mechanism requires a username and password.
-
-* Specify the username in the `username` property.
-* In the `passwordSecret` property, specify a link to a `Secret` containing the password.
-The `secretName` property contains the name of the `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
-
-IMPORTANT: Do not specify the actual password in the `password` field.
-
-.An example SASL based SCRAM-SHA-512 client authentication configuration
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: scram-sha-512
-  username: my-connect
-  passwordSecret:
-    secretName: my-connect
-    password: password
-----
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationScramSha512` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `scram-sha-512` for the type `KafkaClientAuthenticationScramSha512`.
@@ -1480,28 +1446,7 @@ Used in: xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenti
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
-To configure SASL-based PLAIN authentication, set the `type` property to `plain`.
-The PLAIN authentication mechanism requires a username and password.
-
-WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
-Only use SASL PLAIN authentication if TLS encryption is enabled.
-
-* Specify the username in the `username` property.
-* In the `passwordSecret` property, specify a link to a `Secret` containing the password.
-The `secretName` property contains the name of such a `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
-
-IMPORTANT: Do not specify the actual password in the `password` field.
-
-.An example SASL based PLAIN client authentication configuration
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: plain
-  username: my-connect
-  passwordSecret:
-    secretName: my-connect
-    password: password
-----
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationPlain` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
@@ -1521,99 +1466,7 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
-To use OAuth client authentication, set the `type` property to the value `oauth`.
-OAuth authentication can be configured in several different ways.
-
-.Client ID and secret
-
-You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and client secret.
-The OAuth client will connect to the OAuth server, authenticate using the client ID and secret and get and access token which it will use to authenticate with the Kafka broker.
-In the `clientSecret` property, specify a link to a `Secret` containing the client secret.
-
-.An example of OAuth client authentication using client ID and client secret
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
-  clientId: my-client-id
-  clientSecret:
-    secretName: my-client-oauth-secret
-    key: client-secret
-----
-
-.Client ID and refresh token
-
-You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and refresh token.
-The OAuth client will connect to the OAuth server, authenticate using the client ID and refresh token and get and access token which it will use to authenticate with the Kafka broker.
-In the `refreshToken` property, specify a link to a `Secret` containing the refresh token.
-
-.An example of OAuth client authentication using client ID and refresh token
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
-  clientId: my-client-id
-  refreshToken:
-    secretName: my-refresh-token-secret
-    key: refresh-token
-----
-
-.Access token
-
-You can configure the access token which should be used for authentication with the Kafka broker directly.
-In this casse it is not required to specify the `tokenEndpointUri`.
-In the `accessToken` property, specify a link to a `Secret` containing the refresh token.
-
-.An example of OAuth client authentication using only an access token
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: oauth
-  accessToken:
-    secretName: my-access-token-secret
-    key: access-token
-----
-
-.TLS
-
-Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.
-
-In case your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resoruce.
-The `tlsTrustedCertificates` property contains a list of secrets with key names under which the certificates are stored.
-The certificates must be stored in X509 format.
-
-.An example of TLS certificates provided
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
-  clientId: my-client-id
-  refreshToken:
-    secretName: my-refresh-token-secret
-    key: refresh-token
-  tlsTrustedCertificates:
-    - secretName: oauth-server-ca
-      certificate: tls.crt
-----
-
-The OAuth client will by default validate that the hostname of your OAuth server matches either the certificate subject or one of the alternative DNS names.
-If that is not the case, you can disable the hostname verification.
-
-.An example of disabled TLS hostname verification
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
-  clientId: my-client-id
-  refreshToken:
-    secretName: my-refresh-token-secret
-    key: refresh-token
-  disableTlsHostnameVerification: true
-----
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationOAuth` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
@@ -2145,17 +1998,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
-The `tls` property can be used to configure TLS encryption.
-Use the `tls` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
-
-.An example TLS encryption configuration
-[source,yaml,subs=attributes+]
-----
-tls:
-  trustedCertificates:
-    - secretName: my-cluster-cluster-ca-cert
-      certificate: ca.crt
-----
+include::api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=+1]
 
 [options="header"]
 |====

@@ -12,12 +12,9 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -280,8 +277,16 @@ public class DocGenerator {
         Description description = cls.getAnnotation(Description.class);
 
         if (descriptionFile != null)    {
-            String filename = "descriptions/" + cls.getCanonicalName() + ".adoc";
-            InputStream is = cls.getClassLoader().getResourceAsStream(filename);
+            String filename = "api/" + cls.getCanonicalName() + ".adoc";
+            File includeFile = new File(filename);
+
+            if (!includeFile.isFile())   {
+                throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
+            }
+
+            out.append("include::" + filename + "[leveloffset=+1]").append(NL);
+
+            /*InputStream is = cls.getClassLoader().getResourceAsStream(filename);
 
             if (is == null) {
                 throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
@@ -295,7 +300,7 @@ public class DocGenerator {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            });
+            });*/
         } else if (description != null) {
             out.append(getDescription(cls, description)).append(NL);
         }
