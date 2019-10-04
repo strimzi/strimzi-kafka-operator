@@ -46,7 +46,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
-    private int replicas;
+    private Integer replicas;
 
     private String version;
     private String image;
@@ -68,7 +68,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     @Description("The number of pods in the Kafka Connect group.")
     @DefaultValue("3")
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
@@ -91,7 +91,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
         this.logging = logging;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
