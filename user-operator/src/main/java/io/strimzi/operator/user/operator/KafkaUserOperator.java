@@ -6,9 +6,6 @@ package io.strimzi.operator.user.operator;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -16,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -25,33 +23,22 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Operator for a Kafka Users.
  */
-public class KafkaUserOperator {
+public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> {
     private static final Logger log = LogManager.getLogger(KafkaUserOperator.class.getName());
-    private static final int LOCK_TIMEOUT_MS = 10;
-    private static final String RESOURCE_KIND = "KafkaUser";
-    private final Vertx vertx;
-    private final CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator;
+
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
@@ -83,26 +70,27 @@ public class KafkaUserOperator {
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
-        this.vertx = vertx;
+        super(vertx, ResourceType.USER, crdOperator);
         this.certManager = certManager;
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
-        this.crdOperator = crdOperator;
         this.aclOperations = aclOperations;
         this.caCertName = caCertName;
         this.caKeyName = caKeyName;
         this.caNamespace = caNamespace;
     }
 
-    /**
-     * Gets the name of the lock to be used for operating on the given {@code namespace} and
-     * cluster {@code name}
-     *
-     * @param namespace The namespace containing the cluster
-     * @param name The name of the cluster
-     */
-    private final String getLockName(String namespace, String name) {
-        return "lock::" + namespace + "::" + RESOURCE_KIND + "::" + name;
+    @Override
+    protected Future<Set<String>> allResourceNames(String namespace, Labels selector) {
+        return super.allResourceNames(namespace, selector).map(allKnownUsers -> {
+            // Add to all the KafkaUser resource names all the users with ACLs in Kafka
+            // and all the Users with Scram SHA credentials
+            // This is so that reconcile all can correctly delete orphan ACLs and credentials
+            // TODO this should be done in a worker thread.
+            allKnownUsers.addAll(aclOperations.getUsersWithAcls());
+            allKnownUsers.addAll(scramShaCredentialOperator.list());
+            return allKnownUsers;
+        });
     }
 
     /**
@@ -110,25 +98,28 @@ public class KafkaUserOperator {
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
-     * @param kafkaUser KafkaUser resources with the desired user configuration.
-     * @param clientsCaCert Secret with the Clients CA cert
-     * @param clientsCaCert Secret with the Clients CA key
-     * @param userSecret User secret (if it exists, null otherwise)
-     * @param handler Completion handler
+     * @param cr KafkaUser resources with the desired user configuration.
+     * @return a Future
      */
-    protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCaCert, Secret clientsCaKey, Secret userSecret, Handler<AsyncResult<Void>> handler) {
+    @Override
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser cr) {
+        Future<Void> handler = Future.future();
+        Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
+        Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
+        Secret userSecret = secretOperations.get(reconciliation.namespace(), KafkaUserModel.getSecretName(reconciliation.name()));
+
         Future<Void> createOrUpdateFuture = Future.future();
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
         KafkaUserStatus userStatus = new KafkaUserStatus();
         try {
-            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
+            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, cr, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, Future.failedFuture(e));
-            updateStatus(kafkaUser, reconciliation, userStatus)
+            StatusUtils.setStatusConditionAndObservedGeneration(cr, userStatus, Future.failedFuture(e));
+            updateStatus(cr, reconciliation, userStatus)
                     .setHandler(result -> handler.handle(Future.failedFuture(e)));
-            return;
+            return handler;
         }
 
         log.debug("{}: Updating User {} in namespace {}", reconciliation, userName, namespace);
@@ -154,10 +145,10 @@ public class KafkaUserOperator {
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
                 .setHandler(reconciliationResult -> {
-                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, reconciliationResult.mapEmpty());
+                    StatusUtils.setStatusConditionAndObservedGeneration(cr, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getName());
 
-                    updateStatus(kafkaUser, reconciliation, userStatus).setHandler(statusResult -> {
+                    updateStatus(cr, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded()) {
@@ -170,6 +161,7 @@ public class KafkaUserOperator {
                         handler.handle(createOrUpdateFuture);
                     });
                 });
+        return handler;
     }
 
     protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
@@ -240,191 +232,18 @@ public class KafkaUserOperator {
     /**
      * Deletes the user
      *
-     * @param handler Completion handler
+     * @reutrn A Future
      */
-    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    @Override
+    protected Future<Void> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
         log.debug("{}: Deleting User", reconciliation, user, namespace);
-        CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
+        return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
                 scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null))
-            .map((Void) null).setHandler(handler);
+            .map((Void) null);
     }
 
-    /**
-     * Reconcile assembly resources in the given namespace having the given {@code name}.
-     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaUser}) in the given namespace with the given name and
-     * comparing with the corresponding resource.
-     * @param reconciliation The reconciliation.
-     * @param handler The result handler.
-     */
-    public final void reconcile(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
-        final String lockName = getLockName(namespace, name);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
-            if (res.succeeded()) {
-                log.debug("{}: Lock {} acquired", reconciliation, lockName);
-                Lock lock = res.result();
-
-                try {
-                    KafkaUser cr = (KafkaUser) crdOperator.get(namespace, name);
-
-                    if (cr != null) {
-                        log.info("{}: User {} should be created or updated", reconciliation, name);
-                        Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
-                        Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
-                        Secret userSecret = secretOperations.get(namespace, KafkaUserModel.getSecretName(name));
-
-                        createOrUpdate(reconciliation, cr, clientsCaCert, clientsCaKey, userSecret, createResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            if (createResult.failed()) {
-                                log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
-                            } else {
-                                handler.handle(createResult);
-                            }
-                        });
-                    } else {
-                        log.info("{}: User {} should be deleted", reconciliation, name);
-                        delete(reconciliation, deleteResult -> {
-                            if (deleteResult.succeeded())   {
-                                log.info("{}: User {} deleted", reconciliation, name);
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(deleteResult);
-                            } else {
-                                log.error("{}: Deletion of user {} failed", reconciliation, name, deleteResult.cause());
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(deleteResult);
-                            }
-                        });
-                    }
-                } catch (Throwable ex) {
-                    lock.release();
-                    log.error("{}: Reconciliation failed", reconciliation, ex);
-                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                    handler.handle(Future.failedFuture(ex));
-                }
-            } else {
-                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
-            }
-        });
-    }
-
-    /**
-     * Reconcile User resources in the given namespace having the given selector.
-     * Reconciliation works by getting the KafkaUSer custom resources in the given namespace with the given selector and
-     * comparing with the corresponding resource.
-     *
-     * @param trigger A description of the triggering event (timer or watch), used for logging
-     * @param namespace The namespace
-     * @param selector The labels used to select the resources
-     * @return A latch for awaiting the reconciliation.
-     */
-    public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
-        List<KafkaUser> desiredResources = crdOperator.list(namespace, selector);
-        Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", RESOURCE_KIND, trigger, selector, desiredNames);
-
-        CountDownLatch outerLatch = new CountDownLatch(1);
-
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<Set<String>>executeBlocking(
-            future -> {
-                try {
-                    Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
-                    future.complete(usersWithAcls);
-                } catch (Throwable t) {
-                    future.failed();
-                }
-            }, res -> {
-                if (res.succeeded()) {
-                    log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, res.result());
-                    desiredNames.addAll(res.result());
-                    desiredNames.addAll(scramShaCredentialOperator.list());
-
-                    // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
-                    // Using futures would be more complex for no benefit
-                    AtomicInteger counter = new AtomicInteger(desiredNames.size());
-
-                    for (String name : desiredNames) {
-                        Reconciliation reconciliation = new Reconciliation(trigger, ResourceType.USER, namespace, name);
-                        reconcile(reconciliation, result -> {
-                            handleResult(reconciliation, result);
-                            if (counter.getAndDecrement() == 0) {
-                                outerLatch.countDown();
-                            }
-                        });
-                    }
-                } else {
-                    log.error("Error while getting users with ACLs");
-                }
-                return;
-            });
-
-        return outerLatch;
-    }
-
-    /**
-     * Create Kubernetes watch for KafkaUser resources.
-     *
-     * @param namespace Namespace where to watch for users.
-     * @param selector Labels which the Users should match.
-     * @param onClose Callback called when the watch is closed.
-     *
-     * @return A future which completes when the watcher has been created.
-     */
-    public Future<Watch> createWatch(String namespace, Labels selector, Consumer<KubernetesClientException> onClose) {
-        Future<Watch> result = Future.future();
-        vertx.<Watch>executeBlocking(
-            future -> {
-                Watch watch = crdOperator.watch(namespace, selector, new Watcher<KafkaUser>() {
-                    @Override
-                    public void eventReceived(Action action, KafkaUser crd) {
-                        String name = crd.getMetadata().getName();
-                        switch (action) {
-                            case ADDED:
-                            case DELETED:
-                            case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", ResourceType.USER, namespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, RESOURCE_KIND, name, namespace, action);
-                                reconcile(reconciliation, result -> {
-                                    handleResult(reconciliation, result);
-                                });
-                                break;
-                            case ERROR:
-                                log.error("Failed {} {} in namespace{} ", RESOURCE_KIND, name, namespace);
-                                reconcileAll("watch error", namespace, selector);
-                                break;
-                            default:
-                                log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll("watch unknown", namespace, selector);
-                        }
-                    }
-
-                    @Override
-                    public void onClose(KubernetesClientException e) {
-                        onClose.accept(e);
-                    }
-                });
-                future.complete(watch);
-            }, result
-        );
-        return result;
-    }
-
-    /**
-     * Log the reconciliation outcome.
-     */
-    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result) {
-        if (result.succeeded()) {
-            log.info("{}: User reconciled", reconciliation);
-        } else {
-            Throwable cause = result.cause();
-            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-        }
-    }
 }

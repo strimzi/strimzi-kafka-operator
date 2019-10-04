@@ -80,7 +80,7 @@ public class ClusterOperator extends AbstractVerticle {
             L extends KubernetesResourceList/*<T>*/,
             D extends Doneable<T>,
             R extends Resource<T, D>>
-        Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator<C, T, L, D, R> op) {
+        Consumer<KubernetesClientException> recreateWatch(Watchy op) {
         Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
             @Override
             public void accept(KubernetesClientException e) {

@@ -65,7 +65,8 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
  * can proceed at once.</p>
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>> {
+        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
+    implements Watchy {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
@@ -271,6 +272,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param onClose A consumer for any exceptions causing the closing of the watcher.
      * @return A future which completes when watcher has been created.
      */
+    @Override
     public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
         vertx.<Watch>executeBlocking(
