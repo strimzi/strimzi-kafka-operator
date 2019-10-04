@@ -169,8 +169,8 @@ echo "CRs:"
 mkdir -p $direct/reports/crs
 crs=$($platform get crd -o name)
 for line in $crs; do
-	cr=`echo $line | cut -d "/" -f 2`
-	if [[ $cr == *"kafka.strimzi.io" ]]; then
+  cr=`echo $line | cut -d "/" -f 2`
+  if [[ $cr == *"kafka.strimzi.io" ]]; then
     resources=$($platform get $cr -o name -n $namespace | cut -d "/" -f 2)
     if [[ -n "$resources" ]]; then
       echo $cr
