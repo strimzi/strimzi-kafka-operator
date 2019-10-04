@@ -98,7 +98,7 @@ For decode the generated password:
 echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
 ----
 
-[id='simple-acl']
+[id='simple-acl-{context}']
 == Authorization
 
 Authorization is configured using the `authorization` property in `KafkaUser.spec`.
