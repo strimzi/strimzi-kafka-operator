@@ -28,6 +28,6 @@ Like the Cluster Operator, the Topic and User Operators each use a TLS sidecar w
 
 Encrypted communication between Kafka brokers and clients running within the same Kubernetes cluster is provided through the `tls` listener on port 9093.
 
-Encrypted communication between Kafka brokers and clients running outside the same Kubernetes cluster is provided through the `external` listener (the port of the external listener depends on its type).
+Encrypted communication between Kafka brokers and clients running outside the same Kubernetes cluster is provided through the `external` listener (the port of the `external` listener depends on its type).
 
 NOTE: You can use the `plain` listener on port 9092 for unencrypted communication with brokers.
