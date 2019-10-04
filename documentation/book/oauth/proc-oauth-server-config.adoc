@@ -15,7 +15,7 @@ Depending on the chosen xref:con-oauth-authentication-client-options-{context}[a
 * Obtain access and refresh tokens
 
 User credentials are managed by an authorization server using a _realm_, which describes security policies.
-The _realm_ is the authentication provider for clients.
+The _realm_ is the authentication provider for registered clients.
 
 To use {oauth} with {ProductName}, you need a deployment of an authorization server to be able to create and manage authentication realms.
 

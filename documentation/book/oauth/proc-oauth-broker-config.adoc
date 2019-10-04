@@ -37,27 +37,22 @@ For more information on the configuration and authentication of Kafka broker lis
 kubectl edit kafka my-cluster
 ----
 
-. Configure the Kafka broker listener configuration
+. Configure the Kafka broker `listeners` configuration
 +
-The configuration for each listener does not have to be the same, as they are independent.
+The configuration for each type of listener does not have to be the same, as they are independent.
 +
 For example:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-listeners:
- plain:
+#internal configuration
    authentication:
      type: oauth <1>
      validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_ <2>
      jwksEndpointUri: _https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs_ <3>
      userNameClaim: preferred_username <4>
- tls:
-   authentication:
-     type: oauth
-     validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_
-     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs_
-     userNameClaim: preferred_username
+
+#external configuration
  external:
    type: loadbalancer
 
@@ -102,7 +97,7 @@ kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
 kubectl get po -w
 ----
 +
-The rolling updates configure the brokers to send messages using {oauth} authentication.
+The rolling update configures the brokers to use {oauth} authentication.
 
 .What to do next
 

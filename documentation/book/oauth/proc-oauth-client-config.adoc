@@ -44,13 +44,16 @@ System.setProperty(Config.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
 
 . Enable the _SASL OAUTHBEARER_ mechanism on a TLS encrypted connection in the Kafka client configuration:
 +
+For example:
++
 [source,xml]
 ----
 props.put("sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;");
-props.put("security.protocol", "SASL_SSL");
+props.put("security.protocol", "SASL_SSL"); <1>
 props.put("sasl.mechanism", "OAUTHBEARER");
 props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
 ----
+<1> Here we use `SASL_SSL` for use over TLS connections. Use `SASL_PLAINTEXT` over unencrypted connections. 
 
 . Verify that the Kafka client can access the Kafka brokers.
 
