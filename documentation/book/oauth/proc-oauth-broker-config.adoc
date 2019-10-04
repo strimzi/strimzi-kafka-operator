@@ -45,7 +45,7 @@ For example:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-#internal configuration
+#...
    authentication:
      type: oauth <1>
      validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_ <2>
