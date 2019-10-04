@@ -3,7 +3,7 @@ TLS client authentication uses a TLS certificate to authenticate.
 The certificate is specified in the `certificateAndKey` property and is always loaded from a Kubernetes secret.
 In the secret, the certificate must be stored in X509 format under two different keys: public and private.
 
-NOTE: TLS client authentication can be used only with TLS connections.
+NOTE: TLS client authentication can only be used with TLS connections.
 
 .An example TLS client authentication configuration
 [source,yaml,subs=attributes+]

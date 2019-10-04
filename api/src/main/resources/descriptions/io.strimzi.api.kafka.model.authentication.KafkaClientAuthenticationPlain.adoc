@@ -1,5 +1,5 @@
 To configure SASL-based PLAIN authentication, set the `type` property to `plain`.
-The PLAIN authentication mechanism requires a username and password.
+SASL PLAIN authentication mechanism requires a username and password.
 
 WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
 Only use SASL PLAIN authentication if TLS encryption is enabled.
