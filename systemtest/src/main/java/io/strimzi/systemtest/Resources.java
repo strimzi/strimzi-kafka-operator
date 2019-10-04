@@ -52,7 +52,6 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
@@ -678,15 +677,18 @@ public class Resources extends AbstractResources {
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
                 StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
 
+        // Wait for EO deletion
         StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
         StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
-        // Wait for EO deletion
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
 
         // Wait for Kafka Exporter deletion
+        StUtils.waitForDeploymentDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+        StUtils.waitForReplicaSetDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-kafka-exporter"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
