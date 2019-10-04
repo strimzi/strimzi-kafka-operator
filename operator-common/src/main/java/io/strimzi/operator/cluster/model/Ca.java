@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -564,6 +565,10 @@ public abstract class Ca {
      * @return the CA cert secret, which contains both the current CA cert and also previous, still valid certs.
      */
     public Secret caCertSecret() {
+        if (caCertSecret == null) {
+            log.warn("caCertSecret was removed");
+            throw new ResourceNotFoundException("caCertSecret was removed");
+        }
         return caCertSecret;
     }
 
@@ -571,6 +576,10 @@ public abstract class Ca {
      * @return the CA key secret, which contains the current CA private key.
      */
     public Secret caKeySecret() {
+        if (caKeySecret == null) {
+            log.warn("caCertSecret was removed");
+            throw new ResourceNotFoundException("caKeySecret was removed");
+        }
         return caKeySecret;
     }
 
