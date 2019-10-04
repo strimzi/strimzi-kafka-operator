@@ -22,10 +22,10 @@ The recommended approach is to create a _client_ definition in an authorization 
 A Kafka client is configured with either:
 
 * Credentials required to obtain a valid access token from an authorization server
-* A valid long-lived access, obtained using tools provided by an authorization server
+* A valid long-lived access token, obtained using tools provided by an authorization server
 
 Credentials are never sent to the Kafka broker.
-The only information ever sent to the Kafka broker is an access token. 
+The only information ever sent to the Kafka broker is an access token.
 When a client obtains an access token, no further communication with the authorization server is needed.
 
 The simplest mechanism, which requires no additional usage of authorization server tools, is authentication with a client ID and secret.
