@@ -81,6 +81,9 @@ public class KafkaExporter extends AbstractModel {
 
         this.saramaLoggingEnabled = false;
         this.mountPath = "/var/lib/kafka";
+
+        // Kafka Exporter is all about metrics - they are always enabled
+        this.isMetricsEnabled = true;
     }
 
     public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {

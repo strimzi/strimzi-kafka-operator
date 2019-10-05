@@ -133,20 +133,46 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateService() {
         Service headful = zc.generateService();
-        checkService(headful);
-        checkOwnerReference(zc.createOwnerReference(), headful);
-    }
 
-    private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
-        assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
-        assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
         assertEquals(zc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
+
+        checkOwnerReference(zc.createOwnerReference(), headful);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics() {
+        Kafka kafka = new KafkaBuilder(ka)
+                .editSpec()
+                    .editZookeeper()
+                        .withMetrics(null)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafka, VERSIONS);
+        Service headful = zc.generateService();
+
+        assertEquals("ClusterIP", headful.getSpec().getType());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
+        assertEquals(1, headful.getSpec().getPorts().size());
+        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"));
+
+        checkOwnerReference(zc.createOwnerReference(), headful);
     }
 
     @Test
