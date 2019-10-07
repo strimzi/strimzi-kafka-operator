@@ -7,8 +7,6 @@
 
 Distributed tracing allows developers and system administrators to track the progress of transactions between applications and microservices in a distributed system. This information is useful for monitoring application performance at the micro-level and investigating issues with target systems and end-user applications. In {ProductName}, and data streaming platforms in general, distributed tracing facilitates the end-to-end tracking of messages: from source systems to the Kafka cluster and then to target systems and applications.
 
-//screenshot of Jaeger UI
-
 As an aspect of system observability, distributed tracing in {ProductName} complements the metrics that are available to view in xref:assembly-metrics-setup-{context}[Grafana dashboards], as well as the available loggers for each component. 
 
 .Introduction to OpenTracing and Jaeger
@@ -24,6 +22,10 @@ To simplify the instrumentation of producers, consumers, and Kafka Streams appli
 NOTE: The OpenTracing project is merging with the OpenCensus project. The new, combined project is named {OpenTelemetryHome}. OpenTelemetry will provide compatibility for applications that are instrumented using the OpenTracing APIs.
 
 Jaeger, a tracing system, is an implementation of the OpenTracing APIs used for monitoring and troubleshooting microservices-based distributed systems. It consists of four main components and provides client libraries for instrumenting applications. You can use the Jaeger user interface to visualize, query, filter, and analyze trace data.
+
+.An example of a query in the Jaeger user interface
+
+image:image_con-overview-distributed-tracing.png[Simple Jaeger query]
 
 == Distributed tracing support in {ProductName} clients
 
