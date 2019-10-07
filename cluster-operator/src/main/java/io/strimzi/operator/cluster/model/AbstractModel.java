@@ -456,7 +456,22 @@ public abstract class AbstractModel {
         return storage;
     }
 
+    /**
+     * Set Storage
+     *
+     * @param storage   Persistent Storage configuration
+     */
     protected void setStorage(Storage storage) {
+        validatePersistentStorage(storage);
+        this.storage = storage;
+    }
+
+    /**
+     * Validates persistent storage
+     *
+     * @param storage   Persistent Storage configuration
+     */
+    protected static void validatePersistentStorage(Storage storage)   {
         if (storage instanceof PersistentClaimStorage) {
             PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
             checkPersistentStorageSize(persistentClaimStorage);
@@ -474,11 +489,9 @@ public abstract class AbstractModel {
                 }
             }
         }
-
-        this.storage = storage;
     }
 
-    private void checkPersistentStorageSize(PersistentClaimStorage storage)   {
+    private static void checkPersistentStorageSize(PersistentClaimStorage storage)   {
         if (storage.getSize() == null || storage.getSize().isEmpty()) {
             throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
         }

@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -988,6 +989,23 @@ public class ZookeeperClusterTest {
                 .build();
         zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral);
         assertEquals(ephemeral, zc.getStorage());
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testStorageValidationAfterInitialDeployment() {
+        Storage oldStorage = new PersistentClaimStorageBuilder()
+                .withSize("100Gi")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                    .withStorage(new PersistentClaimStorageBuilder().build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage);
     }
 
     @Test

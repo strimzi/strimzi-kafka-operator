@@ -209,6 +209,8 @@ public class ZookeeperCluster extends AbstractModel {
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
+            AbstractModel.validatePersistentStorage(newStorage);
+
             StorageDiff diff = new StorageDiff(oldStorage, newStorage);
 
             if (!diff.isEmpty()) {
