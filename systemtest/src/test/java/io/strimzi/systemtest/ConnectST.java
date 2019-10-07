@@ -55,7 +55,7 @@ class ConnectST extends AbstractST {
 
     @Test
     void testDeployUndeploy() {
-        Map<String, String> exceptedConfig = loadProperties("group.id=connect-cluster\n" +
+        Map<String, Object> exceptedConfig = loadProperties("group.id=connect-cluster\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "config.storage.topic=connect-cluster-configs\n" +

@@ -83,7 +83,6 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -268,12 +267,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Translate key/value pairs fromatted like properties into a Map
+     * Translate key/value pairs formatted like properties into a Map
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
      * @return THe map of key/values
      */
     @SuppressWarnings("unchecked")
-    static Map<String, String> loadProperties(String keyValuePairs) {
+    static Map<String, Object> loadProperties(String keyValuePairs) {
         try {
             Properties actual = new Properties();
             actual.load(new StringReader(keyValuePairs));
@@ -289,7 +288,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param envVar The environment variable name
      * @return The properties which the variable contains
      */
-    static Map<String, String> getPropertiesFromJson(String json, String envVar) {
+    static Map<String, Object> getPropertiesFromJson(String json, String envVar) {
         List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(envVar));
         return loadProperties(array.get(0));
     }
@@ -1030,20 +1029,15 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         if (pods.size() != 0) {
             LOGGER.info("Testing configuration for container {}", containerName);
-            pods.forEach(pod -> {
-                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                    .forEach(container -> {
-                        List<EnvVar> envVarList = container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey)).collect(Collectors.toList());
-                        assertThat(envVarList.size(), greaterThan(0));
 
-                        envVarList.forEach(envVar -> {
-                            LOGGER.info("Check specific configuration: {}", envVar.getName());
-                            for (Map.Entry<String, Object> entry : config.entrySet()) {
-                                assertThat(envVar.getValue().contains(entry.getKey() + "=" + entry.getValue() + "\n"), is(true));
-                            }
-                        });
-                    });
-            });
+            Map<String, Object> actual = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
+                .filter(c -> c.getName().equals(containerName))
+                .flatMap(c -> c.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey)))
+                .map(envVar -> loadProperties(envVar.getValue()))
+                .collect(Collectors.toList()).get(0);
+
+            assertTrue(actual.entrySet().containsAll(config.entrySet()));
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
@@ -1066,7 +1060,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
                 .filter(c -> c.getName().equals(containerName))
                 .flatMap(c -> c.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName())))
-                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue, (a1, a2) -> a1));
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue, (item, duplicatedItem) -> item));
             assertThat(actual, is(config));
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
