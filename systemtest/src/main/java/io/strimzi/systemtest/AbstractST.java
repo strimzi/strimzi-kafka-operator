@@ -1024,7 +1024,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param configKey Expected configuration key
      * @param config Expected component configuration
      */
-    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
+    protected void checkComponentConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
@@ -1061,15 +1061,13 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         if (pods.size() != 0) {
             LOGGER.info("Testing EnvVars configuration for container {}", containerName);
-            pods.forEach(pod -> {
-                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                    .forEach(container -> {
-                        container.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName()))
-                            .forEach(envVar -> {
-                                assertEquals(config.get(envVar.getName()), envVar.getValue());
-                            });
-                    });
-            });
+
+            Map<String, Object> actual = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
+                .filter(c -> c.getName().equals(containerName))
+                .flatMap(c -> c.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName())))
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue, (a1, a2) -> a1));
+            assertThat(actual, is(config));
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
