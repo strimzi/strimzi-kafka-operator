@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -34,17 +35,19 @@ public class KafkaListenerPlain implements UnknownPropertyPreserving, Serializab
 
     private Map<String, Object> additionalProperties;
 
-    private KafkaListenerAuthentication authentication;
+    private KafkaListenerAuthentication auth;
     private List<NetworkPolicyPeer> networkPolicyPeers;
 
     @Description("Authentication configuration for this listener. " +
             "Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`.")
-    public KafkaListenerAuthentication getAuthentication() {
-        return authentication;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("authentication")
+    public KafkaListenerAuthentication getAuth() {
+        return auth;
     }
 
-    public void setAuthentication(KafkaListenerAuthentication authentication) {
-        this.authentication = authentication;
+    public void setAuth(KafkaListenerAuthentication auth) {
+        this.auth = auth;
     }
 
     @Description("List of peers which should be able to connect to this listener. " +

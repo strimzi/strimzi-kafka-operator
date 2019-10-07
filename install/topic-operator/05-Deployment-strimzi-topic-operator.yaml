@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: strimzi-topic-operator
@@ -6,6 +6,9 @@ metadata:
     app: strimzi
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-topic-operator
   template:
     metadata:
       labels:

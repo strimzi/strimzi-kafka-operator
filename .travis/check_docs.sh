@@ -59,6 +59,6 @@ if [ -n "$CHANGED_DERIVED" ] ; then
   echo "Run the following to add up-to-date resources:"
   echo "  make docu_versions \\"
   echo "    && git add documentation/book/ \\"
-  echo "    && git commit -m 'Update generated documentation'"
+  echo "    && git commit -s -m 'Update generated documentation'"
   exit 1
 fi

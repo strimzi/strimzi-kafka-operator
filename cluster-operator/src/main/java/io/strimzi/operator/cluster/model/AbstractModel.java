@@ -169,6 +169,8 @@ public abstract class AbstractModel {
     protected List<LocalObjectReference> templateImagePullSecrets;
     protected PodSecurityContext templateSecurityContext;
     protected int templateTerminationGracePeriodSeconds = 30;
+    protected Map<String, String> templatePersistentVolumeClaimLabels;
+    protected Map<String, String> templatePersistentVolumeClaimAnnotations;
     protected Map<String, String> templatePodDisruptionBudgetLabels;
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
@@ -583,7 +585,7 @@ public abstract class AbstractModel {
      */
     protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected VolumeMount createVolumeMount(String name, String path) {
+    protected static VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
                 .withMountPath(path)
@@ -669,8 +671,8 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
-                    .withAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())))
+                    .withLabels(mergeLabelsOrAnnotations(getLabelsWithName(templateStatefulSetLabels), templatePersistentVolumeClaimLabels))
+                    .withAnnotations(mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
                     .withAccessModes("ReadWriteOnce")
@@ -726,7 +728,7 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    protected static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
         int mode = 0444;
         if (isOpenshift) {
             mode = 0440;
@@ -921,6 +923,26 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Build an environment variable instance which will use a value from a secret
+     *
+     * @param name The name of the environment variable
+     * @param secret The name of the secret which should be used
+     * @param key The key under which the value is stored in the secret
+     * @return The environment variable instance
+     */
+    protected static EnvVar buildEnvVarFromSecret(String name, String secret, String key) {
+        return new EnvVarBuilder()
+                .withName(name)
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(secret)
+                        .withKey(key)
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build();
+    }
+
+    /**
      * Build an environment variable instance with the provided name from a field reference
      * using Downward API
      *
@@ -1079,12 +1101,17 @@ public abstract class AbstractModel {
      * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
      */
     protected Map<String, String> getPrometheusAnnotations()    {
-        Map<String, String> annotations = new HashMap<String, String>(3);
-        annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
-        annotations.put("prometheus.io/scrape", "true");
-        annotations.put("prometheus.io/path", "/metrics");
+        if (isMetricsEnabled) {
+            Map<String, String> annotations = new HashMap<String, String>(3);
 
-        return annotations;
+            annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
+            annotations.put("prometheus.io/scrape", "true");
+            annotations.put("prometheus.io/path", "/metrics");
+
+            return annotations;
+        } else {
+            return null;
+        }
     }
 
     /**

@@ -237,6 +237,48 @@ public class AbstractConfigurationTest {
         assertEquals("42", kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout.ms"));
         assertNull(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout"));
     }
+
+    @Test
+    public void testKafkaConnectHostnameVerification() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("key.converter", "my.package.Converter"); // valid
+        conf.put("ssl.endpoint.identification.algorithm", ""); // valid
+        conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
+
+        KafkaConnectConfiguration configuration = new KafkaConnectConfiguration(conf.entrySet());
+
+        assertEquals("my.package.Converter", configuration.asOrderedProperties().asMap().get("key.converter"));
+        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
+        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+    }
+
+    @Test
+    public void testKafkaMirrorMakerConsumerHostnameVerification() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("compression.type", "zstd"); // valid
+        conf.put("ssl.endpoint.identification.algorithm", ""); // valid
+        conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
+
+        KafkaMirrorMakerConsumerConfiguration configuration = new KafkaMirrorMakerConsumerConfiguration(conf.entrySet());
+
+        assertEquals("zstd", configuration.asOrderedProperties().asMap().get("compression.type"));
+        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
+        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+    }
+
+    @Test
+    public void testKafkaMirrorMakerProducerHostnameVerification() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("compression.type", "zstd"); // valid
+        conf.put("ssl.endpoint.identification.algorithm", ""); // valid
+        conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
+
+        KafkaMirrorMakerProducerConfiguration configuration = new KafkaMirrorMakerProducerConfiguration(conf.entrySet());
+
+        assertEquals("zstd", configuration.asOrderedProperties().asMap().get("compression.type"));
+        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
+        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+    }
 }
 
 class TestConfiguration extends AbstractConfiguration {

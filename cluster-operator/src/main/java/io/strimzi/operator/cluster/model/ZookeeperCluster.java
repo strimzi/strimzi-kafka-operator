@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -52,7 +53,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.parseMap;
 import static java.util.Arrays.asList;
 
 public class ZookeeperCluster extends AbstractModel {
@@ -89,8 +89,6 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
-
-    public static final Map<String, String> IMAGE_MAP = parseMap(System.getenv().get("STRIMZI_ZOOKEEPER_IMAGE_MAP"));
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
@@ -181,11 +179,9 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
-        String version = versions.defaultVersion().version();
-
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            image = IMAGE_MAP.get(version);
+            image = System.getenv().get(ClusterOperatorConfig.STRIMZI_DEFAULT_ZOOKEEPER_IMAGE);
         }
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -240,10 +236,14 @@ public class ZookeeperCluster extends AbstractModel {
         if (tlsSidecar == null) {
             tlsSidecar = new TlsSidecar();
         }
-        if (tlsSidecar.getImage() == null) {
+
+        String tlsSideCarImage = tlsSidecar.getImage();
+        if (tlsSideCarImage == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+            tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
         }
+        tlsSidecar.setImage(tlsSideCarImage);
+
         zk.setTlsSidecar(tlsSidecar);
 
         if (zookeeperClusterSpec.getTemplate() != null) {
@@ -264,6 +264,11 @@ public class ZookeeperCluster extends AbstractModel {
             if (template.getNodesService() != null && template.getNodesService().getMetadata() != null)  {
                 zk.templateHeadlessServiceLabels = template.getNodesService().getMetadata().getLabels();
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
+            }
+
+            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
+                zk.templatePersistentVolumeClaimLabels = template.getPersistentVolumeClaim().getMetadata().getLabels();
+                zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
             }
 
             if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getEnv() != null) {

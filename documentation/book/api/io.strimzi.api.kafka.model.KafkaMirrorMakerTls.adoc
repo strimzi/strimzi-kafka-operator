@@ -1,0 +1,11 @@
+Use the `tls` property to configure TLS encryption.
+Provide a list of secrets with key names under which the certificates are stored in X.509 format.
+
+.An example TLS encryption configuration
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates:
+    - secretName: my-cluster-cluster-ca-cert
+      certificate: ca.crt
+----

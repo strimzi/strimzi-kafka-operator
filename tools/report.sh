@@ -4,14 +4,14 @@ oc_installed=false
 kubectl_installed=false
 platform="kubectl"
 
-oc >/dev/null
+oc &>/dev/null
 
 if [ $? -eq 0 ]; then
 	oc_installed=true
 	platform="oc"
 fi
 
-kubectl >/dev/null
+kubectl &>/dev/null
 
 if [ $? -eq 0 ]; then # we will use kubectl with priority (?)
 	kubectl_installed=true
@@ -25,7 +25,7 @@ fi
 
 
 usage() {
-	echo "Usage: $0 [--namespace <string>] [--cluster <string>]" 1>&2; 
+	echo "Usage: $0 --namespace=<string> --cluster=<string>" 1>&2;
 	exit 1; 
 }
 
@@ -49,7 +49,7 @@ done
 shift $((OPTIND-1))
 
 if [ -z $cluster ] && [ -z $namespace ]; then
-   echo "Cluster and namespace was not specified. Use --cluster and --namespace options to specify it."
+   echo "--cluster and --namespace are mandatory options."
    usage
 fi
 
@@ -131,22 +131,23 @@ for pod in $pods; do
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c topic-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-topic-operator.log
 	  $platform logs $pod -p -c user-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-user-operator.log
-	fi
-	if [[ $pod == *"-kafka-"* ]]; then
+	elif [[ $pod =~ .*-kafka-[0-9]+ ]]; then
 	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
 	  $platform logs $pod -c kafka -n $namespace > $direct/reports/podLogs/"$pod"-kafka.log
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c kafka -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-kafka.log
 
 	  $platform exec -i $pod -n $namespace -c kafka -- cat /tmp/strimzi.properties > $direct/reports/configs/"$pod".cfg
-	fi
-	if [[ $pod == *"-zookeeper-"* ]]; then
+	elif [[ $pod =~ .*-zookeeper-[0-9]+ ]]; then
 	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
 	  $platform logs $pod -c zookeeper -n $namespace > $direct/reports/podLogs/"$pod"-zookeeper.log
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-zookeeper.log
 
 	  $platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties > $direct/reports/configs/"$pod".cfg
+	elif [[ $pod == *"-kafka-exporter-"* || $pod == *"-connect-"* || $pod == *"-bridge-"* || $pod == *"-mirror-maker-"* ]]; then
+	  $platform logs $pod -n $namespace > $direct/reports/podLogs/"$pod".log
+	  $platform logs $pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod".log
 	fi
 done;
 
@@ -165,16 +166,18 @@ echo "CRs:"
 mkdir -p $direct/reports/crs
 crs=$($platform get crd -o name)
 for line in $crs; do
-	cr=`echo $line | cut -d "/" -f 2`
-	resources=$($platform get $cr -o name -n $namespace | cut -d "/" -f 2)
-	if ! [[ -z "$resources" &&  $cr == *"kafka.strimzi.io" ]]; then
-		echo $cr
-		for line in $resources; do
-			resource=`echo $line | cut -f 1 -d " "`
-			$platform get $cr $resource -o yaml > $direct/reports/crs/"$cr"-"$resource".yaml
-			echo "   "$resource
-		done;
-	fi
+  cr=`echo $line | cut -d "/" -f 2`
+  if [[ $cr == *"kafka.strimzi.io" ]]; then
+    resources=$($platform get $cr -o name -n $namespace | cut -d "/" -f 2)
+    if [[ -n "$resources" ]]; then
+      echo $cr
+      for line in $resources; do
+        resource=`echo $line | cut -f 1 -d " "`
+        $platform get $cr $resource -n $namespace -o yaml > $direct/reports/crs/"$cr"-"$resource".yaml
+        echo "   "$resource
+      done;
+    fi
+  fi
 done;
 
 echo "CRDs:"

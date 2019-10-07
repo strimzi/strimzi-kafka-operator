@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: strimzi-cluster-operator
@@ -10,6 +10,10 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-cluster-operator
+      strimzi.io/kind: cluster-operator
   template:
     metadata:
       labels:
@@ -24,7 +28,9 @@ spec:
       containers:
         - name: strimzi-cluster-operator
           image: {{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
+          {{- if .Values.image.imagePullPolicy }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
+          {{- end }}
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           env:

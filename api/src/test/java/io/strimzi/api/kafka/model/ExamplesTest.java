@@ -86,7 +86,7 @@ public class ExamplesTest {
         // This uses a custom deserializer which knows about all the built-in
         // k8s and os kinds, plus the custom kinds registered via Crds
         // But the custom deserializer always allows unknown properties
-        KubernetesResource<?> resource = TestUtils.fromYamlString(content, KubernetesResource.class, false);
+        KubernetesResource resource = TestUtils.fromYamlString(content, KubernetesResource.class, false);
         recurseForAdditionalProperties(new Stack(), resource);
     }
 

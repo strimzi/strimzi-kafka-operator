@@ -2,7 +2,7 @@
 //
 // assembly-deployment-configuration.adoc
 
-//attribute for use in snip-external-logging.adoc
+//attribute for use in snip-inline-logging.adoc
 :kind: KafkaMirrorMaker
 
 // Save the context of the assembly that is including this one.
@@ -15,43 +15,24 @@
 
 :context: deployment-configuration-kafka-mirror-maker
 
-The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[].
-All labels that apply to the desired `KafkaMirrorMaker` resource will also be applied to the Kubernetes resources making up Mirror Maker.
+This chapter describes how to configure the `KafkaMirrorMaker` resource to support a Kafka Mirror Maker deployment in your cluster.
+
+The following procedures show how the resource is configured:
+
+* xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker]
+
+Supported properties are also described in more detail for your reference:
+
+* xref:con-configuring-mirror-maker-{context}[Kafka Mirror Maker configuration properties]
+
+The full schema of the `KafkaMirrorMaker` resource is described in the xref:type-KafkaMirrorMaker-reference[KafkaMirrorMaker schema reference].
+
+NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka Mirror Maker.
 This provides a convenient mechanism for resources to be labeled as required.
 
-include::assembly-kafka-mirror-maker-replicas.adoc[leveloffset=+1]
+include::proc-configuring-mirror-maker.adoc[leveloffset=+1]
 
-include::assembly-kafka-mirror-maker-bootstrap-servers.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-whitelist.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-groupid.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-numstreams.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-offset-commit-interval.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-abort-on-send-failure.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-tls.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-authentication.adoc[leveloffset=+1]
-
-include::assembly-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
-
-include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
-
-include::assembly-logging.adoc[leveloffset=+1]
-
-include::assembly-healthchecks.adoc[leveloffset=+1]
-
-include::assembly-metrics.adoc[leveloffset=+1]
-
-include::assembly-jvm-options.adoc[leveloffset=+1]
-
-include::assembly-configuring-container-images.adoc[leveloffset=+1]
-
-include::assembly-scheduling.adoc[leveloffset=+1]
+include::con-configuring-mirror-maker.adoc[leveloffset=+1]
 
 include::ref-list-of-kafka-mirror-maker-resources.adoc[leveloffset=+1]
 

@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -182,9 +183,12 @@ public class EntityOperator extends AbstractModel {
             result.setUserOperator(userOperator);
             result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
 
-            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
-            result.tlsSidecarImage = tlsSidecarImage;
+            String tlsSideCarImage = tlsSidecar != null ? tlsSidecar.getImage() : null;
+            if (tlsSideCarImage == null) {
+                KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+            }
+            result.tlsSidecarImage = tlsSideCarImage;
         }
         return result;
     }

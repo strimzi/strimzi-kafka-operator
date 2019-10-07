@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -40,11 +41,12 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
 
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
-    private int replicas;
+    private Integer replicas;
 
     private String version;
     private String image;
@@ -58,7 +60,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private List<Toleration> tolerations;
     private String bootstrapServers;
     private KafkaConnectTls tls;
-    private KafkaConnectAuthentication authentication;
+    private KafkaClientAuthentication authentication;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
 
@@ -66,7 +68,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     @Description("The number of pods in the Kafka Connect group.")
     @DefaultValue("3")
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
@@ -89,7 +91,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
         this.logging = logging;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
@@ -114,7 +116,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("CPU and memory resources to reserve (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -224,11 +226,11 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     @Description("Authentication configuration for Kafka Connect")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaConnectAuthentication getAuthentication() {
+    public KafkaClientAuthentication getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(KafkaConnectAuthentication authentication) {
+    public void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
     }
 

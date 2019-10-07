@@ -11,10 +11,15 @@ In order to run the example Grafana dashboards, you must:
 
 . xref:assembly-metrics-kafka-{context}[Add metrics configuration to your Kafka cluster resource]
 . xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
-. xref:assembly-configuring-grafana-{context}[Deploy Grafana]
+. xref:assembly-metrics-grafana-{context}[Deploy Grafana]
 
 NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
 If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
+
+.Kafka Exporter
+When you have Prometheus and Grafana enabled, you can also use Kafka Exporter to provide additional monitoring related to consumer lag.
+For more information, see xref:assembly-kafka-exporter-{context}[].
+
 
 .Additional resources
 * For more information about Prometheus, see the link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation].

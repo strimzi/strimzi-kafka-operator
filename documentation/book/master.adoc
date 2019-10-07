@@ -5,7 +5,7 @@ include::common/attributes.adoc[]
 
 = Using {ProductLongName}
 
-include::assembly-overview.adoc[leveloffset=+1]
+include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
 include::getting-started.adoc[leveloffset=+1]
 
@@ -17,11 +17,13 @@ include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
-include::assembly-using-the-kafka-bridge.adoc[leveloffset=+1]
+include::assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
 include::assembly-metrics-setup.adoc[leveloffset=+1]
 
 include::assembly-distributed-tracing.adoc[leveloffset=+1]
+
+include::assembly-kafka-exporter.adoc[leveloffset=+1]
 
 include::assembly-security.adoc[leveloffset=+1]
 

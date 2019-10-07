@@ -40,7 +40,7 @@ public class MessagingBaseST extends AbstractST {
      * @param messageCount message count
      * @param clusterName cluster name
      */
-    void availabilityTest(int messageCount, String clusterName) throws Exception {
+    protected void availabilityTest(int messageCount, String clusterName) throws Exception {
         availabilityTest(messageCount, clusterName, false, "my-topic", null);
     }
 
@@ -50,7 +50,7 @@ public class MessagingBaseST extends AbstractST {
      * @param clusterName cluster name
      * @param topicName topic name
      */
-    void availabilityTest(int messageCount, String clusterName, String topicName) throws Exception {
+    protected void availabilityTest(int messageCount, String clusterName, String topicName) throws Exception {
         availabilityTest(messageCount, clusterName, false, topicName, null);
     }
 
@@ -176,9 +176,9 @@ public class MessagingBaseST extends AbstractST {
         Matcher current = pattern.matcher(Environment.ST_KAFKA_VERSION);
         Matcher minimal = pattern.matcher(minimalVersion);
         if (current.find() && minimal.find()) {
-            return Integer.valueOf(current.group("major")) >= Integer.valueOf(minimal.group("major"))
-                    && Integer.valueOf(current.group("minor")) >= Integer.valueOf(minimal.group("minor"))
-                    && Integer.valueOf(current.group("micro")) >= Integer.valueOf(minimal.group("micro"));
+            return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
+                    && Integer.parseInt(current.group("minor")) >= Integer.parseInt(minimal.group("minor"))
+                    && Integer.parseInt(current.group("micro")) >= Integer.parseInt(minimal.group("micro"));
         }
         return false;
     }
@@ -191,13 +191,11 @@ public class MessagingBaseST extends AbstractST {
      */
     private int getSentMessagesCount(String response, int messageCount) {
         int sentMessages;
-        String sentPattern = String.format("sent\":(%s)", messageCount);
-        String ackPattern = String.format("acked\":(%s)", messageCount);
-        Pattern r = Pattern.compile(sentPattern);
+        Pattern r = Pattern.compile("sent\":(" + messageCount + ")");
         Matcher m = r.matcher(response);
         sentMessages = m.find() ? Integer.parseInt(m.group(1)) : -1;
 
-        r = Pattern.compile(ackPattern);
+        r = Pattern.compile("acked\":(" + messageCount + ")");
         m = r.matcher(response);
 
         if (m.find()) {
@@ -215,12 +213,11 @@ public class MessagingBaseST extends AbstractST {
      */
     private int getReceivedMessagesCount(String response) {
         int receivedMessages = 0;
-        String pattern = String.format("records_consumed\",\"count\":([0-9]*)");
-        Pattern r = Pattern.compile(pattern);
+        Pattern r = Pattern.compile("records_consumed\",\"count\":([0-9]*)");
         Matcher m = r.matcher(response);
 
-        if (m.find()) {
-            receivedMessages = Integer.parseInt(m.group(1));
+        while (m.find()) {
+            receivedMessages += Integer.parseInt(m.group(1));
         }
 
         return receivedMessages;

@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaUpgrade;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -99,6 +100,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -301,6 +303,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
+                .compose(state -> state.getKafkaExporterDescription())
+                .compose(state -> state.kafkaExporterServiceAccount())
+                .compose(state -> state.kafkaExporterSecret())
+                .compose(state -> state.kafkaExporterDeployment())
+                .compose(state -> state.kafkaExporterService())
+                .compose(state -> state.kafkaExporterReady())
+
                 .compose(state -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
@@ -354,6 +363,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
+
+        /* test */ KafkaExporter kafkaExporter;
+        /* test */ Deployment exporterDeployment = null;
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
@@ -556,21 +568,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
             if (!reason.isEmpty()) {
                 String reasons = reason.stream().collect(Collectors.joining(", "));
-                return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(ss -> {
-                            return zkSetOperations.maybeRollingUpdate(ss, pod -> {
-                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
-                                return true;
-                            },
-                            oldCoSecret);
-                        })
+                Future<Void> zkRollFuture;
+                Predicate<Pod> rollPodAndLogReason = pod -> {
+                    log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
+                    return true;
+                };
+                if (this.clusterCa.keyReplaced()) {
+                    zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(ss -> zkSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                        oldCoSecret));
+                } else {
+                    zkRollFuture = Future.succeededFuture();
+                }
+                return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(ss -> {
-                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
-                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
-                                return true;
-                            });
-                        })
+                        .compose(ss -> kafkaSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason))
                         .compose(i -> deploymentOperations.getAsync(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name)))
                         .compose(dep -> {
                             if (dep != null) {
@@ -2639,6 +2651,73 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String getInternalServiceHostname(String serviceName)    {
             return serviceName + "." + namespace + ".svc";
         }
+
+        private final Future<ReconciliationState> getKafkaExporterDescription() {
+            Future<ReconciliationState> fut = Future.future();
+
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    try {
+                        this.kafkaExporter = KafkaExporter.fromCrd(kafkaAssembly, versions);
+                        this.exporterDeployment = kafkaExporter.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+
+                        future.complete(this);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                }, true,
+                res -> {
+                    if (res.succeeded()) {
+                        fut.complete(res.result());
+                    } else {
+                        fut.fail(res.cause());
+                    }
+                }
+            );
+            return fut;
+        }
+
+        Future<ReconciliationState> kafkaExporterServiceAccount() {
+            return withVoid(serviceAccountOperations.reconcile(namespace,
+                    KafkaExporter.containerServiceAccountName(name),
+                    exporterDeployment != null ? kafkaExporter.generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> kafkaExporterSecret() {
+            return withVoid(secretOperations.reconcile(namespace, KafkaExporter.secretName(name), kafkaExporter.generateSecret(clusterCa)));
+        }
+
+        Future<ReconciliationState> kafkaExporterDeployment() {
+            if (this.kafkaExporter != null && this.exporterDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.kafkaExporter.getName());
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int caCertGeneration = getCaCertGeneration(this.clusterCa);
+                    Annotations.annotations(exporterDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), null));
+            }
+        }
+
+        Future<ReconciliationState> kafkaExporterService() {
+            return withVoid(serviceOperations.reconcile(namespace, this.kafkaExporter.getServiceName(), this.kafkaExporter.generateService()));
+        }
+
+        Future<ReconciliationState> kafkaExporterReady() {
+            if (this.kafkaExporter != null && exporterDeployment != null) {
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.kafkaExporter.getName());
+                return future.compose(dep -> {
+                    return withVoid(deploymentOperations.waitForObserved(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
+                }).compose(dep -> {
+                    return withVoid(deploymentOperations.readiness(namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
+                }).map(i -> this);
+            }
+            return withVoid(Future.succeededFuture());
+        }
+
     }
 
     private Date dateSupplier() {

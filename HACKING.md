@@ -267,7 +267,7 @@ If you want to use your own images with different tag or from different reposito
 
 #### Specific Kafka version
 
-To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.1.0`, `2.1.1`, `2.2.0`, `2.2.1`, `2.3.0`. For more info about allowed versions see [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
+To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` to one of the values in [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
 
 #### Cluster Operator Log level
 

@@ -10,7 +10,7 @@
 +
 For example, the logging level here is set to INFO:
 +
-include::snip-external-logging-{kind}.adoc[]
+include::snip-inline-logging-{kind}.adoc[]
 +
 You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 +
@@ -21,4 +21,3 @@ For more information about the log levels, see the link:https://logging.apache.o
 This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-

@@ -401,4 +401,15 @@ public class KafkaUserModel {
     public boolean isScramUser()  {
         return authentication instanceof KafkaUserScramSha512ClientAuthentication;
     }
+
+    /**
+     * Returns true if the user is configured without authentication section and is not using any authentication.
+     * Such user might be used for example for things such as OAUTH authentication where the users are not managed by
+     * the User Operator.
+     *
+     * @return true if the user is not using any authentication.
+     */
+    public boolean isNoneUser()  {
+        return authentication == null;
+    }
 }

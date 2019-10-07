@@ -2,7 +2,7 @@
 //
 // assembly-deployment-configuration.adoc
 
-//attribute for use in snip-external-logging.adoc
+//attribute for use in snip-inline-logging.adoc
 :kind: Kafka
 
 // Save the context of the assembly that is including this one.
@@ -58,6 +58,8 @@ include::assembly-configuring-container-images.adoc[leveloffset=+1]
 include::assembly-tls-sidecar.adoc[leveloffset=+1]
 
 include::assembly-scheduling.adoc[leveloffset=+1]
+
+include::assembly-kafka-exporter-configuration.adoc[leveloffset=+1]
 
 include::proc-manual-rolling-update-kafka.adoc[leveloffset=+1]
 

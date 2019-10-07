@@ -23,7 +23,7 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
 fi
 
 rm /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
-export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/kafka-agent.jar=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
+export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
@@ -49,7 +49,7 @@ mkdir -p /tmp/kafka
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
-./kafka_config_generator.sh | tee /tmp/strimzi.properties
+./kafka_config_generator.sh | tee /tmp/strimzi.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

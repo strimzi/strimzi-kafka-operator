@@ -26,7 +26,9 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
@@ -270,7 +272,6 @@ public class KubeClient {
      * Gets deployment
      */
     public Deployment getDeployment(String deploymentName) {
-        LOGGER.info("Deployment {} in namespace {}", deploymentName, getNamespace());
         return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get();
     }
 
@@ -321,6 +322,19 @@ public class KubeClient {
         client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).cascading(true).delete();
     }
 
+    public String getReplicaSetNameByPrefix(String namePrefix) {
+        return client.apps().replicaSets().inNamespace(getNamespace()).list().getItems().stream()
+                .filter(rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList()).get(0).getMetadata().getName();
+    }
+
+    public boolean replicaSetExists(String replicaSetName) {
+        return client.apps().replicaSets().inNamespace(getNamespace()).list().getItems().stream().anyMatch(rs -> rs.getMetadata().getName().startsWith(replicaSetName));
+    }
+
+    public void deleteReplicaSet(String replicaSetName) {
+        client.apps().replicaSets().inNamespace(getNamespace()).withName(replicaSetName).cascading(true).delete();
+    }
+
     public String getNodeAddress() {
         return kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
     }
@@ -328,8 +342,8 @@ public class KubeClient {
     /**
      * Gets deployment config status
      */
-    public boolean getDeploymentConfigStatus(String deploymentCofigName) {
-        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentCofigName).isReady();
+    public boolean getDeploymentConfigStatus(String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady();
     }
 
     public Secret createSecret(Secret secret) {
@@ -475,5 +489,24 @@ public class KubeClient {
             LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
             execLatch.countDown();
         }
+    }
+
+    /**
+     * Method which return kubernetes version
+     * @return kubernetes version
+     */
+    public String clusterKubernetesVersion() {
+        // This is basically workaround cause this.client.getVersion() returns null every time
+        VersionInfo versionInfo = new DefaultKubernetesClient().getVersion();
+        return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
+    }
+
+    /**
+     * Method which return name of cluster operator pod
+     * @return cluster operator pod name
+     */
+    public String getClusterOperatorPodName() {
+        LabelSelector selector = kubeClient().getDeploymentSelectors("strimzi-cluster-operator");
+        return kubeClient().listPods(selector).get(0).getMetadata().getName();
     }
 }

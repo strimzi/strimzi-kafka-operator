@@ -19,23 +19,20 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationPlain;
-import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeTls;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -67,6 +64,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String CO_ENV_VAR_CUSTOM_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
 
     // Kafka Bridge configuration keys (EnvVariables)
+    protected static final String ENV_VAR_PREFIX = "KAFKA_BRIDGE_";
     protected static final String ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED = "KAFKA_BRIDGE_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS = "KAFKA_BRIDGE_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_KAFKA_BRIDGE_TLS = "KAFKA_BRIDGE_TLS";
@@ -76,6 +74,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE = "KAFKA_BRIDGE_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME = "KAFKA_BRIDGE_SASL_USERNAME";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM = "KAFKA_BRIDGE_SASL_MECHANISM";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG = "KAFKA_BRIDGE_OAUTH_CONFIG";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET = "KAFKA_BRIDGE_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN = "KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN = "KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN";
+    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth-certs/";
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG = "KAFKA_BRIDGE_PRODUCER_CONFIG";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
@@ -94,10 +97,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
 
     private KafkaBridgeTls tls;
-    private CertAndKeySecretSource tlsAuthCertAndKey;
-    private PasswordSecretSource passwordSecret;
-    private String username;
-    private String saslMechanism;
+    private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
     private boolean httpEnabled = false;
     private boolean amqpEnabled = false;
@@ -141,7 +141,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
         String image = spec.getImage();
         if (image == null) {
-            image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE", "strimzi/kafka-bridge:latest");
+            image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
         }
         kafkaBridgeCluster.setImage(image);
         kafkaBridgeCluster.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
@@ -153,7 +153,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         if (kafkaBridge.getSpec().getReadinessProbe() != null) {
-            kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getReadinessProbe());
+            kafkaBridgeCluster.setReadinessProbe(kafkaBridge.getSpec().getReadinessProbe());
         }
 
         Map<String, Object> metrics = spec.getMetrics();
@@ -164,38 +164,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
-        if (spec.getAuthentication() != null)   {
-            if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationTls) {
-                KafkaBridgeAuthenticationTls auth = (KafkaBridgeAuthenticationTls) spec.getAuthentication();
-                if (auth.getCertificateAndKey() != null) {
-                    kafkaBridgeCluster.setTlsAuthCertAndKey(auth.getCertificateAndKey());
-                    if (spec.getTls() == null) {
-                        log.warn("TLS configuration missing: related TLS client authentication will not work properly");
-                    }
-                } else {
-                    log.warn("TLS Client authentication selected, but no certificate and key configured.");
-                    throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
-                }
-            } else if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationScramSha512)    {
-                KafkaBridgeAuthenticationScramSha512 auth = (KafkaBridgeAuthenticationScramSha512) spec.getAuthentication();
-                if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
-                    kafkaBridgeCluster.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
-                    kafkaBridgeCluster.setSaslMechanism(auth.getType());
-                } else  {
-                    log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                }
-            } else if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationPlain) {
-                KafkaBridgeAuthenticationPlain auth = (KafkaBridgeAuthenticationPlain) spec.getAuthentication();
-                if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
-                    kafkaBridgeCluster.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
-                    kafkaBridgeCluster.setSaslMechanism(auth.getType());
-                } else  {
-                    log.warn("PLAIN authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("PLAIN authentication selected, but no username and password configured.");
-                }
-            }
-        }
+        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
             KafkaBridgeTemplate template = spec.getTemplate();
@@ -233,11 +203,14 @@ public class KafkaBridgeCluster extends AbstractModel {
     
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(3);
+
         int port = DEFAULT_REST_API_PORT;
         if (http != null) {
             port = http.getPort();
         }
+
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
+
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
@@ -247,7 +220,14 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
-        portList.add(createContainerPort(REST_API_PORT_NAME, DEFAULT_REST_API_PORT, "TCP"));
+
+        int port = DEFAULT_REST_API_PORT;
+        if (http != null) {
+            port = http.getPort();
+        }
+
+        portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
+
         if (isMetricsEnabled) {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
@@ -272,14 +252,8 @@ public class KafkaBridgeCluster extends AbstractModel {
             }
         }
 
-        if (tlsAuthCertAndKey != null) {
-            // skipping if a volume with same Secret name was already added
-            if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
-                volumeList.add(createSecretVolume(tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getSecretName(), isOpenShift));
-            }
-        } else if (passwordSecret != null)  {
-            volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName(), isOpenShift));
-        }
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift);
+
         return volumeList;
     }
 
@@ -301,16 +275,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             }
         }
 
-        if (tlsAuthCertAndKey != null) {
-            // skipping if a volume mount with same Secret name was already added
-            if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
-                volumeMountList.add(createVolumeMount(tlsAuthCertAndKey.getSecretName(),
-                        TLS_CERTS_BASE_VOLUME_MOUNT + tlsAuthCertAndKey.getSecretName()));
-            }
-        } else if (passwordSecret != null)  {
-            volumeMountList.add(createVolumeMount(passwordSecret.getSecretName(),
-                    PASSWORD_VOLUME_MOUNT + passwordSecret.getSecretName()));
-        }
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT);
 
         return volumeMountList;
     }
@@ -394,17 +359,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             }
         }
 
-        if (tlsAuthCertAndKey != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_CERT,
-                    String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getCertificate())));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_KEY,
-                    String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getKey())));
-        } else if (passwordSecret != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME, username));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE,
-                    String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM, saslMechanism));
-        }
+        AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
@@ -434,30 +389,12 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     /**
-     * Set the certificate and related private key for TLS based authentication
-     * @param tlsAuthCertAndKey certificate and private key bundle
-     */
-    protected void setTlsAuthCertAndKey(CertAndKeySecretSource tlsAuthCertAndKey) {
-        this.tlsAuthCertAndKey = tlsAuthCertAndKey;
-    }
-
-    /**
-     * Set the username and password for SASL based authentication
+     * Sets the configured authentication
      *
-     * @param username          Username
-     * @param passwordSecret    Secret with password
+     * @param authetication Authentication configuration
      */
-    protected void setUsernameAndPassword(String username, PasswordSecretSource passwordSecret) {
-        this.username = username;
-        this.passwordSecret = passwordSecret;
-    }
-
-    /**
-     * Set the sasl mechanism, supported mechanisms including scram-sha-512 and plain
-     * @param saslMechanism
-     */
-    protected void setSaslMechanism(String saslMechanism) {
-        this.saslMechanism = saslMechanism;
+    protected void setAuthentication(KafkaClientAuthentication authetication) {
+        this.authentication = authetication;
     }
 
     /**

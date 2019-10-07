@@ -11,6 +11,8 @@
 
 You can use {ProductName} to deploy an ephemeral or persistent Kafka cluster to Kubernetes. When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
 
+You can also use it to deploy xref:assembly-kafka-exporter-configuration-deployment-configuration-kafka[Kafka Exporter].
+
 Ephemeral cluster:: In general, an ephemeral (that is, temporary) Kafka cluster is suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (for Zookeeper) and topics or partitions (for Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
 
 Persistent cluster:: A persistent Kafka cluster uses `PersistentVolumes` to store Zookeeper and Kafka data. The `PersistentVolume` is
@@ -35,4 +37,3 @@ metadata:
 ----
 
 include::proc-deploying-kafka-cluster.adoc[leveloffset=+1]
-

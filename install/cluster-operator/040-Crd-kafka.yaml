@@ -119,11 +119,52 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
+                            introspectionEndpointUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
+                            validIssuerUri:
+                              type: string
                           required:
                           - type
                         networkPolicyPeers:
@@ -182,11 +223,52 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
+                            introspectionEndpointUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
+                            validIssuerUri:
+                              type: string
                           required:
                           - type
                         networkPolicyPeers:
@@ -245,11 +327,52 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - key
+                              - secretName
+                            disableTlsHostnameVerification:
+                              type: boolean
+                            introspectionEndpointUri:
+                              type: string
+                            jwksEndpointUri:
+                              type: string
+                            jwksExpirySeconds:
+                              type: integer
+                              minimum: 1
+                            jwksRefreshSeconds:
+                              type: integer
+                              minimum: 1
+                            tlsTrustedCertificates:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  certificate:
+                                    type: string
+                                  secretName:
+                                    type: string
+                                required:
+                                - certificate
+                                - secretName
                             type:
                               type: string
                               enum:
                               - tls
                               - scram-sha-512
+                              - oauth
+                            userNameClaim:
+                              type: string
+                            validIssuerUri:
+                              type: string
                           required:
                           - type
                         class:
@@ -805,6 +928,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -1053,7 +1183,17 @@ spec:
                               type: object
                             annotations:
                               type: object
-                    externalBootstrapIngress:
+                    externalBootstrapService:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    perPodService:
                       type: object
                       properties:
                         metadata:
@@ -1073,50 +1213,6 @@ spec:
                               type: object
                             annotations:
                               type: object
-                    externalBootstrapService:
-                      type: object
-                      properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              type: object
-                            annotations:
-                              type: object
-                    initContainer:
-                      type: object
-                      properties:
-                        env:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                              value:
-                                type: string
-                    kafkaContainer:
-                      type: object
-                      properties:
-                        env:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                              value:
-                                type: string
-                    perPodIngress:
-                      type: object
-                      properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              type: object
-                            annotations:
-                              type: object
                     perPodRoute:
                       type: object
                       properties:
@@ -1127,7 +1223,27 @@ spec:
                               type: object
                             annotations:
                               type: object
-                    perPodService:
+                    externalBootstrapIngress:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    perPodIngress:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    persistentVolumeClaim:
                       type: object
                       properties:
                         metadata:
@@ -1150,7 +1266,31 @@ spec:
                         maxUnavailable:
                           type: integer
                           minimum: 0
+                    kafkaContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
                     tlsSidecarContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    initContainer:
                       type: object
                       properties:
                         env:
@@ -1615,6 +1755,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -1863,6 +2010,16 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    persistentVolumeClaim:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     podDisruptionBudget:
                       type: object
                       properties:
@@ -1876,7 +2033,7 @@ spec:
                         maxUnavailable:
                           type: integer
                           minimum: 0
-                    tlsSidecarContainer:
+                    zookeeperContainer:
                       type: object
                       properties:
                         env:
@@ -1888,7 +2045,7 @@ spec:
                                 type: string
                               value:
                                 type: string
-                    zookeeperContainer:
+                    tlsSidecarContainer:
                       type: object
                       properties:
                         env:
@@ -2721,6 +2878,13 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
@@ -3017,6 +3181,378 @@ spec:
                   enum:
                   - renew-certificate
                   - replace-key
+            kafkaExporter:
+              type: object
+              properties:
+                image:
+                  type: string
+                groupRegex:
+                  type: string
+                topicRegex:
+                  type: string
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                logging:
+                  type: string
+                enableSaramaLogging:
+                  type: boolean
+                template:
+                  type: object
+                  properties:
+                    deployment:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    pod:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                        imagePullSecrets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                        securityContext:
+                          type: object
+                          properties:
+                            fsGroup:
+                              type: integer
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            supplementalGroups:
+                              type: array
+                              items:
+                                type: integer
+                            sysctls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
+                        affinity:
+                          type: object
+                          properties:
+                            nodeAffinity:
+                              type: object
+                              properties:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      preference:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchFields:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                      weight:
+                                        type: integer
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  type: object
+                                  properties:
+                                    nodeSelectorTerms:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchFields:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                            podAffinity:
+                              type: object
+                              properties:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      podAffinityTerm:
+                                        type: object
+                                        properties:
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                type: object
+                                          namespaces:
+                                            type: array
+                                            items:
+                                              type: string
+                                          topologyKey:
+                                            type: string
+                                      weight:
+                                        type: integer
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            type: object
+                                      namespaces:
+                                        type: array
+                                        items:
+                                          type: string
+                                      topologyKey:
+                                        type: string
+                            podAntiAffinity:
+                              type: object
+                              properties:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      podAffinityTerm:
+                                        type: object
+                                        properties:
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                type: object
+                                          namespaces:
+                                            type: array
+                                            items:
+                                              type: string
+                                          topologyKey:
+                                            type: string
+                                      weight:
+                                        type: integer
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            type: object
+                                      namespaces:
+                                        type: array
+                                        items:
+                                          type: string
+                                      topologyKey:
+                                        type: string
+                        priorityClassName:
+                          type: string
+                        tolerations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              tolerationSeconds:
+                                type: integer
+                              value:
+                                type: string
+                    service:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    container:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                livenessProbe:
+                  type: object
+                  properties:
+                    failureThreshold:
+                      type: integer
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    periodSeconds:
+                      type: integer
+                    successThreshold:
+                      type: integer
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                readinessProbe:
+                  type: object
+                  properties:
+                    failureThreshold:
+                      type: integer
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    periodSeconds:
+                      type: integer
+                    successThreshold:
+                      type: integer
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
             maintenanceTimeWindows:
               type: array
               items:

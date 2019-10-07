@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -40,7 +41,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private KafkaBridgeHttpConfig http;
     private String bootstrapServers;
     private KafkaBridgeTls tls;
-    private KafkaBridgeAuthentication authentication;
+    private KafkaClientAuthentication authentication;
     private KafkaBridgeConsumerSpec consumer;
     private KafkaBridgeProducerSpec producer;
     private ResourceRequirements resources;
@@ -96,7 +97,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("CPU and memory resources to reserve (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -107,11 +108,11 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     @Description("Authentication configuration for connecting to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public KafkaBridgeAuthentication getAuthentication() {
+    public KafkaClientAuthentication getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(KafkaBridgeAuthentication authentication) {
+    public void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
     }
 

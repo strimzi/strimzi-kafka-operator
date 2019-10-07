@@ -45,7 +45,7 @@ When setting `-Xmx` explicitly, it is recommended to:
 
 * set the memory request and the memory limit to the same value,
 * use a memory request that is at least 4.5 × the `-Xmx`,
-* consider setting `-Xms` to the same value as `-Xms`.
+* consider setting `-Xms` to the same value as `-Xmx`.
 
 IMPORTANT: Containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
 On such containers, the requested memory should be significantly higher than the memory used by the JVM.

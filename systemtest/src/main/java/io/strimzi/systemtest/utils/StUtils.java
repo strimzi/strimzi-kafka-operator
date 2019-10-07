@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
@@ -21,13 +23,22 @@ import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -289,6 +300,52 @@ public class StUtils {
         return dir;
     }
 
+    public static File downloadYamlAndReplaceNameSpace(String url, String namespace) {
+        try {
+            InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+            StringBuilder sb = new StringBuilder();
+            BufferedReader br = new BufferedReader(new InputStreamReader(bais));
+            String read;
+            while ((read = br.readLine()) != null) {
+                sb.append(read + "\n");
+            }
+            br.close();
+            String yaml = sb.toString();
+            File yamlFile = File.createTempFile("temp-file", ".yaml");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
+            yaml = yaml.replace("securityContext:\n" +
+                    "        runAsNonRoot: true\n" +
+                    "        runAsUser: 65534", "");
+            bw.write(yaml);
+            bw.close();
+            return yamlFile;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) {
+        byte[] encoded = new byte[0];
+        try {
+            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
+
+            String yaml = new String(encoded, StandardCharsets.UTF_8);
+            yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
+
+            File yamlFile = File.createTempFile("temp-file", ".yaml");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            bw.write(yaml);
+            bw.close();
+            return yamlFile.toPath().toFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      *
      * Wait until the SS is ready and all of its Pods are also ready.
@@ -347,10 +404,18 @@ public class StUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentDeletion(String name) {
-        LOGGER.info("Waiting for Deployment deletion {}", name);
-        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getDeploymentStatus(name));
-        LOGGER.info("Deployment {} was deleted", name);
+        LOGGER.debug("Waiting for Deployment {} deletion", name);
+        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getDeployment(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("Deployment {} is not deleted!", name);
+                    kubeClient().deleteDeployment(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("Deployment {} was deleted", name);
     }
 
     /**
@@ -409,14 +474,41 @@ public class StUtils {
     }
 
     /**
+     * Wait until the given DeploymentConfig has been deleted.
+     * @param name The name of the DeploymentConfig.
+     */
+    public static void waitForDeploymentConfigDeletion(String name) {
+        LOGGER.debug("Waiting for DeploymentConfig {} deletion", name);
+        TestUtils.waitFor("DeploymentConfig " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getDeploymentConfig(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("Deployment {} is not deleted!", name);
+                    kubeClient().deleteDeploymentConfig(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("Deployment {} was deleted", name);
+    }
+
+    /**
      * Wait until the given StatefulSet has been deleted.
      * @param name The name of the StatefulSet.
      */
     public static void waitForStatefulSetDeletion(String name) {
-        LOGGER.info("Waiting for StatefulSet deletion {}", name);
-        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !kubeClient().getStatefulSetStatus(name));
-        LOGGER.info("StatefulSet {} was deleted", name);
+        LOGGER.debug("Waiting for StatefulSet {} deletion", name);
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (kubeClient().getStatefulSet(name) == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("StatefulSet {} is not deleted!", name);
+                    kubeClient().deleteStatefulSet(name);
+                    return false;
+                }
+            });
+        LOGGER.debug("StatefulSet {} was deleted", name);
     }
 
     /**
@@ -428,6 +520,26 @@ public class StUtils {
         TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
         LOGGER.info("StatefulSet {} was recovered", name);
+    }
+
+    /**
+     * Wait until the given ReplicaSet has been deleted.
+     * @param name The name of the ReplicaSet
+     */
+    public static void waitForReplicaSetDeletion(String name) {
+        LOGGER.debug("Waiting for deletion of ReplicaSet of Deployment {}", name);
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+            () -> {
+                if (!kubeClient().replicaSetExists(name)) {
+                    return true;
+                } else {
+                    String rsName = kubeClient().getReplicaSetNameByPrefix(name);
+                    LOGGER.warn("ReplicaSet {} is not deleted yet!", rsName);
+                    kubeClient().deleteReplicaSet(rsName);
+                    return false;
+                }
+            });
+        LOGGER.debug("ReplicaSet of Deployment {} was deleted", name);
     }
 
     /**
@@ -512,8 +624,17 @@ public class StUtils {
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getPod(name) == null);
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+            () -> {
+                Pod pod = kubeClient().getPod(name);
+                if (pod == null) {
+                    return true;
+                } else {
+                    LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
+                    cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                    return false;
+                }
+            });
     }
 
     public static void waitForNamespaceDeletion(String name) {
@@ -601,14 +722,19 @@ public class StUtils {
         }
     }
 
-    public static void waitForReconciliation(String testClass, String testName, String nameSpace) {
+    public static void waitForReconciliation(String testClass, String testName, String namespace) {
         LOGGER.info("Waiting for reconciliation");
         String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
-        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till another rolling update starts", Constants.CO_OPERATION_TIMEOUT_POLL, Long.parseLong(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS) + 20000,
             () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator",
                     TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation),
-                        "'Triggering periodic reconciliation for namespace " + nameSpace + "'").isEmpty());
+                        "'Triggering periodic reconciliation for namespace " + namespace + "'").isEmpty());
         TimeMeasuringSystem.stopOperation(reconciliation);
+    }
+
+    public static void waitForRollingUpdateTimeout(String testClass, String testName, String logPattern, String operationID) {
+        TestUtils.waitFor("Wait till rolling update timeout", Constants.CO_OPERATION_TIMEOUT_POLL, Constants.CO_OPERATION_TIMEOUT_WAIT,
+            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
     }
 
     public static void waitForLoadBalancerService(String serviceName) {
@@ -705,5 +831,69 @@ public class StUtils {
             }
         }
         return currentTag;
+    }
+
+    public static void waitUntilAddressIsReachable(String address) {
+        LOGGER.info("Waiting till address {} is reachable", address);
+        TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    InetAddress.getByName(kubeClient().getService("my-cluster-kafka-external-bootstrap").getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                }
+            });
+        LOGGER.info("Address {} is reachable", address);
+    }
+
+    public static void waitUntilMessageIsInLogs(String podName, String containerName, String message) {
+        LOGGER.info("Waiting for message will be in the log");
+        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
+            () -> kubeClient().logs(podName, containerName).contains(message));
+    }
+
+    /**
+     * Method for check if test is allowed on current Kubernetes version
+     * @param desiredKubernetesVersion kubernetes version which test needs
+     * @return true if test is allowed, false if not
+     */
+    public static boolean isAllowedOnCurrentK8sVersion(String desiredKubernetesVersion) {
+        if (desiredKubernetesVersion.equals("latest")) {
+            return true;
+        }
+        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(desiredKubernetesVersion);
+    }
+
+    public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
+        byte[] encoded = new byte[0];
+        try {
+            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
+
+            Map<String, String> data = new HashMap<>();
+            Base64.Encoder encoder = Base64.getEncoder();
+            data.put(key, encoder.encodeToString(encoded));
+
+            Secret secret = new SecretBuilder()
+                    .withData(data)
+                    .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .endMetadata()
+                    .build();
+            kubeClient().namespace(namespace).createSecret(secret);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void createFileSinkConnector(String podName, String topicName) {
+        cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+                "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
+                        "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
+                        "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"/tmp/test-file-sink.txt\" } }' " +
+                        "http://localhost:8083/connectors"
+        );
     }
 }

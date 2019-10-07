@@ -36,8 +36,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
-            if (action == Action.ADDED && !initReconcileFuture.isComplete()) {
-                LOGGER.debug("Ignoring initial added event for {} {} during initial reconcile", kind, name);
+            if (!initReconcileFuture.isComplete()) {
+                LOGGER.debug("Ignoring initial event for {} {} during initial reconcile", kind, name);
                 return;
             }
             LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,

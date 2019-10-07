@@ -98,7 +98,7 @@ public class ZookeeperClusterTest {
             .withReadinessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
             .build();
 
-    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson))
+    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson, null))
             .editSpec()
                 .editZookeeper()
                     .withTlsSidecar(tlsSidecar)
@@ -133,20 +133,46 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateService() {
         Service headful = zc.generateService();
-        checkService(headful);
-        checkOwnerReference(zc.createOwnerReference(), headful);
-    }
 
-    private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
-        assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
-        assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
         assertEquals(zc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
+
+        checkOwnerReference(zc.createOwnerReference(), headful);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics() {
+        Kafka kafka = new KafkaBuilder(ka)
+                .editSpec()
+                    .editZookeeper()
+                        .withMetrics(null)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafka, VERSIONS);
+        Service headful = zc.generateService();
+
+        assertEquals("ClusterIP", headful.getSpec().getType());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
+        assertEquals(1, headful.getSpec().getPorts().size());
+        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"));
+
+        checkOwnerReference(zc.createOwnerReference(), headful);
     }
 
     @Test
@@ -877,6 +903,42 @@ public class ZookeeperClusterTest {
             assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
             assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsWithTemplate() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .withLabels(singletonMap("testLabel", "testValue"))
+                                    .withAnnotations(singletonMap("testAnno", "testValue"))
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                        .withDeleteClaim(false)
+                                        .withId(0)
+                                        .withSize("100Gi")
+                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                        .build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals("testValue", pvc.getMetadata().getLabels().get("testLabel"));
+            assertEquals("testValue", pvc.getMetadata().getAnnotations().get("testAnno"));
         }
     }
 

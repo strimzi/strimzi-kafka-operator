@@ -13,7 +13,7 @@ pipeline {
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
     }
     options {
-        timeout(time: 12, unit: 'HOURS')
+        timeout(time: 16, unit: 'HOURS')
         ansiColor('xterm')
     }
     environment {

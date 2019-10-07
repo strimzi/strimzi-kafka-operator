@@ -62,6 +62,16 @@ spec:
             authentication:
               type: object
               properties:
+                accessToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
                 certificateAndKey:
                   type: object
                   properties:
@@ -75,6 +85,20 @@ spec:
                   - certificate
                   - key
                   - secretName
+                clientId:
+                  type: string
+                clientSecret:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                disableTlsHostnameVerification:
+                  type: boolean
                 passwordSecret:
                   type: object
                   properties:
@@ -85,12 +109,37 @@ spec:
                   required:
                   - password
                   - secretName
+                refreshToken:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - key
+                  - secretName
+                tlsTrustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - certificate
+                    - secretName
+                tokenEndpointUri:
+                  type: string
                 type:
                   type: string
                   enum:
                   - tls
                   - scram-sha-512
                   - plain
+                  - oauth
                 username:
                   type: string
               required:
@@ -242,6 +291,13 @@ spec:
                                 type: string
                               value:
                                 type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0

@@ -69,6 +69,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -299,16 +300,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      */
     static String globalVariableJsonPathBuilder(String envVar) {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
-    }
-
-    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
-        LOGGER.info("Sending messages");
-        String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
-
-        LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
-
-        cmdKubeClient().execInPod(podName, "/bin/bash", "-c", command);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
@@ -664,9 +655,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
+     * This method is {@Deprecated} and it should be removed in the future. Instead of use this method, you should use method {@link io.strimzi.systemtest.utils.StUtils#waitForPodDeletion(String)}
+     * which should be used by default in deletion process for all components (it force pod deletion via executor instead of fabric8 client, which seems to be unstable).
      * @param time timeout in miliseconds
      * @throws Exception exception
      */
+    @Deprecated
     void waitForDeletion(long time) throws Exception {
         List<Pod> pods = kubeClient().listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
@@ -696,6 +690,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
+     * @param operationTimeout timeout for CO operations
+     */
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -708,7 +712,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources.clusterOperator(coNamespace).done();
+        testClassResources().clusterOperator(coNamespace, operationTimeout).done();
     }
 
     /**
@@ -790,25 +794,67 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param userName user name
      * @param namespace cluster namespace
      * @param clusterName cluster name
+     * @param topicName topic name
+     * @param messageCount message count which will be send and receive by consumer and producer
      * @throws Exception exception
      */
-    public void waitForClusterAvailabilityTls(String userName, String namespace, String clusterName) throws Exception {
-        int messageCount = 50;
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+    public void waitForClusterAvailabilityTls(String userName, String namespace, String clusterName, String topicName, int messageCount) throws InterruptedException, ExecutionException, TimeoutException {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
             Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes with SCRAM-SHA
+     * @param userName user name
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @param messageCount message count which will be send and receive by consumer and producer
+     * @throws Exception exception
+     */
+    public void waitForClusterAvailabilityScramSha(String userName, String namespace, String clusterName, String topicName, int messageCount) throws InterruptedException, ExecutionException, TimeoutException {
+        try (KafkaClient testClient = new KafkaClient()) {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL");
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, "SASL_SSL");
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes with TLS
+     * @param userName user name
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @throws Exception exception
+     */
+    public void waitForClusterAvailabilityTls(String userName, String namespace, String clusterName, String topicName) throws Exception {
+        waitForClusterAvailabilityTls(userName, namespace, clusterName, topicName, 50);
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes with TLS
+     * @param userName user name
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @throws Exception exception
+     */
+    public void waitForClusterAvailabilityTls(String userName, String namespace, String clusterName) throws Exception {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        waitForClusterAvailabilityTls(userName, namespace, clusterName, topicName);
     }
 
     /**
@@ -829,110 +875,115 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @throws Exception
      */
     public void waitForClusterAvailability(String namespace, String topicName) throws Exception {
+        waitForClusterAvailability(namespace, CLUSTER_NAME, topicName);
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @throws Exception
+     */
+    public void waitForClusterAvailability(String namespace, String clusterName, String topicName) throws Exception {
         int messageCount = 50;
 
-        KafkaClient testClient = new KafkaClient();
-        try {
-            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
-            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+        try (KafkaClient testClient = new KafkaClient()) {
+            Future producer = testClient.sendMessages(topicName, namespace, clusterName, messageCount);
+            Future consumer = testClient.receiveMessages(topicName, namespace, clusterName, messageCount);
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
+        }
+    }
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @param clusterName cluster name
+     * @param topicName topic name
+     * @param messageCount message count which will be send and receive by consumer and producer
+     * @throws Exception exception
+     */
+    public void waitForClusterAvailability(String namespace, String clusterName, String topicName, int messageCount) throws Exception {
+        try (KafkaClient testClient = new KafkaClient()) {
+            Future producer = testClient.sendMessages(topicName, namespace, clusterName, messageCount);
+            Future consumer = testClient.receiveMessages(topicName, namespace, clusterName, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 
     public void sendMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 
     public void sendMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 
     public void sendMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 
     public void receiveMessagesExternal(String namespace, String topicName, int messageCount) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 
     public void receiveMessagesExternalTls(String namespace, String topicName, int messageCount, String userName) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SSL");
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 
     public void receiveMessagesExternalScramSha(String namespace, String topicName, int messageCount, String userName) throws Exception {
-
-        KafkaClient testClient = new KafkaClient();
-        try {
+        try (KafkaClient testClient = new KafkaClient()) {
             Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
 
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            testClient.close();
         }
     }
 

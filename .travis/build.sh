@@ -37,7 +37,7 @@ if [ -n "$CHANGED_DERIVED" ] ; then
   echo "Run the following to add up-to-date resources:"
   echo "  mvn clean verify -DskipTests -DskipITs \\"
   echo "    && git add install/ helm-charts/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles"
-  echo "    && git commit -m 'Update derived resources'"
+  echo "    && git commit -s -m 'Update derived resources'"
   exit 1
 fi
 
@@ -46,6 +46,10 @@ if [ "$PULL_REQUEST" != "false" ] ; then
     make docu_html
     make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
+elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
+    make docu_html
+    make docu_htmlnoheader
+    echo "Building in a fork and not in a Strimzi repository. Will not attempt to push anything."
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_html
     make docu_htmlnoheader

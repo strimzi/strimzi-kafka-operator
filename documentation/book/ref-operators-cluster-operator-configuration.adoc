@@ -67,7 +67,7 @@ This is used when a `KafkaConnectS2I.spec.version` property is specified but not
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-mirror-maker[].
+This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:con-configuring-container-images-deployment-configuration-kafka-mirror-maker[].
 
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
 The image name to use as the default when deploying the topic operator,

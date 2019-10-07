@@ -1,12 +1,19 @@
 # CHANGELOG
 
+## 0.15.0
+
+* Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
+
 ## 0.14.0
 
 * Add support for configuring Ingress class (#1716)
 * Add support for setting custom environment variables in all containers
 * Add liveness and readiness checks to Mirror Maker
 * Allow configuring loadBalancerIP for LoadBalancer type services
+* Allow setting labels and annotations for Persistent Volume Claims
 * Add support for Jaeger tracing in Kafka Mirror Maker and Kafka Connect
+* Add support for deploying Kafka Exporter
+* Add initial support for OAuth authentication
 
 ## 0.13.0
 

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.14.0-SNAPSHOT</version>
+        <version>0.15.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>systemtest</artifactId>
@@ -99,9 +99,37 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>net.joshka</groupId>
+            <artifactId>junit-json-params</artifactId>
+            <version>${junit-json-params.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <version>${javax.json-api.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>${javax.json.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${json-path.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -137,19 +165,16 @@
             <version>${vertx.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
@@ -188,7 +213,6 @@
             <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance | regression | flaky | travis</groups>
             </properties>
         </profile>
         <profile>
@@ -222,15 +246,50 @@
         <profile>
             <id>scalability</id>
             <properties>
-                <skippTests>false</skippTests>
+                <skipTests>false</skipTests>
                 <groups>scalability &amp; !flaky</groups>
             </properties>
         </profile>
         <profile>
             <id>specific</id>
             <properties>
-                <skippTests>false</skippTests>
+                <skipTests>false</skipTests>
                 <groups>specific</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>nodeport</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>nodeport</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>loadbalancer</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>loadbalancer</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>networkpolicies</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>networkpolicies</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>prometheus</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>prometheus</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>tracing</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>tracing</groups>
             </properties>
         </profile>
     </profiles>

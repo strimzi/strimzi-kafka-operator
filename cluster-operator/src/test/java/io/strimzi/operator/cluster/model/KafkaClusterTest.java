@@ -30,7 +30,10 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -59,6 +62,7 @@ import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -160,11 +164,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateService() {
         Service headful = kc.generateService();
-        checkService(headful);
-        checkOwnerReference(kc.createOwnerReference(), headful);
-    }
 
-    private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(4, headful.getSpec().getPorts().size());
@@ -179,8 +179,42 @@ public class KafkaClusterTest {
         assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
         assertEquals(AbstractModel.METRICS_PORT_NAME, headful.getSpec().getPorts().get(3).getName());
         assertEquals(new Integer(KafkaCluster.METRICS_PORT), headful.getSpec().getPorts().get(3).getPort());
-        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
+        assertEquals("TCP", headful.getSpec().getPorts().get(3).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
+
+        checkOwnerReference(kc.createOwnerReference(), headful);
+    }
+
+    @Test
+    public void testGenerateServiceWithoutMetrics() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withMetrics(null)
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafka, VERSIONS);
+        Service headful = kc.generateService();
+
+        assertEquals("ClusterIP", headful.getSpec().getType());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
+        assertEquals(3, headful.getSpec().getPorts().size());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_TLS_PORT_NAME, headful.getSpec().getPorts().get(2).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_TLS_PORT), headful.getSpec().getPorts().get(2).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
+
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"));
+        assertFalse(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"));
+
+        checkOwnerReference(kc.createOwnerReference(), headful);
     }
 
     @Test
@@ -1231,6 +1265,41 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testReplicationPortNetworkPolicy() {
+        NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)))
+                .endPodSelector()
+                .build();
+
+        NetworkPolicyPeer peer2 = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster)))
+                .endPodSelector()
+                .build();
+
+        NetworkPolicyPeer peer3 = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster)))
+                .endPodSelector()
+                .build();
+
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy();
+
+        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+
+        assertEquals(3, rules.size());
+        assertTrue(rules.contains(peer1));
+        assertTrue(rules.contains(peer2));
+        assertTrue(rules.contains(peer3));
+    }
+
+    @Test
     public void testNetworkPolicyPeers() {
         NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -1867,6 +1936,52 @@ public class KafkaClusterTest {
             assertTrue(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME));
             assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsJbodWithTemplate() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .withLabels(singletonMap("testLabel", "testValue"))
+                                    .withAnnotations(singletonMap("testAnno", "testValue"))
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new JbodStorageBuilder().withVolumes(
+                            new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                    .withDeleteClaim(false)
+                                    .withId(0)
+                                    .withSize("100Gi")
+                                    .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                    .build(),
+                            new PersistentClaimStorageBuilder()
+                                    .withStorageClass("gp2-st1")
+                                    .withDeleteClaim(true)
+                                    .withId(1)
+                                    .withSize("1000Gi")
+                                    .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-st1-az1").build())
+                                    .build())
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertEquals(6, pvcs.size());
+
+        for (int i = 0; i < 6; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals("testValue", pvc.getMetadata().getLabels().get("testLabel"));
+            assertEquals("testValue", pvc.getMetadata().getAnnotations().get("testAnno"));
         }
     }
 
@@ -2528,5 +2643,293 @@ public class KafkaClusterTest {
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
+    }
+
+
+
+
+
+
+
+
+
+
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithClientSecret() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .build())
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
+        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-client-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection"),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithJwks() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                            .withAuth(
+                                    new KafkaListenerAuthenticationOAuthBuilder()
+                                            .withValidIssuerUri("http://valid-issuer")
+                                            .withJwksEndpointUri("http://jwks-endpoint")
+                                            .withJwksExpirySeconds(60)
+                                            .withJwksRefreshSeconds(50)
+                                            .withUserNameClaim("preferred_username")
+                                            .build())
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint",
+                        ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50,
+                        ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 60,
+                        ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username"),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithClientSecretAndTls() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .withDisableTlsHostnameVerification(true)
+                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                .build())
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
+        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-client-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection",
+                        ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+
+        // Volume mounts
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/client", cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/client", cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath());
+
+        // Volumes
+        assertEquals(2, sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
+        assertEquals("ca.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
+        assertEquals("first-certificate/ca.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
+        assertEquals("ca2.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getKey());
+        assertEquals("first-certificate/ca2.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getPath());
+        assertEquals(1, sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
+        assertEquals("tls.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
+        assertEquals("second-certificate/tls.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthEverywhere() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .withDisableTlsHostnameVerification(true)
+                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                .build())
+                            .endPlain()
+                            .withNewTls()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .withDisableTlsHostnameVerification(true)
+                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                .build())
+                            .endTls()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .withDisableTlsHostnameVerification(true)
+                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                .build())
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
+        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-client-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection",
+                        ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
+        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-client-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection",
+                        ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+
+        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue());
+        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
+        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
+        assertEquals(
+                String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-client-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection",
+                        ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""),
+                cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim()
+        );
+
+        // Volume mounts
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/client", cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("client")).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/client", cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("client")).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/clienttls", cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("clienttls")).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/clienttls", cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("clienttls")).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/external", cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("external")).findFirst().orElse(null).getMountPath());
+        assertEquals(KafkaCluster.OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/external", cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName()) && mount.getMountPath().endsWith("external")).findFirst().orElse(null).getMountPath());
+
+        // Volumes
+        assertEquals(2, sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
+        assertEquals("ca.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
+        assertEquals("first-certificate/ca.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
+        assertEquals("ca2.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getKey());
+        assertEquals("first-certificate/ca2.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getPath());
+        assertEquals(1, sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
+        assertEquals("tls.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
+        assertEquals("second-certificate/tls.crt", sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
     }
 }

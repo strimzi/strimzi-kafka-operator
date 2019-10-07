@@ -9,7 +9,6 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-  imagePullPolicy: IfNotPresent
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
@@ -77,6 +76,11 @@ kafkaBridge:
     repository: strimzi
     name: kafka-bridge
     tag: latest
+kafkaExporter:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
 resources:
   limits:
     memory: 256Mi

@@ -52,9 +52,10 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -79,10 +80,12 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.AbstractST.CLUSTER_NAME;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -166,7 +169,6 @@ public class Resources extends AbstractResources {
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    client().deleteDeployment(resource.getMetadata().getName());
                     waitForDeletion((Deployment) resource);
                 });
                 break;
@@ -367,6 +369,8 @@ public class Resources extends AbstractResources {
                 .editZookeeper()
                     .withReplicas(zookeeperReplicas)
                 .endZookeeper()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
             .endSpec();
     }
 
@@ -391,7 +395,27 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
+    /**
+     * This method is used for deploy specific Kafka cluster without wait for all resources.
+     * It can be use for example for deploy Kafka cluster with unsupported Kafka version.
+     * @param kafka kafka cluster specification
+     * @return kafka cluster specification
+     */
+    public Kafka kafkaWithoutWait(Kafka kafka) {
+        kafka().inNamespace(client().getNamespace()).createOrReplace(kafka);
+        return kafka;
+    }
+
+    /**
+     * This method is used for delete specific Kafka cluster without wait for all resources deletion.
+     * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
+     * @param kafka kafka cluster specification
+     */
+    public void deleteKafkaWithoutWait(Kafka kafka) {
+        kafka().inNamespace(client().getNamespace()).delete(kafka);
+    }
+
+    public DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
         return kafkaConnect(defaultKafkaConnect(name, kafkaConnectReplicas).build());
     }
 
@@ -426,6 +450,46 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
+    public DoneableKafkaConnect kafkaConnectWithTracing(String name) {
+        Map<String, Object> configOfKafkaConnect = new HashMap<>();
+        configOfKafkaConnect.put("config.storage.replication.factor", "1");
+        configOfKafkaConnect.put("offset.storage.replication.factor", "1");
+        configOfKafkaConnect.put("status.storage.replication.factor", "1");
+        configOfKafkaConnect.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnect.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+        configOfKafkaConnect.put("key.converter.schemas.enable", "false");
+        configOfKafkaConnect.put("value.converter.schemas.enable", "false");
+
+        return kafkaConnect(defaultKafkaConnect(name, 1)
+                .editSpec()
+                    .withConfig(configOfKafkaConnect)
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withNewTemplate()
+                        .withNewConnectContainer()
+                            .addNewEnv()
+                                .withName("JAEGER_SERVICE_NAME")
+                                .withValue("my-target-connect")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue("my-jaeger-agent")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue("const")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue("1")
+                            .endEnv()
+                        .endConnectContainer()
+                    .endTemplate()
+                .endSpec()
+                .build());
+    }
+
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
             TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
@@ -449,15 +513,14 @@ public class Resources extends AbstractResources {
 
     /**
      * Method to create Kafka Connect S2I using OpenShift client. This method can only be used if you run system tests on the OpenShift platform because of adapting fabric8 client to ({@link OpenShiftClient}) on waiting stage.
-     * @param name Kafka Connect S2I name
      * @param kafkaConnectS2IReplicas the number of replicas
      * @return Kafka Connect S2I
      */
-    DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
-        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaConnectS2IReplicas, kafkaClusterName).build());
+    DoneableKafkaConnectS2I kafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
+        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaClusterName, kafkaConnectS2IReplicas).build());
     }
 
-    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas, String kafkaClusterName) {
+    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
@@ -491,7 +554,7 @@ public class Resources extends AbstractResources {
         });
     }
 
-    DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+    public DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return kafkaMirrorMaker(defaultMirrorMaker(name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
@@ -556,6 +619,12 @@ public class Resources extends AbstractResources {
             StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
             LOGGER.info("Entity Operator pods are ready");
         }
+        // Kafka Exporter is not setup everytime
+        if (kafka.getSpec().getKafkaExporter() != null) {
+            LOGGER.info("Waiting for Kafka Exporter pods");
+            StUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(name));
+            LOGGER.info("Kafka Exporter pods are ready");
+        }
         return kafka;
     }
 
@@ -595,31 +664,52 @@ public class Resources extends AbstractResources {
     }
 
     private void waitForDeletion(Kafka kafka) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
+        String kafkaClusterName = kafka.getMetadata().getName();
+        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafkaClusterName);
+
+        StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+
+        StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+                StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
+
+        // Wait for EO deletion
+        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
+        StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+
+        // Wait for Kafka Exporter deletion
+        StUtils.waitForDeploymentDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+        StUtils.waitForReplicaSetDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-kafka-exporter"))
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
 
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
 
-        client().deleteDeploymentConfig(KafkaConnectS2IResources.buildConfigName(kafkaConnectS2I.getMetadata().getName()));
+        StUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains("-connect-"))
@@ -632,27 +722,36 @@ public class Resources extends AbstractResources {
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
 
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
-        client().getClient().apps().deployments().inNamespace(kafkaBridge.getMetadata().getNamespace()).withName(kafkaBridge.getMetadata().getName()).delete();
+
+        StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
+        StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(Deployment deployment) {
         LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
 
+        StUtils.waitForDeploymentDeletion(deployment.getMetadata().getName());
+
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
-                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
+    @Deprecated
     private void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} in namespace {} will be deleted", name, client().getNamespace());
 
@@ -748,14 +847,14 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, "300000");
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+    public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
         return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
-    private DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -778,7 +877,7 @@ public class Resources extends AbstractResources {
                     envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(operationTimeout);
+                    envVar.setValue(Long.toString(operationTimeout));
                     break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
@@ -790,11 +889,12 @@ public class Resources extends AbstractResources {
                     }
             }
         }
+
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.IMAGE_PULL_POLICY, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
@@ -803,6 +903,7 @@ public class Resources extends AbstractResources {
                         .editSpec()
                             .editFirstContainer()
                                 .withImage(StUtils.changeOrgAndTag(coImage))
+                                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY)
                             .endContainer()
                         .endSpec()
                     .endTemplate()
@@ -944,7 +1045,7 @@ public class Resources extends AbstractResources {
         return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 
-    DoneableDeployment deployKafkaClients(String kafkaClientsName) {
+    public DoneableDeployment deployKafkaClients(String kafkaClientsName) {
         return deployKafkaClients(false, kafkaClientsName, null);
     }
 
@@ -1045,7 +1146,7 @@ public class Resources extends AbstractResources {
                 .withImage(Environment.TEST_CLIENT_IMAGE)
                 .withCommand("sleep")
                 .withArgs("infinity")
-                .withImagePullPolicy("IfNotPresent");
+                .withImagePullPolicy(Environment.IMAGE_PULL_POLICY);
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
@@ -1226,4 +1327,216 @@ public class Resources extends AbstractResources {
                     kB));
         });
     }
+
+    public DoneableDeployment consumerWithTracing(String bootstrapServer) {
+        String consumerName = "hello-world-consumer";
+
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", consumerName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(consumerLabels)
+                        .withName(consumerName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(consumerLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(consumerLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(consumerName)
+                                    .withImage("strimzi/" + consumerName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("GROUP_ID")
+                                        .withValue("my-" + consumerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue("1000000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(consumerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
+    public DoneableDeployment producerWithTracing(String bootstrapServer) {
+        String producerName = "hello-world-producer";
+
+        Map<String, String> producerLabels = new HashMap<>();
+        producerLabels.put("app", producerName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(producerLabels)
+                        .withName(producerName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(producerLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(producerLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(producerName)
+                                    .withImage("strimzi/" + producerName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue("1000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue("1000000")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(producerName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
+    public DoneableDeployment kafkaStreamsWithTracing(String bootstrapServer) {
+        String kafkaStreamsName = "hello-world-streams";
+
+        Map<String, String> kafkaStreamLabels = new HashMap<>();
+        kafkaStreamLabels.put("app", kafkaStreamsName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                    .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withLabels(kafkaStreamLabels)
+                        .withName(kafkaStreamsName)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewSelector()
+                            .withMatchLabels(kafkaStreamLabels)
+                        .endSelector()
+                        .withReplicas(1)
+                        .withNewTemplate()
+                            .withNewMetadata()
+                                .withLabels(kafkaStreamLabels)
+                            .endMetadata()
+                            .withNewSpec()
+                                .withContainers()
+                                .addNewContainer()
+                                    .withName(kafkaStreamsName)
+                                    .withImage("strimzi/" + kafkaStreamsName + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapServer)
+                                      .endEnv()
+                                    .addNewEnv()
+                                        .withName("APPLICATION_ID")
+                                        .withValue(kafkaStreamsName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("SOURCE_TOPIC")
+                                        .withValue("my-topic")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TARGET_TOPIC")
+                                        .withValue("cipot-ym")
+                                    .endEnv()
+                                      .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("INFO")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SERVICE_NAME")
+                                        .withValue(kafkaStreamsName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_AGENT_HOST")
+                                        .withValue("my-jaeger-agent")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_TYPE")
+                                        .withValue("const")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("JAEGER_SAMPLER_PARAM")
+                                        .withValue("1")
+                                    .endEnv()
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
+                    .endSpec()
+                    .build());
+    }
+
 }
