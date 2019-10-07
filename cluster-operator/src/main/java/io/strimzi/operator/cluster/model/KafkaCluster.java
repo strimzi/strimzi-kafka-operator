@@ -413,6 +413,8 @@ public class KafkaCluster extends AbstractModel {
 
         if (oldStorage != null) {
             Storage newStorage = kafkaClusterSpec.getStorage();
+            AbstractModel.validatePersistentStorage(newStorage);
+
             StorageDiff diff = new StorageDiff(oldStorage, newStorage);
 
             if (!diff.isEmpty()) {
