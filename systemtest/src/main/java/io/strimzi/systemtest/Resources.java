@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
@@ -368,6 +369,8 @@ public class Resources extends AbstractResources {
                 .editZookeeper()
                     .withReplicas(zookeeperReplicas)
                 .endZookeeper()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
             .endSpec();
     }
 
@@ -596,6 +599,12 @@ public class Resources extends AbstractResources {
             StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
             LOGGER.info("Entity Operator pods are ready");
         }
+        // Kafka Exporter is not setup everytime
+        if (kafka.getSpec().getKafkaExporter() != null) {
+            LOGGER.info("Waiting for Kafka Exporter pods");
+            StUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(name));
+            LOGGER.info("Kafka Exporter pods are ready");
+        }
         return kafka;
     }
 
@@ -648,11 +657,20 @@ public class Resources extends AbstractResources {
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
                 StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
 
+        // Wait for EO deletion
         StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
         StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+
+        // Wait for Kafka Exporter deletion
+        StUtils.waitForDeploymentDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+        StUtils.waitForReplicaSetDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
+
+        client().listPods().stream()
+                .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-kafka-exporter"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
@@ -1007,7 +1025,7 @@ public class Resources extends AbstractResources {
         return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 
-    DoneableDeployment deployKafkaClients(String kafkaClientsName) {
+    public DoneableDeployment deployKafkaClients(String kafkaClientsName) {
         return deployKafkaClients(false, kafkaClientsName, null);
     }
 

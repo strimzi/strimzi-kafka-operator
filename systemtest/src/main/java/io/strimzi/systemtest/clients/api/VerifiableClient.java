@@ -153,7 +153,7 @@ public class VerifiableClient {
      * @return exit status of client
      */
     public boolean run() {
-        return runClient(60000, true);
+        return runClient(120_000, true);
     }
 
     /**
