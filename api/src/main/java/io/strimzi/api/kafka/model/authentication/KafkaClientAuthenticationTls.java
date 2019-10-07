@@ -7,12 +7,14 @@ package io.strimzi.api.kafka.model.authentication;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
  * Configures the Kafka client authentication using TLS client authentication in client based components
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,

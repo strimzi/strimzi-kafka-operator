@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -16,6 +17,7 @@ import java.util.List;
 /**
  * Configures the Kafka client authentication using SASl OAUTHBEARER mechanism in client based components
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,

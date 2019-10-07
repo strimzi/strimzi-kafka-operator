@@ -1376,6 +1376,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationTls` from xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
@@ -1410,6 +1411,7 @@ Used in: xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthentica
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationScramSha512` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `scram-sha-512` for the type `KafkaClientAuthenticationScramSha512`.
@@ -1444,6 +1446,7 @@ Used in: xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenti
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationPlain` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
@@ -1463,6 +1466,7 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
+include::api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationOAuth` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
@@ -1994,6 +1998,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
+include::api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=+1]
 
 [options="header"]
 |====

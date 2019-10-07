@@ -20,7 +20,6 @@ This chapter describes how to configure the `KafkaMirrorMaker` resource to suppo
 The following procedures show how the resource is configured:
 
 * xref:configuring-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker]
-* xref:assembly-access-configuration-kafka-mirror-maker-{context}[Configuring Kafka Mirror Maker encryption and authentication]
 
 Supported properties are also described in more detail for your reference:
 
@@ -32,8 +31,6 @@ NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Ku
 This provides a convenient mechanism for resources to be labeled as required.
 
 include::proc-configuring-mirror-maker.adoc[leveloffset=+1]
-
-include::assembly-access-configuration-kafka-mirror-maker.adoc[leveloffset=+1]
 
 include::con-configuring-mirror-maker.adoc[leveloffset=+1]
 
