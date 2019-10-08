@@ -74,7 +74,7 @@ public class KafkaUserOperatorTest {
 
         when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
@@ -149,7 +149,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -229,7 +229,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -287,7 +287,7 @@ public class KafkaUserOperatorTest {
         when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
 
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
@@ -347,7 +347,7 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Async async = context.async();
         op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME)).setHandler(res -> {
@@ -377,7 +377,7 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps,
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps,
                 ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
@@ -451,7 +451,7 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
@@ -525,7 +525,7 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -609,13 +609,14 @@ public class KafkaUserOperatorTest {
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
+                Labels.userLabels(ResourceUtils.LABELS),
                 mockSecretOps, scramOps,
                 aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser user) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
                 Future<Void> h = Future.future();
-                createdOrUpdated.add(user.getMetadata().getName());
+                createdOrUpdated.add(resource.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
                 return h;
@@ -631,7 +632,7 @@ public class KafkaUserOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Connect clusters
-        op.reconcileAll("test", ResourceUtils.NAMESPACE, Labels.userLabels(ResourceUtils.LABELS));
+        op.reconcileAll("test", ResourceUtils.NAMESPACE, ignored -> { });
 
         async.await();
 
@@ -647,7 +648,7 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
@@ -718,7 +719,9 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
+                Labels.userLabels(ResourceUtils.LABELS),
+                mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretScramSha();
         String password = new String(Base64.getDecoder().decode(userCert.getData().get(KafkaUserModel.KEY_PASSWORD)));
@@ -790,7 +793,9 @@ public class KafkaUserOperatorTest {
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
         ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
+                Labels.userLabels(ResourceUtils.LABELS),
+                mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretTls();
 
@@ -855,7 +860,9 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
         when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
+                Labels.userLabels(ResourceUtils.LABELS),
+                mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Async async = context.async();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user).setHandler(res -> {
@@ -890,7 +897,9 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
         when(mockCrdOps.updateStatusAsync(userCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
+                Labels.userLabels(ResourceUtils.LABELS),
+                mockSecretOps, scramOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Async async = context.async();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user).setHandler(res -> {

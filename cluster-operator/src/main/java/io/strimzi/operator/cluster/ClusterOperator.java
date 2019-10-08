@@ -18,7 +18,9 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOper
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.Watchy;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -159,13 +161,14 @@ public class ClusterOperator extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAll(String trigger) {
-        kafkaAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace);
+        Handler<AsyncResult<Void>> ignore = ignored -> { };
+        kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
 
         if (kafkaConnectS2IAssemblyOperator != null) {
-            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace);
+            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         }
     }
 

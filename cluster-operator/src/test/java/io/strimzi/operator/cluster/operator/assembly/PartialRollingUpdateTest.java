@@ -124,7 +124,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             createAsync.complete();
         });
@@ -185,7 +185,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 4; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, i)).get();
@@ -209,7 +209,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
@@ -239,7 +239,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
@@ -272,7 +272,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 4; i++) {

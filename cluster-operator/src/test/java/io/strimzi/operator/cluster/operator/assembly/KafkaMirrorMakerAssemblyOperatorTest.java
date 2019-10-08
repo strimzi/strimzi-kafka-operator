@@ -633,7 +633,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMaker foo = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, "foo", image, producer, consumer, whitelist, metricsCm);
         KafkaMirrorMaker bar = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, "bar", image, producer, consumer, whitelist, metricsCm);
 
-        when(mockMirrorOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        when(mockMirrorOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Mirror Maker cluster
         when(mockMirrorOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockMirrorOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
@@ -675,7 +675,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Mirror Maker clusters
-        ops.reconcileAll("test", clusterCmNamespace);
+        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
 
         async.await();
 

@@ -93,7 +93,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertNotNull(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get());
@@ -112,7 +112,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = createConnectCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();

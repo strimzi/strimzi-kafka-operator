@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -30,8 +31,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Operator for a Kafka Users.
@@ -46,6 +50,7 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
     private final String caKeyName;
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
+    private final Labels selector;
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -57,6 +62,7 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
      * @param vertx The Vertx instance.
      * @param certManager For managing certificates.
      * @param crdOperator For operating on Custom Resources.
+     * @param selector A selector for which users in the namespace to consider as the operators
      * @param secretOperations For operating on Secrets.
      * @param scramShaCredentialOperator For operating on SCRAM SHA credentials.
      * @param aclOperations For operating on ACLs.
@@ -67,11 +73,13 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
+                             Labels selector,
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
         super(vertx, "User", crdOperator);
         this.certManager = certManager;
+        this.selector = selector;
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
         this.aclOperations = aclOperations;
@@ -81,15 +89,26 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
     }
 
     @Override
-    protected Future<Set<String>> allResourceNames(String namespace, Labels selector) {
-        return CompositeFuture.join(super.allResourceNames(namespace, selector),
+    public Labels selector() {
+        return selector;
+    }
+
+    @Override
+    public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
+        return CompositeFuture.join(super.allResourceNames(namespace),
                 invokeAsync(aclOperations::getUsersWithAcls),
                 invokeAsync(scramShaCredentialOperator::list)).map(compositeFuture -> {
-                    Set<String> names = compositeFuture.resultAt(0);
-                    names.addAll(compositeFuture.resultAt(1));
-                    names.addAll(compositeFuture.resultAt(2));
+                    Set<NamespaceAndName> names = compositeFuture.resultAt(0);
+                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
+                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));
                     return names;
                 });
+    }
+
+    List<NamespaceAndName> toResourceRef(String namespace, Collection<String> names) {
+        return names.stream()
+                .map(name -> new NamespaceAndName(namespace, name))
+                .collect(Collectors.toList());
     }
 
     private <T> Future<T> invokeAsync(Supplier<T> getter) {
@@ -111,11 +130,11 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
-     * @param cr KafkaUser resources with the desired user configuration.
+     * @param resource KafkaUser resources with the desired user configuration.
      * @return a Future
      */
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser cr) {
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
         Future<Void> handler = Future.future();
         Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
         Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
@@ -127,10 +146,10 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
         KafkaUserModel user;
         KafkaUserStatus userStatus = new KafkaUserStatus();
         try {
-            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, cr, clientsCaCert, clientsCaKey, userSecret);
+            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
-            StatusUtils.setStatusConditionAndObservedGeneration(cr, userStatus, Future.failedFuture(e));
-            updateStatus(cr, reconciliation, userStatus)
+            StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
+            updateStatus(resource, reconciliation, userStatus)
                     .setHandler(result -> handler.handle(Future.failedFuture(e)));
             return handler;
         }
@@ -158,10 +177,10 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
                 .setHandler(reconciliationResult -> {
-                    StatusUtils.setStatusConditionAndObservedGeneration(cr, userStatus, reconciliationResult.mapEmpty());
+                    StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getName());
 
-                    updateStatus(cr, reconciliation, userStatus).setHandler(statusResult -> {
+                    updateStatus(resource, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
                         // If one or both of them failed, we prefer the reconciliation failure as the main error
                         if (reconciliationResult.succeeded() && statusResult.succeeded()) {

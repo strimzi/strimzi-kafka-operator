@@ -11,31 +11,32 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
+import io.strimzi.api.kafka.model.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.TopicOperatorSpec;
+import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.TopicOperatorSpec;
-import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -47,7 +48,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
@@ -1085,8 +1085,8 @@ public class KafkaAssemblyOperatorTest {
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
-        when(mockKafkaOps.list(eq(clusterCmNamespace), any())).thenReturn(
-            asList(foo, bar)
+        when(mockKafkaOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(
+            Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
@@ -1151,7 +1151,9 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", clusterCmNamespace).await();
+        ops.reconcileAll("test", clusterCmNamespace,
+            ignored -> { }
+        );
 
         async.await();
 
@@ -1173,8 +1175,8 @@ public class KafkaAssemblyOperatorTest {
         foo.getMetadata().setNamespace("namespace1");
         Kafka bar = getKafkaAssembly("bar");
         bar.getMetadata().setNamespace("namespace2");
-        when(mockKafkaOps.list(eq("*"), any())).thenReturn(
-                asList(foo, bar)
+        when(mockKafkaOps.listAsync(eq("*"), any())).thenReturn(
+                Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
@@ -1230,9 +1232,11 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", "*").await();
+        ops.reconcileAll("test", "*",
+            ignored -> { }
+        );
 
-        async.await();
+        async.await(30_000);
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
     }

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -260,7 +261,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            return tldrNonNamespaceOperation.withLabels(labels)
+            FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
+            return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
         } else {

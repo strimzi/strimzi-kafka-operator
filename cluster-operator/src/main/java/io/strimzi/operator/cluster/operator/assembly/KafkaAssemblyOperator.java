@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -26,6 +27,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
+import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -103,6 +105,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -2721,5 +2724,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private Date dateSupplier() {
         return new Date();
+    }
+
+    /**
+     * @param current Previous ConfigMap
+     * @param desired Desired ConfigMap
+     * @return Returns true if only metrics settings has been changed
+     */
+    public boolean onlyMetricsSettingChanged(ConfigMap current, ConfigMap desired) {
+        if ((current == null && desired != null) || (current != null && desired == null)) {
+            // Metrics were added or deleted. We want rolling update
+            return false;
+        }
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
+        boolean onlyMetricsSettingChanged = false;
+        for (JsonNode d : diff) {
+            if (d.get("path").asText().equals("/data/metrics-config.yml") && d.get("op").asText().equals("replace")) {
+                onlyMetricsSettingChanged = true;
+            }
+        }
+        return onlyMetricsSettingChanged && diff.size() == 1;
     }
 }

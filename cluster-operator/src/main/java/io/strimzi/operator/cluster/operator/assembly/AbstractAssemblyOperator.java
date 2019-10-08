@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -14,21 +12,20 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.zjsonpatch.JsonDiff;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Operator;
+import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
+import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -40,7 +37,6 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
@@ -48,11 +44,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -65,7 +58,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
-    implements Watchy {
+    implements Operator, Watchy {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
@@ -120,6 +113,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
+    @Override
+    public String kind() {
+        return kind;
+    }
+
     /**
      * Gets the name of the lock to be used for operating on the given {@code assemblyType}, {@code namespace} and
      * cluster {@code name}
@@ -163,9 +161,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * <li>An assembly will be deleted automatically by garbage collection when the custom resoruce is deleted</li>
      * </ul>
      * @param reconciliation The reconciliation.
-     * @param handler The result handler.
+     * @return A Future which is completed when the assembly was reconciled.
      */
-    public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    @Override
+    public final Future<Void> reconcile(Reconciliation reconciliation) {
+        Future<Void> handler = Future.future();
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.name();
         final String lockName = getLockName(namespace, assemblyName);
@@ -210,6 +210,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 log.debug("{}: Failed to acquire lock {}.", reconciliation, lockName);
             }
         });
+        Future<Void> result = Future.future();
+        handler.setHandler(reconcileResult -> {
+            handleResult(reconciliation, reconcileResult);
+            result.handle(reconcileResult);
+        });
+        return result;
     }
 
     /**
@@ -224,42 +230,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         }
     }
 
-
-    /**
-     * Reconcile assembly resources in the given namespace having the given selector.
-     * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
-     * comparing with the corresponding resources}.
-     * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created} for all Custom Resource without same-named resources</li>
-     * <li>An assembly will be deleted automatically by the garbage collection when the Custom Resource is deleted</li>
-     * </ul>
-     *
-     * @param trigger A description of the triggering event (timer or watch), used for logging
-     * @param namespace The namespace
-     * @return A latch for knowing when reconciliation is complete.
-     */
-    public final CountDownLatch reconcileAll(String trigger, String namespace) {
-
-        // get Kafka CustomResources (or Connect, Connect-s2i, or Mirror Maker)
-        List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
-        Set<NamespaceAndName> desiredNames = desiredResources.stream()
-                .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
-                .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", kind, trigger, Labels.EMPTY, desiredNames);
-
-        // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
-        // Using futures would be more complex for no benefit
-        CountDownLatch latch = new CountDownLatch(desiredNames.size());
-
-        for (NamespaceAndName name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, kind, name.getNamespace(), name.getName());
-            reconcileAssembly(reconciliation, result -> {
-                handleResult(reconciliation, result);
-                latch.countDown();
-            });
-        }
-
-        return latch;
+    public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
+        return resourceOperator.listAsync(namespace, selector())
+            .map(resourceList ->
+                    resourceList.stream()
+                    .map(resource -> new NamespaceAndName(resource.getMetadata().getNamespace(), resource.getMetadata().getName()))
+                    .collect(Collectors.toSet()));
     }
 
     /**
@@ -271,38 +247,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     @Override
     public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
-        vertx.<Watch>executeBlocking(
+        vertx.executeBlocking(
             future -> {
-                Watch watch = resourceOperator.watch(watchNamespace, new Watcher<T>() {
-                    @Override
-                    public void eventReceived(Action action, T cr) {
-                        String name = cr.getMetadata().getName();
-                        String resourceNamespace = cr.getMetadata().getNamespace();
-                        switch (action) {
-                            case ADDED:
-                            case DELETED:
-                            case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", kind, resourceNamespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, resourceNamespace, action);
-                                reconcileAssembly(reconciliation, result -> {
-                                    handleResult(reconciliation, result);
-                                });
-                                break;
-                            case ERROR:
-                                log.error("Failed {} {} in namespace{} ", kind, name, resourceNamespace);
-                                reconcileAll("watch error", watchNamespace);
-                                break;
-                            default:
-                                log.error("Unknown action: {} in namespace {}", name, resourceNamespace);
-                                reconcileAll("watch unknown", watchNamespace);
-                        }
-                    }
-
-                    @Override
-                    public void onClose(KubernetesClientException e) {
-                        onClose.accept(e);
-                    }
-                });
+                Watch watch = resourceOperator.watch(watchNamespace, new OperatorWatcher<>(this, watchNamespace, onClose));
                 future.complete(watch);
             }, result
         );
@@ -323,26 +270,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }
-    }
-
-    /**
-     * @param current Previsous ConfigMap
-     * @param desired Desired ConfigMap
-     * @return Returns true if only metrics settings has been changed
-     */
-    public boolean onlyMetricsSettingChanged(ConfigMap current, ConfigMap desired) {
-        if ((current == null && desired != null) || (current != null && desired == null)) {
-            // Metrics were added or deleted. We want rolling update
-            return false;
-        }
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
-        boolean onlyMetricsSettingChanged = false;
-        for (JsonNode d : diff) {
-            if (d.get("path").asText().equals("/data/metrics-config.yml") && d.get("op").asText().equals("replace")) {
-                onlyMetricsSettingChanged = true;
-            }
-        }
-        return onlyMetricsSettingChanged && diff.size() == 1;
     }
 
 }

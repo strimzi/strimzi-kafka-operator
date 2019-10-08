@@ -573,7 +573,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         KafkaBridge bar = ResourceUtils.createKafkaBridgeCluster(clusterCmNamespace, "bar", image, 1,
                 BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, metricsCm);
 
-        when(mockBridgeOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        when(mockBridgeOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(Future.succeededFuture(asList(foo, bar)));
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(bar));
         when(mockBridgeOps.updateStatusAsync(any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         // when requested ConfigMap for a specific Kafka Bridge cluster
@@ -616,7 +616,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Bridge clusters
-        ops.reconcileAll("test", clusterCmNamespace);
+        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
 
         async.await();
 

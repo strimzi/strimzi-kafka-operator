@@ -666,7 +666,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         KafkaConnectS2I foo = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "foo");
         KafkaConnectS2I bar = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "bar");
-        when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        when(mockConnectOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Connect S2I cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
@@ -704,7 +704,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
-        ops.reconcileAll("test", clusterCmNamespace);
+        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
 
         async.await();
 
