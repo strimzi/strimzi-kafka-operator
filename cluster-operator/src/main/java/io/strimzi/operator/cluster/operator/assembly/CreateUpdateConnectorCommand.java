@@ -22,22 +22,25 @@ public class CreateUpdateConnectorCommand {
 
     private Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate = resp -> {
         int statusCode = resp.statusCode();
+        log.info(">>> statusCode: " + statusCode);
         if (statusCode == 200 || statusCode == 201) {
             return ResponsePredicateResult.success();
         }
         return ResponsePredicateResult.failure("Does not work");
     };
 
-    public Future<Void> run(int port, String ip, String path, KafkaConnector kafkaConnector, String name, Vertx vertx) {
+    public Future<Void> run(KafkaConnector kafkaConnector, String name, Vertx vertx) {
         Future<Void> updateRun = Future.future();
         log.info("Calling Kafka Connect API");
         JsonObject connectorConfigJson = new JsonObject().put("connector.class", kafkaConnector.getSpec().getClassName())
                 .put("tasks.max", kafkaConnector.getSpec().getTasksMax())
-                .put("topics", kafkaConnector.getSpec().getTopics());
+                .put("topic", "test-topic");
         kafkaConnector.getSpec().getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
+
+        log.info(">>>> Connector config JSON: " + connectorConfigJson.encode());
         
         WebClient.create(vertx)
-                .put(port, ip, path + "/" + name + "/config")
+                .putAbs(kafkaConnector.getSpec().getConnectCluster().getUrl() + "/connectors/" + name + "/config")
                 .as(BodyCodec.jsonObject())
                 .putHeader("Accept", "application/json")
                 .putHeader("Content-Type", "application/json")
@@ -48,8 +51,7 @@ public class CreateUpdateConnectorCommand {
                         log.info(asyncResult.result().body());
                         updateRun.complete();
                     } else if (asyncResult.failed()) {
-                        log.error("PUT - Kafka Connector Error");
-                        log.error(asyncResult.cause().getMessage());
+                        log.error(">>>>> PUT - Kafka Connector Error", asyncResult.cause());
                         updateRun.fail(asyncResult.cause());
                     }
                 });

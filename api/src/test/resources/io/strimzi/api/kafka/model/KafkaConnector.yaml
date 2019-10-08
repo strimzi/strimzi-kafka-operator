@@ -4,7 +4,7 @@ metadata:
   name: test-source
 spec:
   connectCluster:
-    url: "http://my-kafka-connect-api-server:8083"
+    url: "http://my-connect-cluster-connect-api:8083"
   class: org.apache.kafka.connect.file.FileStreamSourceConnector
   tasksMax: 2
   topics:

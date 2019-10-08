@@ -66,7 +66,7 @@ public class KafkaConnectorAssemblyOperator extends
 
         log.debug("{}: Creating/Updating Kafka Connector", reconciliation, name, namespace);
         kafkaConnectorServiceAccount(namespace)
-                .compose(p -> createUpdateConnectorCommand.run(8083, "my-connect-cluster-connect-api", "/connectors", assemblyResource, name, vertx))
+                .compose(p -> createUpdateConnectorCommand.run(assemblyResource, name, vertx))
                 .setHandler(getRes -> {
                     if (getRes.succeeded()) {
                         log.info("Kafka Connector Create/Update Successfully");
