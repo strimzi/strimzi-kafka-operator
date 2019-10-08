@@ -5,8 +5,9 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +25,7 @@ import java.util.TreeSet;
 /**
  * Represents a Kafka version that's supported by this CO
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class KafkaVersion implements Comparable<KafkaVersion> {
 
     /**
@@ -42,9 +43,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
         YAMLMapper mapper = new YAMLMapper();
 
-        CollectionType listType = mapper.getTypeFactory().constructCollectionType(ArrayList.class, KafkaVersion.class);
-
-        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, listType);
+        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, new TypeReference<List<KafkaVersion>>() { });
 
         KafkaVersion defaultVersion = null;
 
@@ -307,23 +306,17 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String version;
     private final String protocolVersion;
     private final String messageVersion;
-    private final String checksum;
-    private final String thirdPartyLibs;
     private final boolean isDefault;
 
     @JsonCreator
     public KafkaVersion(@JsonProperty("version") String version,
                         @JsonProperty("protocol") String protocolVersion,
                         @JsonProperty("format") String messageVersion,
-                        @JsonProperty("checksum") String checksum,
-                        @JsonProperty("third-party-libs") String thirdPartyLibs,
                         @JsonProperty("default") boolean isDefault) {
 
         this.version = version;
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
-        this.checksum = checksum;
-        this.thirdPartyLibs = thirdPartyLibs;
         this.isDefault = isDefault;
     }
 
@@ -333,8 +326,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 "version='" + version + '\'' +
                 ", protocolVersion='" + protocolVersion + '\'' +
                 ", messageVersion='" + messageVersion + '\'' +
-                ", checksum='" + checksum + '\'' +
-                ", thirdPartyLibs='" + thirdPartyLibs + '\'' +
                 ", isDefault=" + isDefault +
                 '}';
     }
