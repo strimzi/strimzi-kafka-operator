@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.strimzi.operator.cluster.InvalidConfigParameterException;
+import io.strimzi.operator.common.InvalidConfigParameterException;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 

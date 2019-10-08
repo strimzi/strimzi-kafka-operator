@@ -40,7 +40,8 @@ import java.util.stream.Collectors;
 /**
  * Operator for a Kafka Users.
  */
-public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> {
+public class KafkaUserOperator extends AbstractOperator<KafkaUser,
+        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser>> {
     private static final Logger log = LogManager.getLogger(KafkaUserOperator.class.getName());
 
     private final SecretOperator secretOperations;
@@ -267,7 +268,7 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
      * @reutrn A Future
      */
     @Override
-    protected Future<Void> delete(Reconciliation reconciliation) {
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
         log.debug("{}: Deleting User", reconciliation, user, namespace);
@@ -275,7 +276,7 @@ public class KafkaUserOperator extends AbstractOperator<KubernetesClient, KafkaU
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
                 scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null))
-            .map((Void) null);
+            .map(Boolean.TRUE);
     }
 
 }

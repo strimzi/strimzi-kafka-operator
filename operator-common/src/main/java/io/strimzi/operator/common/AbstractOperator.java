@@ -4,15 +4,15 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.model.ResourceVisitor;
+import io.strimzi.operator.common.model.ValidationVisitor;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -25,25 +25,33 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * A base implementation of {@link Operator} using the Fabric8 kubernetes API.
- * @param <C> The type of KubernetesClient (this could be OpenShiftClient if the operator implemented something OpenShift specific)
+ * A base implementation of {@link Operator}.
+ *
+ * <ul>
+ * <li>uses the Fabric8 kubernetes API and implements
+ * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, HasMetadata)}
+ * and {@link #delete(Reconciliation)} methods for subclasses to implement.
+ * 
+ * <li>add support for operator-side {@linkplain #validate(HasMetadata) validation}.
+ *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
+ *
+ * </ul>
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
- * @param <L> The Java representation of the Kubernetes list resource. e.g. {@code KafkaList} or {@code KafkaConnectList}
- * @param <D> The Doneable type for {@code T}.
+ * @param <S> The "Resource Operator" for the source resource type. Typically this will be some instantiation of
+ *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
-public abstract class AbstractOperator<C extends KubernetesClient,
-        T extends CustomResource,
-        L extends CustomResourceList<T>,
-        D extends Doneable<T>>
+public abstract class AbstractOperator<
+        T extends HasMetadata,
+        S extends AbstractWatchableResourceOperator<?, T, ?, ?, ?>>
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
     private static final int LOCK_TIMEOUT_MS = 10;
     protected final Vertx vertx;
-    protected final CrdOperator<C, T, L, D> crdOperator;
+    protected final S crdOperator;
     private final String kind;
 
-    public AbstractOperator(Vertx vertx, String kind, CrdOperator<C, T, L, D> crdOperator) {
+    public AbstractOperator(Vertx vertx, String kind, S crdOperator) {
         this.vertx = vertx;
         this.kind = kind;
         this.crdOperator = crdOperator;
@@ -67,16 +75,25 @@ public abstract class AbstractOperator<C extends KubernetesClient,
 
     /**
      * Asynchronously creates or updates the given {@code resource}.
-     * This method is called when the given {@code resource} has been created,
+     * This method can be called when the given {@code resource} has been created,
      * or updated and also at some regular interval while the resource continues to exist in Kubernetes.
-     * This method should be idempotent.
+     * The calling of this method does not imply that anything has actually changed.
      * @param reconciliation Uniquely identifies the reconciliation itself.
      * @param resource The resource to be created, or updated.
      * @return A Future which is completed once the reconciliation of the given resource instance is complete.
      */
     protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T resource);
 
-    protected abstract Future<Void> delete(Reconciliation reconciliation);
+    /**
+     * Asynchronously deletes the resource identified by {@code reconciliation}.
+     * Operators which only create other Kubernetes resources in order to honour their source resource can rely
+     * on Kubernetes Garbage Collection to handle deletion.
+     * Such operators should return a Future which completes with {@code false}.
+     * Operators which handle deletion themselves should return a Future which completes with {@code true}.
+     * @param reconciliation
+     * @return
+     */
+    protected abstract Future<Boolean> delete(Reconciliation reconciliation);
 
     /**
      * Reconcile assembly resources in the given namespace having the given {@code name}.
@@ -100,6 +117,7 @@ public abstract class AbstractOperator<C extends KubernetesClient,
                 try {
                     T cr = crdOperator.get(namespace, name);
                     if (cr != null) {
+                        validate(cr);
                         log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
 
                         createOrUpdate(reconciliation, cr).setHandler(createResult -> {
@@ -115,15 +133,19 @@ public abstract class AbstractOperator<C extends KubernetesClient,
                         log.info("{}: {} {} should be deleted", reconciliation, kind, name);
                         delete(reconciliation).setHandler(deleteResult -> {
                             if (deleteResult.succeeded())   {
-                                log.info("{}: {} {} deleted", reconciliation, kind, name);
+                                if (deleteResult.result()) {
+                                    log.info("{}: {} {} deleted", reconciliation, kind, name);
+                                } else {
+                                    log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
+                                }
                                 lock.release();
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(deleteResult);
+                                handler.handle(Future.succeededFuture());
                             } else {
                                 log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult.cause());
                                 lock.release();
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(deleteResult);
+                                handler.handle(Future.failedFuture(deleteResult.cause()));
                             }
                         });
                     }
@@ -143,6 +165,19 @@ public abstract class AbstractOperator<C extends KubernetesClient,
             result.handle(reconcileResult);
         });
         return result;
+    }
+
+    /**
+     * Validate the Custom Resource.
+     * This should log at the WARN level (rather than throwing)
+     * if the resource can safely be reconciled (e.g. it merely using deprecated API).
+     * @param resource The custom resource
+     * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     */
+    protected void validate(T resource) {
+        if (resource != null) {
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
+        }
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
@@ -189,7 +224,11 @@ public abstract class AbstractOperator<C extends KubernetesClient,
             log.info("{}: reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
-            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+            if (cause instanceof InvalidConfigParameterException) {
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+            } else {
+                log.warn("{}: Failed to reconcile", reconciliation, cause);
+            }
         }
     }
 

@@ -10,23 +10,15 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Operator;
-import io.strimzi.operator.common.OperatorWatcher;
+import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.model.ResourceVisitor;
-import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -35,17 +27,12 @@ import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -58,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
-    implements Operator, Watchy {
+    extends AbstractOperator<T, AbstractWatchableResourceOperator<C, T, L, D, R>> {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
@@ -95,6 +82,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
+        super(vertx, kind, resourceOperator);
         this.vertx = vertx;
         this.pfa = pfa;
         this.kind = kind;
@@ -117,27 +105,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     public String kind() {
         return kind;
     }
-
-    /**
-     * Gets the name of the lock to be used for operating on the given {@code assemblyType}, {@code namespace} and
-     * cluster {@code name}
-     * @param namespace The namespace containing the cluster
-     * @param name The name of the cluster
-     */
-    protected final String getLockName(String namespace, String name) {
-        return "lock::" + namespace + "::" + kind + "::" + name;
-    }
-
-    /**
-     * Subclasses implement this method to create or update the cluster. The implementation
-     * should not assume that any resources are in any particular state (e.g. that the absence on
-     * one resource means that all resources need to be created).
-     * @param reconciliation Unique identification for the reconciliation
-     * @param assemblyResource Resources with the desired cluster configuration.
-     * @return A future which is completed when the resource has been reconciled.
-     */
-    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource);
-
     /**
      * The name of the given {@code resource}, as read from its metadata.
      * @param resource The resource
@@ -152,124 +119,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return null;
     }
 
-    /**
-     * Reconcile assembly resources in the given namespace having the given {@code name}.
-     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
-     * comparing with the corresponding resources}.
-     * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if CustomResource is without same-named resources</li>
-     * <li>An assembly will be deleted automatically by garbage collection when the custom resoruce is deleted</li>
-     * </ul>
-     * @param reconciliation The reconciliation.
-     * @return A Future which is completed when the assembly was reconciled.
-     */
-    @Override
-    public final Future<Void> reconcile(Reconciliation reconciliation) {
-        Future<Void> handler = Future.future();
-        String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.name();
-        final String lockName = getLockName(namespace, assemblyName);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
-            if (res.succeeded()) {
-                log.debug("{}: Lock {} acquired", reconciliation, lockName);
-                Lock lock = res.result();
-
-                try {
-                    // get CustomResource and related resources for the specific cluster
-                    T cr = resourceOperator.get(namespace, assemblyName);
-                    validate(cr);
-
-                    if (cr != null) {
-                        log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        createOrUpdate(reconciliation, cr)
-                            .setHandler(createResult -> {
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                if (createResult.failed()) {
-                                    if (createResult.cause() instanceof InvalidResourceException) {
-                                        log.error("{}: createOrUpdate failed. {}", reconciliation, createResult.cause().getMessage());
-                                    } else {
-                                        log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
-                                    }
-                                } else {
-                                    handler.handle(createResult);
-                                }
-                            });
-                    } else {
-                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, assemblyName);
-                        lock.release();
-                        log.debug("{}: Lock {} released", reconciliation, lockName);
-                        handler.handle(Future.succeededFuture());
-                    }
-                } catch (Throwable ex) {
-                    lock.release();
-                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                    handler.handle(Future.failedFuture(ex));
-                }
-            } else {
-                log.debug("{}: Failed to acquire lock {}.", reconciliation, lockName);
-            }
-        });
-        Future<Void> result = Future.future();
-        handler.setHandler(reconcileResult -> {
-            handleResult(reconciliation, reconcileResult);
-            result.handle(reconcileResult);
-        });
-        return result;
-    }
-
-    /**
-     * Validate the Custom Resource.
-     * This should log at the WARN level (rather than throwing) if the resource can safely be reconciled.
-     * @param resource The custom resource
-     * @throws InvalidResourceException if the resource cannot be safely reconciled.
-     */
-    protected void validate(T resource) {
-        if (resource != null) {
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
-        }
-    }
-
-    public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-        return resourceOperator.listAsync(namespace, selector())
-            .map(resourceList ->
-                    resourceList.stream()
-                    .map(resource -> new NamespaceAndName(resource.getMetadata().getNamespace(), resource.getMetadata().getName()))
-                    .collect(Collectors.toSet()));
-    }
-
-    /**
-     * Creates a watch on resources in the given namespace.
-     * @param watchNamespace The namespace to watch.
-     * @param onClose A consumer for any exceptions causing the closing of the watcher.
-     * @return A future which completes when watcher has been created.
-     */
-    @Override
-    public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
-        Future<Watch> result = Future.future();
-        vertx.executeBlocking(
-            future -> {
-                Watch watch = resourceOperator.watch(watchNamespace, new OperatorWatcher<>(this, watchNamespace, onClose));
-                future.complete(watch);
-            }, result
-        );
-        return result;
-    }
-
-    /**
-     * Log the reconciliation outcome.
-     */
-    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result) {
-        if (result.succeeded()) {
-            log.info("{}: Assembly reconciled", reconciliation);
-        } else {
-            Throwable cause = result.cause();
-            if (cause instanceof InvalidConfigParameterException) {
-                log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-            } else {
-                log.warn("{}: Failed to reconcile", reconciliation, cause);
-            }
-        }
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return Future.succeededFuture(Boolean.FALSE);
     }
 
 }

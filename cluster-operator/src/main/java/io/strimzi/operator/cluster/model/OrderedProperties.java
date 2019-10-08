@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.operator.cluster.InvalidConfigParameterException;
+import io.strimzi.operator.common.InvalidConfigParameterException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;

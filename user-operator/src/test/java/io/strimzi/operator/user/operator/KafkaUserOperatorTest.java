@@ -622,12 +622,10 @@ public class KafkaUserOperatorTest {
                 return h;
             }
             @Override
-            public Future<Void> delete(Reconciliation reconciliation) {
-                Future<Void> h = Future.future();
+            public Future<Boolean> delete(Reconciliation reconciliation) {
                 deleted.add(reconciliation.name());
                 async.countDown();
-                h.handle(Future.succeededFuture());
-                return h;
+                return Future.succeededFuture(Boolean.TRUE);
             }
         };
 

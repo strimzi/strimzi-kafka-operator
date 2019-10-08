@@ -16,7 +16,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.Watchy;
+import io.strimzi.operator.common.AbstractOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -82,7 +82,7 @@ public class ClusterOperator extends AbstractVerticle {
             L extends KubernetesResourceList/*<T>*/,
             D extends Doneable<T>,
             R extends Resource<T, D>>
-        Consumer<KubernetesClientException> recreateWatch(Watchy op) {
+        Consumer<KubernetesClientException> recreateWatch(AbstractOperator<?, ?> op) {
         Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
             @Override
             public void accept(KubernetesClientException e) {
