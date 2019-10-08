@@ -30,7 +30,7 @@ For more information on the configuration and authentication of Kafka broker lis
 
 .Procedure
 
-. Update the Kafka broker configuration (`Kafka.spec.kafka`) of your `kafka` resource in an editor.
+. Update the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
 +
 [source,shell]
 ----
