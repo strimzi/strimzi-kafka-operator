@@ -8,10 +8,11 @@
 
 # Format of this file:
 #   <version> is the kafka version number
-#   <default> is default if this is the default Kafka version, or empty otherwise
-#   <protocol> is the Kafka protocol version used by this Kafka version
-#   <format> is the Kafka message version used by this Kafka version
-#   <checksum> is the SHA512 checksum
+#   <default> when `true` this is the version to be used by the CO by default when a `Kafka` resource lacks an explicit version. 
+#             Only one Kafka version can be marked as default.
+#   <protocol> is the default `inter.broker.protocol.version` used by this Kafka version
+#   <format> is the default `log.message.format.version` used by this Kafka version
+#   <checksum> is the SHA512 checksum of the Kafka binary downloaded from apache.org
 #   <third-party-libs> is the version string for the third party libraries
 
 # NOTICE: If you change the default here, you should also change it in documentation/book/common/attributes.adoc
