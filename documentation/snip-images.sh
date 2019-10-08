@@ -1,28 +1,15 @@
 #!/usr/bin/env bash
 
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+    
 # Generates documentation/book/snip-images.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
 
-FILE=$1
-
-# Read the kafka versions file and create an array of version strings
-declare -a versions
-finished=0
-counter=0
-while [ $finished -lt 1 ] 
-do
-    version=$(yq read "$FILE" "[${counter}].version")
-
-    if [ "$version" = "null" ]
-    then
-        finished=1
-    else
-        versions+=("$version")
-        counter=$((counter + 1))
-    fi 
-done
+# Parse the Kafka versions file and get a list of version strings in an array 
+# called "versions"
+get_kafka_versions
 
 cat <<EOF
 // Auto generated content - DO NOT EDIT BY HAND

@@ -1,27 +1,14 @@
 #!/usr/bin/env bash
 
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+
 out="$1"
 
-# Read the kafka versions file and create an array of version strings
-versions=()
-finished=0
-counter=0
-while [ $finished -lt 1 ] 
-do
-    version=$(yq read ../kafka-versions.yaml "[${counter}].version")
-
-    if [ "$version" = "null" ]
-    then
-        finished=1
-    else
-        versions+=("$version")
-        counter=$((counter + 1))
-    fi 
-done
+# Read the Kafka versions file and create an array of version strings
+get_kafka_versions
 
 for version in "${versions[@]}"
 do
-    echo "Processing kafka version $version"
     zookeeper_version="{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     zookeeper_tls_sidecar_version="{{ default .Values.tlsSidecarZookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarZookeeper.image.name }}:{{ default .Values.tlsSidecarZookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_tls_sidecar_version="{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
