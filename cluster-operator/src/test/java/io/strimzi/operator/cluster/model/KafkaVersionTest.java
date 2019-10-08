@@ -106,6 +106,26 @@ public class KafkaVersionTest {
                 ), map);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void multipleDefaultTest() throws IOException {
+        Map<String, KafkaVersion> map = new HashMap<>();
+        KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(
+                new StringReader(
+                        "- version: 2.2.1\n" +
+                                "  format: 2.2\n" +
+                                "  protocol: 2.2\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.2.x\n" +
+                                "  default: true\n" +
+                                "- version: 2.3.0\n" +
+                                "  format: 2.3\n" +
+                                "  protocol: 2.3\n" +
+                                "  checksum: ABCDE1234\n" +
+                                "  third-party-libs: 2.3.x\n" +
+                                "  default: true"
+                ), map);
+    }
+
     @Test
     public void compare() {
         assertEquals(0, KafkaVersion.compareDottedVersions("2.0.0", "2.0.0"));

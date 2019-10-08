@@ -29,14 +29,16 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.
-     * @param reader A reader for the kafka version file.
-     * @param mapOfVersions A map of the versions to add to.
-     * @return The configured default version.
-     * @throws IllegalArgumentException If there are duplicate versions listed in the versions file.
+     * @param reader A reader for the Kafka version file.
+     * @param mapOfVersions A map to add the versions to.
+     * @return The configured default Kafka version.
+     * @throws IllegalArgumentException If there are duplicate versions listed in the versions file or more than one
+     *                                  version is listed as the default.
      * @throws RuntimeException If no default version was set.
-     * @throws IOException If the kafka versions file cannot be read.
+     * @throws IOException If the Kafka versions file cannot be read.
      */
-    public static KafkaVersion parseKafkaVersions(Reader reader, Map<String, KafkaVersion> mapOfVersions) throws IOException {
+    public static KafkaVersion parseKafkaVersions(Reader reader, Map<String, KafkaVersion> mapOfVersions)
+            throws IOException, IllegalArgumentException {
 
         YAMLMapper mapper = new YAMLMapper();
 
@@ -53,14 +55,20 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             }
 
             if (kafkaVersion.isDefault) {
-                defaultVersion = kafkaVersion;
+                if (defaultVersion == null) {
+                    defaultVersion = kafkaVersion;
+                } else {
+                    throw new IllegalArgumentException(
+                            "Multiple Kafka versions (" + defaultVersion.version() + " and " + kafkaVersion.version() +
+                                    ") are set as default");
+                }
             }
         }
 
         if (defaultVersion != null) {
             return defaultVersion;
         } else {
-            throw new RuntimeException("No version was configured as the default");
+            throw new RuntimeException("No Kafka version was configured as the default");
         }
     }
 
