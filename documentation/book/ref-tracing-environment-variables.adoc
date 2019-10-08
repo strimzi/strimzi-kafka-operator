@@ -5,7 +5,7 @@
 [id='ref-tracing-environment-variables-{context}']
 = Tracing environment variables
 
-Use these environment variables to configure a Jaeger tracer for client applications.
+Use these environment variables when configuring a Jaeger tracer for Kafka clients.
 
 NOTE: The tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
 

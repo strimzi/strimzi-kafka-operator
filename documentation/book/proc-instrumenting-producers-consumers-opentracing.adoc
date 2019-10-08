@@ -3,13 +3,13 @@
 // assembly-instrumenting-kafka-clients-tracers.adoc
 
 [id='proc-instrumenting-producers-consumers-for-opentracing-{context}']
-= Instrumenting producers and consumers for tracing
+= Instrumenting Kafka Producers and Consumers for tracing
 
-Use a Decorator pattern or Interceptors to instrument your Java producer and consumer code for distributed tracing.
+Use a Decorator pattern or Interceptors to instrument your Java Producer and Consumer application code for distributed tracing.
 
 .Procedure
 
-Perform the following steps in the application code of each producer and consumer.
+Perform these steps in the application code of each Kafka Producer and Consumer application.
 
 . Add the Maven dependency for OpenTracing to the producer or consumer's pom.xml file.
 +
@@ -22,7 +22,7 @@ Perform the following steps in the application code of each producer and consume
 </dependency>
 ----
 
-. If you want to use a Decorator pattern, instrument your client code as shown in the following example. If you prefer to use Interceptors, go to the next step.
+. If you prefer to use a Decorator pattern, instrument your client application code as shown in the following example. If you prefer to use Interceptors, go to the next step.
 +
 [source,java,subs=attributes+]
 ----
@@ -54,7 +54,7 @@ ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
 +
-. If you want to use Interceptors, instrument your client code as shown in the following example.
+. If you prefer to use Interceptors, instrument your client application code as shown in the following example.
 +
 [source,java,subs=attributes+]
 ----
@@ -94,9 +94,9 @@ SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(),
 
 A __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
 
-If you use a Decorator pattern to instrument your producers and consumers, you can define custom span names by passing a BiFunction object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several built-in span names, which are described below.
+If you use a Decorator pattern to instrument your Kafka Producer and Consumer applications, you can define custom span names by passing a BiFunction object as an additional argument when creating the `TracingKafkaProducer` and `TracingKafkaConsumer` objects. The OpenTracing Apache Kafka Client Instrumentation library includes several built-in span names, which are described below.
 
-To use custom span names as part of a Decorator pattern, instrument your client code as shown in the following example:
+.Example: Using custom span names to instrument client application code in a Decorator pattern
 
 [source,java,subs=attributes+]
 ----

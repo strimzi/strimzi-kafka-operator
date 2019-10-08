@@ -5,7 +5,7 @@
 [id='proc-configuring-jaeger-tracer-kafka-clients-{context}']
 = Initializing a Jaeger tracer for Kafka clients
 
-Configure and initialize a Jaeger tracer by using a set of tracing environment variables.
+Configure and initialize a Jaeger tracer using a set of tracing environment variables.
 
 .Procedure
 
@@ -22,7 +22,7 @@ Perform the following steps for each client application.
 </dependency>
 ----
 
-. Define the configuration of the Jaeger tracer by using xref:ref-tracing-environment-variables-{context}[tracing environment variables].
+. Define the configuration of the Jaeger tracer using the xref:ref-tracing-environment-variables-{context}[tracing environment variables].
 
 . Create the Jaeger tracer from the environment variables that you defined in step two:
 +
@@ -40,4 +40,4 @@ NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github
 GlobalTracer.register(tracer);
 ----
 
-A Jaeger tracer is now initialized for the client application.
+A Jaeger tracer is now initialized for the client application to use.
