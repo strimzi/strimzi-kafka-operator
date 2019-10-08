@@ -51,7 +51,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
 
-    protected final Vertx vertx;
     protected final PlatformFeaturesAvailability pfa;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
@@ -65,7 +64,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final ImagePullPolicy imagePullPolicy;
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final KafkaVersion.Lookup versions;
-    private final String kind;
     protected long operationTimeoutMs;
 
     /**
@@ -83,9 +81,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator);
-        this.vertx = vertx;
         this.pfa = pfa;
-        this.kind = kind;
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
         this.secretOperations = supplier.secretOperations;
@@ -101,10 +97,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
-    @Override
-    public String kind() {
-        return kind;
-    }
     /**
      * The name of the given {@code resource}, as read from its metadata.
      * @param resource The resource
