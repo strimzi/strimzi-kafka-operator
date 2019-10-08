@@ -1084,20 +1084,23 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         if (pods.size() != 0) {
             LOGGER.info("Testing Readiness and Liveness configuration for container {}", containerName);
-            pods.forEach(pod -> {
-                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                    .forEach(container -> {
-                        assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
-                        assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
-                        assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
-                        assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
-                        assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
-                        assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
-                        assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
-                        assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
-                        assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
-                        assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
-                    });
+
+            List<Container> containerList = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream())
+                .filter(c -> c.getName().equals(containerName))
+                .collect(Collectors.toList());
+
+            containerList.forEach(container -> {
+                assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
