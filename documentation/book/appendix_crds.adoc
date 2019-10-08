@@ -104,10 +104,12 @@ The `type` property is a discriminator that distinguishes the use of the type `E
 It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
-|Property     |Description
-|id    1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|Property          |Description
+|id         1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
 |integer
-|type  1.2+<.<|Must be `ephemeral`.
+|sizeLimit  1.2+<.<|When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (i.e 1Gi).
+|string
+|type       1.2+<.<|Must be `ephemeral`.
 |string
 |====
 

@@ -275,6 +275,37 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testGenerateStatefulSetWithSetSizeLimit() {
+        String sizeLimit = "1Gi";
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet ss = kc.generateStatefulSet(false, null, null);
+        assertEquals(sizeLimit, ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount());
+    }
+
+    @Test
+    public void testGenerateStatefulSetWithEmptySizeLimit() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewEphemeralStorage().endEphemeralStorage()
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet ss = kc.generateStatefulSet(false, null, null);
+        assertEquals(null, ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit());
+    }
+
+    @Test
     public void testGenerateStatefulSetWithRack() {
         Kafka editKafkaAssembly = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
