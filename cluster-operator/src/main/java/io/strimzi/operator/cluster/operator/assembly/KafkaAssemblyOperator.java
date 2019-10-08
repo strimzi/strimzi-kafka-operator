@@ -2493,7 +2493,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         reasons.add(ca + " certificate removal");
                     }
                     if (ca.certChanged()) {
-                        reasons.add(ca + "certificate metadata changed");
+                        reasons.add(ca + " certificate metadata changed");
                     }
                     if (!isPodCaCertUpToDate(pod, ca)) {
                         reasons.add("Pod has old " + ca + " certificate generation");
