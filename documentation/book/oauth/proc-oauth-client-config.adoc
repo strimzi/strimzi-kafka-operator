@@ -35,8 +35,8 @@ For example:
 [source,xml, subs="+quotes,attributes"]
 ----
 System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token_”); <1>
-System.setProperty(Config.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
-System.setProperty(Config.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
+System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
+System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
 ----
 <1> URI of the authorization server token endpoint
 <2> Client ID, which is the name used when creating the _client_ in the authorization server.
@@ -53,7 +53,7 @@ props.put("security.protocol", "SASL_SSL"); <1>
 props.put("sasl.mechanism", "OAUTHBEARER");
 props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
 ----
-<1> Here we use `SASL_SSL` for use over TLS connections. Use `SASL_PLAINTEXT` over unencrypted connections. 
+<1> Here we use `SASL_SSL` for use over TLS connections. Use `SASL_PLAINTEXT` over unencrypted connections.
 
 . Verify that the Kafka client can access the Kafka brokers.
 
