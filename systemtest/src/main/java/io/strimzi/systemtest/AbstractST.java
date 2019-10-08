@@ -214,7 +214,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
     }
 
-    void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
+    protected void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
         replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
     }
 
@@ -267,12 +267,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Translate key/value pairs fromatted like properties into a Map
+     * Translate key/value pairs formatted like properties into a Map
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
      * @return THe map of key/values
      */
     @SuppressWarnings("unchecked")
-    static Map<String, String> loadProperties(String keyValuePairs) {
+    static Map<String, Object> loadProperties(String keyValuePairs) {
         try {
             Properties actual = new Properties();
             actual.load(new StringReader(keyValuePairs));
@@ -288,7 +288,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param envVar The environment variable name
      * @return The properties which the variable contains
      */
-    static Map<String, String> getPropertiesFromJson(String json, String envVar) {
+    static Map<String, Object> getPropertiesFromJson(String json, String envVar) {
         List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(envVar));
         return loadProperties(array.get(0));
     }
@@ -1017,24 +1017,90 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Verifies container configuration by environment key
+     * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
      * @param configKey Expected configuration key
-     * @param config Expected configuration
+     * @param config Expected component configuration
      */
-    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+    protected void checkComponentConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
         List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing configuration for container {}", containerName);
-            pods.forEach(pod -> {
-                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
-                        .forEach(container -> {
-                            container.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey))
-                                    .forEach(envVar -> assertEquals(config, envVar.getValue()));
-                        });
+
+            Map<String, Object> actual = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
+                .filter(c -> c.getName().equals(containerName))
+                .flatMap(c -> c.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey)))
+                .map(envVar -> loadProperties(envVar.getValue()))
+                .collect(Collectors.toList()).get(0);
+
+            assertTrue(actual.entrySet().containsAll(config.entrySet()));
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies container environment variables passed as a map.
+     * @param podNamePrefix Name of pod where container is located
+     * @param containerName The container where verifying is expected
+     * @param config Expected environment variables with values
+     */
+    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, Map<String, String> config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing EnvVars configuration for container {}", containerName);
+
+            Map<String, Object> actual = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
+                .filter(c -> c.getName().equals(containerName))
+                .flatMap(c -> c.getEnv().stream().filter(envVar -> config.containsKey(envVar.getName())))
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue, (item, duplicatedItem) -> item));
+            assertThat(actual, is(config));
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies readinessProbe and livenessProbe properties in expected container
+     * @param podNamePrefix Prefix of pod name where container is located
+     * @param containerName The container where verifying is expected
+     * @param initialDelaySeconds expected value for property initialDelaySeconds
+     * @param timeoutSeconds expected value for property timeoutSeconds
+     * @param periodSeconds expected value for property periodSeconds
+     * @param successThreshold expected value for property successThreshold
+     * @param failureThreshold expected value for property failureThreshold
+     */
+    protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+                                     int periodSeconds, int successThreshold, int failureThreshold) {
+        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing Readiness and Liveness configuration for container {}", containerName);
+
+            List<Container> containerList = pods.stream()
+                .flatMap(p -> p.getSpec().getContainers().stream())
+                .filter(c -> c.getName().equals(containerName))
+                .collect(Collectors.toList());
+
+            containerList.forEach(container -> {
+                assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
+                assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
+                assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
+                assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
+                assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
+                assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");

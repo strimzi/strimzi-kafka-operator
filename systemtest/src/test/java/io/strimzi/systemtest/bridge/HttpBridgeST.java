@@ -4,9 +4,11 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
+import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -18,6 +20,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -90,6 +95,101 @@ class HttpBridgeST extends HttpBridgeBaseST {
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
         // Delete consumer
         assertTrue(deleteConsumer(bridgeHost, bridgePort, groupId, name));
+    }
+
+    @Test
+    void testCustomAndUpdatedValues() {
+        createTestMethodResources();
+        String bridgeName = "custom-bridge";
+        String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
+        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
+        envVarGeneral.put("TEST_ENV_1", "test.env.one");
+        envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
+
+        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
+        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
+        envVarUpdated.put("TEST_ENV_3", "test.env.three");
+
+        Map<String, Object> producerConfig = new HashMap<>();
+        producerConfig.put("acks", "1");
+
+        Map<String, Object> consumerConfig = new HashMap<>();
+        consumerConfig.put("auto.offset.reset", "earliest");
+
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
+
+        testMethodResources().kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, 8080)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewBridgeContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endBridgeContainer()
+                    .endTemplate()
+                    .withNewProducer()
+                    .endProducer()
+                    .withNewConsumer()
+                    .endConsumer()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
+                    .endReadinessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
+                    .endLivenessProbe()
+                .endSpec().done();
+
+        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
+
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
+        LOGGER.info("Verify values before update");
+        checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
+
+        StUtils.checkCOlogForUsedVariable(usedVariable);
+
+        LOGGER.info("Updating values in Bridge container");
+        replaceBridgeResource(bridgeName, kb -> {
+            kb.getSpec().getTemplate().getBridgeContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            kb.getSpec().getProducer().setConfig(producerConfig);
+            kb.getSpec().getConsumer().setConfig(consumerConfig);
+            kb.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kb.getSpec().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kb.getSpec().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kb.getSpec().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kb.getSpec().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kb.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kb.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+        });
+
+        StUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
+
+        LOGGER.info("Verify values after update");
+        checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkSpecificVariablesInContainer(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarUpdated);
+        checkComponentConfiguration(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
+        checkComponentConfiguration(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_CONSUMER_CONFIG", consumerConfig);
+
+        deleteTestMethodResources();
     }
 
     @BeforeAll

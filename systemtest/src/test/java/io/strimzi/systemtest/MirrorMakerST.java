@@ -4,9 +4,11 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -352,6 +355,109 @@ public class MirrorMakerST extends MessagingBaseST {
                 receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName), is(0));
     }
 
+    @Test
+    void testCustomAndUpdatedValues() {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .withNewEntityOperator()
+                .endEntityOperator()
+            .endSpec().done();
+
+        String usedVariable = "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER";
+
+        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
+        envVarGeneral.put("TEST_ENV_1", "test.env.one");
+        envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
+
+        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
+        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
+        envVarUpdated.put("TEST_ENV_3", "test.env.three");
+
+        Map<String, Object> producerConfig = new HashMap<>();
+        producerConfig.put("acks", "all");
+
+        Map<String, Object> updatedProducerConfig = new HashMap<>();
+        updatedProducerConfig.put("acks", "0");
+
+        Map<String, Object> consumerConfig = new HashMap<>();
+        consumerConfig.put("auto.offset.reset", "latest");
+
+        Map<String, Object> updatedConsumerConfig = new HashMap<>();
+        consumerConfig.put("auto.offset.reset", "earliest");
+
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
+
+        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewMirrorMakerContainer()
+                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                        .endMirrorMakerContainer()
+                    .endTemplate()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
+                    .endReadinessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
+                        .withPeriodSeconds(periodSeconds)
+                        .withSuccessThreshold(successThreshold)
+                        .withFailureThreshold(failureThreshold)
+                    .endLivenessProbe()
+                .endSpec()
+                .done();
+
+        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
+
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
+        LOGGER.info("Verify values before update");
+        checkReadinessLivenessProbe(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        checkSpecificVariablesInContainer(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), envVarGeneral);
+        checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
+        checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
+
+        StUtils.checkCOlogForUsedVariable(usedVariable);
+
+        LOGGER.info("Updating values in MirrorMaker container");
+        replaceMirrorMakerResource(CLUSTER_NAME, kmm -> {
+            kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
+            kmm.getSpec().getConsumer().setConfig(updatedConsumerConfig);
+            kmm.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kmm.getSpec().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kmm.getSpec().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kmm.getSpec().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kmm.getSpec().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kmm.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kmm.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kmm.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+        });
+
+        StUtils.waitTillDepHasRolled(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
+
+        LOGGER.info("Verify values after update");
+        checkReadinessLivenessProbe(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkSpecificVariablesInContainer(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), envVarUpdated);
+        checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", updatedProducerConfig);
+        checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", updatedConsumerConfig);
+    }
+
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
@@ -371,7 +477,16 @@ public class MirrorMakerST extends MessagingBaseST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE)
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(new EnvVarBuilder().withName("TEST_ENV_3").withValue("test.value").build())
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec().done();
     }
 
     @AfterAll

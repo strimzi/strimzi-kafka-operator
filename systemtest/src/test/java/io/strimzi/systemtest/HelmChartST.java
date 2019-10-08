@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.HELM;
 
-@Tag(REGRESSION)
+@Tag(HELM)
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
