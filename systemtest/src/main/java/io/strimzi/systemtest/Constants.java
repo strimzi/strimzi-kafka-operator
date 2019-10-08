@@ -125,4 +125,8 @@ public interface Constants {
      * Tag for Tracing tests
      */
     String TRACING = "tracing";
+    /**
+     * Tag for Helm tests
+     */
+    String HELM = "helm";
 }
