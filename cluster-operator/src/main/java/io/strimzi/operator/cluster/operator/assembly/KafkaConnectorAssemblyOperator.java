@@ -4,29 +4,31 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import java.util.function.Function;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
+import io.vertx.ext.web.client.predicate.ResponsePredicateResult;
 import io.vertx.ext.web.codec.BodyCodec;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * <p>Assembly operator for a "Kafka Connector" assembly, which manages:</p>
@@ -57,13 +59,11 @@ public class KafkaConnectorAssemblyOperator extends
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnector assemblyResource) {
         Future<Void> createOrUpdateFuture = Future.future();
-        CreateUpdateConnectorCommand createUpdateConnectorCommand = new CreateUpdateConnectorCommand();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
-        log.debug("{}: Creating/Updating Kafka Connector", reconciliation, name, namespace);
-        kafkaConnectorServiceAccount(namespace)
-                .compose(p -> createUpdateConnectorCommand.run(assemblyResource, name, vertx))
+        log.info("{}: >>>> Creating/Updating Kafka Connector", reconciliation, name, namespace);
+        update(assemblyResource, name, vertx)
                 .compose(l -> list(assemblyResource, name, vertx))
                 .setHandler(getRes -> {
                     if (getRes.succeeded()) {
@@ -78,18 +78,6 @@ public class KafkaConnectorAssemblyOperator extends
         return createOrUpdateFuture;
     }
 
-
-    Future<ReconcileResult<ServiceAccount>> kafkaConnectorServiceAccount(String namespace) {
-        ServiceAccount desiredServiceAccount = new ServiceAccountBuilder()
-                .withNewMetadata()
-                .withName("strimzi-cluster-operator")
-                .withNamespace(namespace)
-//                .withOwnerReferences(createOwnerReference())
-//                .withLabels(labels.toMap())
-                .endMetadata()
-                .build();
-        return serviceAccountOperations.reconcile(namespace, "strimzi-cluster-operator", desiredServiceAccount);
-    }
 
     public Future<Void> list(KafkaConnector kafkaConnector, String name, Vertx vertx) {
         Future<Void> listPromise = Future.future();
@@ -110,4 +98,43 @@ public class KafkaConnectorAssemblyOperator extends
                 });
         return listPromise;
     }
+
+    public Future<Void> update(KafkaConnector kafkaConnector, String name, Vertx vertx) {
+        Future<Void> updateRun = Future.future();
+        log.info("Calling Kafka Connect API");
+        JsonObject connectorConfigJson = new JsonObject().put("connector.class", kafkaConnector.getSpec().getClassName())
+                .put("tasks.max", kafkaConnector.getSpec().getTasksMax())
+                .put("topic", "test-topic");
+        kafkaConnector.getSpec().getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
+
+        log.info(">>>> Connector config JSON: " + connectorConfigJson.encode());
+        
+        WebClient.create(vertx)
+                .putAbs(kafkaConnector.getSpec().getConnectCluster().getUrl() + "/connectors/" + name + "/config")
+                .as(BodyCodec.jsonObject())
+                .putHeader("Accept", "application/json")
+                .putHeader("Content-Type", "application/json")
+                .expect(methodsPredicate)
+                .sendJson(connectorConfigJson, asyncResult -> {
+                    if (asyncResult.succeeded()) {
+                        log.info("PUT - Kafka Connector Success");
+                        log.info(asyncResult.result().body());
+                        updateRun.complete();
+                    } else if (asyncResult.failed()) {
+                        log.error(">>>>> PUT - Kafka Connector Error", asyncResult.cause());
+                        updateRun.fail(asyncResult.cause());
+                    }
+                });
+
+        return updateRun;
+    }
+
+    private Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate = resp -> {
+        int statusCode = resp.statusCode();
+        log.info(">>> statusCode: " + statusCode);
+        if (statusCode == 200 || statusCode == 201) {
+            return ResponsePredicateResult.success();
+        }
+        return ResponsePredicateResult.failure("Does not work");
+    };
 }
