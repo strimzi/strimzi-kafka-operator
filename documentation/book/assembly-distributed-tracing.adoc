@@ -5,7 +5,13 @@
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing
 
-This chapter provides an overview of distributed tracing in {ProductName}. It includes procedures for configuring distributed tracing in Kafka Connect and Mirror Maker, and for instrumenting Kafka Producer, Consumer, and Streams API applications for tracing.
+This chapter outlines the support for distributed tracing in {ProductName}, using Jaeger.
+
+How you configure distributed tracing varies by {ProductName} client and component.
+
+* You _instrument_ Kafka Producer, Consumer, and Streams API applications for distributed tracing using an OpenTracing client library. This involves adding instrumentation code to these clients, which monitors the execution of individual transactions in order to generate trace data.
+
+* Distributed tracing support is built in to the Kafka Connect and Mirror Maker components of {ProductName}. To configure these components for distributed tracing, you configure and update the relevant custom resources.
 
 include::con-overview-distributed-tracing.adoc[leveloffset=+1]
 
