@@ -5,11 +5,11 @@
 [id='con-overview-distributed-tracing-{context}']
 = Overview of distributed tracing in {ProductName}
 
-Distributed tracing allows developers and system administrators to track the progress of transactions between applications and microservices in a distributed system. This information is useful for monitoring application performance at the micro-level and investigating issues with target systems and end-user applications.
+Distributed tracing allows developers and system administrators to track the progress of transactions between applications and microservices in a distributed system. This information is useful for monitoring application performance and investigating issues with target systems and end-user applications.
 
 In {ProductName} and data streaming platforms in general, distributed tracing facilitates the end-to-end tracking of messages: from source systems to the Kafka cluster and then to target systems and applications.
 
-As an aspect of system observability, distributed tracing complements the metrics that are available to view in xref:assembly-metrics-setup-{context}[Grafana dashboards], as well as the available loggers for each component. 
+As an aspect of system observability, distributed tracing complements the metrics that are available to view in xref:assembly-metrics-setup-{context}[Grafana dashboards] and the available loggers for each component. 
 
 .Introduction to OpenTracing and Jaeger
 

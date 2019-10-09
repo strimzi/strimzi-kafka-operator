@@ -9,7 +9,7 @@ This chapter outlines the support for distributed tracing in {ProductName}, usin
 
 How you configure distributed tracing varies by {ProductName} client and component.
 
-* You _instrument_ Kafka Producer, Consumer, and Streams API applications for distributed tracing using an OpenTracing client library. This involves adding instrumentation code to these clients, which monitors the execution of individual transactions in order to generate trace data.
+* You __instrument__ Kafka Producer, Consumer, and Streams API applications for distributed tracing using an OpenTracing client library. This involves adding instrumentation code to these clients, which monitors the execution of individual transactions in order to generate trace data.
 
 * Distributed tracing support is built in to the Kafka Connect and Mirror Maker components of {ProductName}. To configure these components for distributed tracing, you configure and update the relevant custom resources.
 
