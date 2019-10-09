@@ -2040,6 +2040,7 @@
   "schemaVersion": 16,
   "style": "dark",
   "tags": [
+    "Strimzi",
     "Kafka"
   ],
   "templating": {
@@ -2105,7 +2106,7 @@
         "useTags": false
       },
       {
-        "allValue": ".*",
+        "allValue": ".+",
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "hide": 0,
