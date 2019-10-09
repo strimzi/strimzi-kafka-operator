@@ -5,7 +5,7 @@
 [id='con-overview-distributed-tracing-{context}']
 = Overview of distributed tracing in {ProductName}
 
-Distributed tracing allows developers and system administrators to track the progress of transactions between applications and microservices in a distributed system. This information is useful for monitoring application performance and investigating issues with target systems and end-user applications.
+Distributed tracing allows developers and system administrators to track the progress of transactions between applications (and services in a microservice architecture) in a distributed system. This information is useful for monitoring application performance and investigating issues with target systems and end-user applications.
 
 In {ProductName} and data streaming platforms in general, distributed tracing facilitates the end-to-end tracking of messages: from source systems to the Kafka cluster and then to target systems and applications.
 
@@ -15,11 +15,11 @@ As an aspect of system observability, distributed tracing complements the metric
 
 Distributed tracing in {ProductName} is implemented using the open source {OpenTracingHome} and {JaegerHome} projects.
 
-The OpenTracing specification defines APIs that developers can use to instrument applications -- often in microservice architectures -- for distributed tracing. It is independent from the tracing system.
+The OpenTracing specification defines APIs that developers can use to instrument applications for distributed tracing. It is independent from the tracing system.
 
 When instrumented, applications generate __traces__ for individual transactions. Traces are composed of __spans__, which define specific units of work.
 
-To simplify the instrumentation of Kafka Producer, Consumer, and Streams API applications, {ProductName} includes the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library. This library is an example of a __tracer__.
+To simplify the instrumentation of Kafka Producer, Consumer, and Streams API applications, {ProductName} includes the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library.
 
 NOTE: The OpenTracing project is merging with the OpenCensus project. The new, combined project is named {OpenTelemetryHome}. OpenTelemetry will provide compatibility for applications that are instrumented using the OpenTracing APIs.
 
@@ -36,13 +36,9 @@ In {ProductName}, distributed tracing is supported in:
 * Kafka Connect (including Kafka Connect with Source2Image support)
 * Mirror Maker 
 
-You enable and configure distributed tracing for these types of components by setting template configuration properties in the relevant custom resource (for example, `KafkaConnect`).
+You enable and configure distributed tracing for these components by setting template configuration properties in the relevant custom resource (for example, `KafkaConnect`).
 
 To enable distributed tracing in Kafka Producer, Consumer, and Streams API applications, you can instrument application code using the OpenTracing Apache Kafka Client Instrumentation library.
 When instrumented, these clients generate traces for messages (for example, when producing messages or writing offsets to the log).
 
 Traces are sampled according to a sampling strategy and then visualized in the Jaeger user interface. This trace data is useful for monitoring the performance of your Kafka cluster and debugging issues with target systems and applications.
-
-Before instrumenting a client application, you must first initialize and configure a Jaeger tracer in the Kafka cluster for use by the application, as described in xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initializing a Jaeger tracer for Kafka clients].
-
-NOTE: Distributed tracing is not supported for Kafka brokers.

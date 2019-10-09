@@ -9,8 +9,6 @@ Use these environment variables when configuring a Jaeger tracer for Kafka clien
 
 NOTE: The tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
 
-// We should make clear that these are not our variables but Jaegers and they are subject to change by Jaeger and ideally add a link to their docs for the description in case they change.
-
 [%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
 |===
 
@@ -48,7 +46,7 @@ m¦JAEGER_PASSWORD
 
 m¦JAEGER_PROPAGATION
 ¦No
-¦A comma-separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are *jaeger* and *b3*.
+¦A comma-separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are `jaeger` and `b3`.
 
 m¦JAEGER_REPORTER_LOG_SPANS
 ¦No
@@ -60,7 +58,7 @@ m¦JAEGER_REPORTER_MAX_QUEUE_SIZE
 
 m¦JAEGER_REPORTER_FLUSH_INTERVAL
 ¦No
-¦The reporter's flush interval, in ms.
+¦The reporter's flush interval, in ms. Defines how frequently the Jaeger reporter flushes span batches. 
 
 m¦JAEGER_SAMPLER_TYPE
 ¦No
@@ -76,7 +74,7 @@ m¦JAEGER_SAMPLER_PARAM
 
 m¦JAEGER_SAMPLER_MANAGER_HOST_PORT
 ¦No
-¦The host name and port to use if a Remote sampling strategy is selected.
+¦The hostname and port to use if a Remote sampling strategy is selected.
 
 m¦JAEGER_TAGS
 ¦No

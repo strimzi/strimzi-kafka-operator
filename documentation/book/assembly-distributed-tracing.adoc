@@ -13,6 +13,10 @@ How you configure distributed tracing varies by {ProductName} client and compone
 
 * Distributed tracing support is built in to the Kafka Connect and Mirror Maker components of {ProductName}. To configure these components for distributed tracing, you configure and update the relevant custom resources.
 
+Before configuring distributed tracing in {ProductName} clients and components, you must first initialize and configure a Jaeger tracer in the Kafka cluster for use by the application, as described in xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initializing a Jaeger tracer for Kafka clients].
+
+NOTE: Distributed tracing is not supported for Kafka brokers.
+
 include::con-overview-distributed-tracing.adoc[leveloffset=+1]
 
 .Outline of procedures
