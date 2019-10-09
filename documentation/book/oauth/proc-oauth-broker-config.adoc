@@ -7,7 +7,7 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
 
-If the authorization server is using certificates signed by trusted CA and matching the {oauth} server hostname, TLS connection works out of box.
+If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection using the default settings.
 Otherwise, you have two connection options for your external listener configuration:
 
 . TLS connection to the authorization server with trusted certificates
@@ -25,8 +25,8 @@ For more information on the configuration and authentication of Kafka broker lis
 
 .Prerequisites
 
-* {ProductName} and Kafka is running
-* {oauth} authorization server is deployed
+* {ProductName} and Kafka are running
+* An {oauth} authorization server is deployed
 
 .Procedure
 
@@ -37,7 +37,7 @@ For more information on the configuration and authentication of Kafka broker lis
 kubectl edit kafka my-cluster
 ----
 
-. Configure the Kafka broker `listeners` configuration
+. Configure the Kafka broker `listeners` configuration.
 +
 The configuration for each type of listener does not have to be the same, as they are independent.
 +

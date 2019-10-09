@@ -7,6 +7,8 @@
 
 This procedure describes in general what you need to do to configure an authorization server for integration with {ProductName}.
 
+These instructions are not product specific.
+
 The steps are dependent on the chosen authorization server.
 Consult the product documentation for the authorization server for information on how to set up {oauth} access.
 
@@ -20,7 +22,7 @@ NOTE: If you already have an authorization server deployed, you can skip the dep
 Now prepare the authorization server to work with {ProductName}.
 
 . Configure a `kafka-broker` client.
-. Configure clients for each Kafka client component of your application
+. Configure clients for each Kafka client component of your application.
 
 .What to do next
 After deploying and configuring the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].

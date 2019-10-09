@@ -17,15 +17,15 @@ In this scenario, the Kafka component and the authorization server are running i
 
 .Prerequisites
 
-* AMQ Streams and Kafka is running
-* {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
+* {ProductName} and Kafka are running
+* An {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
 * Kafka brokers are configured for {oauth}
 
 .Procedure
 
-. Create an OpenShift client secret and mount it to the component as an environment variable.
+. Create a client secret and mount it to the component as an environment variable.
 +
-For example, here we are creating a client Secret for the Kafka Bridge:
+For example, here we are creating a client `Secret` for the Kafka Bridge:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -46,9 +46,9 @@ For example, here {oauth} is assigned to the Kafka Bridge client:
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: kafka.strimzi.io/v1beta1
-kind: KafkaConnect
+kind: KafkaBridge
 metadata:
-  name: my-connect
+  name: my-bridge
 spec:
   # ...
   authentication:

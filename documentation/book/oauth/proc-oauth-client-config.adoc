@@ -11,8 +11,8 @@ Add a client callback plugin to your _pom.xml_ file, and configure the system pr
 
 .Prerequisites
 
-* AMQ Streams and Kafka is running
-* {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
+* {ProductName} and Kafka are running
+* An {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
 * Kafka brokers are configured for {oauth}
 
 .Procedure
@@ -38,7 +38,7 @@ System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<authoriza
 System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
 System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
 ----
-<1> URI of the authorization server token endpoint
+<1> URI of the authorization server token endpoint.
 <2> Client ID, which is the name used when creating the _client_ in the authorization server.
 <3> Client secret created when creating the _client_ in the authorization server.
 

@@ -13,7 +13,7 @@ When a Kafka client sends an access token as credentials to a Kafka broker, the 
 Depending on the authorization server used, and the configuration options available, you may prefer to use:
 
 * Fast local token validation based on JWT signature checking and local token introspection, without contacting the authorization server
-* An {oauth} introspection endpoint provided by authorization server
+* An {oauth} introspection endpoint provided by the authorization server
 
 Using fast local token validation requires the authorization server to provide a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
 
@@ -28,8 +28,6 @@ Kafka client credentials can also be configured for:
 * Contact with the authorization server for a new access token to be issued and sent to the Kafka broker
 
 == Example client authentication flows
-
-Here you can see example flows using the following {oauth} client authentication options.
 
 Here you can see the communication flows, for different configurations of Kafka clients and brokers, during Kafka session authentication.
 
