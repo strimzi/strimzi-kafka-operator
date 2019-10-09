@@ -591,7 +591,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Message in per second",
+      "title": "Messages in per second",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -682,7 +682,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Message consume per second",
+      "title": "Messages consumed per second",
       "tooltip": {
         "shared": true,
         "sort": 0,
