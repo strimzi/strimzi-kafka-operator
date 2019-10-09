@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -812,10 +813,14 @@ public class StUtils {
         return sb.toString();
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName) {
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String message) {
         LOGGER.info("Waiting for messages in file sink");
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
+            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().contains(message));
+    }
+
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName) {
+        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, "0\n1\n");
     }
 
     private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
@@ -855,6 +860,12 @@ public class StUtils {
         LOGGER.info("Waiting for message will be in the log");
         TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
             () -> kubeClient().logs(podName, containerName).contains(message));
+    }
+
+    public static void waitUntilMessageIsInPodLogs(String podName, String message) {
+        LOGGER.info("Waiting for message will be in the log");
+        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
+            () -> kubeClient().logs(podName).contains(message));
     }
 
     /**
@@ -899,6 +910,26 @@ public class StUtils {
                         "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"/tmp/test-file-sink.txt\" } }' " +
                         "http://localhost:8083/connectors"
         );
+    }
+
+    public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
+        LOGGER.info("Waiting till pods with prefix {} count is present", podNamePrefix);
+        TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == numberOfPods);
+        LOGGER.info("Pods with count {} are present", numberOfPods);
+    }
+
+    public static void createSecret(String secretName, String dataKey, String dataValue) {
+        LOGGER.info("Creating secret {}", secretName);
+        kubeClient().createSecret(new SecretBuilder()
+                .withNewApiVersion("v1")
+                .withNewKind("Secret")
+                .withNewMetadata()
+                    .withName(secretName)
+                .endMetadata()
+                .withNewType("Opaque")
+                    .withData(Collections.singletonMap(dataKey, dataValue))
+                .build());
     }
 
     public static List<ContainerEnvVar> createContainerEnvVarsFromMap(Map<String, String> envVars) {

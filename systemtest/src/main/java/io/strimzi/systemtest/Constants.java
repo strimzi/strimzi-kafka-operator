@@ -56,6 +56,9 @@ public interface Constants {
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String IMAGE_PULL_POLICY = "Always";
 
+    int HTTP_KEYCLOAK_DEFAULT_PORT = 8080;
+    int HTTPS_KEYCLOAK_DEFAULT_PORT = 8443;
+
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
      */

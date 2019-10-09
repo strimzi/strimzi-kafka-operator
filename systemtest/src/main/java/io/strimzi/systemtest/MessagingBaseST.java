@@ -31,7 +31,7 @@ public class MessagingBaseST extends AbstractST {
      * Simple availability check for kafka cluster
      * @param clusterName cluster name
      */
-    void availabilityTest(String clusterName) throws Exception {
+    public void availabilityTest(String clusterName) throws Exception {
         availabilityTest(100, clusterName, false, "my-topic", null);
     }
 
