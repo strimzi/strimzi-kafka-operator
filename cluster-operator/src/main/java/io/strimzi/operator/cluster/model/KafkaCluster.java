@@ -456,9 +456,13 @@ public class KafkaCluster extends AbstractModel {
         result.setListeners(listeners);
 
         if (listeners != null) {
-            if (listeners.getPlain() != null
-                    && listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
-                throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
+            if (listeners.getPlain() != null) {
+                if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
+                    throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
+                }
+                if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth());
+                }
             }
 
             if (listeners.getExternal() != null && !result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
@@ -1508,10 +1512,38 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Validates provided OAuth configuration. Throws InvalidResourceException when OAuth configuration contains forbidden combinations.
+     *
+     * @param oAuth     OAuth type authentication object
+     */
+    private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth) {
+        if (oAuth.getValidIssuerUri() == null) {
+            log.error("Valid Issue URI has to be specified");
+            throw new InvalidResourceException("Valid Issue URI has to be specified");
+        }
+
+        if (oAuth.getJwksExpirySeconds() != null && oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) {
+            log.error("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
+            throw new InvalidResourceException("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
+        }
+
+        if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
+            log.error("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+            throw new InvalidResourceException("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+        }
+
+        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() != null || oAuth.getJwksExpirySeconds() != null)) {
+            log.error("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+            throw new InvalidResourceException("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+        }
+
+    }
+
+    /**
      * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but as a secret
      * reference to keep it secure.
      *
-     * @param oauth     OAuth type autentication object
+     * @param oauth     OAuth type authentication object
      * @return  JAAS configuration string ith the public variables
      */
     protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
@@ -1520,8 +1552,8 @@ public class KafkaCluster extends AbstractModel {
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
         if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
         if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
+        if (oauth.getJwksExpirySeconds() != null && oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
         if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
