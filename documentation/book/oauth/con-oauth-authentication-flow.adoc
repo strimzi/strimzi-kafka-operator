@@ -31,7 +31,7 @@ When a client obtains an access token, no further communication with the authori
 The simplest mechanism, which requires no additional usage of authorization server tools, is authentication with a client ID and secret.
 Using a long-lived access token, or a long-lived refresh token, is more complex.
 
-NOTE: If you are using long-lived access tokens, configure _realm_ policy settings in the authorization server to increase the maximum lifetime of the token.
+NOTE: If you are using long-lived access tokens, you can set policy in the authorization server to increase the maximum lifetime of the token.
 
 If the Kafka client is not configured with an access token directly, the client exchanges credentials for an access token during Kafka session initiation by contacting the authorization server.
 The Kafka client uses one of two mechanisms:
