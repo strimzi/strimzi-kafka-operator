@@ -13,12 +13,12 @@ Perform these steps in the application code of each Kafka Producer and Consumer 
 
 . Add the Maven dependency for OpenTracing to the Producer or Consumer's `pom.xml` file.
 +
-[source,xml,subs="+quotes,attributes+"]
+[source,xml,subs="attributes+"]
 ----
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-kafka-client</artifactId>
-    <version>{0.1.5}</version>
+    <version>{OpenTracingKafkaClient}</version>
 </dependency>
 ----
 
@@ -137,7 +137,7 @@ TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer
 
 == Built-in span names
 
-When defining custom span names, you can use the following `BiFunctions` in the ClientSpanNameProvider class. If no `spanNameProvider` is specified, `CONSUMER_OPERATION_NAME` and `PRODUCER_OPERATION_NAME` are used.
+When defining custom span names, you can use the following `BiFunctions` in the `ClientSpanNameProvider` class. If no `spanNameProvider` is specified, `CONSUMER_OPERATION_NAME` and `PRODUCER_OPERATION_NAME` are used.
 
 [%autowidth,cols="2*",options="header",stripes="none",separator=¦]
 |===

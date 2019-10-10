@@ -115,6 +115,10 @@
 :KafkaUserApiVersionPrev: kafka.strimzi.io/v1alpha1
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
+// Tracing versions
+:JaegerClientVersion: 1.0.0
+:OpenTracingKafkaClient: 0.1.4
+
 // Section enablers
 :Helm:
 :OperatorHubio:
