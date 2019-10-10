@@ -18,6 +18,7 @@
 :ContextProduct: strimzi
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
+:oauth: OAuth 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
 :KafkaVersionLower: 2.2.1
@@ -31,6 +32,10 @@
 
 //kafka Exporter links
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
+
+//OAuth attributes and links
+:oauth2-site: link:https://oauth.net/2/[{oauth} site^]
+:oauth-artifact-version: 0.1.0.redhat-00002
 
 // External links
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
