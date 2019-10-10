@@ -13,7 +13,7 @@
 However, {oauth} authentication can be used in conjunction with xref:simple-acl-using-uo[ACL-based Kafka authorization].
 
 Using {oauth} token based authentication, application clients can access resources on application servers (called ‘resource servers’) without exposing account credentials.
-The client presents an access token as a means of authenticating, which application servers can also use to find more information about the level of access granted.
+The client passes an access token as a means of authenticating, which application servers can also use to find more information about the level of access granted.
 The authorization server handles the granting of access and inquiries about access.
 
 In the context of {ProductName}:

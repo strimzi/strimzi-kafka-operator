@@ -7,8 +7,8 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
 
-If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection using the default settings.
-Otherwise, you have two connection options for your external listener configuration:
+If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection works using the default settings.
+Otherwise, you have two connection options for your external listener configuration when delegating token validation to the authorization server:
 
 . TLS connection to the authorization server with trusted certificates
 . Direct connection using an introspection endpoint configuration
@@ -48,8 +48,8 @@ For example:
 #...
    authentication:
      type: oauth <1>
-     validIssuerUri: _https://<authorization-server-address>/auth/realms/demo_ <2>
-     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs_ <3>
+     validIssuerUri: <__https://<authorization-server-address>/auth/realms/demo__> <2>
+     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs__> <3>
      userNameClaim: preferred_username <4>
 
 #external configuration
@@ -59,8 +59,8 @@ For example:
    //Option 1
    authentication: <5>
      type: oauth
-     validIssuerUri: _https://<authorization-server-address>/auth/realms/external_
-     jwksEndpointUri: _https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs_
+     validIssuerUri: <__https://<authorization-server-address>/auth/realms/external__>
+     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs__>
      userNameClaim: preferred_username
      tlsTrustedCertificates: <6>
      - secretName: oauth-server-cert
@@ -70,8 +70,8 @@ For example:
    //Option 2
    authentication: <8>
      type: oauth
-     validIssuerUri: _https://<authorization-server-address>/auth/realms/external_
-     introspectionEndpointUri: _https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect_
+     validIssuerUri: <__https://<authorization-server-address>/auth/realms/external__>
+     introspectionEndpointUri: <__https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__>
      clientId: kafka-broker
      clientSecret:
        secretName: my-cluster-oauth

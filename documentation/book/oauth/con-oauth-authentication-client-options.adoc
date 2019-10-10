@@ -6,7 +6,7 @@
 = {oauth} client authentication flow
 
 In this section, we explain and visualize the communication flow between Kafka client, Kafka broker, and authorization server during Kafka session initiation.
-The flow depends on client and server configuration.
+The flow depends on the client and server configuration.
 
 When a Kafka client sends an access token as credentials to a Kafka broker, the token needs to be validated.
 
@@ -39,7 +39,7 @@ Here you can see the communication flows, for different configurations of Kafka 
 [id='oauth-introspection-endpoint-{context}']
 .Client using client ID and secret, with broker delegating validation to authorization server
 
-image:oauth-introspection-endpoint.png[Client using client ID and secret, with broker delegating validation to authorization server]
+image:oauth-introspection-endpoint.png[Client using client ID and secret with broker delegating validation to authorization server]
 
 . Kafka client requests access token from authorization server, using client ID and secret, and optionally a refresh token.
 . Authorization server generates a new access token.
@@ -50,7 +50,7 @@ image:oauth-introspection-endpoint.png[Client using client ID and secret, with b
 [id='oauth-jwt-{context}']
 .Client using client ID and secret, with broker performing fast local token validation
 
-image:oauth-jwt-signature.png[Client using client ID and secret, with broker performing fast local token validation]
+image:oauth-jwt-signature.png[Client using client ID and secret with broker performing fast local token validation]
 
 . Kafka client authenticates with authorization server from the token endpoint, using a client ID and secret, and optionally a refresh token.
 . Authorization server generates a new access token.
@@ -60,7 +60,7 @@ image:oauth-jwt-signature.png[Client using client ID and secret, with broker per
 [id='oauth-token-endpoint-{context}']
 .Client using long-lived access token, with broker delegating validation to authorization server
 
-image:oauth-introspection-endpoint-long-token.png[Client using long-lived access token, with broker delegating validation to authorization server]
+image:oauth-introspection-endpoint-long-token.png[Client using long-lived access token with broker delegating validation to authorization server]
 
 . Kafka client authenticates with the Kafka broker using the _SASL OAUTHBEARER_ mechanism to pass the long-lived access token.
 . Kafka broker validates the access token by calling a token introspection endpoint on authorization server, using client ID and secret.
@@ -69,7 +69,7 @@ image:oauth-introspection-endpoint-long-token.png[Client using long-lived access
 [id='oauth-token-jwt-{context}']
 .Client using long-lived access token, with broker performing fast local validation
 
-image:oauth-jwt-signature-token.png[Client using long-lived access token, with broker performing fast local validation]
+image:oauth-jwt-signature-token.png[Client using long-lived access token with broker performing fast local validation]
 
 . Kafka client authenticates with the Kafka broker using the _SASL OAUTHBEARER_ mechanism to pass the long-lived access token.
 . Kafka broker validates the access token locally using JWT token signature check, and local token introspection.
