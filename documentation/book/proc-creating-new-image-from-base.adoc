@@ -29,7 +29,13 @@ USER {DockerImageUser}
 
 . Push your custom image to your container registry.
 
-. Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image. If set, this property overrides the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable in the Cluster Operator.
+. Point to the new container image.
++
+You can either:
++
+* Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource.  
++
+If set, this property overrides the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable in the Cluster Operator.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -44,7 +50,7 @@ spec:
 +
 or
 +
-In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image and reinstall the Cluster Operator.
+* In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image and reinstall the Cluster Operator.
 
 .Additional resources
 
