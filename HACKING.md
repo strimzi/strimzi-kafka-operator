@@ -6,16 +6,20 @@ This document gives a detailed breakdown of the various build processes and opti
 
 - [Build Pre-requisites](#build-pre-requisites)
 - [Make targets](#make-targets)
-- [Docker options](#docker-options)
+- [Docker build options](#docker-build-options)
 - [Building Strimzi](#building-strimzi)
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
+- [DCO Signoff](#cdo-signoff)
+- [IDE build problems](#ide-build-problems)
 
 <!-- /TOC -->
 
 ## Build Pre-Requisites
 
-To build this project you must first install several command line utilities.
+To build this project you must first install several command line utilities and a Kubernetes or OpenShift cluster
+
+#### Command line tools
 
 - [`make`](https://www.gnu.org/software/make/) - Make build system
 - [`mvn`](https://maven.apache.org/index.html) (version 3.5 and above) - Maven CLI
@@ -29,21 +33,17 @@ To build this project you must first install several command line utilities.
 
 In order to use `make` these all need to be available in your `$PATH`.
 
-### Mac OS
+##### Mac OS
 
 The `make` build is using GNU versions of `find` and `sed` utilities and is not compatible with the BSD versions available on Mac OS. When using Mac OS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you can do `brew install gnu-sed findutils grep coreutils`. This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
-The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`  
+The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
-### IDE
-
-The build also uses a Java annotation processor. Some IDEs (such as IntelliJ) don't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
-
-### Cluster
+#### Kubernetes or OpenShift Cluster
 
 In order to run the integration tests and test any changes made to the operators you will need a functioning Kubernetes or OpenShift cluster. This can be a remote cluster or a local development cluster.
 
-#### Minishift 
+##### Minishift 
 
 In order to perform the operations necessary for the integration tests, your user must have the cluster administrator role assigned. For example, if your username is `developer`, you can add the `cluster-admin` role using the commands below:
 
@@ -53,7 +53,7 @@ In order to perform the operations necessary for the integration tests, your use
     
     oc login -u developer -p <password>
 
-#### Minikube
+##### Minikube
 
 The default minishift setup should allow the integration tests to be run without additional configuration changes. 
 
@@ -63,46 +63,69 @@ Sometimes however, updates to minikube may prevent the test cluster context bein
                                                                                             
 ## Make targets
 
-### Building Docker images
+Strimzi includes a `Makefile` with various Make targets to build the project.
+
+Commonly used Make targets:
+
+ - `docker_build` for [building Docker images](#building-docker-images)
+ - `docker_tag` for [tagging existing images](#tagging-and-pushing-docker-images)
+ - `docker_push` for [pushing images to a Docker registry](#tagging-and-pushing-docker-images)
+
+>*Note*: If you are having trouble running any of the Make commands it may help to run `mvn clean` and then `mvn install -DskipTests -DskipITs` before running the commands again.
+
+#### Building Docker images
 
 The `docker_build` target will build the Docker images provided by the Strimzi project. You can build all Strimzi Docker images by calling `make docker_build` from the root of the Strimzi repository. Or you can build an individual Docker image by running `make docker_build` from the subdirectories with their respective Dockerfiles - e.g. `kafka_base`, `kafka` etc.
 
 The `docker_build` target will **always** build the images under the `strimzi` organization. This is necessary in order to be able to reuse the base image you might have just built without modifying all Dockerfiles. The `DOCKER_TAG` environment variable configures the Docker tag to use (default is `latest`).
 
-#### Kafka versions
+#### Tagging and pushing Docker images
 
-As part of the Docker image build several different versions of Kafka will be built, which can increase build times. Which Kafka versions are to be built are defined in the [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions) file. Unwanted versions can be commented out to speed up the build process.
-
-### Tagging and pushing Docker images
-
-Target `docker_tag` can be used to tag the Docker images built by the `docker_build` target. This target is automatically called by the `docker_push` target and doesn't have to be called separately. 
+Target `docker_tag` tags the Docker images built by the `docker_build` target. This target is automatically called as part of the `docker_push` target, but can be called separately if you wish to avoid pushing images to an external registry.
 
 To configure the `docker_tag` and `docker_push` targets you can set following environment variables:
 * `DOCKER_ORG` configures the Docker organization for tagging/pushing the images (defaults to the value of the `$USER` environment variable)
 * `DOCKER_TAG` configured Docker tag (default is `latest`)
 * `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default is `docker.io`)
 
-## Docker options
+## Docker build options
 
-### Alternate Docker image JRE
+When building the Docker images you can use an alternative JRE or use an alternate base image.
+
+#### Alternate Docker image JRE
 
 The docker images can be built with an alternate java version by setting the environment variable `JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use `JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
 
 If `JAVA_VERSION` environment variable is set, a profile in the parent pom.xml will set the `maven.compiler.source` and `maven.compiler.target` properties.
 
-### Alternate Docker base image
+#### Alternate Docker base image
 
 The docker images can be built with an alternate container OS version by adding the environment variable `ALTERNATE_BASE`.  When this environment variable is set, for each component the build will look for a Dockerfile in the subdirectory named by `ALTERNATE_BASE`.  For example, to build docker images based on alpine, use `ALTERNATE_BASE=alpine make docker_build`.  Alternate docker images are an experimental feature not supported by the core Strimzi team.
 
 ## Building Strimzi
 
-The `make all` target can be used to trigger both the `docker_build` and the `docker_push` targets described above. This will build the Docker images, tag them and push them to the configured repository. 
+The `make all` target can be used to trigger both the `docker_build` and the `docker_push` targets described above. This will build the Docker images, tag them and push them to the configured repository.
 
-### Maven 
+The build can be customised by:
+
+ - building fewer [Kafka versions](#kafka-versions)
+ - customising the [Maven settings](#maven-settings)
+
+Other build options:
+
+ - [Local build with push to Docker Hub](#local-build-with-push-to-docker-hub)
+ - [Local build with push to Minishift Docker registry](#local-build-with-push-to-minishift-docker-registry)
+ - [Local build on Minishift or Minikube](#local-build-on-minishift-or-minikube)
+
+#### Kafka versions
+
+As part of the Docker image build several different versions of Kafka will be built, which can increase build times. Which Kafka versions are to be built are defined in the [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions) file. Unwanted versions can be commented out to speed up the build process. 
+
+#### Maven Settings
 
 Running `make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, etc). The `mvn` command can be customized by setting the `MVN_ARGS` environment variable when launching `make all`. For example, `MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests and adding `-DskipIT` will skip the integration tests.
 
-### Local build with push to Docker Hub
+#### Local build with push to Docker Hub
 
 To build the images on your local machine and push them to the Docker Hub, log into Docker Hub with your account details. This sets the Hub as the `docker push` registry target.
 
@@ -132,7 +155,7 @@ Finally, you can deploy the cluster custom resource running:
 
     oc create -f examples/kafka/kafka-ephemeral.yaml
 
-### Local build with push to Minishift Docker registry
+#### Local build with push to Minishift Docker registry
 
 When developing locally you might want to push the docker images to the docker repository running in your local OpenShift (minishift) cluster. This can be quicker than pushing to Docker Hub and works even without a network connection.
 
@@ -179,7 +202,7 @@ Assuming your OpenShift login is `developer` (a user with the `cluster-admin` ro
 
     oc create -f examples/kafka/kafka-ephemeral.yaml
 
-### Cluster build
+#### Local build on Minishift or Minikube
 
 If you do not want to have the docker daemon running on your local development machine, you can build the container images in your minishift or minikube VM by setting your docker host to the address of the VM's daemon:
 
@@ -191,7 +214,7 @@ or
 
 The images will then be built and stored in the cluster VM's local image store and then pushed to your configured Docker registry. 
 
-#### Skipping the registry push
+##### Skipping the registry push
 
 You can avoid the `docker_push` step and `sed` commands above by configuring the Docker Host as above and then running:
 
@@ -211,7 +234,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-### Test groups
+#### Test groups
 
 To execute an expected group of system tests need to add system property `junitTags` with following value:
 
@@ -230,7 +253,7 @@ If `junitTags` system property isn't defined, all tests without an explicitly de
 | flaky         | Execute all flaky tests (tests, which are failing from time to time)               |
 | all           | Execute all system tests with any tag                                              |
 
-### Helper script
+#### Helper script
 
 The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the travis build.  You can use this script to easily run the `systemtests` project.
 
@@ -238,14 +261,14 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
     EXTRA_ARGS="-Dfoo=bar" ./systemtest/scripts/run_tests.sh
     
-### Running single test class
+#### Running single test class
 
 Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system property. 
 
     mvn verify -pl systemtest -P systemtests -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
-### Environment variables
+#### Environment variables
 
 We can configure our system tests with several environment variables, which are loaded before test execution:
 
@@ -265,15 +288,15 @@ If you want to use your own images with different tag or from different reposito
 
 `KUBERNETES_DOMAIN` should be specified only in case you are using specific configuration in your kubernetes cluster.
 
-#### Specific Kafka version
+##### Specific Kafka version
 
 To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` to one of the values in [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
 
-#### Cluster Operator Log level
+##### Cluster Operator Log level
 
 To set the log level of Strimzi for system tests need to add system property `STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
 
-### Test Cluster
+#### Test Cluster
 
 The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`. If this variable is not set, kubernetes client will use currently active context. Otherwise will use context from kubeconfig with name specified by `TEST_CLUSTER_CONTEXT` variable.
 
@@ -286,3 +309,7 @@ System tests uses admin user for some actions. You can specify admin user via va
 The project requires that all commits are signed-off, indicating that _you_ certify the changes with the developer certificate of origin (DCO) (https://developercertificate.org/). 
 This can be done using `git commit -s` for each commit in your pull request. 
 Alternatively, to signoff a bunch of commits you can use `git rebase --signoff _your-branch_`.
+
+## IDE build problems
+
+The build also uses a Java annotation processor. Some IDEs (such as IntelliJ) don't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
