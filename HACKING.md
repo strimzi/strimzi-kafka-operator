@@ -81,7 +81,7 @@ The `docker_build` target will **always** build the images under the `strimzi` o
 
 #### Tagging and pushing Docker images
 
-Target `docker_tag` can be used to tag the Docker images built by the `docker_build` target. This target is automatically called by the `docker_push` target and doesn't have to be called separately. 
+Target `docker_tag` tags the Docker images built by the `docker_build` target. This target is automatically called as part of the `docker_push` target, but can be called separately if you wish to avoid pushing images to an external registry.
 
 To configure the `docker_tag` and `docker_push` targets you can set following environment variables:
 * `DOCKER_ORG` configures the Docker organization for tagging/pushing the images (defaults to the value of the `$USER` environment variable)
