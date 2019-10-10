@@ -1665,6 +1665,7 @@ public class Resources extends AbstractResources {
 
         return createNewDeployment(new DeploymentBuilder()
                 .withNewMetadata()
+                        .withNamespace(client().getNamespace())
                         .withClusterName(client().getNamespace())
                         .withLabels(producerLabels)
                         .withName("hello-world-producer")
@@ -1747,6 +1748,7 @@ public class Resources extends AbstractResources {
 
         return createNewDeployment(new DeploymentBuilder()
                 .withNewMetadata()
+                        .withNamespace(client().getNamespace())
                         .withClusterName(client().getNamespace())
                         .withLabels(consumerLabels)
                         .withName(name)
@@ -1829,6 +1831,7 @@ public class Resources extends AbstractResources {
 
         return createNewDeployment(new DeploymentBuilder()
                 .withNewMetadata()
+                    .withNamespace(client().getNamespace())
                     .withClusterName(client().getNamespace())
                     .withLabels(kafkaStreamsLabel)
                     .withName(kafkaStreamsName)
