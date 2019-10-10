@@ -34,7 +34,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
-        String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
+        String entityOperatorDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         String entityOperatorDeploymentUid = kubeClient().getDeploymentUid(entityOperatorDeploymentName);
         kubeClient().deleteDeployment(entityOperatorDeploymentName);
 
@@ -53,7 +53,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
-        String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
+        String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
 
@@ -72,7 +72,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
-        String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
+        String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
 
@@ -90,7 +90,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
-        String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
+        String kafkaServiceName = KafkaResources.bootstrapServiceName(CLUSTER_NAME);
         String kafkaServiceUid = kubeClient().getServiceUid(kafkaServiceName);
         kubeClient().deleteService(kafkaServiceName);
 
@@ -124,7 +124,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
-        String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
+        String kafkaHeadlessServiceName = KafkaResources.brokersServiceName(CLUSTER_NAME);
         String kafkaHeadlessServiceUid = kubeClient().getServiceUid(kafkaHeadlessServiceName);
         kubeClient().deleteService(kafkaHeadlessServiceName);
 
@@ -158,7 +158,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
-        String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
+        String kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME);
         String kafkaMetricsConfigUid = kubeClient().getConfigMapUid(kafkaMetricsConfigName);
         kubeClient().deleteConfigMap(kafkaMetricsConfigName);
 
@@ -175,7 +175,7 @@ class RecoveryST extends AbstractST {
         setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
         // kafka cluster already deployed
-        String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
+        String zookeeperMetricsConfigName = KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME);
         String zookeeperMetricsConfigUid = kubeClient().getConfigMapUid(zookeeperMetricsConfigName);
         kubeClient().deleteConfigMap(zookeeperMetricsConfigName);
 

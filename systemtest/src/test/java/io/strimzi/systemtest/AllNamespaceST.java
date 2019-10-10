@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -32,6 +33,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
     private static Resources thirdNamespaceResources;
+    private static final String SECOND_CLUSTER_NAME = CLUSTER_NAME + "-second";
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -55,7 +57,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
-        checkKafkaInDiffNamespaceThanCO();
+        checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
     }
 
     /**
@@ -64,18 +66,16 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
-        checkMirrorMakerForKafkaInDifNamespaceThanCO();
+        checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
     }
 
     @Test
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
-        // Deploy Kafka in other namespace than CO
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
         // Deploy Kafka Connect in other namespace than CO
-        secondNamespaceResources.kafkaConnect(CLUSTER_NAME + "-second", 1).done();
+        secondNamespaceResources.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
-        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME + "-second"), 1);
+        StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
         setNamespace(previousNamespace);
     }
 
@@ -128,29 +128,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources() {
-
-        thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-                .editEntityOperator()
-                    .editTopicOperator()
-                        .withWatchedNamespace(SECOND_NAMESPACE)
-                    .endTopicOperator()
-                    .editUserOperator()
-                        .withWatchedNamespace(SECOND_NAMESPACE)
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec()
-            .done();
-    }
-
-    @BeforeAll
-    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
         createTestClassResources();
@@ -169,9 +146,36 @@ class AllNamespaceST extends AbstractNamespaceST {
         String previousNamespace = setNamespace(THIRD_NAMESPACE);
         thirdNamespaceResources = new Resources(kubeClient());
 
-        deployTestSpecificResources();
+        thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+                .editEntityOperator()
+                    .editTopicOperator()
+                        .withWatchedNamespace(SECOND_NAMESPACE)
+                    .endTopicOperator()
+                    .editUserOperator()
+                        .withWatchedNamespace(SECOND_NAMESPACE)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
+        setNamespace(SECOND_NAMESPACE);
+        secondNamespaceResources = new Resources(kubeClient());
+        // Deploy Kafka in other namespace than CO
+        secondNamespaceResources.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).done();
 
         setNamespace(previousNamespace);
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        deployTestSpecificResources();
     }
 
     @Override
@@ -183,7 +187,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
 }

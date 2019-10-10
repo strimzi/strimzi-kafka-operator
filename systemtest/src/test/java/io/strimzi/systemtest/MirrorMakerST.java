@@ -90,10 +90,10 @@ public class MirrorMakerST extends MessagingBaseST {
         verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
 
-        String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
+        String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
                 "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName, kafkaMirrorMakerName(CLUSTER_NAME),
+        assertExpectedJavaOpts(podName, KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         TimeMeasuringSystem.stopOperation(getOperationID());
