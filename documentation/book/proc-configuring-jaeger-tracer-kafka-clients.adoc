@@ -22,6 +22,8 @@ Perform the following steps for each client application.
 </dependency>
 ----
 
+//Here in Strimzi it should be 0.1.4 for opentracing-kafka-client and 1.0.0 for jaeger-client. (I can share the downstream versions offline)
+
 . Define the configuration of the Jaeger tracer using the xref:ref-tracing-environment-variables-{context}[tracing environment variables].
 
 . Create the Jaeger tracer from the environment variables that you defined in step two:
