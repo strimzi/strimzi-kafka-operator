@@ -77,19 +77,4 @@ public abstract class AbstractNamespaceST extends AbstractST {
     void teardownAdditionalResources() {
         secondNamespaceResources.deleteResources();
     }
-
-//    @BeforeEach
-//    void createSecondNamespaceResources() {
-//        setNamespace(SECOND_NAMESPACE);
-//        secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
-//        setNamespace(CO_NAMESPACE);
-//    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-//        setNamespace(SECOND_NAMESPACE);
-//        secondNamespaceResources.deleteResources();
-//        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
-//        setNamespace(CO_NAMESPACE);
-    }
 }
