@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
@@ -125,7 +124,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             createAsync.complete();
         });
@@ -186,7 +185,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 4; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, i)).get();
@@ -210,7 +209,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
@@ -240,7 +239,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
@@ -273,7 +272,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 4; i++) {

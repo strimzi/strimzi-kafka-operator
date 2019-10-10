@@ -11,14 +11,16 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
+import io.strimzi.operator.common.AbstractOperator;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,7 +82,7 @@ public class ClusterOperator extends AbstractVerticle {
             L extends KubernetesResourceList/*<T>*/,
             D extends Doneable<T>,
             R extends Resource<T, D>>
-        Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator<C, T, L, D, R> op) {
+        Consumer<KubernetesClientException> recreateWatch(AbstractOperator<?, ?> op) {
         Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
             @Override
             public void accept(KubernetesClientException e) {
@@ -159,13 +161,14 @@ public class ClusterOperator extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAll(String trigger) {
-        kafkaAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace);
+        Handler<AsyncResult<Void>> ignore = ignored -> { };
+        kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
 
         if (kafkaConnectS2IAssemblyOperator != null) {
-            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace);
+            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         }
     }
 

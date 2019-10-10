@@ -24,7 +24,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
@@ -121,7 +120,7 @@ public class CertificateRenewalTest {
                         null, null, secretOps, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null),
                 ResourceUtils.dummyClusterOperatorConfig(1L));
-        Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         AtomicReference<Throwable> error = new AtomicReference<>();
         Async async = context.async();

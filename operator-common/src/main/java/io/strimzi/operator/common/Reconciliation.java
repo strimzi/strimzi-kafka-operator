@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.common.model.ResourceType;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,21 +18,21 @@ public class Reconciliation {
     private static final AtomicInteger IDS = new AtomicInteger();
 
     private final String trigger;
-    private final ResourceType type;
+    private final String kind;
     private final String namespace;
     private final String name;
     private final int id;
 
-    public Reconciliation(String trigger, ResourceType type, String namespace, String assemblyName) {
+    public Reconciliation(String trigger, String kind, String namespace, String assemblyName) {
         this.trigger = trigger;
-        this.type = type;
+        this.kind = kind;
         this.namespace = namespace;
         this.name = assemblyName;
         this.id = IDS.getAndIncrement();
     }
 
-    public ResourceType type() {
-        return type;
+    public String kind() {
+        return kind;
     }
 
     public String namespace() {
@@ -46,6 +44,6 @@ public class Reconciliation {
     }
 
     public String toString() {
-        return "Reconciliation #" + id + "(" + trigger + ") " + type() + "(" + namespace() + "/" + name() + ")";
+        return "Reconciliation #" + id + "(" + trigger + ") " + kind() + "(" + namespace() + "/" + name() + ")";
     }
 }

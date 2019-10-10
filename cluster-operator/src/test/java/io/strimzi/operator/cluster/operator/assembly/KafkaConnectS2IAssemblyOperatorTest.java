@@ -22,7 +22,6 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -142,7 +141,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -270,7 +269,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -390,7 +389,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
@@ -515,7 +514,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -576,7 +575,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -640,7 +639,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify ScaleDown
@@ -667,7 +666,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         KafkaConnectS2I foo = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "foo");
         KafkaConnectS2I bar = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "bar");
-        when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        when(mockConnectOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Connect S2I cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
@@ -705,7 +704,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
-        ops.reconcileAll("test", clusterCmNamespace);
+        ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
 
         async.await();
 
@@ -750,7 +749,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             // Verify status

@@ -217,6 +217,7 @@ public class ClusterOperatorTest {
         when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
+        when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
         when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
             numWatchers.incrementAndGet();
             Watch mockWatch = mock(Watch.class);

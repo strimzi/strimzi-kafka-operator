@@ -24,7 +24,6 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -62,7 +61,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             CertManager certManager,
                                             ResourceOperatorSupplier supplier,
                                             ClusterOperatorConfig config) {
-        super(vertx, pfa, ResourceType.MIRRORMAKER, certManager, supplier.mirrorMakerOperator, supplier, config);
+        super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, supplier.mirrorMakerOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
     }
