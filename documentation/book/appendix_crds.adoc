@@ -1325,6 +1325,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |string
 |config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
+|connectorSelector      1.2+<.<|A selector for `KafkaConnector` resources to be created within this Kafka Connect cluster.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |resources              1.2+<.<|CPU and memory resources to reserve (limits and requests).
@@ -1491,6 +1493,38 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |string
 |====
 
+[id='type-LabelSelector-{context}']
+### `LabelSelector` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|matchExpressions  1.2+<.<|
+|xref:type-LabelSelectorRequirement-{context}[`LabelSelectorRequirement`] array
+|matchLabels       1.2+<.<|
+|map
+|====
+
+[id='type-LabelSelectorRequirement-{context}']
+### `LabelSelectorRequirement` schema reference
+
+Used in: xref:type-LabelSelector-{context}[`LabelSelector`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|key       1.2+<.<|
+|string
+|operator  1.2+<.<|
+|string
+|values    1.2+<.<|
+|string array
+|====
+
 [id='type-ExternalConfiguration-{context}']
 ### `ExternalConfiguration` schema reference
 
@@ -1639,6 +1673,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |string
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
 |map
+|connectorSelector         1.2+<.<|A selector for `KafkaConnector` resources to be created within this Kafka Connect cluster.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
 |externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
@@ -2225,30 +2261,15 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 
 [options="header"]
 |====
-|Property               |Description
-|connectCluster  1.2+<.<|The Kafka Connect cluster within which to create the connector.
-|xref:type-KafkaConnectorSpecCluster-{context}[`KafkaConnectorSpecCluster`]
-|class           1.2+<.<|The Class for the Kafka Connector.
+|Property         |Description
+|class     1.2+<.<|The Class for the Kafka Connector.
 |string
-|tasksMax        1.2+<.<|The maximum number of tasks for the Kafka Connector.
+|tasksMax  1.2+<.<|The maximum number of tasks for the Kafka Connector.
 |integer
-|topics          1.2+<.<|A list of topics to use as input for the Kafka Connector.
+|topics    1.2+<.<|A list of topics to use as input for the Kafka Connector.
 |string array
-|config          1.2+<.<|The Config for the Kafka Connector Spec.
+|config    1.2+<.<|The Config for the Kafka Connector Spec.
 |xref:type-KafkaConnectorConfig-{context}[`KafkaConnectorConfig`] array
-|====
-
-[id='type-KafkaConnectorSpecCluster-{context}']
-### `KafkaConnectorSpecCluster` schema reference
-
-Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
-
-
-[options="header"]
-|====
-|Property    |Description
-|url  1.2+<.<|The URL for accessing  the Kafka Connect REST API.
-|string
 |====
 
 [id='type-KafkaConnectorConfig-{context}']

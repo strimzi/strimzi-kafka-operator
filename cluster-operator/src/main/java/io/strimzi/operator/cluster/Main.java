@@ -10,13 +10,12 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectorAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
@@ -87,7 +86,6 @@ public class Main {
                 certManager, resourceOperatorSupplier, config);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
                 certManager, resourceOperatorSupplier, config);
-        KafkaConnectorAssemblyOperator kafkaConnectorAssemblyOperator = new KafkaConnectorAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
@@ -113,8 +111,7 @@ public class Main {
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
-                    kafkaBridgeAssemblyOperator,
-                    kafkaConnectorAssemblyOperator);
+                    kafkaBridgeAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

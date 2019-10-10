@@ -30,17 +30,11 @@ import static java.util.Collections.emptyMap;
 public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private KafkaConnectorSpecCluster connectCluster;
     private String className;
     private Integer tasksMax;
     private List<String> topics;
     private List<KafkaConnectorConfig> config;
     private Map<String, Object> additionalProperties;
-
-    @Description("The Kafka Connect cluster within which to create the connector.")
-    public KafkaConnectorSpecCluster getConnectCluster() {
-        return connectCluster;
-    }
 
     @Description("The Class for the Kafka Connector")
     @JsonProperty("class")
@@ -66,10 +60,6 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
 
     public void setConfig(List<KafkaConnectorConfig> config) {
         this.config = config;
-    }
-
-    public void setConnectCluster(KafkaConnectorSpecCluster connectCluster) {
-        this.connectCluster = connectCluster;
     }
 
     public void setClassName(String className) {

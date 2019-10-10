@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -107,6 +108,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -166,6 +168,34 @@ public class MockKube {
 
     private final List<MockedCrd> mockedCrds = new ArrayList<>();
 
+    static class PredicatedWatcher<CM extends HasMetadata> {
+        private final String str;
+        private final Watcher<CM> watcher;
+        private final Predicate<CM> predicate;
+
+        private PredicatedWatcher(String str, Predicate<CM> predicate, Watcher<CM> watcher) {
+            this.str = str;
+            this.watcher = watcher;
+            this.predicate = predicate;
+        }
+
+        static <CM extends HasMetadata> PredicatedWatcher<CM> watcher(Watcher<CM> watcher) {
+            return new PredicatedWatcher<>("watch on all", resource1 -> ((Predicate<CM>) resource -> true).test(resource1), watcher);
+        }
+
+        static <CM extends HasMetadata> PredicatedWatcher<CM> namedWatcher(String name, Watcher<CM> watcher) {
+            return new PredicatedWatcher<>("watch on named " + name, resource1 -> ((Predicate<CM>) resource -> name.equals(resource.getMetadata().getName())).test(resource1), watcher);
+        }
+
+        static <CM extends HasMetadata> PredicatedWatcher<CM> predicatedWatcher(String desc, Predicate<CM> predicate, Watcher<CM> watcher) {
+            return new PredicatedWatcher<>(desc, resource -> predicate.test(resource), watcher);
+        }
+
+        public String toString() {
+            return str;
+        }
+    }
+
     public class MockedCrd<T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> {
         private final CustomResourceDefinition crd;
         private final Class<T> crClass;
@@ -196,6 +226,8 @@ public class MockKube {
         this.mockedCrds.add(mockedCrd);
         return mockedCrd;
     }
+
+
 
     @SuppressWarnings("unchecked")
     public KubernetesClient build() {
@@ -243,8 +275,8 @@ public class MockKube {
                 Resource crdResource = mock(Resource.class);
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
-                when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class),
-                        any(Class.class))).thenAnswer(invocation -> {
+                when(mockClient.customResources(any(CustomResourceDefinition.class), (Class) eq(mockedCrd.crClass), eq(mockedCrd.crListClass),
+                        eq(mockedCrd.crDoneableClass))).thenAnswer(invocation -> {
                             CustomResourceDefinition crdArg = invocation.getArgument(0);
                             if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
                                     && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
@@ -256,7 +288,10 @@ public class MockKube {
                                 }
                                 return crdMixedOp;
                             } else {
-                                throw new RuntimeException();
+                                throw new RuntimeException("Unknown API version for resource of kind " +
+                                        crdArg.getKind() + ": " +
+                                        crdArg.getSpec().getGroup() + "/" + crdArg.getSpec().getVersion()
+                                );
                             }
                         });
             }
@@ -643,9 +678,11 @@ public class MockKube {
         }.build();
     }
 
+    private Map<Class, List<PredicatedWatcher<?>>> watchersByType = new HashMap<>();
+
     private MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> buildConfigMaps() {
         return new AbstractMockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(
-            ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, castClass(Resource.class), cmDb) {
+                ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, castClass(Resource.class), cmDb) {
             @Override
             protected void nameScopedMocks(Resource<ConfigMap, DoneableConfigMap> resource, String resourceName) {
                 mockGet(resourceName, resource);
@@ -810,7 +847,7 @@ public class MockKube {
      * @param <DCM> The type of doneable resource
      * @param <R> The type of the Resource
      */
-    static abstract class AbstractMockBuilder<CM extends HasMetadata,
+    abstract class AbstractMockBuilder<CM extends HasMetadata,
             CML extends KubernetesResource/*<CM>*/ & KubernetesResourceList/*<CM>*/,
             DCM extends Doneable<CM>,
             R extends Resource<CM, DCM>> {
@@ -822,35 +859,7 @@ public class MockKube {
         protected final Class<CML> listClass;
         protected final String resourceType;
 
-        static class PredicatedWatcher<CM extends HasMetadata> {
-            private final String str;
-            private final Watcher<CM> watcher;
-            private final Predicate<CM> predicate;
-
-            private PredicatedWatcher(String str, Predicate<CM> predicate, Watcher<CM> watcher) {
-                this.str = str;
-                this.watcher = watcher;
-                this.predicate = predicate;
-            }
-
-            static <CM extends HasMetadata> PredicatedWatcher<CM> watcher(Watcher<CM> watcher) {
-                return new PredicatedWatcher<>("watch on all", resource1 -> ((Predicate<CM>) resource -> true).test(resource1), watcher);
-            }
-
-            static <CM extends HasMetadata> PredicatedWatcher<CM> namedWatcher(String name, Watcher<CM> watcher) {
-                return new PredicatedWatcher<>("watch on named " + name, resource1 -> ((Predicate<CM>) resource -> name.equals(resource.getMetadata().getName())).test(resource1), watcher);
-            }
-
-            static <CM extends HasMetadata> PredicatedWatcher<CM> predicatedWatcher(String desc, Predicate<CM> predicate, Watcher<CM> watcher) {
-                return new PredicatedWatcher<>(desc, resource -> predicate.test(resource), watcher);
-            }
-
-            public String toString() {
-                return str;
-            }
-        }
-
-        protected final Collection<PredicatedWatcher<CM>> watchers = Collections.synchronizedList(new ArrayList<>(2));
+        protected final List<MockKube.PredicatedWatcher<CM>> watchers = Collections.synchronizedList(new ArrayList<>(2));
 
         public AbstractMockBuilder(Class<CM> resourceTypeClass, Class<CML> listClass, Class<DCM> doneableClass,
                                    Class<R> resourceClass, Map<String, CM> db) {
@@ -905,7 +914,7 @@ public class MockKube {
             when(mixed.watch(any())).thenAnswer(i -> {
                 Watcher watcher = i.getArgument(0);
                 LOGGER.debug("Watcher {} installed on {}", watcher, mixed);
-                return addWatcher(PredicatedWatcher.watcher(watcher));
+                return addWatcher(MockKube.PredicatedWatcher.watcher(watcher));
             });
             when(mixed.create(any())).thenAnswer(i -> {
                 CM resource = i.getArgument(0);
@@ -930,6 +939,11 @@ public class MockKube {
                 Map<String, String> labels = i.getArgument(0);
                 return mockWithLabels(labels);
             });
+            when(mixed.withLabelSelector(any())).thenAnswer(i -> {
+                LabelSelector labels = i.getArgument(0);
+                return mockWithLabels(labels);
+            });
+            watchersByType.put(resourceTypeClass, (List) Collections.unmodifiableList(watchers));
             return mixed;
         }
 
@@ -952,6 +966,20 @@ public class MockKube {
             return mixed;
         }
 
+        MixedOperation<CM, CML, DCM, R> mockWithLabels(LabelSelector selector) {
+            return mockWithLabels(p -> {
+                if (selector.getMatchLabels() != null
+                        && (selector.getMatchExpressions() == null
+                            || selector.getMatchExpressions().isEmpty())) {
+                    Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
+                    m.keySet().retainAll(selector.getMatchLabels().keySet());
+                    return selector.getMatchLabels().equals(m);
+                } else {
+                    throw new RuntimeException("Not supported by MockKube");
+                }
+            });
+        }
+
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Map<String, String> labels) {
             return mockWithLabels(p -> {
                 Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
@@ -972,7 +1000,7 @@ public class MockKube {
             });
             when(mixedWithLabels.watch(any())).thenAnswer(i2 -> {
                 Watcher watcher = i2.getArgument(0);
-                return addWatcher(PredicatedWatcher.predicatedWatcher("watch on labeled", predicate, watcher));
+                return addWatcher(MockKube.PredicatedWatcher.predicatedWatcher("watch on labeled", predicate, watcher));
             });
             return mixedWithLabels;
         }
@@ -1030,7 +1058,7 @@ public class MockKube {
 
         protected void fireWatchers(String resourceName, CM removed, Watcher.Action action) {
             LOGGER.debug("Firing watchers on {}", resourceName);
-            for (PredicatedWatcher<CM> watcher : watchers) {
+            for (MockKube.PredicatedWatcher<CM> watcher : watchers) {
                 if (watcher.predicate.test(removed)) {
                     LOGGER.debug("Firing watcher {} with {} and resource {}", watcher, action, removed);
                     watcher.watcher.eventReceived(action, removed);
@@ -1063,15 +1091,19 @@ public class MockKube {
         private Watch mockedWatcher(String resourceName, InvocationOnMock i) {
             Watcher<CM> watcher = i.getArgument(0);
             LOGGER.debug("watch {} {} ", resourceType, watcher);
-            return addWatcher(PredicatedWatcher.namedWatcher(resourceName, watcher));
+            return addWatcher(MockKube.PredicatedWatcher.namedWatcher(resourceName, watcher));
         }
 
-        private Watch addWatcher(PredicatedWatcher<CM> predicatedWatcher) {
+        private Watch addWatcher(MockKube.PredicatedWatcher<CM> predicatedWatcher) {
             watchers.add(predicatedWatcher);
             return () -> {
                 watchers.remove(predicatedWatcher);
                 LOGGER.debug("Watcher {} removed", predicatedWatcher);
             };
+        }
+
+        public List<PredicatedWatcher<CM>> getWatchers() {
+            return Collections.unmodifiableList(watchers);
         }
 
         protected void mockCreate(String resourceName, R resource) {
@@ -1116,6 +1148,9 @@ public class MockKube {
         return (Class) c;
     }
 
+    public List<PredicatedWatcher<?>> watchers(Class<?> c) {
+        return watchersByType.get(c);
+    }
 
 
 }

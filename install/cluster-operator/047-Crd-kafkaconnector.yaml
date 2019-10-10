@@ -25,11 +25,6 @@ spec:
         spec:
           type: object
           properties:
-            connectCluster:
-              type: object
-              properties:
-                url:
-                  type: string
             class:
               type: string
             tasksMax:

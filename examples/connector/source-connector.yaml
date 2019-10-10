@@ -1,0 +1,16 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    connect-cluster: my-connect-cluster
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSourceConnector
+  tasksMax: 2
+  topics:
+    - "test.topic"
+  config:
+    - name: file
+      value: "/opt/kafka/LICENSE"
+    - name: topic
+      value: my-topic

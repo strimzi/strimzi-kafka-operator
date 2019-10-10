@@ -45,14 +45,22 @@ rules:
 - apiGroups:
   - "kafka.strimzi.io"
   resources:
+    # The cluster operator runs the KafkaAssemblyOperator, which needs to access Kafka resources
   - kafkas
   - kafkas/status
+    # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access KafkaConnect resources
   - kafkaconnects
   - kafkaconnects/status
+    # The cluster operator runs the KafkaConnectS2IAssemblyOperator, which needs to access KafkaConnectS2I resources
   - kafkaconnects2is
   - kafkaconnects2is/status
+    # The cluster operator runs the KafkaConnectorAssemblyOperator, which needs to access KafkaConnector resources
+  - kafkaconnectors
+  - kafkaconnectors/status
+    # The cluster operator runs the KafkaMirrorMakerAssemblyOperator, which needs to access KafkaMirrorMaker resources
   - kafkamirrormakers
   - kafkamirrormakers/status
+    # The cluster operator runs the KafkaBridgeAssemblyOperator, which needs to access BridgeMaker resources
   - kafkabridges
   - kafkabridges/status
   verbs:

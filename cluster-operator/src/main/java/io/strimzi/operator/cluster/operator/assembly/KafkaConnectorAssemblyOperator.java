@@ -4,31 +4,28 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.util.function.Function;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.certs.CertManager;
-import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
+import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.model.NamespaceAndName;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
-import io.vertx.ext.web.client.predicate.ResponsePredicateResult;
-import io.vertx.ext.web.codec.BodyCodec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * <p>Assembly operator for a "Kafka Connector" assembly, which manages:</p>
@@ -37,104 +34,129 @@ import io.vertx.ext.web.codec.BodyCodec;
  * </ul>
  */
 public class KafkaConnectorAssemblyOperator extends
-        AbstractAssemblyOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> {
+        AbstractOperator<KafkaConnector, CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector>> {
     private static final Logger log = LogManager.getLogger(KafkaConnectorAssemblyOperator.class.getName());
-    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
+    private final LabelSelector selector;
+    private KafkaConnectApi apiClient;
 
     /**
      * @param vertx       The Vertx instance
-     * @param pfa         Platform features availability properties
-     * @param certManager Certificate manager
-     * @param supplier    Supplies the operators for different resources
-     * @param config      ClusterOperator configuration. Used to get the
-     *                    user-configured image pull policy and the secrets.
+     * @param selector    The selector for finding connectors
+     * @param crdOperator The CRD operator
+     * @param apiClient   The Kafka Connect API client
      */
-    public KafkaConnectorAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                          CertManager certManager,
-                                          ResourceOperatorSupplier supplier,
-                                          ClusterOperatorConfig config) {
-        super(vertx, pfa, ResourceType.KAFKACONNECTOR, certManager, supplier.kafkaConnectorOperator, supplier, config);
+    public KafkaConnectorAssemblyOperator(Vertx vertx,
+                                          LabelSelector selector,
+                                          CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> crdOperator,
+                                          KafkaConnectApi apiClient) {
+        super(vertx, KafkaConnector.RESOURCE_KIND, crdOperator);
+        Objects.requireNonNull(selector);
+        this.selector = selector;
+        this.apiClient = apiClient;
+    }
+
+    @Override
+    public Optional<LabelSelector> selector() {
+        return Optional.of(selector);
     }
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnector assemblyResource) {
-        Future<Void> createOrUpdateFuture = Future.future();
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
+        try {
+            String namespace = reconciliation.namespace();
+            String name = reconciliation.name();
 
-        log.info("{}: >>>> Creating/Updating Kafka Connector", reconciliation, name, namespace);
-        update(assemblyResource, name, vertx)
-                .compose(l -> list(assemblyResource, name, vertx))
-                .setHandler(getRes -> {
-                    if (getRes.succeeded()) {
-                        log.info("Kafka Connector Create/Update Successfully");
-                        createOrUpdateFuture.complete();
-                    } else {
-                        log.error("Kafka Connector Create/Update Failed!", getRes.cause());
-                        createOrUpdateFuture.fail(getRes.cause());
-                    }
-                });
+            log.debug("{}: Creating/Updating Kafka Connector", reconciliation, name, namespace);
 
-        return createOrUpdateFuture;
-    }
+            KafkaConnectorSpec spec = assemblyResource.getSpec();
+            JsonObject connectorConfigJson = new JsonObject()
+                    .put("connector.class", spec.getClassName())
+                    .put("tasks.max", spec.getTasksMax());
+            spec.getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
 
-
-    public Future<Void> list(KafkaConnector kafkaConnector, String name, Vertx vertx) {
-        Future<Void> listPromise = Future.future();
-        WebClient.create(vertx)
-                .getAbs(kafkaConnector.getSpec().getConnectCluster().getUrl() + "/connectors")
-                .as(BodyCodec.jsonArray())
-                .putHeader("Accept", "application/json")
-                .expect(ResponsePredicate.SC_OK)
-                .send(asyncResult -> {
-                    if (asyncResult.succeeded()) {
-                        log.info("GET - Kafka Connector Success");
-                        log.info(asyncResult.result().body());
-                        listPromise.complete();
-                    } else if (asyncResult.failed()) {
-                        log.error(">>>>> GET - Kafka Connector Error", asyncResult.cause());
-                        listPromise.fail(asyncResult.cause());
-                    }
-                });
-        return listPromise;
-    }
-
-    public Future<Void> update(KafkaConnector kafkaConnector, String name, Vertx vertx) {
-        Future<Void> updateRun = Future.future();
-        log.info("Calling Kafka Connect API");
-        JsonObject connectorConfigJson = new JsonObject().put("connector.class", kafkaConnector.getSpec().getClassName())
-                .put("tasks.max", kafkaConnector.getSpec().getTasksMax())
-                .put("topic", "test-topic");
-        kafkaConnector.getSpec().getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
-
-        log.info(">>>> Connector config JSON: " + connectorConfigJson.encode());
-        
-        WebClient.create(vertx)
-                .putAbs(kafkaConnector.getSpec().getConnectCluster().getUrl() + "/connectors/" + name + "/config")
-                .as(BodyCodec.jsonObject())
-                .putHeader("Accept", "application/json")
-                .putHeader("Content-Type", "application/json")
-                .expect(methodsPredicate)
-                .sendJson(connectorConfigJson, asyncResult -> {
-                    if (asyncResult.succeeded()) {
-                        log.info("PUT - Kafka Connector Success");
-                        log.info(asyncResult.result().body());
-                        updateRun.complete();
-                    } else if (asyncResult.failed()) {
-                        log.error(">>>>> PUT - Kafka Connector Error", asyncResult.cause());
-                        updateRun.fail(asyncResult.cause());
-                    }
-                });
-
-        return updateRun;
-    }
-
-    private Function<HttpResponse<Void>, ResponsePredicateResult> methodsPredicate = resp -> {
-        int statusCode = resp.statusCode();
-        log.info(">>> statusCode: " + statusCode);
-        if (statusCode == 200 || statusCode == 201) {
-            return ResponsePredicateResult.success();
+            return apiClient.createOrUpdatePutRequest(name, connectorConfigJson)
+                    .map((Void) null);
+        } catch (Throwable t) {
+            return Future.failedFuture(t);
         }
-        return ResponsePredicateResult.failure("Does not work");
-    };
+    }
+
+
+    /**
+     * Updates the Status field of the Kafka Bridge CR. It diffs the desired status against the current status and calls
+     * the update only when there is any difference in non-timestamp fields.
+     * <p>
+     * //     * @param kafkaBridgeAssembly The CR of Kafka Bridge
+     * //     * @param reconciliation Reconciliation information
+     * //     * @param desiredStatus The KafkaBridgeStatus which should be set
+     * <p>
+     * //     * @return
+     */
+//    Future<Void> updateStatus(KafkaBridge kafkaBridgeAssembly, Reconciliation reconciliation, KafkaBridgeStatus desiredStatus) {
+//        Future<Void> updateStatusFuture = Future.future();
+//
+//        resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).setHandler(getRes -> {
+//            if (getRes.succeeded()) {
+//                KafkaBridge kafkaBridge = getRes.result();
+//
+//                if (kafkaBridge != null) {
+//                    KafkaBridgeStatus currentStatus = kafkaBridge.getStatus();
+//
+//                    StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+//
+//                    if (!ksDiff.isEmpty()) {
+//                        KafkaBridge resourceWithNewStatus = new KafkaBridgeBuilder(kafkaBridge).withStatus(desiredStatus).build();
+//                        ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+//                            if (updateRes.succeeded()) {
+//                                log.debug("{}: Completed status update", reconciliation);
+//                                updateStatusFuture.complete();
+//                            } else {
+//                                log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+//                                updateStatusFuture.fail(updateRes.cause());
+//                            }
+//                        });
+//                    } else {
+//                        log.debug("{}: Status did not change", reconciliation);
+//                        updateStatusFuture.complete();
+//                    }
+//                } else {
+//                    log.error("{}: Current Kafka Bridge resource not found", reconciliation);
+//                    updateStatusFuture.fail("Current Kafka Bridge resource not found");
+//                }
+//            } else {
+//                log.error("{}: Failed to get the current Kafka Bridge resource and its status", reconciliation, getRes.cause());
+//                updateStatusFuture.fail(getRes.cause());
+//            }
+//        });
+//
+//        return updateStatusFuture;
+//    }
+
+//    Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {
+//        return serviceAccountOperations.reconcile(namespace,
+//                KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
+//                bridge.generateServiceAccount());
+//    }
+
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return apiClient.delete(reconciliation.name()).map(Boolean.TRUE);
+    }
+
+    @Override
+    public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
+        return CompositeFuture.join(super.allResourceNames(namespace),
+            apiClient.list()).map(cf -> {
+                Set<NamespaceAndName> combined = cf.resultAt(0);
+                List<String> runningConnectors = cf.resultAt(1);
+                combined.addAll(runningConnectors.stream().map(n -> new NamespaceAndName(namespace, n)).collect(Collectors.toList()));
+                return combined;
+            });
+    }
+
+    // TODO status
+    // TODO check common error cases (e.g. missing connector in image) result in understandable logs and statuses
+    // TODO check that noop calls to apiClient.createOrUpdatePutRequest() don't cause rebalances
+
+
 }

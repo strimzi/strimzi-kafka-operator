@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
@@ -63,6 +64,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private KafkaClientAuthentication authentication;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
+    private LabelSelector connectorSelector;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -253,6 +255,15 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
         this.externalConfiguration = externalConfiguration;
+    }
+
+    @Description("A selector for `KafkaConnector` resources to be created within this Kafka Connect cluster.")
+    public LabelSelector getConnectorSelector() {
+        return connectorSelector;
+    }
+
+    public void setConnectorSelector(LabelSelector connectorSelector) {
+        this.connectorSelector = connectorSelector;
     }
 
     @Override
