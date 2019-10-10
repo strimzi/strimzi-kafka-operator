@@ -7,11 +7,12 @@
 
 Authentication is configured through the `authentication` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
 The `authentication` property specifies the type of the authentication mechanisms which should be used and additional configuration details depending on the mechanism.
-The currently supported authentication types are:
+The supported authentication types are:
 
 * TLS client authentication
 * SASL-based authentication using the SCRAM-SHA-512 mechanism
 * SASL-based authentication using the PLAIN mechanism
+* xref:assembly-oauth-str[{oauth} token based authentication]
 
 == TLS Client Authentication
 

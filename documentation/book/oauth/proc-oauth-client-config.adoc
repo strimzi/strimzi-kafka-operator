@@ -1,0 +1,62 @@
+// Module included in the following module:
+//
+// con-oauth-config.adoc
+
+[id='proc-oauth-client-config-{context}']
+= Configuring Kafka Java clients to use {oauth}
+
+This procedure describes how to configure Kafka producer and consumer APIs to use {oauth} for interaction with Kafka brokers.
+
+Add a client callback plugin to your _pom.xml_ file, and configure the system properties.
+
+.Prerequisites
+
+* {ProductName} and Kafka are running
+* An {oauth} authorization server is deployed and configured for OAuth access to Kafka brokers
+* Kafka brokers are configured for {oauth}
+
+.Procedure
+
+. Add the client callback plugin to the `pom.xml` file for the Kafka client:
++
+[source,xml,subs="+attributes"]
+----
+<dependency>
+ <groupId>io.strimzi</groupId>
+ <artifactId>kafka-oauth-client</artifactId>
+ <version>{oauth-artifact-version}</version>
+</dependency>
+----
+
+. Configure the system properties for the callback:
++
+For example:
++
+[source,xml, subs="+quotes,attributes"]
+----
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token_”); <1>
+System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
+System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
+----
+<1> URI of the authorization server token endpoint.
+<2> Client ID, which is the name used when creating the _client_ in the authorization server.
+<3> Client secret created when creating the _client_ in the authorization server.
+
+. Enable the _SASL OAUTHBEARER_ mechanism on a TLS encrypted connection in the Kafka client configuration:
++
+For example:
++
+[source,xml]
+----
+props.put("sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;");
+props.put("security.protocol", "SASL_SSL"); <1>
+props.put("sasl.mechanism", "OAUTHBEARER");
+props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
+----
+<1> Here we use `SASL_SSL` for use over TLS connections. Use `SASL_PLAINTEXT` over unencrypted connections.
+
+. Verify that the Kafka client can access the Kafka brokers.
+
+.What to do next
+
+* xref:proc-oauth-kafka-config-{context}[Configure Kafka components to use {oauth}]

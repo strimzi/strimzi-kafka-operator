@@ -1,0 +1,28 @@
+// Module included in the following module:
+//
+// con-oauth-config.adoc
+
+[id='proc-oauth-server-config-{context}']
+= Configuring an {oauth} authorization server
+
+This procedure describes in general what you need to do to configure an authorization server for integration with {ProductName}.
+
+These instructions are not product specific.
+
+The steps are dependent on the chosen authorization server.
+Consult the product documentation for the authorization server for information on how to set up {oauth} access.
+
+NOTE: If you already have an authorization server deployed, you can skip the deployment step and use your current deployment.
+
+.Procedure
+
+. Deploy the authorization server to your cluster.
+. Access the CLI or admin console for the authorization server to configure {oauth} for {ProductName}.
++
+Now prepare the authorization server to work with {ProductName}.
+
+. Configure a `kafka-broker` client.
+. Configure clients for each Kafka client component of your application.
+
+.What to do next
+After deploying and configuring the authorization server, xref:proc-oauth-broker-config-{context}[configure the Kafka brokers to use {oauth}].
