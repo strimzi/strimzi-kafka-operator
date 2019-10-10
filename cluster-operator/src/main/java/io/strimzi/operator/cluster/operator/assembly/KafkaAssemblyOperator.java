@@ -2727,7 +2727,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     /**
-     * @param current Previous ConfigMap
+     * @param current Current ConfigMap
      * @param desired Desired ConfigMap
      * @return Returns true if only metrics settings has been changed
      */

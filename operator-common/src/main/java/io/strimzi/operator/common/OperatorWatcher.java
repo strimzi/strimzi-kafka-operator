@@ -12,13 +12,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.Consumer;
 
-public class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
+/**
+ * The fabric8 Watcher used to trigger reconciliation of an {@link Operator}.
+ * @param <T> The resource type
+ */
+class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
     private final Consumer<KubernetesClientException> onClose;
     private Operator operator;
     private static final Logger log = LogManager.getLogger(OperatorWatcher.class);
 
-    public OperatorWatcher(Operator operator, String namespace, Consumer<KubernetesClientException> onClose) {
+    OperatorWatcher(Operator operator, String namespace, Consumer<KubernetesClientException> onClose) {
         this.namespace = namespace;
         this.onClose = onClose;
         this.operator = operator;
