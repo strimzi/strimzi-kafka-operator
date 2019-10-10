@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.AfterAll;
 
 import java.io.File;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class AbstractNamespaceST extends AbstractST {
 
@@ -29,8 +32,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
-        // Jen assert
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
+
+        Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
+                .getStatus().getConditions().get(0);
+        LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
+
+        assertEquals("Ready", kafkaCondition.getType());
         setNamespace(previousNamespace);
     }
 
