@@ -52,7 +52,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected static final int LOCK_TIMEOUT_MS = 10000;
 
     protected final PlatformFeaturesAvailability pfa;
-    protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
@@ -82,7 +81,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator);
         this.pfa = pfa;
-        this.resourceOperator = resourceOperator;
         this.certManager = certManager;
         this.secretOperations = supplier.secretOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;

@@ -5,10 +5,10 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
@@ -20,8 +20,10 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -48,13 +50,13 @@ public abstract class AbstractOperator<
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
     private static final int LOCK_TIMEOUT_MS = 10;
     protected final Vertx vertx;
-    protected final S crdOperator;
+    protected final S resourceOperator;
     private final String kind;
 
-    public AbstractOperator(Vertx vertx, String kind, S crdOperator) {
+    public AbstractOperator(Vertx vertx, String kind, S resourceOperator) {
         this.vertx = vertx;
         this.kind = kind;
-        this.crdOperator = crdOperator;
+        this.resourceOperator = resourceOperator;
     }
 
     @Override
@@ -115,7 +117,7 @@ public abstract class AbstractOperator<
                 Lock lock = res.result();
 
                 try {
-                    T cr = crdOperator.get(namespace, name);
+                    T cr = resourceOperator.get(namespace, name);
                     if (cr != null) {
                         validate(cr);
                         log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
@@ -167,6 +169,20 @@ public abstract class AbstractOperator<
         return result;
     }
 
+    protected <T> Future<T> async(Supplier<T> supplier) {
+        Future<T> result = Future.future();
+        vertx.executeBlocking(
+            future -> {
+                try {
+                    future.complete(supplier.get());
+                } catch (Throwable t) {
+                    future.fail(t);
+                }
+            }, result
+        );
+        return result;
+    }
+
     /**
      * Validate the Custom Resource.
      * This should log at the WARN level (rather than throwing)
@@ -181,7 +197,7 @@ public abstract class AbstractOperator<
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-        return crdOperator.listAsync(namespace, selector())
+        return resourceOperator.listAsync(namespace, selector())
                 .map(resourceList ->
                         resourceList.stream()
                                 .map(resource -> new NamespaceAndName(resource.getMetadata().getNamespace(), resource.getMetadata().getName()))
@@ -193,8 +209,8 @@ public abstract class AbstractOperator<
      * and {@linkplain #allResourceNames(String) query}.
      * @return A selector.
      */
-    public Labels selector() {
-        return Labels.EMPTY;
+    public Optional<LabelSelector> selector() {
+        return Optional.empty();
     }
 
     /**
@@ -206,14 +222,22 @@ public abstract class AbstractOperator<
      * @return A future which completes when the watcher has been created.
      */
     public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
-        Future<Watch> result = Future.future();
-        vertx.executeBlocking(
-            future -> {
-                Watch watch = crdOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose));
-                future.complete(watch);
-            }, result
-        );
-        return result;
+        return async(() -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
+    }
+
+    public Consumer<KubernetesClientException> recreateWatch(String namespace) {
+        Consumer<KubernetesClientException> kubernetesClientExceptionConsumer = new Consumer<KubernetesClientException>() {
+            @Override
+            public void accept(KubernetesClientException e) {
+                if (e != null) {
+                    log.error("Watcher closed with exception in namespace {}", namespace, e);
+                    createWatch(namespace, this);
+                } else {
+                    log.info("Watcher closed in namespace {}", namespace);
+                }
+            }
+        };
+        return kubernetesClientExceptionConsumer;
     }
 
     /**

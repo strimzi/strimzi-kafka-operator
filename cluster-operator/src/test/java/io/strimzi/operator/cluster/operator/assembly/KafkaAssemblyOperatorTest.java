@@ -91,6 +91,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -1085,7 +1086,7 @@ public class KafkaAssemblyOperatorTest {
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
-        when(mockKafkaOps.listAsync(eq(clusterCmNamespace), any())).thenReturn(
+        when(mockKafkaOps.listAsync(eq(clusterCmNamespace), any(Optional.class))).thenReturn(
             Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
@@ -1175,7 +1176,7 @@ public class KafkaAssemblyOperatorTest {
         foo.getMetadata().setNamespace("namespace1");
         Kafka bar = getKafkaAssembly("bar");
         bar.getMetadata().setNamespace("namespace2");
-        when(mockKafkaOps.listAsync(eq("*"), any())).thenReturn(
+        when(mockKafkaOps.listAsync(eq("*"), any(Optional.class))).thenReturn(
                 Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster

@@ -5,7 +5,6 @@
 package io.strimzi.operator.user;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.vertx.core.AbstractVerticle;
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -45,21 +43,6 @@ public class UserOperator extends AbstractVerticle {
         this.kafkaUserOperator = kafkaUserOperator;
     }
 
-    Consumer<KubernetesClientException> recreateWatch(KafkaUserOperator op) {
-        Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
-            @Override
-            public void accept(KubernetesClientException e) {
-                if (e != null) {
-                    log.error("Watcher closed with exception in namespace {}", namespace, e);
-                    op.createWatch(namespace, this);
-                } else {
-                    log.info("Watcher closed in namespace {}", namespace);
-                }
-            }
-        };
-        return cons;
-    }
-
     @Override
     public void start(Future<Void> start) {
         log.info("Starting UserOperator for namespace {}", namespace);
@@ -67,7 +50,7 @@ public class UserOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        kafkaUserOperator.createWatch(namespace, recreateWatch(kafkaUserOperator))
+        kafkaUserOperator.createWatch(namespace, kafkaUserOperator.recreateWatch(namespace))
             .compose(w -> {
                 log.info("Started operator for {} kind", "KafkaUser");
                 watch = w;
