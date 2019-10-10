@@ -667,6 +667,8 @@
   "schemaVersion": 16,
   "style": "dark",
   "tags": [
+    "Strimzi",
+    "Kafka",
     "Kafka Connect"
   ],
   "templating": {
