@@ -4,16 +4,18 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.strimzi.operator.common.model.Labels;
-
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+
+import java.util.Optional;
 
 public abstract class AbstractWatchableResourceOperator<
         C extends KubernetesClient,
@@ -52,19 +54,12 @@ public abstract class AbstractWatchableResourceOperator<
         }
     }
 
-    protected Watch watchInAnyNamespace(Labels selector, Watcher<T> watcher) {
-        return operation().inAnyNamespace().withLabels(selector.toMap()).watch(watcher);
-    }
-
-    protected Watch watchInNamespace(String namespace, Labels selector, Watcher<T> watcher) {
-        return operation().inNamespace(namespace).withLabels(selector.toMap()).watch(watcher);
-    }
-
-    public Watch watch(String namespace, Labels selector, Watcher<T> watcher) {
-        if (ANY_NAMESPACE.equals(namespace))    {
-            return watchInAnyNamespace(selector, watcher);
-        } else {
-            return watchInNamespace(namespace, selector, watcher);
+    public Watch watch(String namespace, Optional<LabelSelector> selector, Watcher<T> watcher) {
+        FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> operation
+                = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
+        if (selector.isPresent()) {
+            operation = operation.withLabelSelector(selector.get());
         }
+        return operation.watch(watcher);
     }
 }

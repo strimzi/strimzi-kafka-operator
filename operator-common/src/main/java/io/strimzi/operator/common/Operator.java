@@ -4,12 +4,13 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.common.model.Labels;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,26 +48,27 @@ public interface Operator {
     default void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
         allResourceNames(namespace).setHandler(ar -> {
             if (ar.succeeded()) {
-                Set<NamespaceAndName> desiredNames = ar.result();
-                // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
-                // Using futures would be more complex for no benefit
-                if (desiredNames.size() > 0) {
-                    AtomicInteger counter = new AtomicInteger(desiredNames.size());
-                    for (NamespaceAndName resourceRef : desiredNames) {
-                        Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
-                        reconcile(reconciliation).setHandler(result -> {
-                            if (counter.getAndDecrement() == 0) {
-                                handler.handle(Future.succeededFuture());
-                            }
-                        });
-                    }
-                } else {
-                    handler.handle(Future.succeededFuture());
-                }
+                reconcileThese(trigger, ar.result(), handler);
             } else {
                 handler.handle(ar.map((Void) null));
             }
         });
+    }
+
+    default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, Handler<AsyncResult<Void>> handler) {
+        if (desiredNames.size() > 0) {
+            AtomicInteger counter = new AtomicInteger(desiredNames.size());
+            for (NamespaceAndName resourceRef : desiredNames) {
+                Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
+                reconcile(reconciliation).setHandler(result -> {
+                    if (counter.getAndDecrement() == 0) {
+                        handler.handle(Future.succeededFuture());
+                    }
+                });
+            }
+        } else {
+            handler.handle(Future.succeededFuture());
+        }
     }
 
 
@@ -83,7 +85,7 @@ public interface Operator {
      * A selector for narrowing the resources which this operator instance consumes to those whose labels match this selector.
      * @return A selector.
      */
-    default Labels selector() {
-        return Labels.EMPTY;
+    default Optional<LabelSelector> selector() {
+        return Optional.empty();
     }
 }

@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 
 /**
@@ -292,6 +294,26 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 }
 
                 future.complete(resources);
+            }, true, result
+        );
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
+        Future<List<T>> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+            future -> {
+                FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> operation;
+                if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+                    operation = operation().inAnyNamespace();
+                } else {
+                    operation = operation().inNamespace(namespace);
+                }
+                if (selector.isPresent()) {
+                    operation = operation.withLabelSelector(selector.get());
+                }
+                future.complete(operation.list().getItems());
             }, true, result
         );
         return result;

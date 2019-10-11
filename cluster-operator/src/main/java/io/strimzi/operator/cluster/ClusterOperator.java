@@ -4,19 +4,13 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
-import io.strimzi.operator.common.AbstractOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -28,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -77,27 +70,6 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
     }
 
-    <C extends KubernetesClient,
-            T extends HasMetadata,
-            L extends KubernetesResourceList/*<T>*/,
-            D extends Doneable<T>,
-            R extends Resource<T, D>>
-        Consumer<KubernetesClientException> recreateWatch(AbstractOperator<?, ?> op) {
-        Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
-            @Override
-            public void accept(KubernetesClientException e) {
-                if (e != null) {
-                    log.error("Watcher closed with exception in namespace {}", namespace, e);
-                    op.createWatch(namespace, this);
-                } else {
-                    log.info("Watcher closed in namespace {}", namespace);
-                }
-            }
-        };
-        return cons;
-    }
-
-
     @Override
     public void start(Future<Void> start) {
         log.info("Starting ClusterOperator for namespace {}", namespace);
@@ -105,21 +77,21 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        kafkaAssemblyOperator.createWatch(namespace, recreateWatch(kafkaAssemblyOperator))
+        kafkaAssemblyOperator.createWatch(namespace, kafkaAssemblyOperator.recreateWatch(namespace))
             .compose(w -> {
                 log.info("Started operator for {} kind", "Kafka");
                 watchByKind.put("Kafka", w);
-                return kafkaMirrorMakerAssemblyOperator.createWatch(namespace, recreateWatch(kafkaMirrorMakerAssemblyOperator));
+                return kafkaMirrorMakerAssemblyOperator.createWatch(namespace, kafkaMirrorMakerAssemblyOperator.recreateWatch(namespace));
             }).compose(w -> {
                 log.info("Started operator for {} kind", "KafkaMirrorMaker");
                 watchByKind.put("KafkaMirrorMaker", w);
-                return kafkaConnectAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectAssemblyOperator));
+                return kafkaConnectAssemblyOperator.createWatch(namespace, kafkaConnectAssemblyOperator.recreateWatch(namespace));
             }).compose(w -> {
                 log.info("Started operator for {} kind", "KafkaConnect");
                 watchByKind.put("KafkaConnect", w);
                 if (kafkaConnectS2IAssemblyOperator != null) {
                     // only on OS
-                    return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
+                    return kafkaConnectS2IAssemblyOperator.createWatch(namespace, kafkaConnectS2IAssemblyOperator.recreateWatch(namespace));
                 } else {
                     return Future.succeededFuture(null);
                 }
@@ -128,7 +100,7 @@ public class ClusterOperator extends AbstractVerticle {
                     log.info("Started operator for {} kind", "KafkaConnectS2I");
                     watchByKind.put("KafkaS2IConnect", w);
                 }
-                return kafkaBridgeAssemblyOperator.createWatch(namespace, recreateWatch(kafkaBridgeAssemblyOperator));
+                return kafkaBridgeAssemblyOperator.createWatch(namespace, kafkaBridgeAssemblyOperator.recreateWatch(namespace));
             }).compose(w -> {
                 log.info("Started operator for {} kind", "KafkaBridge");
                 watchByKind.put("KafkaBridge", w);

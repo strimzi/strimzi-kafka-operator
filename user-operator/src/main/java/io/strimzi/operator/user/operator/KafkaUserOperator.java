@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaUserList;
@@ -33,6 +34,8 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -51,7 +54,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     private final String caKeyName;
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
-    private final Labels selector;
+    private final Optional<LabelSelector> selector;
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -63,7 +66,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      * @param vertx The Vertx instance.
      * @param certManager For managing certificates.
      * @param crdOperator For operating on Custom Resources.
-     * @param selector A selector for which users in the namespace to consider as the operators
+     * @param labels A selector for which users in the namespace to consider as the operators
      * @param secretOperations For operating on Secrets.
      * @param scramShaCredentialOperator For operating on SCRAM SHA credentials.
      * @param aclOperations For operating on ACLs.
@@ -74,13 +77,14 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
-                             Labels selector,
+                             Labels labels,
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
         super(vertx, "User", crdOperator);
         this.certManager = certManager;
-        this.selector = selector;
+        Map<String, String> matchLabels = labels.toMap();
+        this.selector = matchLabels.isEmpty() ? Optional.empty() : Optional.of(new LabelSelector(null, matchLabels));
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
         this.aclOperations = aclOperations;
@@ -90,7 +94,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     }
 
     @Override
-    public Labels selector() {
+    public Optional<LabelSelector> selector() {
         return selector;
     }
 
@@ -219,7 +223,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     Future<Void> updateStatus(KafkaUser kafkaUserAssembly, Reconciliation reconciliation, KafkaUserStatus desiredStatus) {
         Future<Void> updateStatusFuture = Future.future();
 
-        crdOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
                 KafkaUser user = getRes.result();
 
@@ -235,7 +239,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                         if (!ksDiff.isEmpty()) {
                             KafkaUser resourceWithNewStatus = new KafkaUserBuilder(user).withStatus(desiredStatus).build();
 
-                            crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
+                            resourceOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusFuture.complete();
