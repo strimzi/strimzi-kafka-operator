@@ -471,6 +471,10 @@ public class KafkaCluster extends AbstractModel {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth());
                 }
             }
+
+            if (listeners.getTls() != null && listeners.getTls().getAuth() != null && listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth());
+            }
         }
 
         result.setAuthorization(kafkaClusterSpec.getAuthorization());
@@ -1531,13 +1535,6 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException("Valid Issue URI has to be specified");
         }
 
-        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
-            (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
-            (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
-            log.error("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
-            throw new InvalidResourceException("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
-        }
-
         if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
             log.error("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
             throw new InvalidResourceException("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
@@ -1546,6 +1543,13 @@ public class KafkaCluster extends AbstractModel {
         if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
             log.error("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
             throw new InvalidResourceException("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+        }
+
+        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
+                (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
+                (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
+            log.error("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
+            throw new InvalidResourceException("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
     }
 
