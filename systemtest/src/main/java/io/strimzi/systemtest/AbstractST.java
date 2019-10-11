@@ -130,60 +130,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return kubeCluster().helmClient().namespace(getNamespace());
     }
 
-    static String kafkaClusterName(String clusterName) {
-        return KafkaResources.kafkaStatefulSetName(clusterName);
-    }
-
-    static String kafkaConnectName(String clusterName) {
-        return clusterName + "-connect";
-    }
-
-    static String kafkaMirrorMakerName(String clusterName) {
-        return clusterName + "-mirror-maker";
-    }
-
-    static String kafkaPodName(String clusterName, int podId) {
-        return KafkaResources.kafkaPodName(clusterName, podId);
-    }
-
-    static String kafkaServiceName(String clusterName) {
-        return KafkaResources.bootstrapServiceName(clusterName);
-    }
-
-    static String kafkaHeadlessServiceName(String clusterName) {
-        return KafkaResources.brokersServiceName(clusterName);
-    }
-
-    static String kafkaMetricsConfigName(String clusterName) {
-        return KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName);
-    }
-
-    static String zookeeperClusterName(String clusterName) {
-        return KafkaResources.zookeeperStatefulSetName(clusterName);
-    }
-
-    static String zookeeperPodName(String clusterName, int podId) {
-        return KafkaResources.zookeeperPodName(clusterName, podId);
-    }
-
     static String zookeeperServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-client";
+        return KafkaResources.zookeeperStatefulSetName(clusterName) + "-client";
     }
 
     static String zookeeperHeadlessServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-nodes";
-    }
-
-    static String zookeeperMetricsConfigName(String clusterName) {
-        return KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName);
+        return KafkaResources.zookeeperStatefulSetName(clusterName) + "-nodes";
     }
 
     static String zookeeperPVCName(String clusterName, int podId) {
-        return "data-" + zookeeperClusterName(clusterName) + "-" + podId;
-    }
-
-    static String entityOperatorDeploymentName(String clusterName) {
-        return KafkaResources.entityOperatorDeploymentName(clusterName);
+        return "data-" + KafkaResources.zookeeperStatefulSetName(clusterName) + "-" + podId;
     }
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
@@ -243,7 +199,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         long pollMs = 1_000L;
 
         for (int podIndex : podIndexes) {
-            String zookeeperPod = zookeeperPodName(CLUSTER_NAME, podIndex);
+            String zookeeperPod = KafkaResources.zookeeperPodName(CLUSTER_NAME, podIndex);
             String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                 try {
@@ -361,14 +317,14 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
-        String podName = zookeeperPodName(clusterName, zkPodId);
+        String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
-        String podName = zookeeperPodName(clusterName, zkPodId);
+        String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
@@ -376,21 +332,21 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
-        String podName = zookeeperPodName(clusterName, zkPodId);
+        String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
-        String podName = zookeeperPodName(clusterName, zkPodId);
+        String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
-        String podName = zookeeperPodName(clusterName, zkPodId);
+        String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();

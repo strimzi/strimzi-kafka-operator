@@ -67,7 +67,7 @@ class ConnectST extends AbstractST {
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
-        String podName = StUtils.getPodNameByPrefix(kafkaConnectName(CLUSTER_NAME));
+        String podName = StUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
@@ -163,10 +163,10 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String podName = StUtils.getPodNameByPrefix(kafkaConnectName(CLUSTER_NAME));
-        assertResources(NAMESPACE, podName, kafkaConnectName(CLUSTER_NAME),
+        String podName = StUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        assertResources(NAMESPACE, podName, KafkaConnectResources.deploymentName(CLUSTER_NAME),
                 "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName, kafkaConnectName(CLUSTER_NAME),
+        assertExpectedJavaOpts(podName, KafkaConnectResources.deploymentName(CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
     }
 
@@ -184,7 +184,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
-        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME), initialReplicas + 1);
+        StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {

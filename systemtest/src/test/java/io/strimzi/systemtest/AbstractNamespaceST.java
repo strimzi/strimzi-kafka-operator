@@ -4,14 +4,18 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
 
 import java.io.File;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class AbstractNamespaceST extends AbstractST {
 
@@ -25,32 +29,25 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     static Resources secondNamespaceResources;
 
-    void checkKafkaInDiffNamespaceThanCO() {
-        String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
-        String previousNamespace = setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
+    void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
+        String previousNamespace = setNamespace(namespace);
+        LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
 
-        LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
-        StUtils.waitForAllStatefulSetPodsReady(kafkaName, 3);
+        Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
+                .getStatus().getConditions().get(0);
+        LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
+
+        assertEquals("Ready", kafkaCondition.getType());
         setNamespace(previousNamespace);
     }
 
-    void checkMirrorMakerForKafkaInDifNamespaceThanCO() {
-        String kafkaName = CLUSTER_NAME + "-target";
-        String kafkaSourceName = kafkaClusterName(CLUSTER_NAME);
-        String kafkaTargetName = kafkaClusterName(kafkaName);
+    void checkMirrorMakerForKafkaInDifNamespaceThanCO(String sourceClusterName) {
+        String kafkaSourceName = sourceClusterName;
+        String kafkaTargetName = CLUSTER_NAME + "-target";
 
         String previousNamespace = setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources.kafkaEphemeral(kafkaName, 3).done();
+        secondNamespaceResources.kafkaEphemeral(kafkaTargetName, 1, 1).done();
         secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
@@ -58,12 +55,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
         setNamespace(previousNamespace);
     }
 
-    void deployNewTopic(String topicNamespace, String clusterNamespace, String topic) {
+    void deployNewTopic(String topicNamespace, String kafkaClusterNamespace, String topic) {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            setNamespace(clusterNamespace);
+            setNamespace(kafkaClusterNamespace);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);
         });
@@ -76,18 +73,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         setNamespace(CO_NAMESPACE);
     }
 
-    @BeforeEach
-    void createSecondNamespaceResources() {
-        setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
-        setNamespace(CO_NAMESPACE);
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        setNamespace(SECOND_NAMESPACE);
+    @AfterAll
+    void teardownAdditionalResources() {
         secondNamespaceResources.deleteResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
-        setNamespace(CO_NAMESPACE);
     }
 }

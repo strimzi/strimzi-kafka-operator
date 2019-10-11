@@ -74,7 +74,7 @@ class SecurityST extends MessagingBaseST {
                 " -verify_hostname my-cluster-kafka-bootstrap";
 
         String outputForKafkaBootstrap =
-                cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, 0),
+                cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                         "/bin/bash", "-c", commandForKafkaBootstrap).out();
         checkKafkaCertificates(outputForKafkaBootstrap);
 
@@ -84,42 +84,42 @@ class SecurityST extends MessagingBaseST {
                 " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
                 " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
         String outputForZookeeperClient =
-                cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, 0),
+                cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                         "/bin/bash", "-c", commandForZookeeperClient).out();
         checkZookeeperCertificates(outputForZookeeperClient);
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
-            String commandForKafkaPort9091 = "echo -n | " + generateOpenSSLCommandWithCerts(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
-            String commandForKafkaPort9093 = "echo -n | " + generateOpenSSLCommandWithCAfile(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
+            String commandForKafkaPort9091 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
+            String commandForKafkaPort9093 = "echo -n | " + generateOpenSSLCommandWithCAfile(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
 
             String outputForKafkaPort9091 =
-                    cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9091).out();
+                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9091).out();
             String outputForKafkaPort9093 =
-                    cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9093).out();
+                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c", commandForKafkaPort9093).out();
 
             checkKafkaCertificates(outputForKafkaPort9091, outputForKafkaPort9093);
 
-            String commandForZookeeperPort2181 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
-            String commandForZookeeperPort2888 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
-            String commandForZookeeperPort3888 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
+            String commandForZookeeperPort2181 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
+            String commandForZookeeperPort2888 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
+            String commandForZookeeperPort3888 = "echo -n | " + generateOpenSSLCommandWithCerts(KafkaResources.zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
 
             String outputForZookeeperPort2181 =
-                    cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
+                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
                             commandForZookeeperPort2181).out();
 
             String outputForZookeeperPort3888 =
-                    cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
+                    cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
                             commandForZookeeperPort3888).out();
             checkZookeeperCertificates(outputForZookeeperPort2181, outputForZookeeperPort3888);
 
             try {
                 String outputForZookeeperPort2888 =
-                        cmdKubeClient().execInPod(kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
+                        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, podId), "/bin/bash", "-c",
                                 commandForZookeeperPort2888).out();
                 checkZookeeperCertificates(outputForZookeeperPort2888);
             } catch (KubeClusterException e) {
                 if (e.result != null && e.result.exitStatus() == 104) {
-                    LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", zookeeperPodName(CLUSTER_NAME, podId));
+                    LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
                 } else {
                     throw new RuntimeException(e);
                 }
@@ -479,11 +479,11 @@ class SecurityST extends MessagingBaseST {
         AtomicInteger count = new AtomicInteger();
         zkPods[0] = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
         kafkaPods[0] = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        eoPods[0] = StUtils.depSnapshot(entityOperatorDeploymentName(CLUSTER_NAME));
+        eoPods[0] = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
             Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-            Map<String, String> eoSnapshot = StUtils.depSnapshot(entityOperatorDeploymentName(CLUSTER_NAME));
+            Map<String, String> eoSnapshot = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
