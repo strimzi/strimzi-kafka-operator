@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -35,7 +36,6 @@ import org.mockito.ArgumentMatchers;
 import java.io.StringReader;
 import java.util.List;
 
-import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,24 +47,12 @@ public class VolumeResizingTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_11;
     private final MockCertManager certManager = new MockCertManager();
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.2.1\n" +
-                    "  format: 2.2\n" +
-                    "  protocol: 2.2\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.2.x\n" +
-                    "  default: false\n" +
-                    "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
-            map("2.2.1", "strimzi/kafka:0.8.0-kafka-2.2.1",
-                    "2.3.0", "strimzi/kafka:0.8.0-kafka-2.3.0"),
-            singletonMap("2.3.0", "kafka-connect"),
-            singletonMap("2.3.0", "kafka-connect-s2i"),
-            singletonMap("2.3.0", "kafka-mirror-maker-s2i")) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            KafkaVersionTestUtils.getKafkaImageMap(),
+            KafkaVersionTestUtils.getKafkaConnectImageMap(),
+            KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
+            KafkaVersionTestUtils.getKafkaMirrorMakerImageMap()) { };
     private final String namespace = "testns";
     private final String clusterName = "testkafka";
     protected static Vertx vertx;

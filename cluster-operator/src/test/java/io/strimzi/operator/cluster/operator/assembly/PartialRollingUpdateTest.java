@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -45,7 +46,6 @@ import java.util.Collections;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class PartialRollingUpdateTest {
@@ -54,15 +54,12 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.0.0\n" +
-                    "  format: 2.0\n" +
-                    "  protocol: 2.0\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.0.x\n" +
-                    "  default: true\n"),
-            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
-            emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            KafkaVersionTestUtils.getKafkaImageMap(),
+            emptyMap(),
+            emptyMap(),
+            emptyMap()) { };
 
     private Vertx vertx;
     private Kafka cluster;

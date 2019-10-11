@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBui
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -50,7 +51,6 @@ import java.util.Map;
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -58,15 +58,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class KafkaMirrorMakerClusterTest {
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
-            emptyMap(), emptyMap(), emptyMap(),
-            singletonMap("2.3.0", "strimzi/kafka-mirror-maker:latest-kafka-2.3.0")) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            emptyMap(),
+            emptyMap(),
+            emptyMap(),
+            KafkaVersionTestUtils.getKafkaMirrorMakerImageMap());
     private final String namespace = "test";
     private final String cluster = "mirror";
     private final int replicas = 2;
@@ -182,7 +179,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
-        assertEquals("strimzi/kafka-mirror-maker:latest-kafka-2.3.0", mm.image);
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_MIRROR_MAKER_IMAGE, mm.image);
         assertEquals(defaultConsumerConfiguration,
                 new KafkaMirrorMakerConsumerConfiguration(mm.consumer.getConfig().entrySet()).getConfiguration());
         assertEquals(defaultProducerConfiguration,

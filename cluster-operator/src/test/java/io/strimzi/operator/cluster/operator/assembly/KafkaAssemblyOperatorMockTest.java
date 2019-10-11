@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
@@ -87,14 +88,12 @@ public class KafkaAssemblyOperatorMockTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
-            singletonMap("2.3.0", "strimzi/kafka:latest-kafka-2.3.0"), emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            KafkaVersionTestUtils.getKafkaImageMap(),
+            emptyMap(),
+            emptyMap(),
+            emptyMap()) { };
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 

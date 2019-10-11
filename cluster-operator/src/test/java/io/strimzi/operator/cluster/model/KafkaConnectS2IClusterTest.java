@@ -45,6 +45,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuild
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -62,7 +63,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -71,14 +71,11 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaConnectS2IClusterTest {
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
-            emptyMap(), emptyMap(), singletonMap("2.3.0", "strimzi/kafka-connect-s2i:latest-kafka-2.3.0"),
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            emptyMap(),
+            emptyMap(),
+            KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
             emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -152,7 +149,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(KafkaConnectS2IResources.deploymentName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
-        assertEquals("strimzi/kafka-connect-s2i:latest-kafka-2.3.0", kc.sourceImageBaseName + ":" + kc.sourceImageTag);
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_S2I_IMAGE, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessProbeOptions.getTimeoutSeconds());
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessProbeOptions.getInitialDelaySeconds());

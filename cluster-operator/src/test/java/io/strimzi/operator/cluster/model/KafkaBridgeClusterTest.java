@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBui
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -52,19 +53,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class KafkaBridgeClusterTest {
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.2.1\n" +
-                    "  format: 2.2\n" +
-                    "  protocol: 2.2\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.2.x\n" +
-                    "  default: false\n" +
-                    "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
             emptyMap(), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";

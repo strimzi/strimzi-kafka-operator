@@ -90,7 +90,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                     kafkaImages, kafkaConnectImages, kafkaConnectS2iImages, kafkaMirrorMakerImages);
         }
 
-        protected Lookup(Reader reader, Map<String, String> kafkaImages,
+        protected Lookup(Reader reader,
+                         Map<String, String> kafkaImages,
                          Map<String, String> kafkaConnectImages,
                          Map<String, String> kafkaConnectS2iImages,
                          Map<String, String> kafkaMirrorMakerImages) {

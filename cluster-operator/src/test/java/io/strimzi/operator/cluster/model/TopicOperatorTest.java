@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 
 import org.junit.AfterClass;
@@ -43,15 +44,12 @@ import static org.junit.Assert.assertNull;
 
 public class TopicOperatorTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "- version: 2.3.0\n" +
-                    "  format: 2.3\n" +
-                    "  protocol: 2.3\n" +
-                    "  checksum: ABCDE1234\n" +
-                    "  third-party-libs: 2.3.x\n" +
-                    "  default: true"),
-            singletonMap("2.3.0", "strimzi/kafka:latest-kafka-2.3.0"),
-            emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            KafkaVersionTestUtils.getKafkaImageMap(),
+            emptyMap(),
+            emptyMap(),
+            emptyMap()) { };
 
     private final String namespace = "test";
     private final String cluster = "foo";
