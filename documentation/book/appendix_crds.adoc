@@ -1295,6 +1295,10 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |Property                      |Description
 |replicas               1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
+|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
+|map
+|connectorSelector      1.2+<.<|A selector for `KafkaConnector` resources to be created within this Kafka Connect cluster.
+|xref:type-LabelSelector-{context}[`LabelSelector`]
 |image                  1.2+<.<|The docker image for the pods.
 |string
 |livenessProbe          1.2+<.<|Pod liveness checking.
@@ -1323,10 +1327,6 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
-|map
-|connectorSelector      1.2+<.<|A selector for `KafkaConnector` resources to be created within this Kafka Connect cluster.
-|xref:type-LabelSelector-{context}[`LabelSelector`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |resources              1.2+<.<|CPU and memory resources to reserve (limits and requests).
@@ -1335,6 +1335,38 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
+|====
+
+[id='type-LabelSelector-{context}']
+### `LabelSelector` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|matchExpressions  1.2+<.<|
+|xref:type-LabelSelectorRequirement-{context}[`LabelSelectorRequirement`] array
+|matchLabels       1.2+<.<|
+|map
+|====
+
+[id='type-LabelSelectorRequirement-{context}']
+### `LabelSelectorRequirement` schema reference
+
+Used in: xref:type-LabelSelector-{context}[`LabelSelector`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|key       1.2+<.<|
+|string
+|operator  1.2+<.<|
+|string
+|values    1.2+<.<|
+|string array
 |====
 
 [id='type-JaegerTracing-{context}']
@@ -1491,38 +1523,6 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |string
 |type                            1.2+<.<|Must be `oauth`.
 |string
-|====
-
-[id='type-LabelSelector-{context}']
-### `LabelSelector` schema reference
-
-Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
-
-
-[options="header"]
-|====
-|Property                 |Description
-|matchExpressions  1.2+<.<|
-|xref:type-LabelSelectorRequirement-{context}[`LabelSelectorRequirement`] array
-|matchLabels       1.2+<.<|
-|map
-|====
-
-[id='type-LabelSelectorRequirement-{context}']
-### `LabelSelectorRequirement` schema reference
-
-Used in: xref:type-LabelSelector-{context}[`LabelSelector`]
-
-
-[options="header"]
-|====
-|Property         |Description
-|key       1.2+<.<|
-|string
-|operator  1.2+<.<|
-|string
-|values    1.2+<.<|
-|string array
 |====
 
 [id='type-ExternalConfiguration-{context}']
