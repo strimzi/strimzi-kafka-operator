@@ -41,7 +41,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.StringReader;
 import java.util.Collections;
 
 import static io.strimzi.test.TestUtils.set;
@@ -54,12 +53,7 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            KafkaVersionTestUtils.getKafkaImageMap(),
-            emptyMap(),
-            emptyMap(),
-            emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private Vertx vertx;
     private Kafka cluster;

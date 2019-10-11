@@ -71,7 +71,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -101,12 +100,7 @@ import static org.junit.Assert.fail;
         "checkstyle:ClassFanOutComplexity"
 })
 public class KafkaClusterTest {
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            KafkaVersionTestUtils.getKafkaImageMap(),
-            emptyMap(),
-            emptyMap(),
-            emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;

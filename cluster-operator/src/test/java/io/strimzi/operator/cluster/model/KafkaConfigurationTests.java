@@ -7,20 +7,13 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import org.junit.Test;
 
-import java.io.StringReader;
-
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 public class KafkaConfigurationTests {
 
-    KafkaVersion kafkaVersion = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            null,
-            null,
-            null,
-            null).defaultVersion();
+    KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
 
     void assertConfigError(String key, Object value, String errorMsg) {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(singletonMap(key, value).entrySet());

@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,12 +62,7 @@ public class KafkaUpdateTest {
     public static final String NAME = "my-kafka";
     private Vertx vertx = Vertx.vertx();
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            KafkaVersionTestUtils.getKafkaImageMap(),
-            KafkaVersionTestUtils.getKafkaConnectImageMap(),
-            KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
-            KafkaVersionTestUtils.getKafkaMirrorMakerImageMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;

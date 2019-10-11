@@ -33,12 +33,10 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -60,12 +58,7 @@ public class KafkaExporterTest {
     private final InlineLogging zooLogJson = new InlineLogging();
     private final String exporterOperatorLogging = "debug";
     private final String version = "2.3.0";
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            KafkaVersionTestUtils.getKafkaImageMap(),
-            emptyMap(),
-            emptyMap(),
-            emptyMap());
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     {
         kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));

@@ -29,7 +29,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,12 +46,7 @@ public class KafkaStatusTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_11;
     private final MockCertManager certManager = new MockCertManager();
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            KafkaVersionTestUtils.getKafkaImageMap(),
-            KafkaVersionTestUtils.getKafkaConnectImageMap(),
-            KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
-            KafkaVersionTestUtils.getKafkaMirrorMakerImageMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "testns";
     private final String clusterName = "testkafka";
     protected static Vertx vertx;

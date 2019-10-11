@@ -48,7 +48,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,12 +65,7 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaConnectClusterTest {
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-            emptyMap(),
-            KafkaVersionTestUtils.getKafkaConnectImageMap(),
-            emptyMap(),
-            emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 2;

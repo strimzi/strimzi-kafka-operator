@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.KafkaVersion;
+
+import java.io.StringReader;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.map;
@@ -127,5 +130,16 @@ public class KafkaVersionTestUtils {
         return map(PREVIOUS_MINOR_KAFKA_VERSION, PREVIOUS_MINOR_KAFKA_MIRROR_MAKER_IMAGE,
                 PREVIOUS_KAFKA_VERSION, PREVIOUS_KAFKA_MIRROR_MAKER_IMAGE,
                 LATEST_KAFKA_VERSION, LATEST_KAFKA_MIRROR_MAKER_IMAGE);
+    }
+
+
+    public static KafkaVersion.Lookup getKafkaVersionLookup() {
+        return new KafkaVersion.Lookup(
+                new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+                KafkaVersionTestUtils.getKafkaImageMap(),
+                KafkaVersionTestUtils.getKafkaConnectImageMap(),
+                KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
+                KafkaVersionTestUtils.getKafkaMirrorMakerImageMap()) {
+        };
     }
 }
