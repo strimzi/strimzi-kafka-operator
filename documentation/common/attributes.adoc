@@ -75,6 +75,11 @@
 :ExternalListeners: link:https://strimzi.io/2019/04/17/accessing-kafka-part-1.html[Accessing Apache Kafka in Strimzi^]
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+:OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
+:OpenTelemetryHome: link:https://opentelemetry.io/[OpenTelemetry^]
+:JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
+:JaegerArch: link:https://www.jaegertracing.io/docs/1.14/architecture/[Jaeger architecure^]
+:OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 
 // Container image names and repositories
@@ -114,6 +119,10 @@
 :KafkaTopicApiVersionPrev: kafka.strimzi.io/v1alpha1
 :KafkaUserApiVersionPrev: kafka.strimzi.io/v1alpha1
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
+
+// Tracing versions
+:JaegerClientVersion: 1.0.0
+:OpenTracingKafkaClient: 0.1.4
 
 // Section enablers
 :Helm:

@@ -21,6 +21,8 @@ include::assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
 include::assembly-metrics-setup.adoc[leveloffset=+1]
 
+include::assembly-distributed-tracing.adoc[leveloffset=+1]
+
 include::assembly-kafka-exporter.adoc[leveloffset=+1]
 
 include::assembly-security.adoc[leveloffset=+1]
