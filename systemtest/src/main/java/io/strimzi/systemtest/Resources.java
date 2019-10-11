@@ -530,6 +530,7 @@ public class Resources extends AbstractResources {
                 .withNewTls()
                 .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
                 .endTls()
+                .withInsecureSourceRepository(true)
             .endSpec();
     }
 
@@ -564,12 +565,12 @@ public class Resources extends AbstractResources {
             .withNewSpec()
                 .withVersion(KAFKA_VERSION)
                 .withNewConsumer()
-                    .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
+                    .withBootstrapServers(tlsListener ? KafkaResources.tlsBootstrapAddress(sourceBootstrapServer) : KafkaResources.plainBootstrapAddress(sourceBootstrapServer))
                     .withGroupId(groupId)
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .endConsumer()
                 .withNewProducer()
-                    .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
+                .withBootstrapServers(tlsListener ? KafkaResources.tlsBootstrapAddress(targetBootstrapServer) : KafkaResources.plainBootstrapAddress(targetBootstrapServer))
                     .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
                 .endProducer()
                 .withResources(new ResourceRequirementsBuilder()

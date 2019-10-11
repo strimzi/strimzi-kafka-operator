@@ -29,12 +29,13 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-
+        setNamespace(SECOND_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
-        deployNewTopic(SECOND_NAMESPACE, CO_NAMESPACE, TOPIC_NAME);
-        deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
+        deployNewTopic(CO_NAMESPACE, SECOND_NAMESPACE, TOPIC_NAME);
+        deleteNewTopic(CO_NAMESPACE, TOPIC_NAME);
+        setNamespace(CO_NAMESPACE);
     }
 
     /**
@@ -43,7 +44,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
-        checkKafkaInDiffNamespaceThanCO();
+        checkKafkaInDiffNamespaceThanCO(CLUSTER_NAME, SECOND_NAMESPACE);
     }
 
     /**
@@ -52,11 +53,15 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches multiple namespaces");
-        checkMirrorMakerForKafkaInDifNamespaceThanCO();
+        checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
     }
 
     @BeforeAll
     void setupEnvironment() {
+        deployTestSpecificResources();
+    }
+
+    private void deployTestSpecificResources() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE));
         createTestClassResources();
@@ -67,23 +72,23 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying CO to watch multiple namespaces");
         testClassResources().clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
-        deployTestSpecificResources();
-    }
+        setNamespace(SECOND_NAMESPACE);
+        secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
 
-    private void deployTestSpecificResources() {
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withWatchedNamespace(SECOND_NAMESPACE)
+                        .withWatchedNamespace(CO_NAMESPACE)
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec().done();
+
+        setNamespace(CO_NAMESPACE);
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
 }
