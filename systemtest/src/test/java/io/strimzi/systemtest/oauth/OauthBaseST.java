@@ -95,7 +95,7 @@ public class OauthBaseST extends MessagingBaseST {
         Service keycloakService = testClassResources().deployKeycloakNodePortService(NAMESPACE);
 
         testClassResources().createServiceResource(keycloakService, NAMESPACE);
-        StUtils.waitForNodePortService(keycloakService.getMetadata().getName() + "service-https");
+        StUtils.waitForNodePortService(keycloakService.getMetadata().getName());
 
         clusterHost = kubeClient(NAMESPACE).getNodeAddress();
 
