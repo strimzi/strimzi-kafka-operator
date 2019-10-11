@@ -30,10 +30,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 
-@Tag(NODEPORT_SUPPORTED)
-@Tag(REGRESSION)
 @Tag(OAUTH)
-public class OauthPlainBaseST extends OauthBaseST {
+@Tag(REGRESSION)
+@Tag(NODEPORT_SUPPORTED)
+public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumer() {
