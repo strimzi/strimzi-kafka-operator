@@ -178,12 +178,12 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.12.0</version>
+            <version>${okhttp.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
-            <version>4.1.34.Final</version>
+            <version>${netty-codec-http.version}</version>
         </dependency>
     </dependencies>
 

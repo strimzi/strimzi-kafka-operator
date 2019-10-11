@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.oauth;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TimeoutException;
 import io.vertx.core.Vertx;
@@ -18,12 +20,11 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.Resources.deployBridgeNodePortService;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
-public class OauthTlsST extends OauthST {
+public class OauthTlsBaseST extends OauthBaseST {
 
     @Test
     void testProducerConsumer() {
@@ -31,25 +32,26 @@ public class OauthTlsST extends OauthST {
         deployConsumerWithOauthTls(TOPIC_NAME);
 
         String podName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
-        String producerMessage = "Sending messages \"Hello world - 9\"";
+        String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
+
+        LOGGER.info("Waiting for:" + producerMessage);
 
         StUtils.waitUntilMessageIsInPodLogs(podName, producerMessage);
 
         String producerLogs = kubeClient().logs(podName);
-        int messageCount = 10;
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, producerLogs, containsString("Sending messages \"Hello world - " + i + "\""));
         }
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-").get(0).getMetadata().getName();
-        String consumerMessage = "value: \"Hello world - 9\"";
+        String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"Hello world - " + i + "\""));
         }
     }
@@ -61,26 +63,26 @@ public class OauthTlsST extends OauthST {
         deployKafkaStreamsOauthTls();
 
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
-        String producerMessage = "Sending messages \"Hello world - 10\"";
+        String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(producerPodName, producerMessage);
 
         String producerLogs = kubeClient().logs(producerPodName);
-        int messageCount = 10;
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, producerLogs, containsString("Sending messages \"Hello world - " + i + "\""));
         }
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-").get(0).getMetadata().getName();
-        String consumerMessage = "value: \"9 - dlrow olleH\"";
+
+        String consumerMessage = "value: \"" + reverseNumber(END_MESSAGE_OFFSET) + " - dlrow olleH\"";
 
         StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
-        for (int i = 0; i < messageCount; i++) {
-            assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"" + i + " - dlrow olleH\""));
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
+            assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"" + reverseNumber(i) + " - dlrow olleH\""));
         }
     }
 
@@ -124,7 +126,7 @@ public class OauthTlsST extends OauthST {
 
         StUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
 
-        String message = "Hello world - 10";
+        String message = "Hello world - " + END_MESSAGE_OFFSET;
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, message);
 
@@ -161,7 +163,10 @@ public class OauthTlsST extends OauthST {
                 .endSpec()
                 .done();
 
-        deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
+        Service bridgeService = testMethodResources().deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
+        testMethodResources().createServiceResource(bridgeService, NAMESPACE);
+
+        StUtils.waitForNodePortService(bridgeService.getMetadata().getName());
 
         client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
 
@@ -187,7 +192,7 @@ public class OauthTlsST extends OauthST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = sendHttpRequests(root, clusterHost, getBridgeNodePort());
+        JsonObject response = HttpUtils.sendHttpRequests(root, clusterHost, getBridgeNodePort(), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {
@@ -240,7 +245,7 @@ public class OauthTlsST extends OauthST {
     }
 
     private void deployConsumerWithOauthTls(String topicName) {
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, topicName, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, topicName, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                 .editSpec()
                     .editTemplate()
                         .editSpec()

@@ -32,15 +32,17 @@ import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Resources.deployKeycloakNodePortService;
 
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @ExtendWith(VertxExtension.class)
-public class OauthST extends MessagingBaseST {
+public class OauthBaseST extends MessagingBaseST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";
-    protected static final Logger LOGGER = LogManager.getLogger(OauthST.class);
+    protected static final Logger LOGGER = LogManager.getLogger(OauthBaseST.class);
+
+    static final int START_MESSAGE_OFFSET = 41;
+    static final int END_MESSAGE_OFFSET = 49;
 
     protected static final String TOPIC_NAME = "my-topic";
     static final String REVERSE_TOPIC_NAME = "my-topic-reversed";
@@ -101,6 +103,17 @@ public class OauthST extends MessagingBaseST {
         return extBootstrapService.getSpec().getPorts().get(0).getNodePort();
     }
 
+    int reverseNumber(int n) {
+        int reverse = 0;
+
+        while (n != 0) {
+            reverse = reverse * 10;
+            reverse = reverse + n % 10;
+            n = n / 10;
+        }
+        return reverse;
+    }
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
@@ -119,9 +132,10 @@ public class OauthST extends MessagingBaseST {
         LOGGER.info("Deploying keycloak...");
         testClassResources().deployKeycloak().done();
 
-        deployKeycloakNodePortService(NAMESPACE);
+        Service keycloakService = testClassResources().deployKeycloakNodePortService(NAMESPACE);
 
-        StUtils.waitForNodePortService("keycloakservice-https");
+        testClassResources().createServiceResource(keycloakService, NAMESPACE);
+        StUtils.waitForNodePortService(keycloakService.getMetadata().getName() + "service-https");
 
         clusterHost = kubeClient(NAMESPACE).getNodeAddress();
 

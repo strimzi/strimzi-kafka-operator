@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.oauth;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -19,38 +21,36 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.Resources.deployBridgeNodePortService;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 
-public class OauthPlainST extends OauthST {
+public class OauthPlainBaseST extends OauthBaseST {
 
     @Test
     void testProducerConsumer() {
         testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
-        String producerMessage = "Sending messages \"Hello world - 9\"";
+        String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(producerPodName, producerMessage);
 
         String producerLogs = kubeClient().logs(producerPodName);
-        int messageCount = 10;
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, producerLogs, containsString("Sending messages \"Hello world - " + i + "\""));
         }
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-").get(0).getMetadata().getName();
-        String consumerMessage = "value: \"Hello world - 9\"";
+        String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = 0; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"Hello world - " + i + "\""));
         }
     }
@@ -58,37 +58,36 @@ public class OauthPlainST extends OauthST {
     @Test
     void testProducerConsumerStreams() {
         testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, "my-topic-reversed", KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, "my-topic-reversed", KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
         testMethodResources().kafkaStreamsWithOauth(oauthTokenEndpointUri, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
-        String producerMessage = "Sending messages \"Hello world - 10\"";
+        String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(producerPodName, producerMessage);
 
         String producerLogs = kubeClient().logs(producerPodName);
-        int messageCount = 10;
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("Producer doesn't send message" + i, producerLogs, containsString("Sending messages \"Hello world - " + i + "\""));
         }
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-").get(0).getMetadata().getName();
-        String consumerMessage = "value: \"9 - dlrow olleH\"";
+        String consumerMessage = "value: \"" + reverseNumber(END_MESSAGE_OFFSET) + " - dlrow olleH\"";
 
         StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
-        for (int i = 0; i < messageCount; i++) {
-            assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"" + i + " - dlrow olleH\""));
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
+            assertThat("Producer doesn't send message" + i, consumerLogs, containsString("value: \"" + reverseNumber(i) + " - dlrow olleH\""));
         }
     }
 
     @Test
     void testProducerConsumerConnect() {
         testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
@@ -118,7 +117,7 @@ public class OauthPlainST extends OauthST {
 
         StUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
 
-        String message = "Hello world - 10";
+        String message = "Hello world - " + END_MESSAGE_OFFSET;
 
         StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, message);
 
@@ -129,7 +128,7 @@ public class OauthPlainST extends OauthST {
     @Test
     void testProducerConsumerMirrorMaker() {
         testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String targetKafkaCluster = CLUSTER_NAME + "-target";
 
@@ -226,13 +225,13 @@ public class OauthPlainST extends OauthST {
         testMethodResources().consumerWithOauth("hello-world-consumer-target", oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(targetKafkaCluster)).done();
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-target-").get(0).getMetadata().getName();
-        String consumerMessage = "value: \"Hello world - 9\"";
+        String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
         StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = START_MESSAGE_OFFSET; i < END_MESSAGE_OFFSET; i++) {
             assertThat("MirrorMaker doesn't replicated data to target kafka cluster", consumerLogs, containsString("value: \"Hello world - " + i + "\""));
         }
     }
@@ -240,7 +239,7 @@ public class OauthPlainST extends OauthST {
     @Test
     void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
         testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(null, oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()
@@ -260,7 +259,10 @@ public class OauthPlainST extends OauthST {
                 .endSpec()
                 .done();
 
-        deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
+        Service bridgeService = testMethodResources().deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
+        testMethodResources().createServiceResource(bridgeService, NAMESPACE);
+
+        StUtils.waitForNodePortService(bridgeService.getMetadata().getName());
 
         client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
 
@@ -286,7 +288,7 @@ public class OauthPlainST extends OauthST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = sendHttpRequests(root, clusterHost, getBridgeNodePort());
+        JsonObject response = HttpUtils.sendHttpRequests(root, clusterHost, getBridgeNodePort(), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {

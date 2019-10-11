@@ -87,7 +87,6 @@ import java.util.Stack;
 import java.util.stream.IntStream;
 
 import static io.strimzi.systemtest.AbstractST.CLUSTER_NAME;
-import static io.strimzi.systemtest.AbstractST.testClassResources;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -339,8 +338,8 @@ public class Resources extends AbstractResources {
                             .withNewReadinessProbe()
                                 .withInitialDelaySeconds(15)
                                 .withTimeoutSeconds(5)
-                                .endReadinessProbe()
-                                .withNewLivenessProbe()
+                            .endReadinessProbe()
+                            .withNewLivenessProbe()
                                 .withInitialDelaySeconds(15)
                                 .withTimeoutSeconds(5)
                             .endLivenessProbe()
@@ -1621,13 +1620,13 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
-    public static void deployKeycloakNodePortService(String namespace) throws InterruptedException {
+    public Service deployKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
 
-        Service httpsService = getSystemtestsServiceResource(keycloakName + "service-https",
+        return getSystemtestsServiceResource(keycloakName + "service-https",
                 Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace)
                     .editSpec()
                         .withType("NodePort")
@@ -1636,25 +1635,20 @@ public class Resources extends AbstractResources {
                             .withNodePort(32223)
                         .endPort()
                     .endSpec().build();
-
-        testClassResources().createServiceResource(httpsService, namespace);
-        StUtils.waitForNodePortService(keycloakName + "service-https");
     }
 
-    public static void deployBridgeNodePortService(String bridgeExternalService, String namespace) throws InterruptedException {
+    public Service deployBridgeNodePortService(String bridgeExternalService, String namespace) {
         Map<String, String> map = new HashMap<>();
         map.put("strimzi.io/cluster", CLUSTER_NAME);
         map.put("strimzi.io/kind", "KafkaBridge");
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
 
         // Create node port service for expose bridge outside the cluster
-        Service service = getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
+        return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
                 .editSpec()
                 .withType("NodePort")
                 .withSelector(map)
                 .endSpec().build();
-        testClassResources().createServiceResource(service, namespace).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
     }
 
     public DoneableDeployment producerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
@@ -1702,7 +1696,7 @@ public class Resources extends AbstractResources {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("MESSAGE_COUNT")
-                                    .withValue("1000")
+                                    .withValue("100")
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("OAUTH_CLIENT_ID")
@@ -1740,9 +1734,12 @@ public class Resources extends AbstractResources {
                 .endSpec().build());
     }
 
-    public DoneableDeployment consumerWithOauth(String name, String oauthTokenEndpointUri, String topicName, String bootstrap) {
-        name = name == null ? "hello-world-consumer" : name;
 
+    public DoneableDeployment consumerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
+        return consumerWithOauth("hello-world-consumer", oauthTokenEndpointUri, topicName, bootstrap);
+    }
+
+    public DoneableDeployment consumerWithOauth(String name, String oauthTokenEndpointUri, String topicName, String bootstrap) {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", name);
 
@@ -1785,7 +1782,7 @@ public class Resources extends AbstractResources {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("MESSAGE_COUNT")
-                                    .withValue("1000")
+                                    .withValue("100")
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("OAUTH_CLIENT_ID")
