@@ -8,6 +8,9 @@ spec:
   bootstrapServers: kafka:9092
   config:
     name: bar
+  connectorSelector:
+    matchLabels:
+      foo: bar
   tolerations:
     - key: "key1"
       operator: "Equal"

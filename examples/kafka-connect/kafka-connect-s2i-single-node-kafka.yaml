@@ -14,3 +14,8 @@ spec:
     config.storage.replication.factor: 1
     offset.storage.replication.factor: 1
     status.storage.replication.factor: 1
+  connectorSelector:
+    # The connectorSelector identifies KafkaConnectors in the same namespace
+    # which should be created within this connect cluster
+    matchLabels:
+      connect-cluster: my-connect-cluster
