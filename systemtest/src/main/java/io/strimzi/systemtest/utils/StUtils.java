@@ -918,4 +918,12 @@ public class StUtils {
         assertTrue(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"));
         LOGGER.info("ClusterOperator logs contains proper warning");
     }
+
+    public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
+        LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
+        TestUtils.waitFor("Waiting till pod" + podNamePrefix + " will have " + numberOfContainers + " containers",
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
+        LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
+    }
 }
