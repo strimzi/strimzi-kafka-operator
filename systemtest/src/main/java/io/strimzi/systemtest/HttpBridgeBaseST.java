@@ -112,15 +112,6 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         }
     }
 
-    protected int getBridgeNodePort() {
-        Service extBootstrapService = kubeClient(getBridgeNamespace()).getClient().services()
-                .inNamespace(getBridgeNamespace())
-                .withName(bridgeExternalService)
-                .get();
-
-        return extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-    }
-
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");

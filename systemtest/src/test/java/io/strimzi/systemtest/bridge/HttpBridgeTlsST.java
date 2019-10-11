@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
+import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
@@ -137,7 +138,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         deployBridgeNodePortService();
 
-        bridgePort = getBridgeNodePort();
+        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 

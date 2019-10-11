@@ -7,6 +7,7 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
@@ -14,6 +15,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;
@@ -21,10 +23,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.OAUTH;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 
+@Tag(NODEPORT_SUPPORTED)
+@Tag(REGRESSION)
+@Tag(OAUTH)
 public class OauthPlainBaseST extends OauthBaseST {
 
     @Test
@@ -288,7 +296,7 @@ public class OauthPlainBaseST extends OauthBaseST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = HttpUtils.sendHttpRequests(root, clusterHost, getBridgeNodePort(), TOPIC_NAME, client);
+        JsonObject response = HttpUtils.sendHttpRequests(root, clusterHost, BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {

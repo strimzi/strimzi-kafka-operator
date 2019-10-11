@@ -5,16 +5,11 @@
 package io.strimzi.systemtest.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.executor.Exec;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,16 +20,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
+@Tag(OAUTH)
 @ExtendWith(VertxExtension.class)
 public class OauthBaseST extends MessagingBaseST {
 
@@ -69,39 +62,6 @@ public class OauthBaseST extends MessagingBaseST {
     static String clusterHost = "";
     static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
     protected WebClient client;
-
-    JsonObject sendHttpRequests(JsonObject records, String bridgeHost, int bridgePort) throws InterruptedException, ExecutionException, TimeoutException {
-        LOGGER.info("Sending records to Kafka Bridge");
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        client.post(bridgePort, bridgeHost, "/topics/" + TOPIC_NAME)
-                .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
-                .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON_JSON)
-                .as(BodyCodec.jsonObject())
-                .sendJsonObject(records, ar -> {
-                    if (ar.succeeded()) {
-                        HttpResponse<JsonObject> response = ar.result();
-                        if (response.statusCode() == HttpResponseStatus.OK.code()) {
-                            LOGGER.debug("Server accepted post");
-                            future.complete(response.body());
-                        } else {
-                            LOGGER.error("Server didn't accept post", ar.cause());
-                        }
-                    } else {
-                        LOGGER.error("Server didn't accept post", ar.cause());
-                        future.completeExceptionally(ar.cause());
-                    }
-                });
-        return future.get(1, TimeUnit.MINUTES);
-    }
-
-    protected int getBridgeNodePort() {
-        Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
-                .inNamespace(NAMESPACE)
-                .withName(BRIDGE_EXTERNAL_SERVICE)
-                .get();
-
-        return extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-    }
 
     int reverseNumber(int n) {
         int reverse = 0;

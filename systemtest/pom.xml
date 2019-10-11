@@ -298,5 +298,12 @@
                 <groups>tracing</groups>
             </properties>
         </profile>
+        <profile>
+            <id>oauth</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>oauth</groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

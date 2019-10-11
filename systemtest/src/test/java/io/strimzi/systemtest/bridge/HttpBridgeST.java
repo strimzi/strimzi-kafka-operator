@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
+import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
@@ -212,7 +213,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
 
         deployBridgeNodePortService();
-        bridgePort = getBridgeNodePort();
+        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 

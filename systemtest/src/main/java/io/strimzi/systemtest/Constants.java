@@ -132,4 +132,9 @@ public interface Constants {
      * Tag for Helm tests
      */
     String HELM = "helm";
+
+    /**
+     * Tag for oauth tests
+     */
+    String OAUTH = "oauth";
 }
