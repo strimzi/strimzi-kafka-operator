@@ -2704,22 +2704,20 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationMissingValidIssuerUri() {
+    public void testOAuthValidationMissingValidIssuerUriPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
                             .withNewPlain()
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                    .withSecretName("my-secret-secret")
-                                                    .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .build())
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withIntrospectionEndpointUri("http://introspection")
+                                        .withNewClientSecret()
+                                        .withSecretName("my-secret-secret")
+                                        .withKey("my-secret-key")
+                                        .endClientSecret().build())
                             .endPlain()
                         .endListeners()
                     .endKafka()
@@ -2730,7 +2728,120 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationRefreshSecondsRelationWithExpirySeconds() {
+    public void testOAuthValidationMissingValidIssuerUriExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withIntrospectionEndpointUri("http://introspection")
+                                        .withNewClientSecret()
+                                        .withSecretName("my-secret-secret")
+                                        .withKey("my-secret-key")
+                                        .endClientSecret().build())
+                                .endKafkaListenerExternalIngress()
+                            .endListeners()
+                        .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsRelationWithExpirySecondsPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withJwksEndpointUri("http://jwks-endpoint")
+                                        .withJwksRefreshSeconds(30)
+                                        .withJwksExpirySeconds(89)
+                                        .build())
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsRelationWithExpirySecondsExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withJwksEndpointUri("http://jwks-endpoint")
+                                        .withJwksRefreshSeconds(30)
+                                        .withJwksExpirySeconds(89)
+                                        .build())
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsSetWithExpirySecondsNotSetPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withJwksEndpointUri("http://jwks-endpoint")
+                                        .withJwksRefreshSeconds(333).build())
+                            .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsSetWithExpirySecondsNotSetExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                                        .withValidIssuerUri("http://valid-issuer")
+                                        .withJwksEndpointUri("http://jwks-endpoint")
+                                        .withJwksRefreshSeconds(333)
+                                        .build())
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsNotSetWithExpirySecondsSetPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -2741,8 +2852,7 @@ public class KafkaClusterTest {
                                         new KafkaListenerAuthenticationOAuthBuilder()
                                                 .withValidIssuerUri("http://valid-issuer")
                                                 .withJwksEndpointUri("http://jwks-endpoint")
-                                                .withJwksRefreshSeconds(30)
-                                                .withJwksExpirySeconds(89)
+                                                .withJwksExpirySeconds(150)
                                                 .build())
                             .endPlain()
                         .endListeners()
@@ -2754,7 +2864,70 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationIntrospectionEndpointUriWithoutClientId() {
+    public void testOAuthValidationRefreshSecondsNotSetWithExpirySecondsSetExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalRoute()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withValidIssuerUri("http://valid-issuer")
+                                                .withJwksEndpointUri("http://jwks-endpoint")
+                                                .withJwksExpirySeconds(150)
+                                                .build())
+                            .endKafkaListenerExternalRoute()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationNoUriSpecifiedPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .build())
+                                .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationNoUriSpecifiedExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .build())
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationIntrospectionEndpointUriWithoutClientIdPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -2779,7 +2952,32 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationIntrospectionEndpointUriWithoutClientSecret() {
+    public void testOAuthValidationIntrospectionEndpointUriWithoutClientIdExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withNewClientSecret()
+                                                .withSecretName("my-secret-secret")
+                                                .withKey("my-secret-key")
+                                                .endClientSecret()
+                                                .build())
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationIntrospectionEndpointUriWithoutClientSecretPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -2801,7 +2999,29 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationExpirySecondsWithoutEndpointUri() {
+    public void testOAuthValidationIntrospectionEndpointUriWithoutClientSecretExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withClientId("my-client-id")
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .build())
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationExpirySecondsWithoutEndpointUriPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -2810,6 +3030,7 @@ public class KafkaClusterTest {
                             .withNewPlain()
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withIntrospectionEndpointUri("http://introspection")
                                                 .withClientId("my-client-id")
                                                 .withJwksExpirySeconds(100)
                                                 .build())
@@ -2823,7 +3044,30 @@ public class KafkaClusterTest {
     }
 
     @Test(expected = InvalidResourceException.class)
-    public void testOAuthValidationRefreshSecondsWithoutEndpointUri() {
+    public void testOAuthValidationExpirySecondsWithoutEndpointUriExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withClientId("my-client-id")
+                                                .withJwksExpirySeconds(100)
+                                                .build())
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsWithoutEndpointUriPlain() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -2832,10 +3076,34 @@ public class KafkaClusterTest {
                             .withNewPlain()
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withIntrospectionEndpointUri("http://introspection")
                                                 .withClientId("my-client-id")
                                                 .withJwksRefreshSeconds(40)
                                                 .build())
                                 .endPlain()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test(expected = InvalidResourceException.class)
+    public void testOAuthValidationRefreshSecondsWithoutEndpointUriExternal() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withAuth(
+                                        new KafkaListenerAuthenticationOAuthBuilder()
+                                                .withIntrospectionEndpointUri("http://introspection")
+                                                .withClientId("my-client-id")
+                                                .withJwksRefreshSeconds(40)
+                                                .build())
+                            .endKafkaListenerExternalIngress()
                         .endListeners()
                     .endKafka()
                 .endSpec()

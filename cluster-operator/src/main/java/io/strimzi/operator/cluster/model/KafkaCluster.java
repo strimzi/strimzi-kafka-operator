@@ -459,14 +459,17 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getPlain() != null) {
                 if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
                     throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
-                }
-                if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                } else if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
                     validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth());
                 }
             }
 
-            if (listeners.getExternal() != null && !result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
-                throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
+            if (listeners.getExternal() != null) {
+                if (!result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
+                    throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
+                } else if (listeners.getExternal().getAuth() != null && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth());
+                }
             }
         }
 
@@ -1516,13 +1519,21 @@ public class KafkaCluster extends AbstractModel {
      *
      * @param oAuth     OAuth type authentication object
      */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth) {
+        if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
+            log.error("Introspection endpoint URI or JWKS endpoint URI has to be specified");
+            throw new InvalidResourceException("Introspection endpoint URI or JWKS endpoint URI has to be specified");
+        }
+
         if (oAuth.getValidIssuerUri() == null) {
             log.error("Valid Issue URI has to be specified");
             throw new InvalidResourceException("Valid Issue URI has to be specified");
         }
 
-        if (oAuth.getJwksExpirySeconds() != null && oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) {
+        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
+            (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
+            (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
             log.error("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
             throw new InvalidResourceException("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
@@ -1532,11 +1543,10 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
         }
 
-        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() != null || oAuth.getJwksExpirySeconds() != null)) {
+        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
             log.error("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
             throw new InvalidResourceException("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
         }
-
     }
 
     /**
@@ -1552,8 +1562,8 @@ public class KafkaCluster extends AbstractModel {
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
         if (oauth.getValidIssuerUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri()));
         if (oauth.getJwksEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri()));
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
-        if (oauth.getJwksExpirySeconds() != null && oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
+        if (oauth.getJwksRefreshSeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, oauth.getJwksRefreshSeconds()));
+        if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
         if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));

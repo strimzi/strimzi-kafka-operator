@@ -29,13 +29,15 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_OAUTH = "oauth";
+    public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
+    public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;
 
     private String clientId;
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
     private String jwksEndpointUri;
-    private Integer jwksRefreshSeconds;
-    private Integer jwksExpirySeconds;
+    private int jwksRefreshSeconds;
+    private int jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
     private List<CertSecretSource> tlsTrustedCertificates;
@@ -93,11 +95,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Minimum(1)
     @DefaultValue("300")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getJwksRefreshSeconds() {
+    public int getJwksRefreshSeconds() {
         return jwksRefreshSeconds;
     }
 
-    public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
+    public void setJwksRefreshSeconds(int jwksRefreshSeconds) {
         this.jwksRefreshSeconds = jwksRefreshSeconds;
     }
 
@@ -107,11 +109,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Minimum(1)
     @DefaultValue("360")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getJwksExpirySeconds() {
+    public int getJwksExpirySeconds() {
         return jwksExpirySeconds;
     }
 
-    public void setJwksExpirySeconds(Integer jwksExpirySeconds) {
+    public void setJwksExpirySeconds(int jwksExpirySeconds) {
         this.jwksExpirySeconds = jwksExpirySeconds;
     }
 
