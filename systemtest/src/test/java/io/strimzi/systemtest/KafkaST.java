@@ -876,6 +876,7 @@ class KafkaST extends MessagingBaseST {
         //Waiting when EO pod will be recreated without TO
         StUtils.waitForPodDeletion(eoPodName);
         StUtils.waitForDeploymentReady(entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        StUtils.waitUntilPodContainersCount(entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that TO was removed
         kubeClient().listPodsByPrefixInName(entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
