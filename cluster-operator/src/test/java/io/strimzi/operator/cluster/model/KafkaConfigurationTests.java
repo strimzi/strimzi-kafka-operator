@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import org.junit.Test;
 
 import static java.util.Collections.singletonList;
@@ -12,8 +13,7 @@ import static org.junit.Assert.assertEquals;
 
 public class KafkaConfigurationTests {
 
-    KafkaVersion kafkaVersion = new KafkaVersion.Lookup(
-            null, null, null, null).defaultVersion();
+    KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
 
     void assertConfigError(String key, Object value, String errorMsg) {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(singletonMap(key, value).entrySet());

@@ -80,9 +80,9 @@ helm_pkg:
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_versions:
-	documentation/snip-kafka-versions.sh kafka-versions > documentation/book/snip-kafka-versions.adoc
-	documentation/version-dependent-attrs.sh kafka-versions > documentation/book/common/version-dependent-attrs.adoc
-	documentation/snip-images.sh kafka-versions > documentation/book/snip-images.adoc
+	documentation/snip-kafka-versions.sh > documentation/book/snip-kafka-versions.adoc
+	documentation/version-dependent-attrs.sh > documentation/book/common/version-dependent-attrs.adoc
+	documentation/snip-images.sh > documentation/book/snip-images.adoc
 
 docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
@@ -32,7 +33,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,17 +62,7 @@ public class KafkaUpdateTest {
     public static final String NAME = "my-kafka";
     private Vertx vertx = Vertx.vertx();
 
-    private final KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
-            new StringReader(
-                    "2.0.0  default  2.0  2.0  1234567890abcdef 2.0.x\n" +
-                    "2.0.1           2.0  2.0  1234567890abcdef 2.0.x\n" +
-                    "2.1.0           2.1  2.1  1234567890abcdef 2.1.x\n"),
-            map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
-                    "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
-                    "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
-            singletonMap("2.0.0", "kafka-connect"),
-            singletonMap("2.0.0", "kafka-connect-s2i"),
-            singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;
@@ -131,7 +121,7 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null, null);
+        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, VERSIONS).generateStatefulSet(false, null, null);
 
         when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
 
@@ -155,7 +145,7 @@ public class KafkaUpdateTest {
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null, null),
-                ResourceUtils.dummyClusterOperatorConfig(lookup, 1L));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Async async = context.async();
@@ -182,9 +172,9 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgrade200_201_withEmptyConfig(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithEmptyConfig(TestContext context) throws IOException {
         try {
-            testUpgrade200_201_messageFormatConfig(context, emptyMap(), true);
+            testUpgradeMinorToPrevMessageFormatConfig(context, emptyMap(), true);
         } catch (UpgradeException e) {
             context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
             context.assertTrue(e.states.isEmpty());
@@ -192,39 +182,40 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgrade200_201_with200messageFormatConfig(TestContext context) throws IOException {
-        testUpgrade200_201_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.0"),
-                // 2.0.0 → 2.0.1 doesn't require proto or mvg version change, so single phase
+    public void upgradeMinorToPrevWithSameMessageFormatConfig(TestContext context) throws IOException {
+        testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
+                // Minor version upgrade doesn't require proto or mvg version change, so single phase
                 true);
     }
 
     @Test
-    public void upgrade200_201_with100messageFormatConfig(TestContext context) throws IOException {
-        testUpgrade200_201_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), true);
+    public void upgradeMinorToPrevWithOldMessageFormatConfig(TestContext context) throws IOException {
+        testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), true);
     }
 
     @Test
-    public void upgrade200_201_with200protocolVersion(TestContext context) throws IOException {
-        testUpgrade200_201_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
-                        INTERBROKER_PROTOCOL_VERSION, "2.0"),
-                // 2.0.0 → 2.0.1 doesn't require proto or mvg version change, so single phase
+    public void upgradeMinorToPrevWithSameProtocolVersion(TestContext context) throws IOException {
+        testUpgradeMinorToPrevMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
+                        INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
+                // Minor version upgrade doesn't require proto or mvg version change, so single phase
                 true);
     }
 
     @Test
-    public void upgrade200_201_with110protocolVersion(TestContext context) throws IOException {
-        testUpgrade200_201_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
+    public void upgradeMinorToPrevWithOldProtocolVersion(TestContext context) throws IOException {
+        testUpgradeMinorToPrevMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"),
-                // 2.0.0 → 2.0.1 doesn't require proto or mvg version change, so single phase
+                // Minor version upgrade doesn't require proto or mvg version change, so single phase
                 true);
     }
 
-    private void testUpgrade200_201_messageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
-        String initialKafkaVersion = "2.0.0";
-        String upgradedKafkaVersion = "2.0.1";
-        String upgradedImage = "strimzi/kafka:0.8.0-kafka-" + upgradedKafkaVersion;
+    private void testUpgradeMinorToPrevMessageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
+        String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String upgradedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
         Kafka initialKafka = initialKafka(initialKafkaVersion, config);
         List<StatefulSet> states = upgrade(context,
                 singletonMap(upgradedKafkaVersion, upgradedImage),
@@ -243,8 +234,10 @@ public class KafkaUpdateTest {
             context.assertEquals(upgradedImage, container1.getImage());
             List<EnvVar> env = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, "2.0"), config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
+                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
+            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
+                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
         }
 
         StatefulSet phase2 = states.get(expectSinglePhase ? 0 : 1);
@@ -257,17 +250,18 @@ public class KafkaUpdateTest {
         EnvVar env = findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION);
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(env != null ? env.getValue() : "");
         context.assertEquals(config.get(INTERBROKER_PROTOCOL_VERSION), config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION, "2.0"),
+        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
+                config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
                 "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
     }
 
     /** Test we can recover from an exception during phase 1 rolling of the upgrade */
     @Test
-    public void testUpgrade200_201_messageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
-        Map<String, Object> initialConfig = singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.0");
-        String initialKafkaVersion = "2.0.0";
-        String upgradedKafkaVersion = "2.0.1";
-        String upgradedImage = "strimzi/kafka:0.8.0-kafka-" + upgradedKafkaVersion;
+    public void testUpgradeMinorToPrevMessageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
+        Map<String, Object> initialConfig = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION);
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
+        String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String upgradedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
         AtomicBoolean exceptionThrown = new AtomicBoolean(false);
         Kafka initialKafka = initialKafka(initialKafkaVersion, initialConfig);
 
@@ -303,7 +297,8 @@ public class KafkaUpdateTest {
         List<EnvVar> env1 = container1.getEnv();
         KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
         context.assertNull(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
+                config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
 
         // Do the upgrade again, but without throwing this time
         states = upgrade(context,
@@ -322,9 +317,9 @@ public class KafkaUpdateTest {
     /////////////////
 
     @Test
-    public void upgrade200_210_withEmptyConfig(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithEmptyConfig(TestContext context) throws IOException {
         try {
-            testUpgrade200_210_messageFormatConfig(context, emptyMap(), false);
+            testUpgradePrevToLatestMessageFormatConfig(context, emptyMap(), false);
         } catch (UpgradeException e) {
             context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
             context.assertTrue(e.states.isEmpty());
@@ -332,33 +327,35 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgrade200_210_with200messageFormatConfig(TestContext context) throws IOException {
-        testUpgrade200_210_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.0"), false);
+    public void upgradePrevToLatestWithPrevMessageFormatConfig(TestContext context) throws IOException {
+        testUpgradePrevToLatestMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION), false);
     }
 
     @Test
-    public void upgrade200_210_with100messageFormatConfig(TestContext context) throws IOException {
-        testUpgrade200_210_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), false);
+    public void upgradePrevToLatestWithOldMessageFormatConfig(TestContext context) throws IOException {
+        testUpgradePrevToLatestMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                "1.0"), false);
     }
 
     @Test
-    public void upgrade200_210_with200protocolVersion(TestContext context) throws IOException {
-        testUpgrade200_210_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
-                INTERBROKER_PROTOCOL_VERSION, "2.0"), true);
+    public void upgradePrevToLatestWithPrevProtocolVersion(TestContext context) throws IOException {
+        testUpgradePrevToLatestMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION), true);
     }
 
     @Test
-    public void upgrade200_210_with110protocolVersion(TestContext context) throws IOException {
-        testUpgrade200_210_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
+    public void upgradePrevToLatestWithOldProtocolVersion(TestContext context) throws IOException {
+        testUpgradePrevToLatestMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"), true);
     }
 
-    private void testUpgrade200_210_messageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
-        String initialKafkaVersion = "2.0.0";
-        String upgradedKafkaVersion = "2.1.0";
-        String upgradedImage = "strimzi/kafka:0.8.0-kafka-" + upgradedKafkaVersion;
+    private void testUpgradePrevToLatestMessageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String upgradedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
+        String upgradedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
         Kafka initialKafka = initialKafka(initialKafkaVersion, config);
         List<StatefulSet> states = upgrade(context,
             singletonMap(upgradedKafkaVersion, upgradedImage),
@@ -377,8 +374,10 @@ public class KafkaUpdateTest {
             context.assertEquals(upgradedImage, container1.getImage());
             List<EnvVar> env = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, "2.0"), config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
+                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
+            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
         }
 
         StatefulSet phase2 = states.get(expectSinglePhase ? 0 : 1);
@@ -390,17 +389,18 @@ public class KafkaUpdateTest {
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
         context.assertEquals(config.get(INTERBROKER_PROTOCOL_VERSION), config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
                 "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
     }
 
     /** Test we can recover from an exception during phase 1 rolling of the upgrade */
     @Test
-    public void testUpgrade200_210_messageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
-        Map<String, Object> config = singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.0.0");
-        String initialKafkaVersion = "2.0.0";
-        String upgradedKafkaVersion = "2.1.0";
-        String upgradedImage = "strimzi/kafka:0.8.0-kafka-" + upgradedKafkaVersion;
+    public void testUpgradePrevToLatestMessageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
+        Map<String, Object> config = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
+        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String upgradedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
+        String upgradedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
         AtomicBoolean exceptionThrown = new AtomicBoolean(false);
         Kafka initialKafka = initialKafka(initialKafkaVersion, config);
 
@@ -435,8 +435,10 @@ public class KafkaUpdateTest {
         context.assertEquals(upgradedImage, container1.getImage());
         List<EnvVar> env1 = container1.getEnv();
         KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, "2.0"), config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+        context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
+                config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
+        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
 
         // Do the upgrade again, but without throwing this time
         states = upgrade(context,
@@ -460,14 +462,15 @@ public class KafkaUpdateTest {
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
         context.assertEquals(null, config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
                 "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
     }
 
     @Test
-    public void downgrade200_210_withEmptyConfig(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithEmptyConfig(TestContext context) throws IOException {
         try {
-            testDowngrade210_200_messageFormatConfig(context, emptyMap(), true);
+            testDowngradeLatestToPrevMessageFormatConfig(context, emptyMap(), true);
             context.fail();
         } catch (UpgradeException e) {
             context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
@@ -476,9 +479,10 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void downgrade210_200_with210messageFormatConfig(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithLatestMessageFormatConfig(TestContext context) throws IOException {
         try {
-            testDowngrade210_200_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.1"), true);
+            testDowngradeLatestToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                    KafkaVersionTestUtils.LATEST_FORMAT_VERSION), true);
             context.fail();
         } catch (UpgradeException e) {
             context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
@@ -487,30 +491,31 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void downgrade210_200_with200messageFormatConfig(TestContext context) throws IOException {
-        testDowngrade210_200_messageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "2.0"), true);
+    public void downgradeLatestToPrevWithPrevMessageFormatConfig(TestContext context) throws IOException {
+        testDowngradeLatestToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION), true);
     }
 
     @Test
-    public void downgrade210_200_with210protocolVersion(TestContext context) throws IOException {
-        testDowngrade210_200_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
-                INTERBROKER_PROTOCOL_VERSION, "2.1"),
+    public void downgradeLatestToPrevWithLatestProtocolVersion(TestContext context) throws IOException {
+        testDowngradeLatestToPrevMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION),
                 true);
     }
 
     @Test
-    public void downgrade210_200_with200protocolVersion(TestContext context) throws IOException {
-        testDowngrade210_200_messageFormatConfig(context,
-                (Map) map(LOG_MESSAGE_FORMAT_VERSION, "2.0",
-                INTERBROKER_PROTOCOL_VERSION, "2.0"),
+    public void downgradeLatestToPrevWithPrevProtocolVersion(TestContext context) throws IOException {
+        testDowngradeLatestToPrevMessageFormatConfig(context,
+                (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
                 false);
     }
 
-    private void testDowngrade210_200_messageFormatConfig(TestContext context, Map<String, Object> initialConfig, boolean expectFirstPhase) throws IOException {
-        String initialKafkaVersion = "2.1.0";
-        String downgradedKafkaVersion = "2.0.0";
-        String downgradedImage = "strimzi/kafka:0.8.0-kafka-" + downgradedKafkaVersion;
+    private void testDowngradeLatestToPrevMessageFormatConfig(TestContext context, Map<String, Object> initialConfig, boolean expectFirstPhase) throws IOException {
+        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
+        String downgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
+        String downgradedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
         Kafka initialKafka = initialKafka(initialKafkaVersion, initialConfig);
         List<StatefulSet> states = upgrade(context,
             singletonMap(downgradedKafkaVersion, downgradedImage),
@@ -529,8 +534,10 @@ public class KafkaUpdateTest {
             context.assertNotEquals(downgradedImage, container1.getImage());
             List<EnvVar> env1 = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(initialConfig.getOrDefault(INTERBROKER_PROTOCOL_VERSION, "2.0"), config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.assertEquals(initialConfig.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
+                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
+            context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
         }
 
         StatefulSet phase2 = states.get(expectFirstPhase ? 1 : 0);
@@ -542,7 +549,8 @@ public class KafkaUpdateTest {
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
         context.assertEquals(null, config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, "2.0"), config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+                config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
                 "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
     }
 

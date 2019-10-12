@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.AfterClass;
@@ -31,7 +32,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,11 +48,7 @@ import static org.junit.Assert.assertTrue;
 
 public class EntityOperatorTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
-            "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
-            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
-                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     static Map<String, String> volumeMounts(List<VolumeMount> mounts) {
         return mounts.stream().collect(Collectors.toMap(vm -> vm.getName(), vm -> vm.getMountPath()));
@@ -424,12 +419,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion("2.0.0")
+                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -439,12 +434,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion("2.1.0")
+                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
     }
 
     @Test

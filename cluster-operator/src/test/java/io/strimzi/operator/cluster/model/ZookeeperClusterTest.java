@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -55,7 +56,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -70,11 +70,12 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class ZookeeperClusterTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
-                    "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
-            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
-                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
+            new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
+            KafkaVersionTestUtils.getKafkaImageMap(),
+            emptyMap(),
+            emptyMap(),
+            emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -599,12 +600,12 @@ public class ZookeeperClusterTest {
                         .endTlsSidecar()
                     .endZookeeper()
                     .editKafka()
-                        .withVersion("2.0.0")
+                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -615,12 +616,12 @@ public class ZookeeperClusterTest {
                         .endTlsSidecar()
                     .endZookeeper()
                     .editKafka()
-                        .withVersion("2.1.0")
+                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
     }
 
     @Test

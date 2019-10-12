@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.Test;
 
@@ -34,17 +35,19 @@ public class ModelUtilsTest {
 
     @Test
     public void testParseImageMap() {
-        Map<String, String> m = parseMap("2.0.0=strimzi/kafka:latest-kafka-2.0.0\n  " +
-                "1.1.1=strimzi/kafka:latest-kafka-1.1.1");
+        Map<String, String> m = parseMap(
+                KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "\n  " +
+                        KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE + "\n ");
         assertEquals(2, m.size());
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", m.get("2.0.0"));
-        assertEquals("strimzi/kafka:latest-kafka-1.1.1", m.get("1.1.1"));
+        assertEquals(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
+        assertEquals(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
 
-        m = parseMap(" 2.0.0=strimzi/kafka:latest-kafka-2.0.0," +
-                "1.1.1=strimzi/kafka:latest-kafka-1.1.1");
+        m = parseMap(
+                KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "," +
+                KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
         assertEquals(2, m.size());
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", m.get("2.0.0"));
-        assertEquals("strimzi/kafka:latest-kafka-1.1.1", m.get("1.1.1"));
+        assertEquals(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
+        assertEquals(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
     }
 
     @Test

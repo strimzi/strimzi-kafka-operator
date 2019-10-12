@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+    
 # Generates documentation/book/snip-images.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
 
-FILE=$1
+# Parse the Kafka versions file and get a list of version strings in an array 
+# called "versions"
+get_kafka_versions
+
 cat <<EOF
 // Auto generated content - DO NOT EDIT BY HAND
 // Edit documentation/snip-images.sh instead
@@ -16,7 +21,8 @@ cat <<EOF
 |Kafka
 a|
 EOF
-for kafka_version in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/^ *([0-9.]+) .*$/\1/g'); do
+for kafka_version in "${versions[@]}" 
+do
 echo "* {DockerOrg}/kafka:{DockerTag}-kafka-${kafka_version}"
 done
 cat <<EOF

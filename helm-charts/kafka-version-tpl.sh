@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+
 out="$1"
-default_version=$(grep -E '^([0-9.]+)[[:space:]]+default' ../kafka-versions | cut -d ' ' -f 1)
-for version in $(sed -E -e '/^(#.*|[[:space:]]*)$/d' -e 's/^([0-9.]+)[[:space:]]+.*$/\1/g' ../kafka-versions); do
+
+# Read the Kafka versions file and create an array of version strings
+get_kafka_versions
+
+for version in "${versions[@]}"
+do
     zookeeper_version="{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     zookeeper_tls_sidecar_version="{{ default .Values.tlsSidecarZookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarZookeeper.image.name }}:{{ default .Values.tlsSidecarZookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_tls_sidecar_version="{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
@@ -19,6 +25,7 @@ ${version}={{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRep
     kafka_exporter_versions="${kafka_exporter_versions}
 ${version}={{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
 done
+
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')
 kafka_connect_versions=$(echo "$kafka_connect_versions" | sed 's/^/                /g')
 kafka_connect_s2i_versions=$(echo "$kafka_connect_s2i_versions" | sed 's/^/                /g')

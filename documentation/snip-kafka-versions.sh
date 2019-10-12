@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+
 # Generates documentation/book/ref-kafka-versions.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
 
-FILE=$1
+# Parse the Kafka versions file and get a list of version strings in an array 
+# called "versions" and likewise for protocols and formats
+get_kafka_versions
+get_kafka_protocols
+get_kafka_formats
+
 cat <<EOF
 // This assembly is included in the following assemblies:
 //
@@ -16,12 +23,9 @@ cat <<EOF
 |=================
 |Kafka version |Interbroker protocol version |Log message format version| Zookeeper version
 EOF
-for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
-    
-    for y in $(echo $x | $SED -E -e 's/[|]default//g' | cut -d "|" -f 1,2,3 | $SED -E -e 's/[|]/ /g' ); do
-        echo -n "|$y "
-    done
-    echo "|3.4.13"
+for i in "${!versions[@]}"
+do 
+    echo "| ${versions[$i]} | ${protocols[$i]} | ${formats[$i]} | 3.4.13"
 done
 cat <<EOF
 |=================

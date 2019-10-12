@@ -63,6 +63,7 @@ import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -70,7 +71,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -83,7 +83,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
-import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -101,12 +100,7 @@ import static org.junit.Assert.fail;
         "checkstyle:ClassFanOutComplexity"
 })
 public class KafkaClusterTest {
-
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef 2.0.x\n" +
-                    "2.1.0         2.1 2.0 1234567890abcdef 2.1.x"),
-            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
-                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -1478,12 +1472,12 @@ public class KafkaClusterTest {
                         .editOrNewTlsSidecar()
                             .withImage(null)
                         .endTlsSidecar()
-                        .withVersion("2.0.0")
+                        .withVersion("2.2.1")
                         .withImage(null)
                     .endKafka()
                 .endSpec()
                 .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -1491,12 +1485,12 @@ public class KafkaClusterTest {
                         .editOrNewTlsSidecar()
                             .withImage(null)
                         .endTlsSidecar()
-                        .withVersion("2.1.0")
+                        .withVersion("2.3.0")
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals("strimzi/kafka:latest-kafka-2.0.0", KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
     }
 
     @Test
@@ -2674,16 +2668,6 @@ public class KafkaClusterTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
 
     }
-
-
-
-
-
-
-
-
-
-
 
     @Test
     public void testGenerateDeploymentWithOAuthWithClientSecret() {

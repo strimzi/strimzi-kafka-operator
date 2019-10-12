@@ -1,18 +1,25 @@
 #!/bin/bash
-
 set -e
 
-if [ $1 = "build" ]
+source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+
+# Parse the Kafka versions file and get a list of version strings in an array 
+# called "versions"
+get_kafka_versions
+
+if [ "$1" = "build" ]
 then
     # Always delete existing files so when kafka-versions changes we remove
     # models for unsupported versions
     rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
-    for kversion in $(sed -E -e '/^(#.*|[[:space:]]*)$/d' -e 's/^([0-9.]+)[[:space:]]+.*[[:space:]]+([[:alnum:]]+)[[:space:]]+.*$/\1/g' ../kafka-versions)
+
+    for version in "${versions[@]}"
     do
-      mvn ${MVN_ARGS} verify exec:java \
-        "-Dkafka-metadata-version=$kversion" \
-        "-Dconfig-model-file=../cluster-operator/src/main/resources/kafka-${kversion}-config-model.json"
+        mvn ${MVN_ARGS} verify exec:java \
+        "-Dkafka-metadata-version=$version" \
+        "-Dconfig-model-file=../cluster-operator/src/main/resources/kafka-${version}-config-model.json"
     done
 else
-    mvn ${MVN_ARGS} clean "-Dkafka-metadata-version=$(sed -E -e '/^(#.*|[[:space:]]*)$/d' -e 's/^([0-9.]+)[[:space:]]+.*[[:space:]]+([[:alnum:]]+)[[:space:]]+.*$/\1/g' ../kafka-versions | tail -1)"
+    # Clean up the last version in the file?
+    mvn ${MVN_ARGS} clean "-Dkafka-metadata-version=${versions[-1]}"
 fi

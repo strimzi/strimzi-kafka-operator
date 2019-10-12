@@ -37,6 +37,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -84,7 +85,6 @@ import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,7 +99,6 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -124,17 +123,7 @@ public class KafkaAssemblyOperatorTest {
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(
-            new StringReader(
-                    "2.0.0  default  2.0  2.0  1234567890abcdef 2.0.x\n" +
-                            "2.0.1           2.0  2.0  1234567890abcdef 2.0.x\n" +
-                            "2.1.0           2.1  2.1  1234567890abcdef 2.1.x\n"),
-            map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
-                    "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
-                    "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
-            singletonMap("2.0.0", "kafka-connect"),
-            singletonMap("2.0.0", "kafka-connect-s2i"),
-            singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));

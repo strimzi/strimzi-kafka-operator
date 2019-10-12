@@ -4,76 +4,75 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Represents a Kafka version that's supported by this CO
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class KafkaVersion implements Comparable<KafkaVersion> {
-
-    private static final Pattern KAFKA_VERSION_PATTERN = Pattern.compile(
-        "(?<version>[0-9.]+)\\s+" +
-        "(?<default>default)?\\s+" +
-        "(?<proto>[0-9.]+)\\s+" +
-        "(?<msg>[0-9.]+)\\s+" +
-        "(?<sha>[0-9A-Za-z]+)\\s+" +
-        "(?<thirdpartylibs>[0-9A-Za-z._-]+)");
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.
-     * @param reader A leader for the version info.
-     * @param mapOfVersions A map of the versions to add to.
-     * @return The default version.
-     * @throws Exception
+     * @param reader A reader for the Kafka version file.
+     * @param mapOfVersions A map to add the versions to.
+     * @return The configured default Kafka version.
+     * @throws IllegalArgumentException If there are duplicate versions listed in the versions file or more than one
+     *                                  version is listed as the default.
+     * @throws RuntimeException If no default version was set.
+     * @throws IOException If the Kafka versions file cannot be read.
      */
-    static KafkaVersion parseKafkaVersions(LineNumberReader reader, Map<String, KafkaVersion> mapOfVersions)
-            throws Exception {
+    public static KafkaVersion parseKafkaVersions(Reader reader, Map<String, KafkaVersion> mapOfVersions)
+            throws IOException, IllegalArgumentException {
+
+        YAMLMapper mapper = new YAMLMapper();
+
+        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, new TypeReference<List<KafkaVersion>>() { });
+
         KafkaVersion defaultVersion = null;
-        String line = reader.readLine();
-        while (line != null) {
-            if (!line.isEmpty() && !line.startsWith("#")) {
-                Matcher matcher = KAFKA_VERSION_PATTERN.matcher(line);
-                if (matcher.matches()) {
-                    String version = matcher.group("version");
-                    KafkaVersion kafkaVersion = new KafkaVersion(version,
-                            matcher.group("proto"),
-                            matcher.group("msg"));
-                    if (mapOfVersions.put(version, kafkaVersion) != null) {
-                        throw new Exception("Duplicate version '" + version + "' on line " + reader.getLineNumber());
-                    }
-                    if (matcher.group("default") != null) {
-                        if (defaultVersion == null) {
-                            defaultVersion = kafkaVersion;
-                        } else {
-                            throw new Exception("Multiple default versions given");
-                        }
-                    }
+
+        for (KafkaVersion kafkaVersion: kafkaVersions) {
+
+            if (mapOfVersions.put(kafkaVersion.version, kafkaVersion) != null) {
+                throw new IllegalArgumentException("Duplicate version (" + kafkaVersion.version + ") listed in kafka-versions file");
+            }
+
+            if (kafkaVersion.isDefault) {
+                if (defaultVersion == null) {
+                    defaultVersion = kafkaVersion;
                 } else {
-                    throw new Exception("Malformed line: " + reader.getLineNumber());
+                    throw new IllegalArgumentException(
+                            "Multiple Kafka versions (" + defaultVersion.version() + " and " + kafkaVersion.version() +
+                                    ") are set as default");
                 }
             }
-            line = reader.readLine();
         }
-        if (defaultVersion == null) {
-            throw new Exception("No version was configured as the default");
+
+        if (defaultVersion != null) {
+            return defaultVersion;
+        } else {
+            throw new RuntimeException("No Kafka version was configured as the default");
         }
-        return defaultVersion;
     }
 
     public static class Lookup {
-        public static final String KAFKA_VERSIONS_RESOURCE = "kafka-versions";
+        public static final String KAFKA_VERSIONS_RESOURCE = "kafka-versions.yaml";
         private final Map<String, KafkaVersion> map;
         private final KafkaVersion defaultVersion;
         private final Map<String, String> kafkaImages;
@@ -91,15 +90,14 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                     kafkaImages, kafkaConnectImages, kafkaConnectS2iImages, kafkaMirrorMakerImages);
         }
 
-        protected Lookup(Reader reader, Map<String, String> kafkaImages,
+        protected Lookup(Reader reader,
+                         Map<String, String> kafkaImages,
                          Map<String, String> kafkaConnectImages,
                          Map<String, String> kafkaConnectS2iImages,
                          Map<String, String> kafkaMirrorMakerImages) {
             map = new HashMap<>(5);
             try {
-                try (LineNumberReader lnReader = new LineNumberReader(reader)) {
-                    defaultVersion = parseKafkaVersions(lnReader, map);
-                }
+                defaultVersion = parseKafkaVersions(reader, map);
             } catch (Exception e) {
                 throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
             }
@@ -309,16 +307,28 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String version;
     private final String protocolVersion;
     private final String messageVersion;
+    private final boolean isDefault;
 
-    private KafkaVersion(String version, String protocolVersion, String messageVersion) {
+    @JsonCreator
+    public KafkaVersion(@JsonProperty("version") String version,
+                        @JsonProperty("protocol") String protocolVersion,
+                        @JsonProperty("format") String messageVersion,
+                        @JsonProperty("default") boolean isDefault) {
+
         this.version = version;
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
+        this.isDefault = isDefault;
     }
 
     @Override
     public String toString() {
-        return version;
+        return "KafkaVersion{" +
+                "version='" + version + '\'' +
+                ", protocolVersion='" + protocolVersion + '\'' +
+                ", messageVersion='" + messageVersion + '\'' +
+                ", isDefault=" + isDefault +
+                '}';
     }
 
     public String version() {
@@ -331,6 +341,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     public String messageVersion() {
         return messageVersion;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
     }
 
     @Override
