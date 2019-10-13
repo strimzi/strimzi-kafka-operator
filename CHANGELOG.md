@@ -3,6 +3,7 @@
 ## 0.15.0
 
 * Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
+* Improve Kafka Exporter Grafana dashboard
 
 ## 0.14.0
 
