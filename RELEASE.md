@@ -23,6 +23,7 @@ The release process should normally look like this:
   * Add release documentation to `strimzi.github.io/docs/`. Update references to docs in `strimzi.github.io/documentation/index.md` and `strimzi.github.io/documentation/archive/index.md`. Update also the link from the start page: `strimzi.github.io/index.md`.
   * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to `strimzi.github.io/charts/index.yaml`.
   * Update the Quickstarts for OKD and Minikube to use the latest stuff.
+  * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
 10. The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 11. Update the Strimzi manifest files in Operate Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
 
