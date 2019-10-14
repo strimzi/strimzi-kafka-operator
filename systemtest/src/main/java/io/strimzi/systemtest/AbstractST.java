@@ -668,7 +668,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources().clusterOperator(coNamespace, operationTimeout).done();
+        testClassResources().clusterOperator(coNamespace).done();
     }
 
     /**
@@ -953,6 +953,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        assertNoCoErrorsLogged(0);
         if (Environment.SKIP_TEARDOWN == null) {
             if (context.getExecutionException().isPresent()) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");

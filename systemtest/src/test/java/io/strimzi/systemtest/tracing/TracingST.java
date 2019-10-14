@@ -47,6 +47,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @Tag(TRACING)
+@Tag(REGRESSION)
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";

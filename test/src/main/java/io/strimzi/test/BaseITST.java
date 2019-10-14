@@ -157,7 +157,7 @@ public class BaseITST {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
 
-            if (kubeClient().getNamespace(namespace) != null) {
+            if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
                 LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
                 kubeClient().deleteNamespace(namespace);
                 cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
