@@ -44,7 +44,7 @@ image:oauth-introspection-endpoint.png[Client using client ID and secret with br
 . Kafka client requests access token from authorization server, using client ID and secret, and optionally a refresh token.
 . Authorization server generates a new access token.
 . Kafka client authenticates with the Kafka broker using the _SASL OAUTHBEARER_ mechanism to pass the access token.
-. Kafka broker validates the access token by calling a token introspection endpoint on authorization server, using client ID and secret.
+. Kafka broker validates the access token by calling a token introspection endpoint on authorization server, using its own client ID and secret.
 . Kafka client session is established if the token is valid.
 
 [id='oauth-jwt-{context}']
@@ -63,7 +63,7 @@ image:oauth-jwt-signature.png[Client using client ID and secret with broker perf
 image:oauth-introspection-endpoint-long-token.png[Client using long-lived access token with broker delegating validation to authorization server]
 
 . Kafka client authenticates with the Kafka broker using the _SASL OAUTHBEARER_ mechanism to pass the long-lived access token.
-. Kafka broker validates the access token by calling a token introspection endpoint on authorization server, using client ID and secret.
+. Kafka broker validates the access token by calling a token introspection endpoint on authorization server, using its own client ID and secret.
 . Kafka client session is established if the token is valid.
 
 [id='oauth-token-jwt-{context}']
