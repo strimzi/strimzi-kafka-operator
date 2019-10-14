@@ -138,11 +138,12 @@ rm $DIR/metrics/prometheus-operator.yaml
 
 # Grafana
 kubectl apply -f $DIR/metrics/examples/grafana/grafana.yaml -n $NAMESPACE
-kubectl expose service/grafana -n $NAMESPACE
 
 echo "Waiting for Grafana server to be ready..."
 kubectl rollout status deployment/grafana -w -n $NAMESPACE
 echo "...Grafana server ready"
+
+kubectl expose service/grafana -n $NAMESPACE
 
 sleep 5
 
