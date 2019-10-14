@@ -48,8 +48,8 @@ For example:
 #...
    authentication:
      type: oauth <1>
-     validIssuerUri: <__https://<authorization-server-address>/auth/realms/demo__> <2>
-     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/certs__> <3>
+     validIssuerUri: <__https://<authorization-server-address>/auth/realms/master__> <2>
+     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/master/protocol/openid-connect/certs__> <3>
      userNameClaim: preferred_username <4>
 
 #external configuration

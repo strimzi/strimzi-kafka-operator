@@ -53,7 +53,7 @@ spec:
   # ...
   authentication:
    type: oauth <1>
-   tokenEndpointUri: https://<authorization-server-address>/auth/realms/demo/protocol/openid-connect/token <2>
+   tokenEndpointUri: https://<authorization-server-address>/auth/realms/master/protocol/openid-connect/token <2>
    clientId: kafka-bridge
    clientSecret:
      secretName: my-bridge-oauth

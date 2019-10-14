@@ -28,15 +28,6 @@ For a deployment of {ProductName}, {oauth} integration provides:
 * Server-side {oauth} support for Kafka brokers
 * Client-side {oauth} support for Kafka Mirror Maker, Kafka Connect and the Kafka Bridge
 
-.Authorization server support
-
-Depending on the chosen xref:con-oauth-authentication-client-options-{context}[authentication flow], you can use an authorization server to:
-
-* Configure authentication for Kafka brokers
-* Configure and authorize clients
-* Configure users and roles
-* Obtain access and refresh tokens
-
 .Additional resources
 
 * {oauth2-site}
