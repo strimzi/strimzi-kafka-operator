@@ -25,14 +25,13 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"connectCluster", "class", "tasksMax", "topics", "config"})
+@JsonPropertyOrder({"connectCluster", "class", "tasksMax", "config"})
 @EqualsAndHashCode
 public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private String className;
     private Integer tasksMax;
-    private List<String> topics;
     private List<KafkaConnectorConfig> config;
     private Map<String, Object> additionalProperties;
 
@@ -46,11 +45,6 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
     @Minimum(1)
     public Integer getTasksMax() {
         return tasksMax;
-    }
-
-    @Description("A list of topics to use as input for the Kafka Connector")
-    public List<String> getTopics() {
-        return topics;
     }
 
     @Description("The Config for the Kafka Connector Spec.")
@@ -68,10 +62,6 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
 
     public void setTasksMax(Integer tasksMax) {
         this.tasksMax = tasksMax;
-    }
-
-    public void setTopics(List<String> topics) {
-        this.topics = topics;
     }
 
     @Override
