@@ -918,6 +918,7 @@ class KafkaST extends MessagingBaseST {
         //Waiting when EO pod will be recreated without UO
         StUtils.waitForPodDeletion(eoPodName);
         StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        StUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that UO was removed
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -1955,6 +1956,7 @@ class KafkaST extends MessagingBaseST {
 
     @AfterEach
     void deleteTestResources() throws Exception {
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
         deleteTestMethodResources();
         waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }

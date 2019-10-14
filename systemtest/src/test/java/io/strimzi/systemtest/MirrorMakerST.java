@@ -384,7 +384,7 @@ public class MirrorMakerST extends MessagingBaseST {
         consumerConfig.put("auto.offset.reset", "latest");
 
         Map<String, Object> updatedConsumerConfig = new HashMap<>();
-        consumerConfig.put("auto.offset.reset", "earliest");
+        updatedConsumerConfig.put("auto.offset.reset", "earliest");
 
         int initialDelaySeconds = 30;
         int timeoutSeconds = 10;
@@ -398,6 +398,12 @@ public class MirrorMakerST extends MessagingBaseST {
 
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
+                    .editProducer()
+                        .withConfig(producerConfig)
+                    .endProducer()
+                    .editConsumer()
+                        .withConfig(consumerConfig)
+                    .endConsumer()
                     .withNewTemplate()
                         .withNewMirrorMakerContainer()
                             .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))

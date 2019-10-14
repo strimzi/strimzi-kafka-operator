@@ -4,9 +4,12 @@
  */
 package io.strimzi.systemtest.matchers;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,16 +19,33 @@ import java.util.regex.Pattern;
  */
 public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
 
+    private static final Logger LOGGER = LogManager.getLogger(LogHasNoUnexpectedErrors.class);
+
     @Override
     public boolean matches(Object actualValue) {
         if (!"".equals(actualValue)) {
-            for (LogWhiteList value : LogWhiteList.values()) {
-                Matcher m = Pattern.compile(value.name).matcher((String) actualValue);
-                if (m.find()) {
-                    return true;
+            if (actualValue.toString().contains("NullPointer") || actualValue.toString().contains("Unhandled Exception")) {
+                return false;
+            }
+            for (String line : ((String) actualValue).split("\n")) {
+                if (line.contains("DEBUG")) {
+                    continue;
+                }
+                String lineLowerCase = line.toLowerCase(Locale.ENGLISH);
+                if (lineLowerCase.contains("error") || lineLowerCase.contains("exception")) {
+                    boolean whiteListResult = false;
+                    for (LogWhiteList value : LogWhiteList.values()) {
+                        Matcher m = Pattern.compile(value.name).matcher(line);
+                        if (m.find()) {
+                            whiteListResult = true;
+                        }
+                    }
+                    if (!whiteListResult) {
+                        return false;
+                    }
                 }
             }
-            return false;
+            return true;
         }
         return true;
     }
@@ -36,7 +56,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
     }
 
     enum LogWhiteList {
-        CO_TIMEOUT_EXCEPTION("io.strimzi.operator.cluster.operator.resource.TimeoutException"),
+        CO_TIMEOUT_EXCEPTION("io.strimzi.operator.common.operator.resource.TimeoutException"),
         // "NO_ERROR" is necessary because DnsNameResolver prints debug information `QUERY(0), NoError(0), RD RA` after `recived` operation
         NO_ERROR("NoError\\(0\\)"),
         // This is necessary for OCP 3.10 or less because of having exception handling during the patching of NetworkPolicy
@@ -45,9 +65,11 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                 + "io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: PATCH"),
         // fabric8 now throws exceptions, which doesn't influence kafka scaleup/scaledown
         FABRIC_EIGHT_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:115 - Error while waiting for resource to be scaled."),
-        FABRIC_EIGHT_STATEFUL_SET_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:126 - 0/.* pod(s) ready for StatefulSet: .*  after waiting for 0 seconds so giving up"),
+        FABRIC_EIGHT_STATEFUL_SET_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:[0-9]+ - 0/.* pod(s) ready for StatefulSet: .*  after waiting for 0 seconds so giving up"),
         // This happen from time to time during CO startup, it doesn't influence CO behavior
-        EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError");
+        EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
+        OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
+        RECONCILIATION_TIMEOUT("ERROR AbstractOperator:[0-9]+ - Reconciliation.*");
 
         final String name;
 
