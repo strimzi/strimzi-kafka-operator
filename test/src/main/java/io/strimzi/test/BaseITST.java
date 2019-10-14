@@ -96,7 +96,7 @@ public class BaseITST {
      * @return Kubernetes client
      */
     public static KubeClient kubeClient() {
-        return kubeCluster(). client().namespace(namespace);
+        return kubeCluster().client().namespace(namespace);
     }
 
     /**
