@@ -8,6 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -925,5 +926,35 @@ public class StUtils {
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
+    }
+
+    public static void waitUntilPVCLabelsChange(Map<String, String> newLabels, String labelKey) {
+        LOGGER.info("Waiting till PVC labels will change {}", newLabels.toString());
+        TestUtils.waitFor("Waiting till PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                boolean result = false;
+
+                for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
+                    result = pvc.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey));
+                }
+
+                return result;
+            });
+        LOGGER.info("PVC labels has changed {}", newLabels.toString());
+    }
+
+    public static void waitUntilPVCAnnotationChange(Map<String, String> newAnnotation, String annotationKey) {
+        LOGGER.info("Waiting till PVC annotation will change {}", newAnnotation.toString());
+        TestUtils.waitFor("Waiting till PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                boolean result = false;
+
+                for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
+                    result =  pvc.getMetadata().getAnnotations().get(annotationKey).equals(newAnnotation.get(annotationKey));
+                }
+
+                return result;
+            });
+        LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
 }

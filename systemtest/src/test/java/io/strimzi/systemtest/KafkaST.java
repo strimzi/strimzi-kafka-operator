@@ -1948,6 +1948,94 @@ class KafkaST extends MessagingBaseST {
         assertThat("Folder kafka-log0 doesn't contains 100 files", result, containsString(stringToMatch.toString()));
     }
 
+    @Test
+    void testLabelsAndAnnotationforPVC() {
+        final String labelAnnotationKey = "testKey";
+
+        Map<String, String> pvcLabel = new HashMap<>();
+        pvcLabel.put(labelAnnotationKey, "testValue");
+        Map<String, String> pvcAnnotation = pvcLabel;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .addToLabels(pvcLabel)
+                                    .addToAnnotations(pvcAnnotation)
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withStorage(new JbodStorageBuilder().withVolumes(
+                            new PersistentClaimStorageBuilder()
+                                    .withDeleteClaim(false)
+                                    .withId(0)
+                                    .withSize("20Gi")
+                                    .build(),
+                            new PersistentClaimStorageBuilder()
+                                    .withDeleteClaim(true)
+                                    .withId(1)
+                                    .withSize("10Gi")
+                                    .build())
+                            .build())
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPersistentVolumeClaim()
+                                .withNewMetadata()
+                                    .addToLabels(pvcLabel)
+                                    .addToAnnotations(pvcAnnotation)
+                                .endMetadata()
+                            .endPersistentVolumeClaim()
+                        .endTemplate()
+                        .withNewPersistentClaimStorage()
+                            .withDeleteClaim(false)
+                            .withId(0)
+                            .withSize("3Gi")
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
+
+        List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims();
+
+        assertThat(7, is(kubeClient().listPersistentVolumeClaims().size()));
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            LOGGER.info("Verifying that PVC label {} - {} = {}", pvc.getMetadata().getName(), "testValue", pvc.getMetadata().getLabels().get("testKey"));
+
+            assertThat("testValue", is(pvc.getMetadata().getLabels().get("testKey")));
+            assertThat("testValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
+        }
+
+        pvcLabel.put(labelAnnotationKey, "editedTestValue");
+        pvcAnnotation.put(labelAnnotationKey, "editedTestValue");
+
+        replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            LOGGER.info("Replacing kafka && zookeeper labels and annotaions from {} to {}", "testKey", "editedTestValue");
+            kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
+            kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
+
+            kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
+            kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
+        });
+
+        StUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
+        StUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
+
+        pvcs = kubeClient().listPersistentVolumeClaims();
+
+        assertThat(7, is(kubeClient().listPersistentVolumeClaims().size()));
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            LOGGER.info("Verifying replaced PVC label {} - {} = {}", pvc.getMetadata().getName(), "testValue", pvc.getMetadata().getLabels().get("testKey"));
+
+            assertThat("editedTestValue", is(pvc.getMetadata().getLabels().get("testKey")));
+            assertThat("editedTestValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
+        }
+    }
+
     @BeforeEach
     void createTestResources() {
         createTestMethodResources();
