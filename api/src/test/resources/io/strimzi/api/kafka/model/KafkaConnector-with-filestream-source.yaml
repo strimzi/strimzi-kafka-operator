@@ -1,12 +1,14 @@
 apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaConnector
 metadata:
-  name: test-source
+  name: local-file-source
+  labels:
+    connect-cluster: my-connect-cluster
 spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector
   tasksMax: 2
-  topics:
-    - "test.topic"
   config:
     - name: file
       value: "/home/source/test.source.txt"
+    - name: topic
+      value: "test.topic"

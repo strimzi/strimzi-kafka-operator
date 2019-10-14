@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+  name: local-file-sink
+  labels:
+    connect-cluster: my-connect-cluster
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSinkConnector
+  tasksMax: 1
+  config:
+    - name: file
+      value: "/tmp/test.sink.txt"
+    - name: topics
+      value: "connect-test"
