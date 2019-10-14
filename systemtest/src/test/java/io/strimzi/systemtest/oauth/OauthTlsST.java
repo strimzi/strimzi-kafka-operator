@@ -200,7 +200,7 @@ public class OauthTlsST extends OauthBaseST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = HttpUtils.sendHttpRequests(root, clusterHost, BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(root, clusterHost, BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {

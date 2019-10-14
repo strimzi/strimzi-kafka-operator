@@ -90,7 +90,7 @@ public class HttpUtils {
         return root;
     }
 
-    public static JsonObject sendHttpRequests(JsonObject records, String bridgeHost, int bridgePort, String topicName, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
+    public static JsonObject sendMessagesHttpRequest(JsonObject records, String bridgeHost, int bridgePort, String topicName, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Sending records to Kafka Bridge");
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
         client.post(bridgePort, bridgeHost, "/topics/" + topicName)
@@ -114,7 +114,7 @@ public class HttpUtils {
         return future.get(1, TimeUnit.MINUTES);
     }
 
-    public static JsonArray receiveHttpRequests(String bridgeHost, int bridgePort, String groupID, String name, WebClient client) throws Exception {
+    public static JsonArray receiveMessagesHttpRequest(String bridgeHost, int bridgePort, String groupID, String name, WebClient client) throws Exception {
         CompletableFuture<JsonArray> future = new CompletableFuture<>();
         client.get(bridgePort, bridgeHost, "/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
                 .putHeader("Accept", Constants.KAFKA_BRIDGE_JSON_JSON)

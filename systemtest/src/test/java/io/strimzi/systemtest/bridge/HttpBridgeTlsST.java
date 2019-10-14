@@ -54,7 +54,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         testClassResources().topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
-        JsonObject response = HttpUtils.sendHttpRequests(records, bridgeHost, bridgePort, topicName, client);
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         checkSendResponse(response, messageCount);
         receiveMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
     }
@@ -86,10 +86,10 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Send messages to Kafka
         sendMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveHttpRequests(bridgeHost, bridgePort, groupId, name, client);
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = HttpUtils.receiveHttpRequests(bridgeHost, bridgePort, groupId, name, client);
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
         // Delete consumer
