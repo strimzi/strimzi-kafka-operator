@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import static io.restassured.RestAssured.given;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -44,6 +45,7 @@ import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.greaterThan;
 
 @Tag(TRACING)
+@Tag(REGRESSION)
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";

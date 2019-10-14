@@ -223,7 +223,7 @@ class CustomResourceStatusST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+        testClassResources().clusterOperator(NAMESPACE).done();
 
         deployTestSpecificResources();
     }

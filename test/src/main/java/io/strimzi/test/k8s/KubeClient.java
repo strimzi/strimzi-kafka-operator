@@ -363,11 +363,11 @@ public class KubeClient {
     }
 
     public Service createService(Service service) {
-        return client.services().inNamespace(getNamespace()).create(service);
+        return client.services().inNamespace(getNamespace()).createOrReplace(service);
     }
 
     public Ingress createIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(getNamespace()).create(ingress);
+        return client.extensions().ingresses().inNamespace(getNamespace()).createOrReplace(ingress);
     }
 
     public Boolean deleteIngress(Ingress ingress) {

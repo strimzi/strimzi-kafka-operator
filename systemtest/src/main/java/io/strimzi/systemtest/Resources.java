@@ -792,7 +792,7 @@ public class Resources extends AbstractResources {
 
     DoneableKafkaTopic topic(KafkaTopic topic) {
         return new DoneableKafkaTopic(topic, kt -> {
-            KafkaTopic resource = kafkaTopic().inNamespace(topic.getMetadata().getNamespace()).create(kt);
+            KafkaTopic resource = kafkaTopic().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(kt);
             LOGGER.info("Created KafkaTopic {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
@@ -848,14 +848,10 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+        return createNewDeployment(defaultCLusterOperator(namespace).build());
     }
 
-    public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
-    }
-
-    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -876,9 +872,6 @@ public class Resources extends AbstractResources {
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
                     envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
-                    break;
-                case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(Long.toString(operationTimeout));
                     break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {

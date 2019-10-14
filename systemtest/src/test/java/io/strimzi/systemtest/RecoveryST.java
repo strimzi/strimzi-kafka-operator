@@ -43,8 +43,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForDeploymentReady(entityOperatorDeploymentName, 1);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -62,8 +60,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForAllStatefulSetPodsReady(kafkaStatefulSetName, 3);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -81,8 +77,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForAllStatefulSetPodsReady(zookeeperStatefulSetName, 1);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -98,8 +92,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForServiceRecovery(kafkaServiceName, kafkaServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -115,8 +107,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForServiceRecovery(zookeeperServiceName, zookeeperServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -132,8 +122,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForServiceRecovery(kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -149,8 +137,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForServiceRecovery(zookeeperHeadlessServiceName, zookeeperHeadlessServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -166,8 +152,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForConfigMapRecovery(kafkaMetricsConfigName, kafkaMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -183,8 +167,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForConfigMapRecovery(zookeeperMetricsConfigName, zookeeperMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -201,8 +183,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForDeploymentRecovery(kafkaBridgeDeploymentName, kafkaBridgeDeploymentUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -218,8 +198,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForServiceRecovery(kafkaBridgeServiceName, kafkaBridgeServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @Test
@@ -235,8 +213,6 @@ class RecoveryST extends AbstractST {
         StUtils.waitForConfigMapRecovery(kafkaBridgeMetricsConfigName, kafkaBridgeMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
     }
 
     @BeforeAll
