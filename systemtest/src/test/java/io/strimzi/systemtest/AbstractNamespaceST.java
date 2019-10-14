@@ -33,10 +33,16 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String previousNamespace = setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
 
+        TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
+                    .getStatus().getConditions().get(0);
+            LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
+            LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
+            return kafkaCondition.getType().equals("Ready");
+        });
+
         Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
-        LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
-        LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
 
         assertEquals("Ready", kafkaCondition.getType());
         setNamespace(previousNamespace);
