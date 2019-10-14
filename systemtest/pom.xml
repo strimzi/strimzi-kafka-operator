@@ -37,7 +37,7 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>
-            <dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
         </dependency>
@@ -172,12 +172,18 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+            <version>${netty-codec-http.version}</version>
         </dependency>
     </dependencies>
 
@@ -290,6 +296,13 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>tracing</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>oauth</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>oauth</groups>
             </properties>
         </profile>
     </profiles>

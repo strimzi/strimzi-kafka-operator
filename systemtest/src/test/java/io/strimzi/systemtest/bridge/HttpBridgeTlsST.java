@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.HttpBridgeBaseST;
+import io.strimzi.systemtest.utils.BridgeUtils;
+import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -51,8 +53,8 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Create topic
         testClassResources().topic(CLUSTER_NAME, topicName).done();
 
-        JsonObject records = generateHttpMessages(messageCount);
-        JsonObject response = sendHttpRequests(records, bridgeHost, bridgePort, topicName);
+        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
         checkSendResponse(response, messageCount);
         receiveMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
     }
@@ -80,14 +82,14 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertTrue(subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name));
+        assertTrue(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client));
         // Send messages to Kafka
         sendMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
-        JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, bridgePort, groupId, name);
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = receiveHttpRequests(bridgeHost, bridgePort, groupId, name);
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
         // Delete consumer
@@ -136,7 +138,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         deployBridgeNodePortService();
 
-        bridgePort = getBridgeNodePort();
+        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 

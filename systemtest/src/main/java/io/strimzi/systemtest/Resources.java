@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -97,6 +98,8 @@ public class Resources extends AbstractResources {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String PATH_TO_KAFKA_METRICS_CONFIG = "../metrics/examples/kafka/kafka-metrics.yaml";
     public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../metrics/examples/kafka/kafka-connect-metrics.yaml";
+
+    public static final String PATH_TO_KAFKA_CONNECT_OAUTH_CONFIG = "../systemtest/src/test/resources/oauth2/kafka-connect-oauth.yaml";
 
     private static final String DEPLOYMENT = "Deployment";
     private static final String SERVICE = "Service";
@@ -333,13 +336,13 @@ public class Resources extends AbstractResources {
                                 .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                             .withNewReadinessProbe()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endReadinessProbe()
-                .withNewLivenessProbe()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endLivenessProbe()
+                                .withInitialDelaySeconds(15)
+                                .withTimeoutSeconds(5)
+                            .endReadinessProbe()
+                            .withNewLivenessProbe()
+                                .withInitialDelaySeconds(15)
+                                .withTimeoutSeconds(5)
+                            .endLivenessProbe()
                             .withNewEphemeralStorage().endEphemeralStorage()
                             .withNewJvmOptions()
                                 .withGcLoggingEnabled(false)
@@ -448,6 +451,21 @@ public class Resources extends AbstractResources {
                     .withResources(new ResourceRequirementsBuilder()
                             .addToRequests("memory", new Quantity("1G")).build())
                 .endSpec();
+    }
+
+    public DoneableKafkaConnect kafkaConnectWithOauth(String name, int kafkaConnectReplicas) {
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_OAUTH_CONFIG);
+
+        return kafkaConnect(new KafkaConnectBuilder(kafkaConnect)
+                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+                .editSpec()
+                    .withVersion(KAFKA_VERSION)
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                    .withReplicas(kafkaConnectReplicas)
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
+                .endSpec()
+                .build());
     }
 
     public DoneableKafkaConnect kafkaConnectWithTracing(String name) {
@@ -828,6 +846,18 @@ public class Resources extends AbstractResources {
                 .build());
     }
 
+    public DoneableKafkaUser basicUser(String clusterName, String name) {
+        return user(new KafkaUserBuilder()
+                .withMetadata(
+                    new ObjectMetaBuilder()
+                        .withClusterName(clusterName)
+                        .withName(name)
+                        .withNamespace(client().getNamespace())
+                        .addToLabels("strimzi.io/cluster", clusterName)
+                        .build())
+                .build());
+    }
+
     DoneableKafkaUser user(KafkaUser user) {
         return new DoneableKafkaUser(user, ku -> {
             KafkaUser resource = kafkaUser().inNamespace(client().getNamespace()).createOrReplace(ku);
@@ -1054,7 +1084,7 @@ public class Resources extends AbstractResources {
         return deployKafkaClients(tlsListener, kafkaClientsName, null);
     }
 
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+    public DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
@@ -1540,4 +1570,337 @@ public class Resources extends AbstractResources {
                     .build());
     }
 
+    public DoneableDeployment deployKeycloak() {
+        String keycloakName = "keycloak";
+
+        Map<String, String> keycloakLabels = new HashMap<>();
+        keycloakLabels.put("app", keycloakName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                .withNewMetadata()
+                    .withNamespace(client().getNamespace())
+                    .withLabels(keycloakLabels)
+                    .withName(keycloakName)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewSelector()
+                        .withMatchLabels(keycloakLabels)
+                    .endSelector()
+                    .withReplicas(1)
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withLabels(keycloakLabels)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withContainers()
+                            .addNewContainer()
+                                .withName(keycloakName + "pod")
+                                .withImage("jboss/keycloak")
+                                .withPorts(
+                                        new ContainerPortBuilder()
+                                                .withName("http")
+                                                .withContainerPort(8080)
+                                                .build(),
+                                        new ContainerPortBuilder()
+                                                .withName("https")
+                                                .withContainerPort(8443)
+                                                .build()
+                                )
+                                .addNewEnv()
+                                    .withName("KEYCLOAK_USER")
+                                    .withValue("admin")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("KEYCLOAK_PASSWORD")
+                                    .withValue("admin")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
+    }
+
+    public Service deployKeycloakNodePortService(String namespace) {
+        String keycloakName = "keycloak";
+
+        Map<String, String> keycloakLabels = new HashMap<>();
+        keycloakLabels.put("app", keycloakName);
+
+        return getSystemtestsServiceResource(keycloakName + "service-https",
+                Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace)
+                    .editSpec()
+                        .withType("NodePort")
+                        .withSelector(keycloakLabels)
+                        .editFirstPort()
+                            .withNodePort(32223)
+                        .endPort()
+                    .endSpec().build();
+    }
+
+    public Service deployBridgeNodePortService(String bridgeExternalService, String namespace) {
+        Map<String, String> map = new HashMap<>();
+        map.put("strimzi.io/cluster", CLUSTER_NAME);
+        map.put("strimzi.io/kind", "KafkaBridge");
+        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
+
+        // Create node port service for expose bridge outside the cluster
+        return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
+                .editSpec()
+                .withType("NodePort")
+                .withSelector(map)
+                .endSpec().build();
+    }
+
+    public DoneableDeployment producerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
+        String producerName = "hello-world-producer";
+
+        Map<String, String> producerLabels = new HashMap<>();
+        producerLabels.put("app", producerName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withClusterName(client().getNamespace())
+                        .withLabels(producerLabels)
+                        .withName("hello-world-producer")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withNewSelector()
+                        .withMatchLabels(producerLabels)
+                    .endSelector()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withLabels(producerLabels)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withContainers()
+                            .addNewContainer()
+                                .withName(producerName)
+                                .withImage("strimzi/" + producerName + ":latest")
+                                .addNewEnv()
+                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withValue(bootstrap)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC")
+                                    .withValue(topicName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("DELAY_MS")
+                                    .withValue("1000")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("LOG_LEVEL")
+                                    .withValue("DEBUG")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("MESSAGE_COUNT")
+                                    .withValue("100")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_ID")
+                                    .withValue("hello-world-producer")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_SECRET")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("hello-world-producer-oauth")
+                                            .withKey("clientSecret")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_TOKEN_ENDPOINT_URI")
+                                    .withValue(oauthTokenEndpointUri)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CRT")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("x509-https-secret")
+                                            .withKey("tls.crt")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM") // disable hostname verification
+                                    .withValue("")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec().build());
+    }
+
+
+    public DoneableDeployment consumerWithOauth(String oauthTokenEndpointUri, String topicName, String bootstrap) {
+        return consumerWithOauth("hello-world-consumer", oauthTokenEndpointUri, topicName, bootstrap);
+    }
+
+    public DoneableDeployment consumerWithOauth(String name, String oauthTokenEndpointUri, String topicName, String bootstrap) {
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", name);
+
+        return createNewDeployment(new DeploymentBuilder()
+                .withNewMetadata()
+                        .withNamespace(client().getNamespace())
+                        .withClusterName(client().getNamespace())
+                        .withLabels(consumerLabels)
+                        .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withNewSelector()
+                        .withMatchLabels(consumerLabels)
+                    .endSelector()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withLabels(consumerLabels)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withContainers()
+                            .addNewContainer()
+                                .withName(name)
+                                .withImage("strimzi/hello-world-consumer:latest")
+                                .addNewEnv()
+                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withValue(bootstrap)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC")
+                                    .withValue(topicName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("GROUP_ID")
+                                    .withValue(name)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("LOG_LEVEL")
+                                    .withValue("INFO")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("MESSAGE_COUNT")
+                                    .withValue("100")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_ID")
+                                    .withValue("hello-world-consumer")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_SECRET")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("hello-world-consumer-oauth")
+                                            .withKey("clientSecret")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_TOKEN_ENDPOINT_URI")
+                                    .withValue(oauthTokenEndpointUri)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CRT")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("x509-https-secret")
+                                            .withKey("tls.crt")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM")  // disable hostname verification
+                                    .withValue("")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec().build());
+    }
+
+    public DoneableDeployment kafkaStreamsWithOauth(String oauthTokenEndpointUri, String bootstrap) {
+        String kafkaStreamsName = "hello-world-streams";
+
+        Map<String, String> kafkaStreamsLabel = new HashMap<>();
+        kafkaStreamsLabel.put("app", kafkaStreamsName);
+
+        return createNewDeployment(new DeploymentBuilder()
+                .withNewMetadata()
+                    .withNamespace(client().getNamespace())
+                    .withClusterName(client().getNamespace())
+                    .withLabels(kafkaStreamsLabel)
+                    .withName(kafkaStreamsName)
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withNewSelector()
+                        .withMatchLabels(kafkaStreamsLabel)
+                    .endSelector()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withLabels(kafkaStreamsLabel)
+                        .endMetadata()
+                        .withNewSpec()
+                        .withContainers()
+                            .addNewContainer()
+                                .withName(kafkaStreamsName)
+                                .withImage("strimzi/" + kafkaStreamsName + ":latest")
+                                .addNewEnv()
+                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withValue(bootstrap)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("APPLICATION_ID")
+                                    .withValue(kafkaStreamsName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("SOURCE_TOPIC")
+                                    .withValue("my-topic")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TARGET_TOPIC")
+                                    .withValue("my-topic-reversed")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("LOG_LEVEL")
+                                    .withValue("DEBUG")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_ID")
+                                    .withValue(kafkaStreamsName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CLIENT_SECRET")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("hello-world-streams-oauth")
+                                            .withKey("clientSecret")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_TOKEN_ENDPOINT_URI")
+                                    .withValue(oauthTokenEndpointUri)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_CRT")
+                                    .withNewValueFrom()
+                                        .withNewSecretKeyRef()
+                                            .withName("x509-https-secret")
+                                            .withKey("tls.crt")
+                                        .endSecretKeyRef()
+                                    .endValueFrom()
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM") // disable hostname verification
+                                    .withValue("")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec().build());
+    }
 }

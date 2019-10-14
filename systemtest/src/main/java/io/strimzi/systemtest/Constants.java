@@ -20,7 +20,7 @@ public interface Constants {
     long TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_TOPIC_CREATION = Duration.ofMinutes(1).toMillis();
-    long TIMEOUT_FOR_LOG = Duration.ofSeconds(30).toMillis();
+    long TIMEOUT_FOR_LOG = Duration.ofMinutes(2).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_DELETION = Duration.ofSeconds(5).toMillis();
@@ -55,6 +55,9 @@ public interface Constants {
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String IMAGE_PULL_POLICY = "Always";
+
+    int HTTP_KEYCLOAK_DEFAULT_PORT = 8080;
+    int HTTPS_KEYCLOAK_DEFAULT_PORT = 8443;
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
@@ -129,4 +132,9 @@ public interface Constants {
      * Tag for Helm tests
      */
     String HELM = "helm";
+
+    /**
+     * Tag for oauth tests
+     */
+    String OAUTH = "oauth";
 }
