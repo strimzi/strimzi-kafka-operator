@@ -5,11 +5,10 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.bases.IMetrics;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -36,7 +34,7 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-public class MetricsST extends MessagingBaseST {
+public class MetricsST extends MessagingBaseST implements IMetrics {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
@@ -124,7 +122,7 @@ public class MetricsST extends MessagingBaseST {
 
         availabilityTest(5000, CLUSTER_NAME, TEST_TOPIC_NAME);
 
-        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics();
+        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics(CLUSTER_NAME);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         kafkaExporterMetricsData.forEach((key, value) -> {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
@@ -153,98 +151,6 @@ public class MetricsST extends MessagingBaseST {
         runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + TEST_TOPIC_NAME + "\""));
-    }
-
-    private HashMap<String, String> collectKafkaPodsMetrics() {
-        LabelSelector kafkaSelector = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        return collectMetricsFromPods(kafkaSelector);
-    }
-
-    private HashMap<String, String> collectZookeeperPodsMetrics() {
-        LabelSelector zookeeperSelector = kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        return collectMetricsFromPods(zookeeperSelector);
-    }
-
-    private HashMap<String, String> collectKafkaConnectPodsMetrics() {
-        LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaConnectResources.deploymentName(CLUSTER_NAME));
-        return collectMetricsFromPods(connectSelector);
-    }
-
-    private HashMap<String, String> collectKafkaExporterPodsMetrics() {
-        LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(CLUSTER_NAME));
-        return collectMetricsFromPods(connectSelector, "/metrics");
-    }
-
-
-    /**
-     * Parse out specific metric from whole metrics file
-     * @param pattern regex patern for specific metric
-     * @param data all metrics data
-     * @return list of parsed values
-     */
-    private ArrayList<Double> collectSpecificMetric(Pattern pattern, HashMap<String, String> data) {
-        ArrayList<Double> values = new ArrayList<>();
-
-        data.forEach((k, v) -> {
-            Matcher t = pattern.matcher(v);
-            if (t.find()) {
-                values.add(Double.parseDouble(t.group(1)));
-            }
-        });
-        return values;
-    }
-
-    /**
-     * Collect metrics from all pods with specific selector
-     * @param labelSelector pod selector
-     * @return map with metrics {podName, metrics}
-     */
-    private HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector) {
-        return collectMetricsFromPods(labelSelector, "");
-    }
-
-    /**
-     * Collect metrics from all pods with specific selector
-     * @param labelSelector pod selector
-     * @param metricsPath additional path where metrics are available
-     * @return map with metrics {podName, metrics}
-     */
-    private HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector, String metricsPath) {
-        HashMap<String, String> map = new HashMap<>();
-        kubeClient().listPods(labelSelector).forEach(p -> {
-            try {
-                map.put(p.getMetadata().getName(), collectMetrics(p.getMetadata().getName(), metricsPath));
-            } catch (InterruptedException | ExecutionException | IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        return  map;
-    }
-
-    /**
-     * Collect metrics from specific pod
-     * @param podName pod name
-     * @return collected metrics
-     */
-    private String collectMetrics(String podName, String metricsPath) throws InterruptedException, ExecutionException, IOException {
-        ArrayList<String> command = new ArrayList<>();
-        command.add("curl");
-        command.add(kubeClient().getPod(podName).getStatus().getPodIP() + ":9404" + metricsPath);
-        ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", NAMESPACE, "--"));
-        executableCommand.addAll(command);
-
-        Exec exec = new Exec();
-        // 20 seconds should be enough for collect data from the pod
-        int ret = exec.execute(null, executableCommand, 20_000);
-
-        synchronized (lock) {
-            LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
-        }
-
-        assertThat("Collected metrics should not be empty", exec.out(), not(isEmptyString()));
-        return exec.out();
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
@@ -285,9 +191,9 @@ public class MetricsST extends MessagingBaseST {
         testClassResources().topic(CLUSTER_NAME, "test-topic", 7, 2).done();
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
-        kafkaMetricsData = collectKafkaPodsMetrics();
-        zookeeperMetricsData = collectZookeeperPodsMetrics();
-        kafkaConnectMetricsData = collectKafkaConnectPodsMetrics();
-        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics();
+        kafkaMetricsData = collectKafkaPodsMetrics(CLUSTER_NAME);
+        zookeeperMetricsData = collectZookeeperPodsMetrics(CLUSTER_NAME);
+        kafkaConnectMetricsData = collectKafkaConnectPodsMetrics(CLUSTER_NAME);
+        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics(CLUSTER_NAME);
     }
 }
