@@ -31,8 +31,6 @@ spec:
           value: "120000"
         - name: STRIMZI_OPERATION_TIMEOUT_MS
           value: "300000"
-        - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-          value: strimzi/kafka:latest-kafka-2.3.1
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
           value: strimzi/kafka:latest-kafka-2.3.1
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE

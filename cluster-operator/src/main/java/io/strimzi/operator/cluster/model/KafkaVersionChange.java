@@ -7,12 +7,12 @@ package io.strimzi.operator.cluster.model;
 /**
  * Represents the upgrade or downgrade from one Kafka version to another
  */
-public class KafkaUpgrade {
+public class KafkaVersionChange {
     private final KafkaVersion from;
     private final KafkaVersion to;
     private final int compare;
 
-    public KafkaUpgrade(KafkaVersion from, KafkaVersion to) {
+    public KafkaVersionChange(KafkaVersion from, KafkaVersion to) {
         this.from = from;
         this.to = to;
         this.compare = from.compareTo(to);

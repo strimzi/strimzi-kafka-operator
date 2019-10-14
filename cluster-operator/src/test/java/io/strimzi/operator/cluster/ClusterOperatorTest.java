@@ -167,10 +167,11 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.countDown();
-        });
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
+                    ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
+                        context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+                        async.countDown();
+                    });
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
@@ -247,10 +248,11 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
-            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.countDown();
-        });
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
+                ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
+                    context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+                    async.countDown();
+                });
         if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }

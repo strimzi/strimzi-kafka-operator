@@ -5,8 +5,6 @@
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
-            - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-              value: {{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-2.3.1
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
               value: {{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-2.3.1
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE

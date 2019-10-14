@@ -181,9 +181,6 @@ public class ZookeeperCluster extends AbstractModel {
 
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            image = System.getenv().get(ClusterOperatorConfig.STRIMZI_DEFAULT_ZOOKEEPER_IMAGE);
-        }
-        if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);

@@ -40,8 +40,6 @@ cat >"$out" <<EOF
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
-            - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-              value: ${zookeeper_version}
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
               value: ${entity_operator_tls_sidecar_version}
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE

@@ -256,12 +256,7 @@ public class ZookeeperClusterTest {
         assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(new Integer(10)));
         assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(new Integer(4)));
         assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(new Integer(33)));
-        OrderedProperties expectedConfig = new OrderedProperties()
-                .addPair("autopurge.purgeInterval", "1")
-                .addPair("tickTime", "2000")
-                .addPair("syncLimit", "2")
-                .addPair("initLimit", "5")
-                .addPair("foo", "bar");
+        OrderedProperties expectedConfig = new OrderedProperties().addMapPairs(ZookeeperConfiguration.DEFAULTS).addPair("foo", "bar");
         OrderedProperties actual = new OrderedProperties()
                 .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
         assertThat(actual, is(expectedConfig));
