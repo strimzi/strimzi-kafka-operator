@@ -1,4 +1,6 @@
 #!/bin/bash
+
+. $(dirname $0)/../multi-platform-support.sh
 DIR=`pwd`
 k=false
 
@@ -26,7 +28,7 @@ fi
 
 if [ "$c" == true ] ; then
 	# Determine whether CO is deployed in specified NS
-	lines_of_operator=`kubectl get pods -l strimzi.io/kind=cluster-operator -n $NAMESPACE | wc -l`
+	lines_of_operator=`kubectl get pods -l strimzi.io/kind=cluster-operator -n $NAMESPACE | $WC -l`
 
 	if [ "$lines_of_operator" -lt "2" ]; then
 		echo "Cluster Operator is not deployed!"
@@ -35,9 +37,9 @@ if [ "$c" == true ] ; then
 
 	echo "Deploying Kafka "$CLUSTER
 	if [[ "$OSTYPE" == "linux-gnu" ]]; then
-	    sed "s/my-cluster/$CLUSTER/" $DIR/metrics/examples/kafka/kafka-metrics.yaml > $DIR/metrics/examples/kafka/$CLUSTER-kafka-metrics.yaml
+	    $SED "s/my-cluster/$CLUSTER/" $DIR/metrics/examples/kafka/kafka-metrics.yaml > $DIR/metrics/examples/kafka/$CLUSTER-kafka-metrics.yaml
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        sed '' "s/my-cluster/$CLUSTER/" $DIR/metrics/examples/kafka/kafka-metrics.yaml > $DIR/metrics/examples/kafka/$CLUSTER-kafka-metrics.yaml
+        $SED '' "s/my-cluster/$CLUSTER/" $DIR/metrics/examples/kafka/kafka-metrics.yaml > $DIR/metrics/examples/kafka/$CLUSTER-kafka-metrics.yaml
     fi
 	kubectl apply -f $DIR/metrics/examples/kafka/$CLUSTER-kafka-metrics.yaml -n $NAMESPACE
 
@@ -80,9 +82,9 @@ fi
 curl https://gist.githubusercontent.com/stanlyDoge/5a0b43114d9be0e72f0f4b4e3ee168a1/raw/09614357fa20efd14deffb31a06fd87aaa6dc6c8/prometheus-operator.yaml --output $DIR/metrics/prometheus-operator.yaml
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    sed "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/prometheus-operator.yaml > $DIR/metrics/prometheus-operator-deploy.yaml
+    $SED "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/prometheus-operator.yaml > $DIR/metrics/prometheus-operator-deploy.yaml
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    sed '' "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/prometheus-operator.yaml > $DIR/metrics/prometheus-operator-deploy.yaml
+    $SED '' "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/prometheus-operator.yaml > $DIR/metrics/prometheus-operator-deploy.yaml
 fi
 kubectl apply -f $DIR/metrics/prometheus-operator-deploy.yaml -n $NAMESPACE
 
@@ -97,9 +99,9 @@ kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager
 
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    sed "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/examples/prometheus/install/prometheus.yaml > $DIR/metrics/examples/prometheus/install/prometheus-deploy.yaml
+    $SED "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/examples/prometheus/install/prometheus.yaml > $DIR/metrics/examples/prometheus/install/prometheus-deploy.yaml
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    sed '' "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/examples/prometheus/install/prometheus.yaml > $DIR/metrics/examples/prometheus/install/prometheus-deploy.yaml
+    $SED '' "s/namespace: .*/namespace: $NAMESPACE/" $DIR/metrics/examples/prometheus/install/prometheus.yaml > $DIR/metrics/examples/prometheus/install/prometheus-deploy.yaml
 fi
 
 kubectl apply -f $DIR/metrics/examples/prometheus/install/prometheus-rules.yaml -n $NAMESPACE
