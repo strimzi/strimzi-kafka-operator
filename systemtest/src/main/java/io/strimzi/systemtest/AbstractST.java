@@ -419,10 +419,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return TimeMeasuringSystem.startOperation(operation);
     }
 
-    public String clusterCaCertSecretName(String cluster) {
-        return cluster + "-cluster-ca-cert";
-    }
-
     void verifyLabelsForKafkaCluster(String clusterName, String appName) {
         verifyLabelsForKafkaOrZkPods(clusterName, "zookeeper", appName);
         verifyLabelsForKafkaOrZkPods(clusterName, "kafka", appName);

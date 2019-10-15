@@ -7,8 +7,12 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -744,6 +748,120 @@ class SecurityST extends MessagingBaseST {
         assertThrows(AssertionError.class, () -> availabilityTest(50, CLUSTER_NAME, true, topic1, kafkaUser, kafkaClientsNewPodName));
     }
 
+    @Test
+    void testTlsHostnameVerificationWithKafkaConnect() {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        LOGGER.info("Getting IP of the bootstrap service");
+
+        String ipOfBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME)).getSpec().getClusterIP();
+
+        LOGGER.info("Kafka connect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
+
+        KafkaConnect kafkaConnect = testMethodResources().kafkaConnectWithoutWait(testMethodResources().defaultKafkaConnect(CLUSTER_NAME, 1)
+                .editSpec()
+                    .withNewTls()
+                        .addNewTrustedCertificate()
+                            .withSecretName(CLUSTER_NAME + "-cluster-ca-cert")
+                            .withCertificate("ca.crt")
+                        .endTrustedCertificate()
+                    .endTls()
+                    .withBootstrapServers(ipOfBootstrapService + ":9093")
+                .endSpec()
+                .build());
+
+        TestUtils.waitFor("Waiting till kafka connect status will be 'NotReady'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("NotReady"));
+
+        KafkaConnectStatus kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat("Kafka connect status should be " + "NotReady", kafkaStatus.getConditions().get(0).getType(), is("NotReady"));
+
+        replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+            kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
+        });
+
+        LOGGER.info("Kafka connect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
+
+        TestUtils.waitFor("Waiting till kafka connect status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus()
+                        .getConditions().get(0).getType().equals("Ready"));
+
+        kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat("Kafka connect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
+
+        testMethodResources().deleteKafkaConnectWithoutWait(kafkaConnect);
+    }
+
+    @Test
+    void testTlsHostnameVerificationWithMirrorMaker() {
+        String sourceKafkaCluster = CLUSTER_NAME + "-source";
+        String targetKafkaCluster = CLUSTER_NAME + "-target";
+
+        testMethodResources().kafkaEphemeral(sourceKafkaCluster, 3, 1).done();
+        testMethodResources().kafkaEphemeral(targetKafkaCluster, 3, 1).done();
+
+        LOGGER.info("Getting IP of the source bootstrap service for consumer");
+        String ipOfSourceBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
+
+        LOGGER.info("Getting IP of the target bootstrap service for producer");
+        String ipOfTargetBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(targetKafkaCluster)).getSpec().getClusterIP();
+
+        LOGGER.info("Mirror maker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
+        LOGGER.info("Mirror maker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
+
+        KafkaMirrorMaker kafkaMirrorMaker = testMethodResources().kafkaMirrorMakerWithoutWait(testMethodResources().defaultMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
+                "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+                .editSpec()
+                    .editConsumer()
+                        .withNewTls()
+                            .addNewTrustedCertificate()
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(sourceKafkaCluster))
+                                .withCertificate("ca.crt")
+                            .endTrustedCertificate()
+                        .endTls()
+                        .withBootstrapServers(ipOfSourceBootstrapService + ":9093")
+                    .endConsumer()
+                    .editProducer()
+                        .withNewTls()
+                            .addNewTrustedCertificate()
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaCluster))
+                                .withCertificate("ca.crt")
+                            .endTrustedCertificate()
+                        .endTls()
+                        .withBootstrapServers(ipOfTargetBootstrapService + ":9093")
+                    .endProducer()
+                .endSpec()
+                .build());
+
+        TestUtils.waitFor("Waiting till kafka mirror maker status will be 'NotReady'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("NotReady"));
+
+        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat("Kafka mirror maker status should be " + "NotReady", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("NotReady"));
+
+        LOGGER.info("Mirror maker with config {} will connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
+        LOGGER.info("Mirror maker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
+
+        LOGGER.info("Adding configuration {} to the mirror maker...", "ssl.endpoint.identification.algorithm");
+        replaceMirrorMakerResource(CLUSTER_NAME, mm -> {
+            mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
+            mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
+        });
+
+        TestUtils.waitFor("Waiting till kafka mirror maker status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("Ready"));
+
+        kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat("Kafka mirror maker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
+
+
+        LOGGER.info("Mirror maker connect to the kafka broker...");
+
+        testMethodResources().deleteMirrorMakerWithoutWait(kafkaMirrorMaker);
+    }
 
     @BeforeEach
     void createTestResources() {

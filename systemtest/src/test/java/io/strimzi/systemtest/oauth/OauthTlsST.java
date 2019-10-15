@@ -153,7 +153,7 @@ public class OauthTlsST extends OauthBaseST {
                 .withTrustedCertificates(
                         new CertSecretSourceBuilder()
                                 .withCertificate("ca.crt")
-                                .withSecretName(clusterCaCertSecretName(CLUSTER_NAME)).build())
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).build())
                 .endTls()
                 .withNewKafkaClientAuthenticationOAuth()
                 .withTokenEndpointUri(oauthTokenEndpointUri)
@@ -302,7 +302,7 @@ public class OauthTlsST extends OauthBaseST {
                 .withName("CA_CRT")
                 .withNewValueFrom()
                 .withNewSecretKeyRef()
-                .withName(clusterCaCertSecretName(CLUSTER_NAME))
+                .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
                 .withKey("ca.crt")
                 .endSecretKeyRef()
                 .endValueFrom()
