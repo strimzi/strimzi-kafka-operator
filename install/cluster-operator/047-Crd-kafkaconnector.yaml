@@ -30,16 +30,5 @@ spec:
             tasksMax:
               type: integer
               minimum: 1
-            topics:
-              type: array
-              items:
-                type: string
             config:
-              type: array
-              items:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  value:
-                    type: string
+              type: object

@@ -9,7 +9,5 @@ spec:
   class: "org.apache.kafka.connect.file.FileStreamSourceConnector"
   tasksMax: 2
   config:
-  - name: "file"
-    value: "/home/source/test.source.txt"
-  - name: "topic"
-    value: "test.topic"
+    file: "/home/source/test.source.txt"
+    topic: "test.topic"
