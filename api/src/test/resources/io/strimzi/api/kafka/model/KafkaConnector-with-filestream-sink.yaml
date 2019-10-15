@@ -8,7 +8,5 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSinkConnector
   tasksMax: 1
   config:
-    - name: file
-      value: "/tmp/test.sink.txt"
-    - name: topics
-      value: "connect-test"
+    file: "/tmp/test.sink.txt"
+    topics: "connect-test"

@@ -14,7 +14,6 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -32,7 +31,7 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
 
     private String className;
     private Integer tasksMax;
-    private List<KafkaConnectorConfig> config;
+    private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
     @Description("The Class for the Kafka Connector")
@@ -41,27 +40,27 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
         return className;
     }
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
     @Description("The maximum number of tasks for the Kafka Connector")
     @Minimum(1)
     public Integer getTasksMax() {
         return tasksMax;
     }
 
-    @Description("The Config for the Kafka Connector Spec.")
-    public List<KafkaConnectorConfig> getConfig() {
-        return config;
-    }
-
-    public void setConfig(List<KafkaConnectorConfig> config) {
-        this.config = config;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     public void setTasksMax(Integer tasksMax) {
         this.tasksMax = tasksMax;
+    }
+
+    @Description("The Config for the Kafka Connector Spec")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getConfig() {
+        return config;
+    }
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 
     @Override

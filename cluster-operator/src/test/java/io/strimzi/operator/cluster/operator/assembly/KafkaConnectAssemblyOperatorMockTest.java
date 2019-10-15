@@ -43,6 +43,8 @@ import org.junit.runner.RunWith;
 
 import java.io.StringReader;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -152,6 +154,10 @@ public class KafkaConnectAssemblyOperatorMockTest {
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testCreateUpdateWithSelector(TestContext context) throws InterruptedException {
+        // KafkaConnector Config
+        Map<String, Object> kakfaConnectorConfig = new HashMap<>();
+        kakfaConnectorConfig.put("my.config", "true");
+
         // Create a connect with a selector
         KafkaConnect connectCluster = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -189,10 +195,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withNewSpec()
                     .withClassName("my.connector.ClassA")
                     .withTasksMax(4)
-                    .addNewConfig()
-                        .withName("my.config")
-                        .withValue("true")
-                    .endConfig()
+                    .withConfig(kakfaConnectorConfig)
                 .endSpec()
             .build());
 
@@ -207,10 +210,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withNewSpec()
                     .withClassName("my.connector.ClassB")
                     .withTasksMax(4)
-                    .addNewConfig()
-                    .withName("my.config")
-                    .withValue("true")
-                    .endConfig()
+                    .withConfig(any())
                 .endSpec()
             .build());
 

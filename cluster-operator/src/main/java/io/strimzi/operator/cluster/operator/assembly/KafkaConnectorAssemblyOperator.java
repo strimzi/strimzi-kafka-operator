@@ -70,7 +70,7 @@ public class KafkaConnectorAssemblyOperator extends
             JsonObject connectorConfigJson = new JsonObject()
                     .put("connector.class", spec.getClassName())
                     .put("tasks.max", spec.getTasksMax());
-            spec.getConfig().forEach(cf -> connectorConfigJson.put(cf.getName(), cf.getValue()));
+            spec.getConfig().forEach(connectorConfigJson::put);
 
             return apiClient.createOrUpdatePutRequest(name, connectorConfigJson)
                     .map((Void) null);
