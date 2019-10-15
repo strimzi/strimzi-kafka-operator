@@ -52,7 +52,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1536950082067,
+  "iteration": 1571174402338,
   "links": [],
   "panels": [
     {
@@ -76,7 +76,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 2,
         "x": 0,
         "y": 0
       },
@@ -161,8 +161,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 2,
+        "x": 2,
         "y": 0
       },
       "id": 36,
@@ -244,7 +244,7 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 8,
+        "x": 4,
         "y": 0
       },
       "id": 38,
@@ -326,7 +326,7 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 12,
+        "x": 8,
         "y": 0
       },
       "id": 40,
@@ -407,7 +407,7 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 16,
+        "x": 12,
         "y": 0
       },
       "id": 30,
@@ -456,6 +456,88 @@
       ],
       "thresholds": "1,5",
       "title": "Under Replicated Partitions",
+      "type": "singlestat",
+      "valueFontSize": "200%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#508642",
+        "rgba(237, 129, 40, 0.89)",
+        "#bf1b00"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |).",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 102,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "100%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(kafka_cluster_partition_atminisr{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "1,5",
+      "title": "At Mininimum In Sync Replicas",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -1121,7 +1203,7 @@
       "rangeMaps": [
         {
           "from": "null",
-          "text": "N/A",
+          "text": "0",
           "to": "null"
         }
       ],
@@ -2179,5 +2261,5 @@
   "timezone": "",
   "title": "Strimzi Kafka",
   "uid": "8wCTC5Tmz",
-  "version": 6
+  "version": 7
 }
