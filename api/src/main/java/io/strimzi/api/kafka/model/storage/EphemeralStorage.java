@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.storage;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -26,6 +27,8 @@ public class EphemeralStorage extends SingleVolumeStorage {
 
     private Integer id;
 
+    private String sizeLimit;
+
     @Description("Must be `" + TYPE_EPHEMERAL + "`")
     @Override
     public String getType() {
@@ -43,5 +46,15 @@ public class EphemeralStorage extends SingleVolumeStorage {
     @Override
     public void setId(Integer id) {
         super.setId(id);
+    }
+
+    @Pattern("^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$")
+    @Description("When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).")
+    public String getSizeLimit() {
+        return sizeLimit;
+    }
+
+    public void setSizeLimit(String sizeLimit) {
+        this.sizeLimit = sizeLimit;
     }
 }

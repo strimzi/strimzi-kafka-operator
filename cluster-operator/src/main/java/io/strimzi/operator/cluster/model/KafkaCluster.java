@@ -1149,7 +1149,8 @@ public class KafkaCluster extends AbstractModel {
             String mountPath = this.mountPath + "/" + name;
 
             if (storage instanceof EphemeralStorage) {
-                dataVolumes.add(createEmptyDirVolume(name));
+                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
+                dataVolumes.add(createEmptyDirVolume(name, sizeLimit));
             } else if (storage instanceof PersistentClaimStorage) {
                 dataPvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
             }
@@ -1194,7 +1195,7 @@ public class KafkaCluster extends AbstractModel {
         volumeList.addAll(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
+            volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME, null));
         }
         volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));

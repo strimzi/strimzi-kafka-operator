@@ -70,6 +70,9 @@ spec:
                       type: object
                     size:
                       type: string
+                    sizeLimit:
+                      type: string
+                      pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
                     type:
                       type: string
                       enum:
@@ -101,6 +104,9 @@ spec:
                             type: object
                           size:
                             type: string
+                          sizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
                           type:
                             type: string
                             enum:
@@ -1339,6 +1345,9 @@ spec:
                       type: object
                     size:
                       type: string
+                    sizeLimit:
+                      type: string
+                      pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
                     type:
                       type: string
                       enum:

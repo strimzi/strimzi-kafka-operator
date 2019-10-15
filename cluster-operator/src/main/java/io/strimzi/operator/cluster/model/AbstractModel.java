@@ -647,13 +647,14 @@ public abstract class AbstractModel {
         return pvc;
     }
 
-    protected Volume createEmptyDirVolume(String name) {
+    protected Volume createEmptyDirVolume(String name, String sizeLimit) {
         Volume volume = new VolumeBuilder()
-                .withName(name)
+            .withName(name)
                 .withNewEmptyDir()
+                    .withNewSizeLimit(sizeLimit == null || sizeLimit.isEmpty() ? null : sizeLimit)
                 .endEmptyDir()
-                .build();
-        log.trace("Created emptyDir Volume named '{}'", name);
+            .build();
+        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
         return volume;
     }
 

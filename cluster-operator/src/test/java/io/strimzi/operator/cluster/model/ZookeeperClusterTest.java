@@ -945,7 +945,7 @@ public class ZookeeperClusterTest {
     }
 
     @Test
-    public void testGeneratePersistentVolumeClaimsephemeral()    {
+    public void testGeneratePersistentVolumeClaimsEphemeral()    {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                 .editZookeeper()
@@ -962,6 +962,37 @@ public class ZookeeperClusterTest {
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
 
         assertEquals(0, pvcs.size());
+    }
+
+    @Test
+    public void testGenerateSTSWithPersistentVolumeEphemeral()    {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(false, null, null);
+        assertNull(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount());
+    }
+
+    @Test
+    public void testGenerateSTSWithPersistentVolumeEphemeralWithSizeLimit()    {
+        String sizeLimit = "1Gi";
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(false, null, null);
+        assertEquals(sizeLimit, ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount());
     }
 
     @Test
