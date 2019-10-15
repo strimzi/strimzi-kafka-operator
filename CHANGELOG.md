@@ -4,6 +4,7 @@
 
 * Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
 * Improve Kafka Exporter Grafana dashboard
+* Add sizeLimit option to ephemeral storage (#1505)
 
 ## 0.14.0
 
