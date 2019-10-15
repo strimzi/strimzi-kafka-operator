@@ -172,7 +172,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
             // Verify status
             List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
-            context.assertEquals(capturedStatuses.get(0).getStatus().getUrl(), "http://foo-bridge-bridge-service.test.svc:8080");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUrl(), "http://foo-bridge-service.test.svc:8080");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "Ready");
 
@@ -667,7 +667,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
             // Verify status
             List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
-            context.assertEquals(capturedStatuses.get(0).getStatus().getUrl(), "http://foo-bridge-bridge-service.test.svc:8080");
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUrl(), "http://foo-bridge-service.test.svc:8080");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
 
