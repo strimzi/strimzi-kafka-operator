@@ -49,7 +49,7 @@ public class EphemeralStorage extends SingleVolumeStorage {
     }
 
     @Pattern("^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$")
-    @Description("When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (i.e 1Gi).")
+    @Description("When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).")
     public String getSizeLimit() {
         return sizeLimit;
     }

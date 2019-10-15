@@ -246,7 +246,7 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", null);
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
+        Assert.assertNull(volume.getEmptyDir().getSizeLimit().getAmount());
     }
 
     @Test
@@ -263,6 +263,6 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", "");
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
+        Assert.assertNull(volume.getEmptyDir().getSizeLimit().getAmount());
     }
 }

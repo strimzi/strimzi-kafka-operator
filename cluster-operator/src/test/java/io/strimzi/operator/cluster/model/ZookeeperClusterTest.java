@@ -968,15 +968,15 @@ public class ZookeeperClusterTest {
     public void testGenerateSTSWithPersistentVolumeEphemeral()    {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
-                .editZookeeper()
-                .withNewEphemeralStorage().endEphemeralStorage()
-                .endZookeeper()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         StatefulSet ss = zc.generateStatefulSet(false, null, null);
-        assertEquals(null, ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit());
+        assertNull(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount());
     }
 
     @Test
@@ -984,9 +984,9 @@ public class ZookeeperClusterTest {
         String sizeLimit = "1Gi";
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
-                .editZookeeper()
-                .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
-                .endZookeeper()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);

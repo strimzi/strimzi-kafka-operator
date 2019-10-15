@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
@@ -650,18 +648,11 @@ public abstract class AbstractModel {
     }
 
     protected Volume createEmptyDirVolume(String name, String sizeLimit) {
-        EmptyDirVolumeSource emptyDirVolumeSource;
-        if (sizeLimit == null || sizeLimit.isEmpty()) {
-            emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder()
-                .build();
-        } else {
-            emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder()
-                .withNewSizeLimit(sizeLimit)
-                .build();
-        }
         Volume volume = new VolumeBuilder()
             .withName(name)
-            .withEmptyDir(emptyDirVolumeSource)
+                .withNewEmptyDir()
+                    .withNewSizeLimit(sizeLimit == null || sizeLimit.isEmpty() ? null : sizeLimit)
+                .endEmptyDir()
             .build();
         log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
         return volume;
