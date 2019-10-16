@@ -1621,7 +1621,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |integer
 |image                     1.2+<.<|The docker image for the pods.
 |string
-|buildResources            1.2+<.<|CPU and memory resources to reserve (limits and requests) for the build.
+|buildResources            1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |livenessProbe             1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]

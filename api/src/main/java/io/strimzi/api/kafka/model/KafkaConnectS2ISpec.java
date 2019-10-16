@@ -30,7 +30,7 @@ public class KafkaConnectS2ISpec extends KafkaConnectSpec {
     private boolean insecureSourceRepository = false;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve (limits and requests) for the build.")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getBuildResources() {
         return buildResources;
     }
