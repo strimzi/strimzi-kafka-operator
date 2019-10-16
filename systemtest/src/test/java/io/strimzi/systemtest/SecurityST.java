@@ -758,6 +758,9 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Kafka connect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         KafkaConnect kafkaConnect = testMethodResources().kafkaConnectWithoutWait(testMethodResources().defaultKafkaConnect(CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect")
+                .endMetadata()
                 .editSpec()
                     .withNewTls()
                         .addNewTrustedCertificate()
@@ -769,12 +772,14 @@ class SecurityST extends MessagingBaseST {
                 .endSpec()
                 .build());
 
-        TestUtils.waitFor("Waiting till kafka connect status will be 'NotReady'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("NotReady"));
+        StUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
-        KafkaConnectStatus kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
-        assertThat("Kafka connect status should be " + "NotReady", kafkaStatus.getConditions().get(0).getType(), is("NotReady"));
+        StUtils.waitUntilPodIsInCrashLoopBackOff(kafkaConnectPodName);
+
+        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses().get(0)
+                .getState().getWaiting().getReason()));
 
         replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
@@ -786,7 +791,7 @@ class SecurityST extends MessagingBaseST {
             () -> testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus()
                         .getConditions().get(0).getType().equals("Ready"));
 
-        kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaConnectStatus kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat("Kafka connect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
 
@@ -812,6 +817,9 @@ class SecurityST extends MessagingBaseST {
 
         KafkaMirrorMaker kafkaMirrorMaker = testMethodResources().kafkaMirrorMakerWithoutWait(testMethodResources().defaultMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
                 "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+                .editMetadata()
+                    .addToLabels("type", "kafka-mirror-maker")
+                .endMetadata()
                 .editSpec()
                     .editConsumer()
                         .withNewTls()
@@ -834,12 +842,14 @@ class SecurityST extends MessagingBaseST {
                 .endSpec()
                 .build());
 
-        TestUtils.waitFor("Waiting till kafka mirror maker status will be 'NotReady'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("NotReady"));
+        StUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 
-        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        String kafkaMirrorMakerPodName = kubeClient().listPods("type", "kafka-mirror-maker").get(0).getMetadata().getName();
 
-        assertThat("Kafka mirror maker status should be " + "NotReady", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("NotReady"));
+        StUtils.waitUntilPodIsInCrashLoopBackOff(kafkaMirrorMakerPodName);
+
+        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
+                .getState().getWaiting().getReason()));
 
         LOGGER.info("Mirror maker with config {} will connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("Mirror maker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
@@ -853,7 +863,7 @@ class SecurityST extends MessagingBaseST {
         TestUtils.waitFor("Waiting till kafka mirror maker status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("Ready"));
 
-        kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat("Kafka mirror maker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
 
