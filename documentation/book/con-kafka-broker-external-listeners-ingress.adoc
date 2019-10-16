@@ -68,7 +68,7 @@ listeners:
 On `ingress` listeners, you can use the `dnsAnnotations` property to add additional annotations to the ingress resources.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources.
 
-.Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
+.Example of an external listener of type `ingress` using `dnsAnnotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...
