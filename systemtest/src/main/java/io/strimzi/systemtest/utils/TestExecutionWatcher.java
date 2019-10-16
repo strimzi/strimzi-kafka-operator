@@ -46,14 +46,11 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
     @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         String testClass = extensionContext.getRequiredTestClass().getName();
-        String testMethod = extensionContext.getRequiredTestMethod().getName();
 
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
-        String logDir = !testMethod.isEmpty() ?
-                TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
-                : TEST_LOG_DIR + currentDate;
+        String logDir = TEST_LOG_DIR + testClass + "_" + currentDate;
 
         LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
         logCollector.collectDeployments();

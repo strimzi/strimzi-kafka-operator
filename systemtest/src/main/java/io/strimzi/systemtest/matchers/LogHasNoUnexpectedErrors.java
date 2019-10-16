@@ -64,12 +64,13 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                 + "(?s)(.*?)"
                 + "io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: PATCH"),
         // fabric8 now throws exceptions, which doesn't influence kafka scaleup/scaledown
-        FABRIC_EIGHT_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:115 - Error while waiting for resource to be scaled."),
-        FABRIC_EIGHT_STATEFUL_SET_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:[0-9]+ - 0/.* pod(s) ready for StatefulSet: .*  after waiting for 0 seconds so giving up"),
+        FABRIC_EIGHT_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:[0-9]+ - Error while waiting for resource to be scaled."),
+        FABRIC_EIGHT_STATEFUL_SET_SCALEUP_ERROR("ERROR StatefulSetOperationsImpl:[0-9]+ - 0/.* pod(s).*after waiting for 0 seconds so giving up"),
         // This happen from time to time during CO startup, it doesn't influence CO behavior
         EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
         OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
-        RECONCILIATION_TIMEOUT("ERROR AbstractOperator:[0-9]+ - Reconciliation.*");
+        // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
+        RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*");
 
         final String name;
 
