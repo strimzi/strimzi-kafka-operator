@@ -778,8 +778,8 @@ class SecurityST extends MessagingBaseST {
 
         StUtils.waitUntilPodIsInCrashLoopBackOff(kafkaConnectPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses().get(0)
-                .getState().getWaiting().getReason()));
+        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses()
+                .get(0).getState().getWaiting().getReason()));
 
         replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
@@ -803,8 +803,8 @@ class SecurityST extends MessagingBaseST {
         String sourceKafkaCluster = CLUSTER_NAME + "-source";
         String targetKafkaCluster = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(sourceKafkaCluster, 3, 1).done();
-        testMethodResources().kafkaEphemeral(targetKafkaCluster, 3, 1).done();
+        testMethodResources().kafkaEphemeral(sourceKafkaCluster, 1, 1).done();
+        testMethodResources().kafkaEphemeral(targetKafkaCluster, 1, 1).done();
 
         LOGGER.info("Getting IP of the source bootstrap service for consumer");
         String ipOfSourceBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
@@ -866,7 +866,6 @@ class SecurityST extends MessagingBaseST {
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat("Kafka mirror maker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
-
 
         LOGGER.info("Mirror maker connect to the kafka broker...");
 
