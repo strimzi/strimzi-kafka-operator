@@ -20,6 +20,7 @@ import static java.util.Collections.unmodifiableMap;
 public class Labels {
 
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
+    public static final String KUBERNETES_DOMAIN = "app.kubernetes.io/";
 
     /**
      * The kind of a Kubernetes / OpenShift Resource. It contains the same value as the Kind of the corresponding
@@ -46,6 +47,13 @@ public class Labels {
      * but is different in some cases (e.g. headful and headless services)
      */
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
+
+    public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
+    public static final String KUBERNETES_NAME = "strimzi";
+
+    public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
+
+    public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
 
     /**
      * Used to identify individual pods
@@ -177,6 +185,33 @@ public class Labels {
      */
     public Labels withCluster(String cluster) {
         return with(STRIMZI_CLUSTER_LABEL, cluster);
+    }
+    
+    /**
+     * The same labels as this instance, but with the application name {@code strimzi} for the {@code app.kubernetes.io/name} key.
+     * @return A new instance with the given kubernetes application name added.
+     */
+    public Labels withKubernetesName() {
+        return with(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code instance} for the {@code app.kubernetes.io/instance} key.
+     * @param instance The instance to add.
+     * @return A new instance with the given kubernetes application instance added.
+     */
+    public Labels withKubernetesInstance(String instance) {
+        return with(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code operatorName} for the {@code app.kubernetes.io/managed-by} key.
+     * @param operatorName The name of the operator managing this resource.
+     * @return A new instance with the given operator that is managing this resourse.
+     */
+    public Labels withKubernetesManagedBy(String operatorName) {
+        // Make configurable?
+        return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
     }
 
     /**
