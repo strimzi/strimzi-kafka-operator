@@ -460,7 +460,7 @@ public class KafkaCluster extends AbstractModel {
                 if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
                     throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
                 } else if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
-                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth());
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth(), "Plain listener");
                 }
             }
 
@@ -468,12 +468,12 @@ public class KafkaCluster extends AbstractModel {
                 if (!result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
                     throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
                 } else if (listeners.getExternal().getAuth() != null && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
-                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth());
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth(), "External listener");
                 }
             }
 
             if (listeners.getTls() != null && listeners.getTls().getAuth() != null && listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
-                validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth());
+                validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth(), "TLS listener");
             }
         }
 
@@ -1524,32 +1524,32 @@ public class KafkaCluster extends AbstractModel {
      * @param oAuth     OAuth type authentication object
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth) {
+    private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth, String listener) {
         if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
-            log.error("Introspection endpoint URI or JWKS endpoint URI has to be specified");
-            throw new InvalidResourceException("Introspection endpoint URI or JWKS endpoint URI has to be specified");
+            log.error("{}: Introspection endpoint URI or JWKS endpoint URI has to be specified", listener);
+            throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
         }
 
         if (oAuth.getValidIssuerUri() == null) {
-            log.error("Valid Issue URI has to be specified");
-            throw new InvalidResourceException("Valid Issue URI has to be specified");
+            log.error("{}: Valid Issuer URI has to be specified", listener);
+            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified");
         }
 
         if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
-            log.error("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
-            throw new InvalidResourceException("Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+            log.error("{}: Introspection Endpoint URI needs to be configured together with clientId and clientSecret", listener);
+            throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
         }
 
         if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
-            log.error("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
-            throw new InvalidResourceException("jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+            log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
         }
 
         if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
                 (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
                 (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
-            log.error("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
-            throw new InvalidResourceException("The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
+            log.error("{}: The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`", listener);
+            throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
     }
 
