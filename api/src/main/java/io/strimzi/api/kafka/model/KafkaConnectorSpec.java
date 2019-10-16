@@ -28,6 +28,7 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
+    private static final String FORBIDDEN_PARAMETERS = "connector.class, tasks.max";
 
     private String className;
     private Integer tasksMax;
@@ -54,7 +55,7 @@ public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreservi
         this.tasksMax = tasksMax;
     }
 
-    @Description("The Config for the Kafka Connector Spec")
+    @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
