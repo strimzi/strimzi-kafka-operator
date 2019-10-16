@@ -59,7 +59,7 @@ For more information on using node ports to access Kafka, see xref:proc-accessin
 On `nodeport` listeners, you can use the `dnsAnnotations` property to add additional annotations to the nodeport services.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the cluster nodes.
 
-.Example of an external listener of type `nodeport` using Kubernetes External DNS annotations
+.Example of an external listener of type `nodeport` using `dnsAnnotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...
