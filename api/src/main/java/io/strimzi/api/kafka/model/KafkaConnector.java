@@ -50,7 +50,7 @@ import static java.util.Collections.unmodifiableList;
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 @EqualsAndHashCode
 public class KafkaConnector extends CustomResource implements UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
