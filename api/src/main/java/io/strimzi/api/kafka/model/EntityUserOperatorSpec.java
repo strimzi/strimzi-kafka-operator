@@ -89,7 +89,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
         this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
 
-    @Description("CPU and memory resources to reserve (limits and requests).")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
     }

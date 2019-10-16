@@ -129,7 +129,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve (limits and requests).")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
     }
