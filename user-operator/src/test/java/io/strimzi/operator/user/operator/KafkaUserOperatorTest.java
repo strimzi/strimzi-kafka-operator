@@ -105,7 +105,13 @@ public class KafkaUserOperatorTest {
             Secret captured = capturedSecrets.get(0);
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
-            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels())
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                    .withKubernetesName()
+                    .withKubernetesInstance(ResourceUtils.NAME)
+                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                    .toMap(),
+                captured.getMetadata().getLabels());
             context.assertEquals("clients-ca-crt", new String(Base64.getDecoder().decode(captured.getData().get("ca.crt"))));
             context.assertEquals("crt file", new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))));
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
@@ -423,7 +429,13 @@ public class KafkaUserOperatorTest {
             Secret captured = capturedSecrets.get(0);
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
-            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels())
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                    .withKubernetesName()
+                    .withKubernetesInstance(ResourceUtils.NAME)
+                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                    .toMap(),
+                captured.getMetadata().getLabels());
             context.assertEquals("clients-ca-crt", new String(Base64.getDecoder().decode(captured.getData().get("ca.crt"))));
             context.assertEquals("crt file", new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))));
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
@@ -497,7 +509,13 @@ public class KafkaUserOperatorTest {
             Secret captured = capturedSecrets.get(0);
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
-            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels())
+                    .withKubernetesName()
+                    .withKubernetesInstance(ResourceUtils.NAME)
+                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                    .toMap(),
+                captured.getMetadata().getLabels());
             context.assertEquals(userCert.getData().get("ca.crt"), captured.getData().get("ca.crt"));
             context.assertEquals(userCert.getData().get("user.crt"), captured.getData().get("user.crt"));
             context.assertEquals(userCert.getData().get("user.key"), captured.getData().get("user.key"));
@@ -689,7 +707,13 @@ public class KafkaUserOperatorTest {
             Secret captured = capturedSecrets.get(0);
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
-            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels())
+                    .withKubernetesName()
+                    .withKubernetesInstance(ResourceUtils.NAME)
+                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                    .toMap(),
+                captured.getMetadata().getLabels());
 
             context.assertEquals(scramPasswordCaptor.getValue(), new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))));
             context.assertTrue(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{12}"));
@@ -764,7 +788,13 @@ public class KafkaUserOperatorTest {
             Secret captured = capturedSecrets.get(0);
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
-            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels())
+                    .withKubernetesName()
+                    .withKubernetesInstance(ResourceUtils.NAME)
+                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                    .toMap(),
+                captured.getMetadata().getLabels());
             context.assertEquals(password, new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))));
             context.assertEquals(password, scramPasswordCaptor.getValue());
 

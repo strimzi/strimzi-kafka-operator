@@ -57,6 +57,8 @@ public class KafkaUserModel {
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
+    public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-kafka-user-operator";
+
     // Owner Reference information
     private String ownerApiVersion;
     private String ownerKind;
@@ -72,7 +74,9 @@ public class KafkaUserModel {
     protected KafkaUserModel(String namespace, String name, Labels labels) {
         this.namespace = namespace;
         this.name = name;
-        this.labels = labels;
+        this.labels = labels.withKubernetesName()
+            .withKubernetesInstance(name)
+            .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
     }
 
     /**

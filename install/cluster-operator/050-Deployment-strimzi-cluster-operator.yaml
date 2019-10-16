@@ -4,6 +4,9 @@ metadata:
   name: strimzi-cluster-operator
   labels:
     app: strimzi
+    app.kubernetes.io/name: strimzi
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: kubernetes
 spec:
   replicas: 1
   selector:

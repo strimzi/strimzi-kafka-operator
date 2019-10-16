@@ -46,7 +46,12 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAMESPACE, model.namespace);
         assertEquals(ResourceUtils.NAME, model.name);
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND), model.labels);
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME),
+            model.labels);
         assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
 
         KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) tlsUser.getSpec().getAuthorization();
@@ -63,7 +68,13 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                .toMap(), 
+            generated.getMetadata().getLabels());
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -136,7 +147,13 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                .toMap(),
+            generated.getMetadata().getLabels());
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
@@ -154,7 +171,14 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .toMap(), 
+            generated.getMetadata()
+                .getLabels());
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals(existing, generated.getData().get(KafkaUserModel.KEY_PASSWORD));
@@ -171,7 +195,13 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                .toMap(), 
+            generated.getMetadata().getLabels());
 
         assertEquals(singleton("password"), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
