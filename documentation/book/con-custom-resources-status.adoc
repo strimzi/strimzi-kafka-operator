@@ -104,7 +104,7 @@ status:
 <3> The `observedGeneration` indicates the generation of the `Kafka` custom resource that was last reconciled by the Cluster Operator.
 <4> The `listeners` describe the current Kafka bootstrap addresses by type.
 +
-IMPORTANT: The status for `external` listeners is still under development and does not provide a specific IP address for external listeners of type `nodeport`.
+IMPORTANT: The address in the custom resource status for external listeners with type `nodeport` is currently not supported.
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a ready state.
 

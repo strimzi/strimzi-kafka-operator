@@ -17,6 +17,7 @@ Perform these steps for each `KafkaMirrorMaker`, `KafkaConnect`, and `KafkaConne
 
 . In the `spec.template` property, configure the Jaeger tracer service. For example:
 +
+--
 .Jaeger tracer configuration for Kafka Connect
 [source,yaml,subs=attributes+]
 ----
@@ -29,17 +30,17 @@ spec:
   template:
     connectContainer: <1>
       env:
-        - name: JAEGER_SERVICE_NAME 
+        - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
         - name: JAEGER_AGENT_HOST
           value: jaeger-agent-name
         - name: JAEGER_AGENT_PORT
-          value: "6831"        
+          value: "6831"
   tracing: <2>
     type: jaeger
   #...
 ----
-+
+
 .Jaeger tracer configuration for Mirror Maker
 [source,yaml,subs=attributes+]
 ----
@@ -52,20 +53,19 @@ spec:
   template:
     mirrorMakerContainer: <1>
       env:
-        - name: JAEGER_SERVICE_NAME  
+        - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
         - name: JAEGER_AGENT_HOST
           value: jaeger-agent-name
         - name: JAEGER_AGENT_PORT
-          value: "6831" 
+          value: "6831"
   tracing: <2>
     type: jaeger
 #...
 ----
-+
 <1> Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
-+
 <2> Set the `spec.tracing.type` property to `jaeger`.
+--
 
 . Create or update the resource:
 +
