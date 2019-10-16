@@ -43,7 +43,7 @@ public class Sidecar implements UnknownPropertyPreserving, Serializable {
         this.image = image;
     }
 
-    @Description("CPU and memory resources to reserve (limits and requests).")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
     }
