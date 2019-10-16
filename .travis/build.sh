@@ -35,7 +35,8 @@ if [ -n "$CHANGED_DERIVED" ] ; then
   echo "ERROR: Uncommitted changes in derived resources:"
   echo "$CHANGED_DERIVED"
   echo "Run the following to add up-to-date resources:"
-  echo "  make crd_install \\"
+  echo "  mvn clean verify -DskipTests -DskipITs \\"
+  echo "    && make crd_install \\"
   echo "    && git add install/ helm-charts/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles"
   echo "    && git commit -s -m 'Update derived resources'"
   exit 1
