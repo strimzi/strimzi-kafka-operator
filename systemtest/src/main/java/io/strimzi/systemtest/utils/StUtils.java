@@ -932,13 +932,12 @@ public class StUtils {
         LOGGER.info("Waiting till PVC labels will change {}", newLabels.toString());
         TestUtils.waitFor("Waiting till PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                boolean result = false;
-
                 for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
-                    result = pvc.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey));
+                    if (!pvc.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey))) {
+                        return false;
+                    }
                 }
-
-                return result;
+                return true;
             });
         LOGGER.info("PVC labels has changed {}", newLabels.toString());
     }
@@ -947,13 +946,12 @@ public class StUtils {
         LOGGER.info("Waiting till PVC annotation will change {}", newAnnotation.toString());
         TestUtils.waitFor("Waiting till PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                boolean result = false;
-
                 for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
-                    result =  pvc.getMetadata().getAnnotations().get(annotationKey).equals(newAnnotation.get(annotationKey));
+                    if (!pvc.getMetadata().getLabels().get(annotationKey).equals(newAnnotation.get(annotationKey))) {
+                        return false;
+                    }
                 }
-
-                return result;
+                return true;
             });
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
