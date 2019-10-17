@@ -302,7 +302,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(false, null, null);
-        assertNull(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount());
+        assertNull(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit());
     }
 
     @Test
