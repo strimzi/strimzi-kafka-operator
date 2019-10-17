@@ -11,8 +11,11 @@ This guide is meant to assist contributors to the Strimzi documentation.
 
 [source,options="nowrap",subs="+quotes"]
 ----
-book/                                # The source for the book
-common/                              # Shared include files
-common/attributes.adoc               # Global book attributes
-images/                              # Shared image files
+quickstart/                          # Quickstart guide
+using/                               # User guide
+assemblies/                          # Assemblies for all guides
+modules/                             # Modules for all guides
+shared/                              # Shared include files
+shared/attributes.adoc               # Global book attributes
+shared/images/                       # Shared image files
 ----

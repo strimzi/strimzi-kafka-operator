@@ -4,9 +4,9 @@
 == Important files
 
 |===
-| Standard attributes         | common/attributes.adoc
-| Shared includes             | common/
-| Images                      | images/
+| Standard attributes         | shared/attributes.adoc
+| Shared includes             | shared/
+| Images                      | shared/images/
 |===
 
 [[anchor-and-file-names]]

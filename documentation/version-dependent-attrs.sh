@@ -2,7 +2,7 @@
 
 source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
 
-# Generates documentation/book/common/version-dependent-attrs.adoc
+# Generates documentation/book/shared/version-dependent-attrs.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
