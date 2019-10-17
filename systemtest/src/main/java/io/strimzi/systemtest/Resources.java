@@ -534,7 +534,7 @@ public class Resources extends AbstractResources {
      * @param kafkaConnectS2IReplicas the number of replicas
      * @return Kafka Connect S2I
      */
-    DoneableKafkaConnectS2I kafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
+    public DoneableKafkaConnectS2I kafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
         return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaClusterName, kafkaConnectS2IReplicas).build());
     }
 
