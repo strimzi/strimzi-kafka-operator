@@ -210,7 +210,6 @@ public class Labels {
      * @return A new instance with the given operator that is managing this resourse.
      */
     public Labels withKubernetesManagedBy(String operatorName) {
-        // Make configurable?
         return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
     }
 
