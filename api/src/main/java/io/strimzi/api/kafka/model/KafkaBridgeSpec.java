@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
         "producer", "resources", "jvmOptions", "logging",
-        "metrics", "livenessProbe", "readinessProbe", "template"})
+        "metrics", "livenessProbe", "readinessProbe", "template", "enableDefaultPodDisruptionBudget"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -50,6 +50,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private Map<String, Object> metrics;
     private Probe livenessProbe;
     private Probe readinessProbe;
+    private Boolean enableDefaultPodDisruptionBudget = true;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaBridgeTemplate template;
 
@@ -205,6 +206,16 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setReadinessProbe(Probe readinessProbe) {
         this.readinessProbe = readinessProbe;
+    }
+
+    @Description("Flag to create default pod disruption budget. By default `true`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget == null ? true : enableDefaultPodDisruptionBudget;
+    }
+
+    public void setEnableDefaultPodDisruptionBudget(Boolean enableDefaultPodDisruptionBudget) {
+        this.enableDefaultPodDisruptionBudget = enableDefaultPodDisruptionBudget;
     }
 
     @Override

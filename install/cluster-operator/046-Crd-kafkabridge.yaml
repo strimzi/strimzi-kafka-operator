@@ -561,6 +561,8 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
+            enableDefaultPodDisruptionBudget:
+              type: boolean
           required:
           - bootstrapServers
         status:

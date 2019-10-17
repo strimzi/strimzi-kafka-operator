@@ -149,6 +149,8 @@ public abstract class AbstractModel {
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
 
+    protected boolean enableDefaultPodDisruptionBudget = true;
+
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
     protected Map<String, String> templateStatefulSetAnnotations;
@@ -264,6 +266,13 @@ public abstract class AbstractModel {
      */
     public boolean isMetricsEnabled() {
         return isMetricsEnabled;
+    }
+
+    /**
+     * @return Whether enableDefaultPodDisruptionBudget is enabled.
+     */
+    public boolean isEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget;
     }
 
     protected void setMetricsEnabled(boolean isMetricsEnabled) {

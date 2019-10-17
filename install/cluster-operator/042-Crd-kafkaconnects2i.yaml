@@ -730,6 +730,8 @@ spec:
               type: string
             config:
               type: object
+            enableDefaultPodDisruptionBudget:
+              type: boolean
             externalConfiguration:
               type: object
               properties:

@@ -34,7 +34,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", "template"})
+        "affinity", "tolerations", "logging", "metrics", "tracing", "template", "enableDefaultPodDisruptionBudget"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
 
@@ -63,6 +63,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     private KafkaClientAuthentication authentication;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
+    private Boolean enableDefaultPodDisruptionBudget = true;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -253,6 +254,16 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
 
     public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
         this.externalConfiguration = externalConfiguration;
+    }
+
+    @Description("Flag to create default pod disruption budget. By default `true`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget == null ? true : enableDefaultPodDisruptionBudget;
+    }
+
+    public void setEnableDefaultPodDisruptionBudget(Boolean enableDefaultPodDisruptionBudget) {
+        this.enableDefaultPodDisruptionBudget = enableDefaultPodDisruptionBudget;
     }
 
     @Override

@@ -38,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "tlsSidecar", "template"})
+         "metrics", "logging", "tlsSidecar", "template", "enableDefaultPodDisruptionBudget"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -64,6 +64,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
+    private Boolean enableDefaultPodDisruptionBudget = true;
     private ZookeeperClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -203,6 +204,16 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
+    }
+
+    @Description("Flag to create default pod disruption budget. By default `true`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget == null ? true : enableDefaultPodDisruptionBudget;
+    }
+
+    public void setEnableDefaultPodDisruptionBudget(Boolean enableDefaultPodDisruptionBudget) {
+        this.enableDefaultPodDisruptionBudget = enableDefaultPodDisruptionBudget;
     }
 
     @Description("Template for Zookeeper cluster resources. " +

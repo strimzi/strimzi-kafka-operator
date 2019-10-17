@@ -550,6 +550,7 @@ public class KafkaCluster extends AbstractModel {
         }
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
+        result.enableDefaultPodDisruptionBudget = kafkaClusterSpec.getEnableDefaultPodDisruptionBudget();
         return result;
     }
 

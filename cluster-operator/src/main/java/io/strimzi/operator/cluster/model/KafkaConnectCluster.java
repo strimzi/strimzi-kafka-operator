@@ -215,6 +215,8 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
+        kafkaConnect.enableDefaultPodDisruptionBudget = spec.getEnableDefaultPodDisruptionBudget();
+
         return kafkaConnect;
     }
 

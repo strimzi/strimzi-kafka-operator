@@ -41,7 +41,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "metrics", "logging", "tlsSidecar", "template"})
+        "metrics", "logging", "tlsSidecar", "template", "enableDefaultPodDisruptionBudget"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -77,6 +77,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
+    private Boolean enableDefaultPodDisruptionBudget = true;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The kafka broker version. Defaults to {DefaultKafkaVersion}. " +
@@ -268,6 +269,16 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
+    }
+
+    @Description("Flag to create default pod disruption budget. By default `true`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget == null ? true : enableDefaultPodDisruptionBudget;
+    }
+
+    public void setEnableDefaultPodDisruptionBudget(Boolean enableDefaultPodDisruptionBudget) {
+        this.enableDefaultPodDisruptionBudget = enableDefaultPodDisruptionBudget;
     }
 
     @Description("Template for Kafka cluster resources. " +

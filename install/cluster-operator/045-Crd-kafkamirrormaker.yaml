@@ -873,6 +873,8 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
+            enableDefaultPodDisruptionBudget:
+              type: boolean
             livenessProbe:
               type: object
               properties:

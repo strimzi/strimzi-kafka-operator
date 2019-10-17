@@ -665,6 +665,8 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
+            enableDefaultPodDisruptionBudget:
+              type: boolean
             authentication:
               type: object
               properties:

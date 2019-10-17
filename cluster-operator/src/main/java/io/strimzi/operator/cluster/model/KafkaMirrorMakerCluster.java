@@ -193,6 +193,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
 
+        kafkaMirrorMakerCluster.enableDefaultPodDisruptionBudget = spec.getEnableDefaultPodDisruptionBudget();
+
         return kafkaMirrorMakerCluster;
     }
 

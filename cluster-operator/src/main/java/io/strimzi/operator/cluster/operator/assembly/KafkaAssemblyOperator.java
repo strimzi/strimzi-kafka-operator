@@ -1132,7 +1132,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
-            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            if (zkCluster.isEnableDefaultPodDisruptionBudget()) {
+                return withVoid(podDisruptionBudgetOperator.reconcile(namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> zkStatefulSet() {
@@ -1715,7 +1719,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
-            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
+            if (kafkaCluster.isEnableDefaultPodDisruptionBudget()) {
+                return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
+            } else return withVoid(Future.succeededFuture());
         }
 
         int getPodIndexFromPvcName(String pvcName)  {

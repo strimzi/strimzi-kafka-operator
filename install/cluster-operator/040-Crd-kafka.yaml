@@ -1308,6 +1308,8 @@ spec:
                                 type: string
                               value:
                                 type: string
+                enableDefaultPodDisruptionBudget:
+                  type: boolean
                 version:
                   type: string
               required:
@@ -2066,6 +2068,8 @@ spec:
                                 type: string
                               value:
                                 type: string
+                enableDefaultPodDisruptionBudget:
+                  type: boolean
               required:
               - replicas
               - storage

@@ -198,6 +198,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
+        kafkaBridgeCluster.enableDefaultPodDisruptionBudget = spec.getEnableDefaultPodDisruptionBudget();
+
         return kafkaBridgeCluster;
     }
     

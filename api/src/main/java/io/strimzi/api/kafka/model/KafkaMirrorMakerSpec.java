@@ -34,7 +34,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "tracing", "template"})
+        "logging", "metrics", "tracing", "template", "enableDefaultPodDisruptionBudget"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -56,6 +56,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private Map<String, Object> metrics;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
+    private Boolean enableDefaultPodDisruptionBudget = true;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
@@ -228,6 +229,16 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
 
     public void setTemplate(KafkaMirrorMakerTemplate template) {
         this.template = template;
+    }
+
+    @Description("Flag to create default pod disruption budget. By default `true`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getEnableDefaultPodDisruptionBudget() {
+        return enableDefaultPodDisruptionBudget == null ? true : enableDefaultPodDisruptionBudget;
+    }
+
+    public void setEnableDefaultPodDisruptionBudget(Boolean enableDefaultPodDisruptionBudget) {
+        this.enableDefaultPodDisruptionBudget = enableDefaultPodDisruptionBudget;
     }
 
     @Override

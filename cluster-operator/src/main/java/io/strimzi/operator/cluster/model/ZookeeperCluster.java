@@ -284,6 +284,8 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
+        zk.enableDefaultPodDisruptionBudget = zookeeperClusterSpec.getEnableDefaultPodDisruptionBudget();
+
         return zk;
     }
 
