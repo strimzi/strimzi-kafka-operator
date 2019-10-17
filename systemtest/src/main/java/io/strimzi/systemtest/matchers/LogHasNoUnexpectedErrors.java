@@ -27,7 +27,10 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
             if (actualValue.toString().contains("NullPointer") || actualValue.toString().contains("Unhandled Exception")) {
                 return false;
             }
-            for (String line : ((String) actualValue).split("\n")) {
+            // This pattern is used for split each log ine with stack trace if it's there from some reasons
+            // It's match start of the line which contains date in format yyyy-mm-dd hh:mm:ss
+            String logLineSplitPattern = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
+            for (String line : ((String) actualValue).split(logLineSplitPattern)) {
                 if (line.contains("DEBUG")) {
                     continue;
                 }
@@ -38,6 +41,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                         Matcher m = Pattern.compile(value.name).matcher(line);
                         if (m.find()) {
                             whiteListResult = true;
+                            break;
                         }
                     }
                     if (!whiteListResult) {

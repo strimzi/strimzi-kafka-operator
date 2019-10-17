@@ -144,7 +144,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaBridgeStatus() {
-        String bridgeUrl = "http://my-cluster-bridge-bridge-service.status-cluster-test.svc:8080";
+        String bridgeUrl = "http://my-cluster-bridge-service.status-cluster-test.svc:8080";
         testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
         waitForKafkaBridgeStatus("Ready");
         assertKafkaBridgeStatus(1, bridgeUrl);
@@ -223,7 +223,7 @@ class CustomResourceStatusST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
 
         deployTestSpecificResources();
     }
