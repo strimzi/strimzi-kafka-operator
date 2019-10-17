@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.model.Labels;
 
@@ -352,8 +351,12 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration()    {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
 
-        if (tracing != null && JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+        if (tracing != null) {
+            if (tracing.getType() != null) {
+                config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            } else {
+                log.warn("The spec.tracing.type is not specified, tracing won't be enabled");
+            }
         }
 
         return config;
@@ -362,8 +365,12 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
 
-        if (tracing != null && JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+        if (tracing != null) {
+            if (tracing.getType() != null) {
+                config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            } else {
+                log.warn("The spec.tracing.type is not specified, tracing won't be enabled");
+            }
         }
 
         return config;
