@@ -5,7 +5,7 @@
 [id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
 = Retrieving the latest messages from a Kafka Bridge consumer
 
-Next, retrieve the latest messages from the Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production, HTTP clients can call this endpoint repeatedly (in a loop).
+Retrieve the latest messages from the Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production, HTTP clients can call this endpoint repeatedly (in a loop).
 
 .Procedure
 
@@ -19,11 +19,11 @@ curl -X GET http://localhost:8080/consumers/bridge-quickstart-consumer-group/ins
   -H 'accept: application/vnd.kafka.json.v2+json'
 ----
 +
-After creating and subscribing to a Kafka Bridge consumer, a first GET request will return an empty response because the poll operation starts a rebalancing process to assign partitions.
+After creating and subscribing to a Kafka Bridge consumer, a first GET request will return an empty response because the poll operation triggers a rebalancing process to assign partitions.
 
 . Repeat step two to retrieve messages from the Kafka Bridge consumer.
 +
-The Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body, along with a `200` code. Messages are retrieved from the latest offset by default.
+The Kafka Bridge returns an array of messages -- describing the topic name, key, value, partition, and offset -- in the response body, along with a `200 OK` code. Messages are retrieved from the latest offset by default.
 +
 [source,json,subs=attributes+]
 ----

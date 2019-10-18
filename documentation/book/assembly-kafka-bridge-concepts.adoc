@@ -5,12 +5,12 @@
 [id='kafka-bridge-concepts-{context}']
 = Kafka Bridge
 
-This chapter provides an overview of the {ProductName} Kafka Bridge and helps you get started using its REST API to interact with {ProductName}. To try out the Kafka Bridge in your local environment, see the xref:assembly-kafka-bridge-quickstart-{context}[] later in this chapter.
+This chapter provides an overview of the {ProductName} Kafka Bridge on {ProductPlatformName} and helps you get started using its REST API to interact with {ProductName}. To try out the Kafka Bridge in your local environment, see the xref:assembly-kafka-bridge-quickstart-{context}[] later in this chapter.
 
 .Additional resources
 * For information on how to deploy the Kafka Bridge, see xref:kafka-bridge-str[] in the _Getting started with {ProductName}_ chapter.
 * For detailed information on configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-{context}[] in the _Deployment configuration_ chapter
-* To view the API documentation, including example requests and responses, see the {LatestBridgeAPIDocs} on the Strimzi website.
+* To view the API documentation, including example requests and responses, see the {LatestBridgeAPIDocs}[Kafka Bridge API reference^].
 
 include::assembly-kafka-bridge-overview.adoc[leveloffset=+1]
 
