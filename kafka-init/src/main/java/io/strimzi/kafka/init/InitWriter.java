@@ -148,12 +148,12 @@ public class InitWriter {
             return addressMap.get("ExternalDNS");
         } else if (addressMap.containsKey("ExternalIP"))  {
             return addressMap.get("ExternalIP");
+        } else if (addressMap.containsKey("Hostname")) {
+            return addressMap.get("Hostname");
         } else if (addressMap.containsKey("InternalDNS"))  {
             return addressMap.get("InternalDNS");
         } else if (addressMap.containsKey("InternalIP"))  {
             return addressMap.get("InternalIP");
-        } else if (addressMap.containsKey("Hostname")) {
-            return addressMap.get("Hostname");
         }
 
         return null;

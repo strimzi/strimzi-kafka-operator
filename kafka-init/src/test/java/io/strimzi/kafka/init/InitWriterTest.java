@@ -192,6 +192,30 @@ public class InitWriterTest {
         assertEquals(port1, "1001");
     }
 
+    @Test
+    public void testAddressSelectionPriority()   {
+        List<NodeAddress> addresses = new ArrayList<>(5);
+        addresses.add(new NodeAddressBuilder().withType("InternalIP").withAddress("10.0.4.1").build());
+
+        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+        InitWriter writer = new InitWriter(client, config);
+        String address = writer.findAddress(addresses);
+        assertEquals("10.0.4.1", address);
+        // add each address in order of ascending prority and check that the retrieved address is correct
+        addresses.add(new NodeAddressBuilder().withType("InternalDNS").withAddress("my.internal.address").build());
+        address = writer.findAddress(addresses);
+        assertEquals("my.internal.address", address);
+        addresses.add(new NodeAddressBuilder().withType("Hostname").withAddress("my.hostname").build());
+        address = writer.findAddress(addresses);
+        assertEquals("my.hostname", address);
+        addresses.add(new NodeAddressBuilder().withType("ExternalIP").withAddress("192.168.2.94").build());
+        address = writer.findAddress(addresses);
+        assertEquals("192.168.2.94", address);
+        addresses.add(new NodeAddressBuilder().withType("ExternalDNS").withAddress("my.external.address").build());
+        address = writer.findAddress(addresses);
+        assertEquals("my.external.address", address);
+    }
     /**
      * Mock a Kubernetes client for getting cluster node information
      *
