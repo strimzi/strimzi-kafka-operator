@@ -7,6 +7,7 @@ package io.strimzi.operator.common.model;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -89,9 +90,14 @@ public class Labels {
      */
     public static Labels userLabels(Map<String, String> userLabels) {
         if (userLabels != null) {
-            for (String key : userLabels.keySet()) {
+            Iterator<String> keys = userLabels.keySet().iterator();
+            while (keys.hasNext()) {
+                String key = keys.next();
                 if (key.startsWith(STRIMZI_DOMAIN)) {
                     throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
+                }
+                if (key.startsWith(KUBERNETES_DOMAIN)) {
+                    keys.remove();
                 }
             }
             return new Labels(userLabels);

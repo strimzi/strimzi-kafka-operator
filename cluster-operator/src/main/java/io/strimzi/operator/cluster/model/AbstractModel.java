@@ -73,6 +73,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1155,9 +1156,14 @@ public abstract class AbstractModel {
         if (templates != null) {
             for (Map<String, String> template : templates) {
                 if (template != null) {
-                    for (String key : template.keySet()) {
-                        if (key.contains("strimzi.io")) {
+                    Iterator<String> keys = template.keySet().iterator();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        if (key.contains(Labels.STRIMZI_DOMAIN)) {
                             throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + key);
+                        }
+                        if (key.contains(Labels.KUBERNETES_DOMAIN)) {
+                            keys.remove();
                         }
                     }
 
