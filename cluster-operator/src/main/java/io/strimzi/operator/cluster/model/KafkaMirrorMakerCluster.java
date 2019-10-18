@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.model.Labels;
 
@@ -352,7 +351,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration()    {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
 
-        if (tracing != null && JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
+        if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
         }
 
@@ -362,7 +361,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
 
-        if (tracing != null && JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
+        if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
 
