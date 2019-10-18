@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.model;
@@ -246,7 +246,7 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", null);
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit().getAmount());
+        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
     }
 
     @Test
@@ -263,6 +263,6 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", "");
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit().getAmount());
+        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
     }
 }

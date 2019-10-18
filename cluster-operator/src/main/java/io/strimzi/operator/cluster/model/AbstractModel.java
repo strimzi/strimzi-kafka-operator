@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.model;
@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
@@ -653,11 +655,14 @@ public abstract class AbstractModel {
     }
 
     protected Volume createEmptyDirVolume(String name, String sizeLimit) {
+        EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
+        if (sizeLimit != null && !sizeLimit.isEmpty()) {
+            emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
+        }
+
         Volume volume = new VolumeBuilder()
             .withName(name)
-                .withNewEmptyDir()
-                    .withNewSizeLimit(sizeLimit == null || sizeLimit.isEmpty() ? null : sizeLimit)
-                .endEmptyDir()
+                .withEmptyDir(emptyDirVolumeSource)
             .build();
         log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", name, sizeLimit);
         return volume;

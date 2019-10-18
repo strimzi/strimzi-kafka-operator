@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.api.kafka.model;
@@ -100,7 +100,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("CPU and memory resources to reserve (limits and requests).")
+    @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
     }

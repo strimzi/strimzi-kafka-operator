@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.common.model;
@@ -210,7 +210,6 @@ public class Labels {
      * @return A new instance with the given operator that is managing this resourse.
      */
     public Labels withKubernetesManagedBy(String operatorName) {
-        // Make configurable?
         return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
     }
 

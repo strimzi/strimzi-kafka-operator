@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.api.kafka.model.listener;
@@ -29,6 +29,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_OAUTH = "oauth";
+    public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
+    public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;
 
     private String clientId;
     private GenericSecretSource clientSecret;

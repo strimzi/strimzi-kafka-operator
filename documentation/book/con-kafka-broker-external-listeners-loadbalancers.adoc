@@ -32,7 +32,7 @@ For more information on using loadbalancers to access Kafka, see xref:proc-acces
 On `loadbalancer` listeners, you can use the `dnsAnnotations` property to add additional annotations to the loadbalancer services.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
 
-.Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
+.Example of an external listener of type `loadbalancer` using `dnsAnnotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...

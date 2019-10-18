@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.model;
@@ -456,13 +456,24 @@ public class KafkaCluster extends AbstractModel {
         result.setListeners(listeners);
 
         if (listeners != null) {
-            if (listeners.getPlain() != null
-                    && listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
-                throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
+            if (listeners.getPlain() != null) {
+                if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationTls) {
+                    throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
+                } else if (listeners.getPlain().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth(), "Plain listener");
+                }
             }
 
-            if (listeners.getExternal() != null && !result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
-                throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
+            if (listeners.getExternal() != null) {
+                if (!result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls) {
+                    throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
+                } else if (listeners.getExternal().getAuth() != null && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                    validateOauth((KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth(), "External listener");
+                }
+            }
+
+            if (listeners.getTls() != null && listeners.getTls().getAuth() != null && listeners.getTls().getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth(), "TLS listener");
             }
         }
 
@@ -1509,10 +1520,45 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Validates provided OAuth configuration. Throws InvalidResourceException when OAuth configuration contains forbidden combinations.
+     *
+     * @param oAuth     OAuth type authentication object
+     */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private static void validateOauth(KafkaListenerAuthenticationOAuth oAuth, String listener) {
+        if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
+            log.error("{}: Introspection endpoint URI or JWKS endpoint URI has to be specified", listener);
+            throw new InvalidResourceException(listener + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
+        }
+
+        if (oAuth.getValidIssuerUri() == null) {
+            log.error("{}: Valid Issuer URI has to be specified", listener);
+            throw new InvalidResourceException(listener + ": Valid Issuer URI has to be specified");
+        }
+
+        if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
+            log.error("{}: Introspection Endpoint URI needs to be configured together with clientId and clientSecret", listener);
+            throw new InvalidResourceException(listener + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+        }
+
+        if (oAuth.getJwksEndpointUri() == null && (oAuth.getJwksRefreshSeconds() > 0 || oAuth.getJwksExpirySeconds() > 0)) {
+            log.error("{}: jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": jwksRefreshSeconds and jwksExpirySeconds can be used only together with jwksEndpointUri");
+        }
+
+        if ((oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() > 0 && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
+                (oAuth.getJwksExpirySeconds() == 0 && oAuth.getJwksRefreshSeconds() > 0 && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
+                (oAuth.getJwksExpirySeconds() > 0 && oAuth.getJwksRefreshSeconds() == 0 && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
+            log.error("{}: The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`", listener);
+            throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
+        }
+    }
+
+    /**
      * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but as a secret
      * reference to keep it secure.
      *
-     * @param oauth     OAuth type autentication object
+     * @param oauth     OAuth type authentication object
      * @return  JAAS configuration string ith the public variables
      */
     protected String getOauthConfiguration(KafkaListenerAuthenticationOAuth oauth)  {
