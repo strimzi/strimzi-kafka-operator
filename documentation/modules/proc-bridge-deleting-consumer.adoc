@@ -16,7 +16,7 @@ Finally, delete the Kafa Bridge consumer that you used throughout this quickstar
 curl -X DELETE http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
 ----
 +
-If the request is successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204 No Content` code only.
 
 .Additional resources
 

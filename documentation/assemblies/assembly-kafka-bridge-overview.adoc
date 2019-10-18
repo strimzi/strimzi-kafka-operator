@@ -25,6 +25,8 @@ You can:
 
 * Subscribe consumers to topics, so that they start receiving messages from those topics.
 
+* Retrieve a list of the topics to which a consumer is subscribed.
+
 * Unsubscribe consumers from topics.
 
 * Assign partitions to consumers.

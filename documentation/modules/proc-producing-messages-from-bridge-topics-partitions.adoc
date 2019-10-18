@@ -5,7 +5,9 @@
 [id='proc-producing-messages-from-bridge-topics-partitions-{context}']
 = Producing messages to topics and partitions
 
-Next, produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. You can specify destination partitions for messages in the request body, as shown here. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
+Produce messages to a topic in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. 
+
+You can specify destination partitions for messages in the request body, as shown below. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
 .Procedure
 
@@ -66,7 +68,7 @@ curl -X POST \
 * `sales-lead-0002` is sent directly to partition 2. 
 * `sales-lead-0003` is sent to a partition in the `bridge-quickstart-topic` topic using a round-robin method.
 
-. If the request is successful, the Kafka Bridge returns an `offsets` array, along with a `200` code and a `content-type` header of `application/vnd.kafka.v2+json`. For each message, the `offsets` array describes:
+. If the request is successful, the Kafka Bridge returns an `offsets` array, along with a `200 OK` code and a `content-type` header of `application/vnd.kafka.v2+json`. For each message, the `offsets` array describes:
 +
 * The partition that the message was sent to
 * The current message offset of the partition

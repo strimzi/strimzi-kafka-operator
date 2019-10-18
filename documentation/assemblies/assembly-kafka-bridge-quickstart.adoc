@@ -31,10 +31,10 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 
 .Prerequisites for the quickstart
 
-* Cluster administrator access to a local or remote Kubernetes cluster. 
-* {ProductName} is installed.
+* xref:downloads-str[{ProductName} is installed].
+* Cluster administrator access to a local or remote Kubernetes cluster (or you are a designated xref:assembly-getting-started-strimzi-admin-str[Strizi Administrator]). 
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
-* The Entity Operator is deployed and running as part of the Kafka cluster.  
+* The xref:deploying-the-topic-operator-using-the-cluster-operator-str[Entity Operator is deployed] and running as part of the Kafka cluster.  
 
 include::../modules/proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 
