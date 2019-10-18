@@ -44,7 +44,7 @@ import java.util.List;
  * can proceed at once.</p>
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
+        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>>
     extends AbstractOperator<T, AbstractWatchableResourceOperator<C, T, L, D, R>> {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());

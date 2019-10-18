@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient,
         T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/,
+        L extends KubernetesResourceList<T>,
         D extends Doneable<T>,
         R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-resource";

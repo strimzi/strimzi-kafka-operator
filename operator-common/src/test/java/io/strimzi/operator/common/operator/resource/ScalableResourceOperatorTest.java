@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 
 public abstract class ScalableResourceOperatorTest<C extends KubernetesClient,
             T extends HasMetadata,
-            L extends KubernetesResourceList,
+            L extends KubernetesResourceList<T>,
             D extends Doneable<T>,
             R extends Resource<T, D>>
         extends AbtractReadyResourceOperatorTest<C, T, L, D, R> {

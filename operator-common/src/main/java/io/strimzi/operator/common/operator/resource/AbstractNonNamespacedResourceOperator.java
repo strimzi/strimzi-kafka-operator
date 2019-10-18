@@ -34,7 +34,7 @@ import java.util.Objects;
  * @param <R> The resource operations.
  */
 public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+        L extends KubernetesResourceList<T>, D, R extends Resource<T, D>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
@@ -217,7 +217,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return listInAnyNamespace(selector);
     }
 
-    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
         FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
 

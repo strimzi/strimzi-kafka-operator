@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractNonNamespacedResourceOperatorTest<C extends KubernetesClient,
         T extends HasMetadata,
-        L extends KubernetesResourceList,
+        L extends KubernetesResourceList<T>,
         D extends Doneable<T>,
         R extends Resource<T, D>> {
 

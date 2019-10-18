@@ -42,7 +42,7 @@ import java.util.function.BiPredicate;
  */
 public abstract class AbstractResourceOperator<C extends KubernetesClient,
         T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/,
+        L extends KubernetesResourceList<T>,
         D extends Doneable<T>,
         R extends Resource<T, D>> {
 
@@ -249,7 +249,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @param selector The selector.
      * @return A list of matching resources.
      */
-    @SuppressWarnings("unchecked")
     public List<T> list(String namespace, Labels selector) {
         if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
             return listInAnyNamespace(selector);
@@ -258,7 +257,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         }
     }
 
-    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
         FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
 
@@ -275,7 +273,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         }
     }
 
-    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInNamespace(String namespace, Labels selector) {
         NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
 
@@ -299,7 +296,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @param selector The selector.
      * @return A Future with a list of matching resources.
      */
-    @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     public Future<List<T>> listAsync(String namespace, Labels selector) {
         FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> x;
         if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
@@ -310,7 +306,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         if (selector != null) {
             x = x.withLabels(selector.toMap());
         }
-        return (Future) resourceSupport.listAsync(x);
+        return resourceSupport.listAsync(x);
     }
 
     @SuppressWarnings("unchecked")
