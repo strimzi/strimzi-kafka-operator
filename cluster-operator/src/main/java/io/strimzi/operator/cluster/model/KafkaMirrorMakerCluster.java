@@ -352,11 +352,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
 
         if (tracing != null) {
-            if (tracing.getType() != null) {
-                config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-            } else {
-                log.warn("The spec.tracing.type is not specified, tracing won't be enabled");
-            }
+            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
         }
 
         return config;
@@ -366,11 +362,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
 
         if (tracing != null) {
-            if (tracing.getType() != null) {
-                config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
-            } else {
-                log.warn("The spec.tracing.type is not specified, tracing won't be enabled");
-            }
+            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
 
         return config;

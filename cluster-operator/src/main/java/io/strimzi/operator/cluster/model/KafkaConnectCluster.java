@@ -146,12 +146,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
         KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
         if (kafkaConnect.tracing != null)   {
-            if (kafkaConnect.tracing.getType() != null) {
-                config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-                config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
-            } else {
-                log.warn("The spec.tracing.type is not specified, tracing won't be enabled");
-            }
+            config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
         kafkaConnect.setConfiguration(config);
 
