@@ -52,6 +52,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     KubernetesClient client;
 
     @Parameterized.Parameters(name = "{index}: {0}")
+    @SuppressWarnings("unchecked")
     public static Iterable<Object[]> parameters() {
         return Arrays.<Object[]>asList(
                 new Object[]{Pod.class,
@@ -150,6 +151,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void podCreateDeleteUnscoped() {
         MyWatcher w = new MyWatcher();
         mixedOp().watch(w);
@@ -181,6 +183,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void podNameScopedCreateListGetDelete() {
         MyWatcher w = new MyWatcher();
         mixedOp().watch(w);
@@ -256,6 +259,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void watches() {
         RT pod = pod();
 
