@@ -38,8 +38,9 @@ public class TopicSerializationTest {
     @Test
     public void testResourceSerializationRoundTrip() {
 
+        String topicName = "tom";
         Topic.Builder builder = new Topic.Builder();
-        builder.withTopicName("tom");
+        builder.withTopicName(topicName);
         builder.withNumReplicas((short) 1);
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
@@ -50,8 +51,13 @@ public class TopicSerializationTest {
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
 
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
-        assertEquals(1, kafkaTopic.getMetadata().getLabels().size());
+        assertEquals(4, kafkaTopic.getMetadata().getLabels().size());
         assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
+        assertEquals(
+            io.strimzi.operator.common.model.Labels.KUBERNETES_NAME,
+            kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL));
+        assertEquals(topicName, kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL));
+        assertEquals(TopicOperator.KAFKA_TOPIC_OPERATOR_NAME, kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL));
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getSpec().getTopicName());
         assertEquals(Integer.valueOf(2), kafkaTopic.getSpec().getPartitions());
         assertEquals(Integer.valueOf(1), kafkaTopic.getSpec().getReplicas());
