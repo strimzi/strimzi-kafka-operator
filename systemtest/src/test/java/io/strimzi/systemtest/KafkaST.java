@@ -605,7 +605,6 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(ACCEPTANCE)
     void testSendMessagesPlainAnonymous() throws Exception {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -803,8 +802,7 @@ class KafkaST extends MessagingBaseST {
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "300m");
 
-        TestUtils.waitFor("Wait till reconciliation timeout", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> !cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, getOperationID()), "\"Assembly reconciled\"").isEmpty());
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
@@ -1830,12 +1828,12 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
         String uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, containsString("KafkaUser " + userName + " in namespace " + NAMESPACE + " was ADDED"));
+        assertThat(uOLogs, containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED"));
 
         LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
         entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0).getMetadata().getName();
         uOLogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, not(containsString("KafkaUser " + userName + " in namespace " + NAMESPACE + " was ADDED")));
+        assertThat(uOLogs, not(containsString("User " + userName + " in namespace " + NAMESPACE + " was ADDED")));
 
         LOGGER.info("Verifying that user belongs to {} cluster", firstClusterName);
         String kafkaUserResource = cmdKubeClient().getResourceAsYaml("kafkauser", userName);

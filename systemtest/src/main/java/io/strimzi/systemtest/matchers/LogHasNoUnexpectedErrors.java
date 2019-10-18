@@ -31,7 +31,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
             // It's match start of the line which contains date in format yyyy-mm-dd hh:mm:ss
             String logLineSplitPattern = "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}";
             for (String line : ((String) actualValue).split(logLineSplitPattern)) {
-                if (line.contains("DEBUG")) {
+                if (line.contains("DEBUG") || line.contains("WARN")) {
                     continue;
                 }
                 String lineLowerCase = line.toLowerCase(Locale.ENGLISH);
@@ -45,6 +45,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                         }
                     }
                     if (!whiteListResult) {
+                        LOGGER.error(line);
                         return false;
                     }
                 }
@@ -74,7 +75,8 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
         OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
         // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
-        RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*");
+        RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
+        ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*failed.*");
 
         final String name;
 

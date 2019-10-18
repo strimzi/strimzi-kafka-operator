@@ -47,7 +47,7 @@ class UserST extends AbstractST {
         testMethodResources().tlsUser(CLUSTER_NAME, userWithCorrectName).done();
         StUtils.waitForSecretReady(userWithCorrectName);
 
-        String messageUserWasAdded = "KafkaUser " + userWithCorrectName + " in namespace " + NAMESPACE + " was ADDED";
+        String messageUserWasAdded = "User " + userWithCorrectName + " in namespace " + NAMESPACE + " was ADDED";
         String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
 
         // Checking UO logs
@@ -62,7 +62,7 @@ class UserST extends AbstractST {
 
         // Checking UO logs
         uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        messageUserWasAdded = "KafkaUser " + saslUserWithLongName + " in namespace " + NAMESPACE + " was ADDED";
+        messageUserWasAdded = "User " + saslUserWithLongName + " in namespace " + NAMESPACE + " was ADDED";
         assertThat(uOlogs, containsString(messageUserWasAdded));
         assertThat(uOlogs, not(containsString(errorMessage)));
 
