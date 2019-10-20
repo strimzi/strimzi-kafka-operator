@@ -238,6 +238,8 @@ public class ZookeeperClusterTest {
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), ss.getSpec().getSelector().getMatchLabels());
 
+        assertEquals("default-scheduler", ss.getSpec().getTemplate().getSpec().getSchedulerName());
+
         List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
 
         assertEquals(2, containers.size());
@@ -387,6 +389,7 @@ public class ZookeeperClusterTest {
                                     .withAnnotations(podAnots)
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
+                                .withNewSchedulerName("my-scheduler")
                             .endPod()
                             .withNewClientService()
                                 .withNewMetadata()
@@ -421,6 +424,7 @@ public class ZookeeperClusterTest {
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(ss.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+        assertEquals("my-scheduler", ss.getSpec().getTemplate().getSpec().getSchedulerName());
 
         // Check Service
         Service svc = zc.generateService();

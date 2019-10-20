@@ -40,7 +40,6 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         + "|/spec/template/spec/containers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/dnsPolicy"
         + "|/spec/template/spec/restartPolicy"
-        + "|/spec/template/spec/schedulerName"
         + "|/spec/template/spec/securityContext"
         + "|/spec/template/spec/terminationGracePeriodSeconds"
         + "|/spec/template/spec/volumes/[0-9]+/configMap/defaultMode"

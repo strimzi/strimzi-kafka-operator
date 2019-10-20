@@ -45,6 +45,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private Affinity affinity;
     private List<Toleration> tolerations;
     private String priorityClassName;
+    private String schedulerName;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -125,6 +126,17 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setPriorityClassName(String priorityClassName) {
         this.priorityClassName = priorityClassName;
+    }
+
+    @Description("The name of the scheduler used to dispatch this `Pod`. " +
+            "If not specified, the default scheduler will be used.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getSchedulerName() {
+        return schedulerName;
+    }
+
+    public void setSchedulerName(String schedulerName) {
+        this.schedulerName = schedulerName;
     }
 
     @Override

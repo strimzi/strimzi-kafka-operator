@@ -139,6 +139,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
+                            .withSchedulerName(templatePodSchedulerName)
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)

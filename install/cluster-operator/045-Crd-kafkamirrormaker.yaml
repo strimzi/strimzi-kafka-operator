@@ -833,6 +833,8 @@ spec:
                                     type: string
                     priorityClassName:
                       type: string
+                    schedulerName:
+                      type: string
                     tolerations:
                       type: array
                       items:

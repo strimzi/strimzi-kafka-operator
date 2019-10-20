@@ -41,6 +41,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaExporterTest {
     private final String namespace = "test";
@@ -318,6 +319,51 @@ public class KafkaExporterTest {
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
         assertNull(ke.generateService());
+    }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewKafkaExporter()
+                        .withNewTemplate()
+                            .withNewDeployment()
+                                .withNewMetadata()
+                                    .withLabels(depLabels)
+                                    .withAnnotations(depAnots)
+                                .endMetadata()
+                            .endDeployment()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                                .withNewPriorityClassName("top-priority")
+                                .withNewSchedulerName("my-scheduler")
+                            .endPod()
+                        .endTemplate()
+                    .endKafkaExporter()
+                .endSpec()
+                .build();
+        KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        Deployment dep = ke.generateDeployment(true, null, null);
+        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
+        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
+        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
     }
 
     @AfterClass

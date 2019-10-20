@@ -349,6 +349,8 @@ public class KafkaClusterTest {
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
         assertEquals(expectedSelectorLabels(), ss.getSpec().getSelector().getMatchLabels());
 
+        assertEquals("default-scheduler", ss.getSpec().getTemplate().getSpec().getSchedulerName());
+
         List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
 
         assertEquals(2, containers.size());
@@ -1213,6 +1215,7 @@ public class KafkaClusterTest {
                                     .withAnnotations(podAnots)
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
+                                .withNewSchedulerName("my-scheduler")
                             .endPod()
                             .withNewBootstrapService()
                                 .withNewMetadata()
@@ -1271,6 +1274,7 @@ public class KafkaClusterTest {
         // Check Pods
         assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(ss.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+        assertEquals("my-scheduler", ss.getSpec().getTemplate().getSpec().getSchedulerName());
 
         // Check Service
         Service svc = kc.generateService();
