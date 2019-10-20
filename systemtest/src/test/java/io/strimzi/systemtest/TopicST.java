@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -163,6 +164,39 @@ public class TopicST extends AbstractST {
             StUtils.waitForKafkaTopicDeletion(currentTopic);
         }
     }
+
+    @Test
+    void testTopicModificationOfReplicationFactor() throws InterruptedException {
+        String topicName = "topic-with-changed-replication";
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        testMethodResources().topic(CLUSTER_NAME, topicName)
+                .editSpec()
+                    .withReplicas(2)
+                .endSpec()
+                .done();
+
+        StUtils.waitForKafkaTopicCreation(topicName);
+        Thread.sleep(1000);
+
+        replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
+
+        StUtils.waitForKafkaTopicReplicationFactorChange(topicName, 1);
+
+        String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))
+                .get(0).getMetadata().getName();
+        String topicOperatorLogs = kubeClient().logs(eoPodName, "topic-operator");
+
+        String exceptedMessage = "java.lang.Exception: Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
+
+        StUtils.waitUntilMessageIsInLogs(eoPodName, "topic-operator", exceptedMessage);
+
+        assertThat(topicOperatorLogs, containsString(exceptedMessage));
+
+        cmdKubeClient().deleteByName("kafkatopic", topicName);
+        StUtils.waitForKafkaTopicDeletion(topicName);
+      }
 
     boolean hasTopicInKafka(String topicName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
