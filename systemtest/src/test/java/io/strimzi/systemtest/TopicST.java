@@ -196,7 +196,7 @@ public class TopicST extends AbstractST {
 
         cmdKubeClient().deleteByName("kafkatopic", topicName);
         StUtils.waitForKafkaTopicDeletion(topicName);
-      }
+    }
 
     boolean hasTopicInKafka(String topicName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
