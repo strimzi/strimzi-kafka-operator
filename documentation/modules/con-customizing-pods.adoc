@@ -33,6 +33,10 @@ For more information about configuring SecurityContext, see {K8sConfigureSecurit
 |Configures the name of the Priority Class which will be used for given a Pod.
 For more information about Priority Classes, see {K8sPriorityClass}.
 
+|`schedulerName`
+| The name of the scheduler used to dispatch this `Pod`.
+If not specified, the default scheduler will be used.
+
 |===
 
 These fields are effective on each type of cluster (Kafka and Zookeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka Mirror Maker).
