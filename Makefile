@@ -80,23 +80,23 @@ helm_pkg:
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_versions:
-	documentation/snip-kafka-versions.sh > documentation/book/snip-kafka-versions.adoc
-	documentation/version-dependent-attrs.sh > documentation/book/common/version-dependent-attrs.adoc
-	documentation/snip-images.sh > documentation/book/snip-images.adoc
+	documentation/snip-kafka-versions.sh > documentation/modules/snip-kafka-versions.adoc
+	documentation/version-dependent-attrs.sh > documentation/shared/version-dependent-attrs.adoc
+	documentation/snip-images.sh > documentation/modules/snip-images.adoc
 
 docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html
-	$(CP) -vrL documentation/book/images documentation/html/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/books/evaluating/master.adoc -o documentation/html/quickstart.html
+	$(CP) -vrL documentation/shared/images documentation/html/images
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/using/master.adoc -o documentation/html/index.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/quickstart/master.adoc -o documentation/html/quickstart.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
 docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
-	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/books/evaluating/master.adoc -o documentation/htmlnoheader/quickstart.html
+	$(CP) -vrL documentation/shared/images documentation/htmlnoheader/images
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/using/master.adoc -o documentation/htmlnoheader/master.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/quickstart/master.adoc -o documentation/htmlnoheader/quickstart.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
 
 docu_check:

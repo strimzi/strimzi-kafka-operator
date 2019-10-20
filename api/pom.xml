@@ -188,7 +188,7 @@
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
                                 <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/</argument>
-                                <argument>appendix_crds.adoc</argument>
+                                <argument>modules/appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2I</argument>
@@ -197,7 +197,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                             </arguments>
-                            <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation${file.separator}book</workingDirectory>
+                            <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>
                     </execution>
                 </executions>

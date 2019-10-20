@@ -12,7 +12,8 @@ function grep_check {
   local description=$2
   local opts=${3:--i -E -r -n}
   local fatalness=${4:-1}
-  x=$($GREP $opts "$pattern" documentation/book/)
+  local excludes="--exclude-dir=logo --exclude-dir=images --exclude-dir=contributing --exclude-dir=html --exclude-dir=htmlnoheader"
+  x=$($GREP $opts $excludes "$pattern" documentation/)
   if [ -n "$x" ]; then
     echo "$description:"
     echo "$x"
@@ -58,7 +59,7 @@ if [ -n "$CHANGED_DERIVED" ] ; then
   echo "$CHANGED_DERIVED"
   echo "Run the following to add up-to-date resources:"
   echo "  make docu_versions \\"
-  echo "    && git add documentation/book/ \\"
+  echo "    && git add documentation/ \\"
   echo "    && git commit -s -m 'Update generated documentation'"
   exit 1
 fi
