@@ -673,16 +673,6 @@ public class StUtils {
         );
     }
 
-    public static void waitForKafkaTopicReplicationFactorChange(String topicName, int replicationFactor) throws InterruptedException {
-        LOGGER.info("Waiting for Kafka topic change {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-                        Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace())
-                                .withName(topicName).get().getSpec().getReplicas() == replicationFactor
-        );
-        Thread.sleep(1000);
-    }
-
     public static void waitForKafkaServiceLabelsChange(String serviceName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");

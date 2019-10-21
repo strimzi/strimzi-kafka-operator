@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -169,7 +168,7 @@ public class TopicST extends AbstractST {
     void testTopicModificationOfReplicationFactor() throws InterruptedException {
         String topicName = "topic-with-changed-replication";
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2, 1).done();
 
         testMethodResources().topic(CLUSTER_NAME, topicName)
                 .editSpec()
@@ -177,22 +176,19 @@ public class TopicST extends AbstractST {
                 .endSpec()
                 .done();
 
-        StUtils.waitForKafkaTopicCreation(topicName);
         Thread.sleep(1000);
 
         replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
 
-        StUtils.waitForKafkaTopicReplicationFactorChange(topicName, 1);
+        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
 
-        String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME))
-                .get(0).getMetadata().getName();
-        String topicOperatorLogs = kubeClient().logs(eoPodName, "topic-operator");
+        TestUtils.waitFor("Waiting for " + topicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
+                () ->  testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
+        );
 
-        String exceptedMessage = "java.lang.Exception: Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
+        String topicCRDMessage = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
-        StUtils.waitUntilMessageIsInLogs(eoPodName, "topic-operator", exceptedMessage);
-
-        assertThat(topicOperatorLogs, containsString(exceptedMessage));
+        assertThat(topicCRDMessage, containsString(exceptedMessage));
 
         cmdKubeClient().deleteByName("kafkatopic", topicName);
         StUtils.waitForKafkaTopicDeletion(topicName);
