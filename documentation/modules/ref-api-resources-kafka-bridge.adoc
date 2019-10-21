@@ -5,4 +5,4 @@
 [id='ref-api-resources-kafka-bridge-{context}']
 = Kafka Bridge API resources
 
-For the full list of REST API endpoints and descriptions, including example requests and responses, see the {LatestBridgeAPIDocs}[Kafka Bridge API reference^].
+For the full list of REST API endpoints and descriptions, including example requests and responses, see the link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^].
