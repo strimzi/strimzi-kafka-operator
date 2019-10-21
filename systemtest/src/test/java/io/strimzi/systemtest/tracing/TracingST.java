@@ -59,6 +59,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
     private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-target-connect";
+    private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
 
     private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
@@ -549,7 +550,6 @@ public class TracingST extends AbstractST {
         StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
-    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
@@ -694,6 +694,79 @@ public class TracingST extends AbstractST {
         StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
+    @Test
+    void testConnectS2IService() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 4, 1)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+
+        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+
+        final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
+
+        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect-s2i")
+                .endMetadata()
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                    .withNewTemplate()
+                        .withNewConnectContainer()
+                            .addNewEnv()
+                                .withName("JAEGER_SERVICE_NAME")
+                                .withValue(JAEGER_KAFKA_CONNECT_S2I_SERVICE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue("my-jaeger-agent")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue("const")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue("1")
+                            .endEnv()
+                        .endConnectContainer()
+                    .endTemplate()
+                .endSpec()
+                .done();
+
+        String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+
+        StUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
+
+        waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
+
+        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
+
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
+                JAEGER_KAFKA_CONNECT_S2I_SERVICE);
+
+        verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
+
+        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
+
+        verifyServicesHasSomeTraces(JAEGER_PRODUCER_SERVICE, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_CONNECT_S2I_SERVICE);
+
+        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
+        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+    }
+
     private void verifyServiceIsPresent(String serviceName) {
         given()
                 .when()
@@ -808,6 +881,5 @@ public class TracingST extends AbstractST {
 
         // 050-Deployment
         testClassResources().clusterOperator(NAMESPACE).done();
-
     }
 }
