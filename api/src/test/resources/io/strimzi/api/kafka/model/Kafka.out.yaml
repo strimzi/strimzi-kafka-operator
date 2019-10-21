@@ -13,8 +13,6 @@ spec:
       deleteClaim: false
     listeners:
       plain:
-        authentication:
-          type: "scram-sha-512"
         networkPolicyPeers:
         - namespaceSelector:
             matchLabels:
@@ -25,6 +23,8 @@ spec:
         - podSelector:
             matchLabels:
               app: "kafka-producer"
+        authentication:
+          type: "scram-sha-512"
       tls:
         networkPolicyPeers:
         - namespaceSelector:
