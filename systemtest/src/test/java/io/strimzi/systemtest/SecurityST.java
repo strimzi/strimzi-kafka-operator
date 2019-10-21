@@ -253,7 +253,6 @@ class SecurityST extends MessagingBaseST {
 
     @Test
     @OpenShiftOnly
-    @Tag(ACCEPTANCE)
     void testAutoRenewClusterCaCertsTriggeredByAnno() throws Exception {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME)),
@@ -267,7 +266,6 @@ class SecurityST extends MessagingBaseST {
 
     @Test
     @OpenShiftOnly
-    @Tag(ACCEPTANCE)
     void testAutoRenewClientsCaCertsTriggeredByAnno() throws Exception {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clientsCaCertificateSecretName(CLUSTER_NAME)),
