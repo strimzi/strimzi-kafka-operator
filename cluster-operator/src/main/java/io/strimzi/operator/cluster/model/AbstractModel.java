@@ -4,6 +4,20 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -55,30 +69,16 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public abstract class AbstractModel {
 
@@ -1147,6 +1147,7 @@ public abstract class AbstractModel {
 
     @SafeVarargs
     protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
+        
         Map<String, String> merged = new HashMap<>();
 
         if (internal != null) {
@@ -1155,20 +1156,27 @@ public abstract class AbstractModel {
 
         if (templates != null) {
             for (Map<String, String> template : templates) {
-                if (template != null) {
-                    Iterator<String> keys = template.keySet().iterator();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        if (key.contains(Labels.STRIMZI_DOMAIN)) {
-                            throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + key);
-                        }
-                        if (key.contains(Labels.KUBERNETES_DOMAIN)) {
-                            keys.remove();
-                        }
-                    }
 
-                    merged.putAll(template);
+                if (template == null) {
+                    continue;
                 }
+                List<String> invalidAnnotations = template
+                    .keySet()
+                    .stream()
+                    .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
+                    .collect(Collectors.toList());
+                if (invalidAnnotations.size() > 0) {
+                    throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + invalidAnnotations.toString());
+                }
+
+                // Remove Kubernetes Domain specific labels
+                Map<String, String> filteredTemplate = template
+                    .entrySet()
+                    .stream()
+                    .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                merged.putAll(filteredTemplate);
             }
         }
 

@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.common.model;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class LabelsTest {
     @Test
@@ -117,11 +117,16 @@ public class LabelsTest {
         userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
         userLabels.put("key2", "value2");
         userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
+        String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
+        userLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
+
         
         // user labels should appear as if Kubernetes Domain labels are not present
         Map expectedUserLabels = new HashMap<String, String>(2);
         expectedUserLabels.put("key1", "value1");
         expectedUserLabels.put("key2", "value2");
+        expectedUserLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
+
 
         Map<String, String> expected = new HashMap<String, String>();
         expected.putAll(start.toMap());
