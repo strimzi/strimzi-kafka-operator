@@ -9,6 +9,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -20,11 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag(REGRESSION)
-public class TopicST extends AbstractST {
+public class TopicST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
 
@@ -196,6 +198,42 @@ public class TopicST extends AbstractST {
         StUtils.waitForKafkaTopicDeletion(topicName);
     }
 
+    @Test
+    void testDeleteTopicEnableFalse() throws Exception {
+        String topicName = "my-deleted-topic";
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("delete.topic.enable", false)
+                .endKafka()
+            .endSpec()
+            .done();
+
+        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+
+        StUtils.waitForKafkaTopicCreation(topicName);
+        LOGGER.info("Topic {} was created", topicName);
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        int sent = sendMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+
+        String topicUid = StUtils.topicSnapshot(topicName);
+        LOGGER.info("Going to delete topic {}", topicName);
+        testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).delete();
+        LOGGER.info("Topic {} deleted", topicName);
+
+        StUtils.waitTopicHasRolled(topicName, topicUid);
+
+        LOGGER.info("Wait topic {} recreation", topicName);
+        StUtils.waitForKafkaTopicCreation(topicName);
+        LOGGER.info("Topic {} recreated", topicName);
+
+        int received = receiveMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+        assertThat(received, is(sent));
+    }
+
     boolean hasTopicInKafka(String topicName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
         return listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(topicName);
@@ -221,8 +259,13 @@ public class TopicST extends AbstractST {
     }
 
     @BeforeEach
-    void createTestResources()  {
+    void createTestResources() {
         createTestMethodResources();
+    }
+
+    @AfterEach
+    void deleteTestResources()  {
+        deleteTestMethodResources();
     }
 
     @BeforeAll

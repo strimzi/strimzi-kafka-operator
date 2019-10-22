@@ -96,14 +96,13 @@ public class VerifiableClient {
             executor = new Exec();
             int ret = executor.execute(null, prepareCommand(), timeout);
             synchronized (lock) {
-                LOGGER.info("{} {} Return code - {}", this.getClass().getName(), clientType,  ret);
+                LOGGER.info("{} {} Return code - {}", this.getClass().getSimpleName(), clientType,  ret);
                 if (logToOutput) {
-                    LOGGER.info("{} {} stdout : {}", this.getClass().getName(), clientType, executor.out());
-                    if (!executor.err().isEmpty()) {
-                        LOGGER.error("{} {} stderr : {}", this.getClass().getName(), clientType, executor.err());
-                    }
+                    LOGGER.debug("{} {} stdout : {}", this.getClass().getSimpleName(), clientType, executor.out());
                     if (ret == 0) {
                         parseToList(executor.out());
+                    } else if (!executor.err().isEmpty()) {
+                        LOGGER.error("{} {} stderr : {}", this.getClass().getSimpleName(), clientType, executor.err());
                     }
                 }
             }
