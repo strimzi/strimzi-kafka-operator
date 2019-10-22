@@ -1,0 +1,25 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+// assembly-deployment-configuration-kafka-connect.adoc
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
+// assembly-deployment-configuration-kafka-mirror-maker.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-logging-{context}']
+= Logging
+
+This section provides information on loggers and how to configure log levels.
+
+You can set the log levels by specifying the loggers and their levels directly (inline) or use a custom (external) config map.
+
+include::../modules/ref-loggers-{kind}.adoc[leveloffset=+1]
+
+include::../modules/proc-kafka-inline-logging.adoc[leveloffset=+1]
+
+include::../modules/proc-kafka-external-logging.adoc[leveloffset=+1]
+
+Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-deployment-configuration-kafka[]

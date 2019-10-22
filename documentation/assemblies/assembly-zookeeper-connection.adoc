@@ -1,0 +1,13 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='assembly-zookeeper-connection-{context}']
+
+= Zookeeper connection
+
+Zookeeper services are secured with encryption and authentication and are not intended to be used by external applications that are not part of {ProductName}.
+
+However, if you want to use Kafka CLI tools that require a connection to Zookeeper, such as the `kafka-topics` tool, you can use a terminal inside a Kafka container and connect to the local end of the TLS tunnel to Zookeeper by using `localhost:2181` as the Zookeeper address.
+
+include::../modules/proc-connecting-to-zookeeper.adoc[leveloffset=+1]

@@ -1,0 +1,31 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-configuring-kafka-broker-listeners-{context}']
+= Kafka broker listeners
+
+You can configure the listeners enabled in Kafka brokers.
+The following types of listener are supported:
+
+* Plain listener on port 9092 (without encryption)
+* TLS listener on port 9093 (with encryption)
+* External listener on port 9094 for access from outside of Kubernetes
+
+.{oauth}
+If you are using {oauth} token based authentication, you can configure the listeners to connect to your authorization server.
+For more information, see xref:assembly-oauth-str[Using {oauth} token based authentication].
+
+include::../modules/con-kafka-listeners.adoc[leveloffset=+1]
+
+include::../modules/proc-configuring-kafka-listeners.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-listener-authentication.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-external-listeners.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-listener-network-policies.adoc[leveloffset=+1]

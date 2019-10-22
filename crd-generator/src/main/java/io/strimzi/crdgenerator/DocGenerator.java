@@ -284,23 +284,7 @@ public class DocGenerator {
                 throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
             }
 
-            out.append("include::" + filename + "[leveloffset=+1]").append(NL);
-
-            /*InputStream is = cls.getClassLoader().getResourceAsStream(filename);
-
-            if (is == null) {
-                throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
-            }
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-            reader.lines().forEach(line -> {
-                try {
-                    out.append(line.subSequence(0, line.length())).append(NL);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });*/
+            out.append("include::../" + filename + "[leveloffset=+1]").append(NL);
         } else if (description != null) {
             out.append(getDescription(cls, description)).append(NL);
         }

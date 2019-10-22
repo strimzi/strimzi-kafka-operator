@@ -26,18 +26,19 @@ make crd_install
 make helm_install
 make docker_build
 
-if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
+if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
+  echo "ERROR: documentation/modules/appendix_crds.adoc does not exist!"
   exit 1
 fi
 
-CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
+CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
 if [ -n "$CHANGED_DERIVED" ] ; then
   echo "ERROR: Uncommitted changes in derived resources:"
   echo "$CHANGED_DERIVED"
   echo "Run the following to add up-to-date resources:"
   echo "  mvn clean verify -DskipTests -DskipITs \\"
   echo "    && make crd_install \\"
-  echo "    && git add install/ helm-charts/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles"
+  echo "    && git add install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles"
   echo "    && git commit -s -m 'Update derived resources'"
   exit 1
 fi

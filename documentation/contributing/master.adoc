@@ -1,4 +1,4 @@
-include::common/attributes.adoc[]
+include::shared/attributes.adoc[]
 
 = Strimzi documentation contributor guide
 
@@ -26,4 +26,4 @@ include::git-tips.adoc[leveloffset=+1]
 include::templates.adoc[leveloffset=+1]
 
 // Revision information
-include::common/revision-info.adoc[]
+include::shared/revision-info.adoc[]

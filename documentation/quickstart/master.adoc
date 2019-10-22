@@ -1,0 +1,11 @@
+include::shared/attributes.adoc[]
+
+:context: str
+
+= {ProductName} Quick Start
+
+// common intro
+include::assemblies/assembly-overview.adoc[leveloffset=+1]
+
+//evaluating
+include::assemblies/assembly-quickstart.adoc[leveloffset=+1]

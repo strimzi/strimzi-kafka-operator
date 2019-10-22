@@ -26,7 +26,7 @@ velocity.log
 # Generated docs
 documentation/html/**
 documentation/htmlnoheader/**
-documentation/book/build/**
+documentation/**/build/**
 master.html
 
 helm-charts/strimzi-kafka-operator-*.*.*.tgz
