@@ -449,6 +449,7 @@ public class KafkaConnectClusterTest {
                                 .withAnnotations(podAnots)
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
+                            .withNewSchedulerName("my-scheduler")
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -476,6 +477,7 @@ public class KafkaConnectClusterTest {
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
 
         // Check Service
         Service svc = kc.generateService();

@@ -181,6 +181,7 @@ public class EntityOperatorTest {
                                             .withAnnotations(podAnots)
                                         .endMetadata()
                                         .withNewPriorityClassName("top-priority")
+                                        .withNewSchedulerName("my-scheduler")
                                     .endPod()
                                 .endTemplate()
                             .endEntityOperator()
@@ -197,6 +198,7 @@ public class EntityOperatorTest {
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
     }
 
     @Test

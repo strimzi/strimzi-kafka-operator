@@ -289,6 +289,7 @@ public class ModelUtils {
             model.templateImagePullSecrets = pod.getImagePullSecrets();
             model.templateSecurityContext = pod.getSecurityContext();
             model.templatePodPriorityClassName = pod.getPriorityClassName();
+            model.templatePodSchedulerName = pod.getSchedulerName();
         }
     }
 

@@ -171,6 +171,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templatePodDisruptionBudgetAnnotations;
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
+    protected String templatePodSchedulerName;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -823,6 +824,7 @@ public abstract class AbstractModel {
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(securityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
+                            .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -870,6 +872,7 @@ public abstract class AbstractModel {
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
+                            .withSchedulerName(templatePodSchedulerName)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

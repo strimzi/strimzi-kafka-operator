@@ -1154,6 +1154,8 @@ spec:
                                         type: string
                         priorityClassName:
                           type: string
+                        schedulerName:
+                          type: string
                         tolerations:
                           type: array
                           items:
@@ -1983,6 +1985,8 @@ spec:
                                       topologyKey:
                                         type: string
                         priorityClassName:
+                          type: string
+                        schedulerName:
                           type: string
                         tolerations:
                           type: array
@@ -3107,6 +3111,8 @@ spec:
                                         type: string
                         priorityClassName:
                           type: string
+                        schedulerName:
+                          type: string
                         tolerations:
                           type: array
                           items:
@@ -3494,6 +3500,8 @@ spec:
                                       topologyKey:
                                         type: string
                         priorityClassName:
+                          type: string
+                        schedulerName:
                           type: string
                         tolerations:
                           type: array
