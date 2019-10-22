@@ -76,7 +76,8 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
         // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
         RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
-        ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*failed.*");
+        ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*failed.*"),
+        RECOVERY_STS_DELETION("java\\.lang\\.IllegalStateException: Can't wait for StatefulSet: recovery-cluster-(kafka|zookeeper) in namespace: recovery-cluster-test to scale. Resource is no longer available.");
 
         final String name;
 
