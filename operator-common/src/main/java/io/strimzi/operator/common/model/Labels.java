@@ -102,7 +102,6 @@ public class Labels {
             .collect(Collectors.toList());
         if (invalidLabels.size() > 0) {
             throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
-
         }
 
         // Remove Kubernetes Domain specific labels
