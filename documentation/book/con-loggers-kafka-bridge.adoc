@@ -24,10 +24,10 @@ The log level of all other operations is set to `INFO` by default.
 Loggers are formatted as follows:
 
 ```
-log4j.logger.http.openapi.operation.<operation-id>
+log4j.logger.http.openapi.operation.{operation-id}
 ```
 
-Where `<operation-id>` is the identifier of the specific operation.
+Where `{operation-id}` is the identifier of the specific operation.
 Following is the list of operations defined by the OpenAPI specification:
 
 * `createConsumer`

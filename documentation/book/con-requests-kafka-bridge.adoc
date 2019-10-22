@@ -13,7 +13,7 @@ API request and response bodies are always encoded as JSON.
 
 A `Content-Type` header must be submitted for all requests (apart from the exception described below). 
 
-Consumer operations (`/consumers` endpoints) and producer operations (`/topics` endpoints) require different `Content-Type` headers.  
+Consumer operations (`/consumers` endpoints) and producer operations (`/topics` endpoints) require different `Content-Type` headers.
 
 .Content-Type headers for consumer operations
 
@@ -24,7 +24,7 @@ Regardless of the link:#embedded-data-format[embedded data format], `POST` reque
 Content-Type: application/vnd.kafka.v2+json
 ----
 
-Do not send a `Content-Type` header if the `POST` request body is empty, or the request will fail.
+If the `POST` request body is empty, requests sent with a `Content-Type` header will fail because the OpenAPI Specification (OAS) will not validate the request.
 
 .Content-Type headers for producer operations
 
@@ -44,7 +44,7 @@ m¦Content-Type: application/vnd.kafka.binary.v2+json
 
 |===
 
-You set the embedded data format when creating a consumer using the `consumers/groupid` endpoint--for more information, see the next section.
+You set the embedded data format when creating a consumer using the `consumers/{groupid}` endpoint--for more information, see the next section.
 
 The `Content-Type` must not be set if the `POST` request has an empty body.
 An empty body can be used to create a consumer with the default values.
@@ -54,7 +54,7 @@ An empty body can be used to create a consumer with the default values.
 
 The embedded data format is the format of the Kafka messages that are transmitted, over HTTP, from a producer to a consumer using the Kafka Bridge. Two embedded data formats are supported: JSON or binary.
 
-When creating a consumer using the `/consumers/groupid` endpoint, the `POST` request body must specify an embedded data format of either JSON or binary. This is specified in the `format` field in the request body, for example:
+When creating a consumer using the `/consumers/{groupid}` endpoint, the `POST` request body must specify an embedded data format of either JSON or binary. This is specified in the `format` field in the request body, for example:
 
 [source,json,subs=attributes+]
 ----
@@ -71,7 +71,7 @@ If an embedded data format for the consumer is not specified, then a binary form
 
 The embedded data format specified when creating a consumer must match the data format of the Kafka messages it will consume. 
 
-If you choose to specify a binary embedded data format, subsequent producer requests must provide the binary data in the request body as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/_topicname_` endpoint, the `value` must be encoded in Base64:
+If you choose to specify a binary embedded data format, subsequent producer requests must provide the binary data in the request body as Base64-encoded strings. For example, when sending messages by making `POST` requests to the `/topics/{topicname}` endpoint, the `value` must be encoded in Base64:
 
 [source,json,subs=attributes+]
 ----
@@ -93,7 +93,7 @@ After creating a consumer, all subsequent GET requests must provide an `Accept` 
 
 [source,http,subs=+quotes]
 ----
-Accept: application/vnd.kafka._embedded-data-format_.v2+json
+Accept: application/vnd.kafka.{embedded-data-format}.v2+json
 ----
 
 The __embedded-data-format__ is either `json` or `binary`.
