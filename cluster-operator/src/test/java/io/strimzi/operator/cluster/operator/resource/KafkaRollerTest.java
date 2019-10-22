@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.operator.resource;
@@ -17,7 +17,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
