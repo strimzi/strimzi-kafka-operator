@@ -70,7 +70,8 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
         OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
         // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
-        RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*");
+        RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
+        ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*failed.*");
 
         final String name;
 

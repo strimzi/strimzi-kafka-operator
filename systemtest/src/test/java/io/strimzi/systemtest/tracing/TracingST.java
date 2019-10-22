@@ -560,9 +560,17 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-                .editSpec()
-                    .editKafka()
+        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).editSpec().editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
