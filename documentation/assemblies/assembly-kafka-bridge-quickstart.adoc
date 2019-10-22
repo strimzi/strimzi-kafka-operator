@@ -32,7 +32,7 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 .Prerequisites for the quickstart
 
 * xref:downloads-str[{ProductName} is installed].
-* Cluster administrator access to a local or remote Kubernetes cluster (or you are a designated xref:assembly-getting-started-strimzi-admin-str[Strizi Administrator]). 
+* Cluster administrator access to a local or remote Kubernetes cluster (or you are a designated xref:assembly-getting-started-strimzi-admin-str[Strimzi Administrator]). 
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The xref:deploying-the-topic-operator-using-the-cluster-operator-str[Entity Operator is deployed] and running as part of the Kafka cluster.  
 
