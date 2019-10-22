@@ -959,6 +959,23 @@ public class StUtils {
         LOGGER.info("Waiting till pod {} will have {} containers", podNamePrefix, numberOfContainers);
     }
 
+    public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
+        LOGGER.info("Waiting till pod {} is in CrashLoopBackOff state", podName);
+        TestUtils.waitFor("Waiting till pod {} is in CrashLoopBackOff state",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().getPod(podName).getStatus().getContainerStatuses().get(0)
+                    .getState().getWaiting().getReason().equals("CrashLoopBackOff"));
+        LOGGER.info("Pod {} is in CrashLoopBackOff state", podName);
+    }
+
+    public static void waitUntilPodIsPresent(String podNamePrefix) {
+        LOGGER.info("Waiting till pod {} is present but not ready", podNamePrefix);
+        TestUtils.waitFor("Waiting till pod {} is in CrashLoopBackOff state",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0) != null);
+        LOGGER.info("Pod {} is present but not ready", podNamePrefix);
+    }
+
     public static void waitUntilPVCLabelsChange(Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Waiting till PVC labels will change {}", newLabels.toString());
         TestUtils.waitFor("Waiting till PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,

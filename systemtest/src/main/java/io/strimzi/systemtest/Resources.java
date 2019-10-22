@@ -422,7 +422,7 @@ public class Resources extends AbstractResources {
         return kafkaConnect(defaultKafkaConnect(name, kafkaConnectReplicas).build());
     }
 
-    private KafkaConnectBuilder defaultKafkaConnect(String name, int kafkaConnectReplicas) {
+    public KafkaConnectBuilder defaultKafkaConnect(String name, int kafkaConnectReplicas) {
         return new KafkaConnectBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
@@ -529,6 +529,15 @@ public class Resources extends AbstractResources {
         });
     }
 
+    public KafkaConnect kafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
+        kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kafkaConnect);
+        return kafkaConnect;
+    }
+
+    public void deleteKafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
+        kafkaConnect().inNamespace(client().getNamespace()).delete(kafkaConnect);
+    }
+
     /**
      * Method to create Kafka Connect S2I using OpenShift client. This method can only be used if you run system tests on the OpenShift platform because of adapting fabric8 client to ({@link OpenShiftClient}) on waiting stage.
      * @param kafkaConnectS2IReplicas the number of replicas
@@ -577,7 +586,7 @@ public class Resources extends AbstractResources {
         return kafkaMirrorMaker(defaultMirrorMaker(name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
-    private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+    public KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return new KafkaMirrorMakerBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
@@ -617,6 +626,15 @@ public class Resources extends AbstractResources {
             );
             return waitFor(deleteLater(k));
         });
+    }
+
+    public KafkaMirrorMaker kafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
+        kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(kafkaMirrorMaker);
+        return kafkaMirrorMaker;
+    }
+
+    public void deleteMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
+        kafkaMirrorMaker().inNamespace(client().getNamespace()).delete(kafkaMirrorMaker);
     }
 
     /**
