@@ -11,7 +11,7 @@ API request and response bodies are always encoded as JSON.
 
 == Content Type headers
 
-A `Content-Type` header must be submitted for all requests (apart from the exception described below). 
+A `Content-Type` header must be submitted with all requests. The only exception is for consumer operations where the `POST` request body is empty. In this case, requests sent with a `Content-Type` header will fail because the OpenAPI Specification (OAS) does not validate the request.
 
 Consumer operations (`/consumers` endpoints) and producer operations (`/topics` endpoints) require different `Content-Type` headers.
 
@@ -23,8 +23,6 @@ Regardless of the link:#embedded-data-format[embedded data format], `POST` reque
 ----
 Content-Type: application/vnd.kafka.v2+json
 ----
-
-If the `POST` request body is empty, requests sent with a `Content-Type` header will fail because the OpenAPI Specification (OAS) will not validate the request.
 
 .Content-Type headers for producer operations
 
@@ -96,7 +94,7 @@ After creating a consumer, all subsequent GET requests must provide an `Accept` 
 Accept: application/vnd.kafka.{embedded-data-format}.v2+json
 ----
 
-The __embedded-data-format__ is either `json` or `binary`.
+The {embedded-data-format} is either `json` or `binary`.
 
 For example, when retrieving records for a subscribed consumer using an embedded data format of JSON, include this Accept header:
 
