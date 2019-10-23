@@ -91,10 +91,10 @@ After creating a consumer, all subsequent GET requests must provide an `Accept` 
 
 [source,http,subs=+quotes]
 ----
-Accept: application/vnd.kafka.{embedded-data-format}.v2+json
+Accept: application/vnd.kafka.<embedded-data-format>.v2+json
 ----
 
-The {embedded-data-format} is either `json` or `binary`.
+The <embedded-data-format> is either `json` or `binary`.
 
 For example, when retrieving records for a subscribed consumer using an embedded data format of JSON, include this Accept header:
 
