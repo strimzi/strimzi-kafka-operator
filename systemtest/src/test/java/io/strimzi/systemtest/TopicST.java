@@ -177,7 +177,7 @@ public class TopicST extends AbstractST {
                 .done();
 
         TestUtils.waitFor("Waiting to " + topicName + " to be ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getStatus().equals("True")
+            () ->  testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
         );
 
         replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
