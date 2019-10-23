@@ -568,6 +568,15 @@ spec:
                     maxUnavailable:
                       type: integer
                       minimum: 0
+            tracing:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jaeger
+              required:
+              - type
           required:
           - bootstrapServers
         status:
