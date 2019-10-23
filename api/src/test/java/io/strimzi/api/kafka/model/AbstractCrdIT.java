@@ -9,16 +9,16 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import org.junit.Assume;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public abstract class AbstractCrdIT extends BaseITST {
 
     protected void assumeKube1_11Plus() {
         VersionInfo version = new DefaultKubernetesClient().getVersion();
-        Assume.assumeTrue("1".equals(version.getMajor())
+        assumeTrue("1".equals(version.getMajor())
                 && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 11);
     }
 
@@ -41,13 +41,13 @@ public abstract class AbstractCrdIT extends BaseITST {
         RuntimeException thrown2 = null;
         try {
             try {
-                kubeCluster().cmdClient().applyContent(ssStr);
+                cmdKubeClient().applyContent(ssStr);
             } catch (RuntimeException t) {
                 thrown = t;
             }
         } finally {
             try {
-                kubeCluster().cmdClient().deleteContent(ssStr);
+                cmdKubeClient().deleteContent(ssStr);
             } catch (RuntimeException t) {
                 thrown2 = t;
             }
@@ -62,7 +62,7 @@ public abstract class AbstractCrdIT extends BaseITST {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setupTests() {
         kubeCluster().before();
     }

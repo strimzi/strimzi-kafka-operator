@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -47,7 +47,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("spec.bootstrapServers in body is required"));
+            assertTrue(e.getMessage().contains("spec.bootstrapServers in body is required"));
         }
     }
 
