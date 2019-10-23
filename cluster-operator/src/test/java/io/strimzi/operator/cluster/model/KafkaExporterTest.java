@@ -329,6 +329,9 @@ public class KafkaExporterTest {
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -348,6 +351,12 @@ public class KafkaExporterTest {
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
                             .endPod()
+                            .withNewService()
+                                .withNewMetadata()
+                                    .withLabels(svcLabels)
+                                    .withAnnotations(svcAnots)
+                                .endMetadata()
+                            .endService()
                         .endTemplate()
                     .endKafkaExporter()
                 .endSpec()
@@ -364,6 +373,11 @@ public class KafkaExporterTest {
         assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
         assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
         assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
+
+        // Check Service
+        Service svc = ke.generateService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
     }
 
     @AfterClass
