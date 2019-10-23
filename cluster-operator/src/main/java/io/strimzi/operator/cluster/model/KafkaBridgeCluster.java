@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Labels;
 
@@ -79,6 +80,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN = "KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN";
     protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN = "KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth-certs/";
+    protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG = "KAFKA_BRIDGE_PRODUCER_CONFIG";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
@@ -105,6 +107,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
     private List<ContainerEnvVar> templateContainerEnvVars;
+    private Tracing tracing;
 
     /**
      * Constructor
@@ -136,6 +139,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 kafkaBridge.getMetadata().getName(), Labels.fromResource(kafkaBridge).withKind(kafkaBridge.getKind()));
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
+        kafkaBridgeCluster.tracing = spec.getTracing();
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
@@ -360,6 +364,10 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
+
+        if (tracing != null) {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
+        }
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
