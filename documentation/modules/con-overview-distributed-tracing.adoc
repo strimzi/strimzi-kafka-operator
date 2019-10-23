@@ -19,7 +19,7 @@ The OpenTracing specification defines APIs that developers can use to instrument
 
 When instrumented, applications generate __traces__ for individual transactions. Traces are composed of __spans__, which define specific units of work.
 
-To simplify the instrumentation of Kafka Producer, Consumer, and Streams API applications, {ProductName} includes the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library.
+To simplify the instrumentation of the Kafka Bridge and Kafka Producer, Consumer, and Streams API applications, {ProductName} includes the https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library.
 
 NOTE: The OpenTracing project is merging with the OpenCensus project. The new, combined project is named {OpenTelemetryHome}. OpenTelemetry will provide compatibility for applications that are instrumented using the OpenTracing APIs.
 
@@ -36,9 +36,10 @@ image:image_con-overview-distributed-tracing.png[Simple Jaeger query]
 In {ProductName}, distributed tracing is supported in:
 
 * Kafka Connect (including Kafka Connect with Source2Image support)
-* Mirror Maker 
+* Mirror Maker
+* The {ProductName} Kafka Bridge
 
-You enable and configure distributed tracing for these components by setting template configuration properties in the relevant custom resource (for example, `KafkaConnect`).
+You enable and configure distributed tracing for these components by setting template configuration properties in the relevant custom resource (for example, `KafkaConnect` and `KafkaBridge`).
 
 To enable distributed tracing in Kafka Producer, Consumer, and Streams API applications, you can instrument application code using the OpenTracing Apache Kafka Client Instrumentation library.
 When instrumented, these clients generate traces for messages (for example, when producing messages or writing offsets to the log).
