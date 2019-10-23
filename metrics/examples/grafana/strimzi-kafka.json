@@ -472,7 +472,7 @@
       "colorValue": true,
       "colors": [
         "#508642",
-        "rgba(237, 129, 40, 0.89)",
+        "#ef843c",
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
@@ -542,7 +542,7 @@
       "valueMaps": [
         {
           "op": "=",
-          "text": "N/A",
+          "text": "0",
           "value": "null"
         }
       ],
@@ -554,7 +554,7 @@
       "colorValue": true,
       "colors": [
         "#508642",
-        "rgba(237, 129, 40, 0.89)",
+        "#ef843c",
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
@@ -617,7 +617,7 @@
           "refId": "A"
         }
       ],
-      "thresholds": "1,5",
+      "thresholds": "1,1",
       "title": "Partitions under mininimum ISR",
       "type": "singlestat",
       "valueFontSize": "200%",
