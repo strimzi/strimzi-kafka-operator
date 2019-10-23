@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthB
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
-import io.strimzi.api.kafka.model.tracing.JaegerTracingBuilder;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
