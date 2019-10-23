@@ -211,7 +211,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         operation().inNamespace(NAMESPACE).create(topicResource);
 
         waitForEvent(context, topicResource,
-                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
+                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels \\{.*\\}: " +
                         "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
     }
