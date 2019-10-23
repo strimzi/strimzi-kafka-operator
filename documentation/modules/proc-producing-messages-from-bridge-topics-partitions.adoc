@@ -20,7 +20,7 @@ kind: KafkaTopic
 metadata:
   name: bridge-quickstart-topic
   labels:
-    strimzi.io/cluster: {kafka-cluster-name} <1>
+    strimzi.io/cluster: <kafka-cluster-name> <1>
 spec:
   partitions: 3 <2>
   replicas: 1
