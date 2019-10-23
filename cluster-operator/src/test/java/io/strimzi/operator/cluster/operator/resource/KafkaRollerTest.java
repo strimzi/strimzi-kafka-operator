@@ -48,6 +48,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -140,7 +141,7 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.FatalException.class, "Error while waiting for restarted pod c-kafka-1 to become ready",
-                asList(0, 1));
+                asList(1));
         // On the next reconciliation only pod 2 (controller) would need rolling, and we expect it to fail in the same way
         kafkaRoller = rollerWithControllers(sts, podOps, 2);
         clearRestarted();
@@ -161,12 +162,12 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.FatalException.class, "Error while waiting for restarted pod c-kafka-3 to become ready",
-                asList(0, 1, 3));
+                asList(3));
         // On the next reconciliation only pods 2 (controller) and 4 would need rolling, and we expect it to fail in the same way
         kafkaRoller = rollerWithControllers(sts, podOps, 2);
         clearRestarted();
         doFailingRollingRestart(testContext, kafkaRoller,
-                asList(2, 4),
+                asList(0, 1, 2, 4),
                 KafkaRoller.FatalException.class, "Error while waiting for non-restarted pod c-kafka-3 to become ready",
                 emptyList());
     }
@@ -380,8 +381,6 @@ public class KafkaRollerTest {
             );
         async.await();
         AsyncResult<Void> ar = arReference.get();
-        testContext.assertEquals(expectedRestart, restarted(),
-                "The restarted pods were not as expected");
         if (ar.succeeded()) {
             testContext.fail(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
         }
@@ -389,7 +388,8 @@ public class KafkaRollerTest {
                 ar.cause().getClass().getName() + " is not a subclass of " + exception.getName());
         testContext.assertEquals(message, ar.cause().getMessage(),
                 "The exception message was not as expected");
-
+        testContext.assertEquals(expectedRestart, restarted(),
+                "The restarted pods were not as expected");
         assertNoUnclosedAdminClient(testContext, kafkaRoller);
     }
 
@@ -412,11 +412,23 @@ public class KafkaRollerTest {
                     .endMetadata()
                 .build()
         );
-        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenAnswer(
-            invocationOnMock ->  {
-                String podName = invocationOnMock.getArgument(1);
-                return readiness.apply(podName2Number(podName));
-            });
+        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
+            String podName = invocationOnMock.getArgument(1);
+            return readiness.apply(podName2Number(podName));
+        });
+        when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock ->  {
+            String podName = invocationOnMock.getArgument(1);
+            Future<Void> ready = readiness.apply(podName2Number(podName));
+            if (ready.succeeded()) {
+                return true;
+            } else {
+                if (ready.cause() instanceof TimeoutException) {
+                    return false;
+                } else {
+                    throw ready.cause();
+                }
+            }
+        });
         return podOps;
     }
 

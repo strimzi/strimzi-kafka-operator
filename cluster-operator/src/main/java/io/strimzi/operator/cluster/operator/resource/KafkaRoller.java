@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
@@ -72,12 +73,6 @@ import java.util.function.Supplier;
  *     <li>even pods which aren't candidates for rolling are checked for readiness which partly avoids
  *     successive reconciliations each restarting a pod which never becomes ready</li>
  * </ul>
- */
-/* TODO Problems with this include:
-    1. We only do the non-rollable readiness check in order.
-       This means we can rolling even if some pods are not ready.
-       We should possibly check all pods for readiness up front.
-    2. There's no way to opt out of the availability check. It would be useful if there was (annotation?)
  */
 public class KafkaRoller {
 
@@ -152,7 +147,12 @@ public class KafkaRoller {
     Future<Void> rollingRestart(Predicate<Pod> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         List<Future> futures = new ArrayList<>(numPods);
+        List<Integer> podIds = new ArrayList<>(numPods);
         for (int podId = 0; podId < numPods; podId++) {
+            podIds.add(podOperations.isReady(namespace, podName(podId)) ? podIds.size() : 0, podId);
+        }
+        log.debug("Initial order for rolling restart {}", podIds);
+        for (Integer podId: podIds) {
             futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
         }
         Future<Void> result = Future.future();
@@ -241,7 +241,12 @@ public class KafkaRoller {
      */
     private void restartIfNecessary(int podId, boolean finalAttempt)
             throws InterruptedException, ForceableException, UnforceableException, FatalException {
-        Pod pod = podOperations.get(namespace, KafkaCluster.kafkaPodName(cluster, podId));
+        Pod pod;
+        try {
+            pod = podOperations.get(namespace, KafkaCluster.kafkaPodName(cluster, podId));
+        } catch (KubernetesClientException e) {
+            throw new UnforceableException("Error getting pod " + podName(podId), e);
+        }
 
         if (podNeedsRestart.test(pod)) {
             log.debug("Pod {} needs to be restarted", podId);
