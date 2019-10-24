@@ -42,7 +42,6 @@ import java.util.function.Predicate;
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     private static final int NO_GENERATION = -1;
-    private static final String NO_UID = "NULL";
     private static final int INIT_GENERATION = 0;
 
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
@@ -102,14 +101,18 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return CompositeFuture.join(clusterCaKeySecretFuture, coKeySecretFuture).compose(compositeFuture -> {
             Secret clusterCaKeySecret = compositeFuture.resultAt(0);
             if (clusterCaKeySecret == null) {
-                return Future.failedFuture(ZookeeperLeaderFinder.missingSecretFuture(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
+                return Future.failedFuture(missingSecretFuture(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
             }
             Secret coKeySecret = compositeFuture.resultAt(1);
             if (coKeySecret == null) {
-                return Future.failedFuture(ZookeeperLeaderFinder.missingSecretFuture(namespace, ClusterOperator.secretName(cluster)));
+                return Future.failedFuture(missingSecretFuture(namespace, ClusterOperator.secretName(cluster)));
             }
             return maybeRollingUpdate(ss, podNeedsRestart, clusterCaKeySecret, coKeySecret);
         });
+    }
+
+    static RuntimeException missingSecretFuture(String namespace, String secretName) {
+        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
     }
 
     public abstract Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
@@ -165,40 +168,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @return a Future which completes when the Pod has been recreated
      */
     private Future<Void> restartPod(StatefulSet ss, Pod pod) {
-        long pollingIntervalMs = 1_000;
-        long timeoutMs = operationTimeoutMs;
-        String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        String podName = pod.getMetadata().getName();
-        Future<Void> deleteFinished = Future.future();
-        log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
-
-        // Determine generation of deleted pod
-        String deleted = getPodUid(pod);
-
-        // Delete the pod
-        log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
-        Future<Void> podReconcileFuture =
-            podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                    // predicate - changed generation means pod has been updated
-                    String newUid = getPodUid(podOperations.get(namespace, podName));
-                    boolean done = !deleted.equals(newUid);
-                    if (done) {
-                        log.debug("Rolling pod {} finished", podName);
-                    }
-                    return done;
-                });
-                return del;
-            });
-
-        podReconcileFuture.setHandler(deleteResult -> {
-            if (deleteResult.succeeded()) {
-                log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, name, podName);
-            }
-            deleteFinished.handle(deleteResult);
-        });
-        return deleteFinished;
+        return podOperations.restart("Rolling update of " + ss.getMetadata().getNamespace() + "/" + ss.getMetadata().getName(),
+                pod, operationTimeoutMs);
     }
 
     @Override
@@ -373,13 +344,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
-    }
-
-    private static String getPodUid(Pod resource) {
-        if (resource == null || resource.getMetadata() == null) {
-            return NO_UID;
-        }
-        return resource.getMetadata().getUid();
     }
 
     /**

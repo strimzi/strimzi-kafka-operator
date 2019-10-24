@@ -77,7 +77,6 @@ import java.util.function.Supplier;
 public class KafkaRoller {
 
     private static final Logger log = LogManager.getLogger(KafkaRoller.class);
-    private static final String NO_UID = "NULL";
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -113,13 +112,6 @@ public class KafkaRoller {
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
-    }
-
-    private static String getPodUid(Pod resource) {
-        if (resource == null || resource.getMetadata() == null) {
-            return NO_UID;
-        }
-        return resource.getMetadata().getUid();
     }
 
     /**
@@ -390,38 +382,7 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected Future<Void> restart(Pod pod) {
-        long pollingIntervalMs = 1_000;
-        String stsName = KafkaCluster.kafkaClusterName(cluster);
-        String podName = pod.getMetadata().getName();
-        Future<Void> deleteFinished = Future.future();
-        log.info("Rolling update of {}/{}: Rolling pod {}", namespace, stsName, podName);
-
-        // Determine generation of deleted pod
-        String deleted = getPodUid(pod);
-
-        // Delete the pod
-        log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, stsName, podName);
-        Future<Void> podReconcileFuture =
-            podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                Future<Void> del = podOperations.waitFor(namespace, podName, pollingIntervalMs, operationTimeoutMs, (ignore1, ignore2) -> {
-                    // predicate - changed generation means pod has been updated
-                    String newUid = getPodUid(podOperations.get(namespace, podName));
-                    boolean done = !deleted.equals(newUid);
-                    if (done) {
-                        log.debug("Rolling pod {} finished", podName);
-                    }
-                    return done;
-                });
-                return del;
-            });
-
-        podReconcileFuture.setHandler(deleteResult -> {
-            if (deleteResult.succeeded()) {
-                log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, stsName, podName);
-            }
-            deleteFinished.handle(deleteResult);
-        });
-        return deleteFinished;
+        return podOperations.restart("Rolling update of " + namespace + "/" + KafkaCluster.kafkaClusterName(cluster), pod, operationTimeoutMs);
     }
 
     /**

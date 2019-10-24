@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -149,6 +149,7 @@ public class StatefulSetOperatorTest
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
+        when(podOperator.restart(anyString(), any(), anyLong())).thenReturn(Future.succeededFuture());
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -187,7 +188,6 @@ public class StatefulSetOperatorTest
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         AtomicInteger call = new AtomicInteger();
@@ -198,6 +198,7 @@ public class StatefulSetOperatorTest
                 return null;
             }
         });
+        when(podOperator.restart(anyString(), any(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -242,6 +243,7 @@ public class StatefulSetOperatorTest
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
+        when(podOperator.restart(anyString(), any(), anyLong())).thenReturn(Future.succeededFuture());
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -283,8 +285,8 @@ public class StatefulSetOperatorTest
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.failedFuture("reconcile failed"));
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
+        when(podOperator.restart(anyString(), any(), anyLong())).thenReturn(Future.failedFuture("reconcile failed"));
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
