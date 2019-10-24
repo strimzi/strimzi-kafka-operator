@@ -199,10 +199,8 @@ public class KafkaRoller {
                         podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                 ctx.future.fail(e);
                 singleExecutor.shutdownNow();
-                podToContext.forEachValue(100, f -> {
-                    if (!f.future.isComplete()) {
-                        f.future.fail(e);
-                    }
+                podToContext.forEachValue(Integer.MAX_VALUE, f -> {
+                    f.future.tryFail(e);
                 });
             } catch (Exception e) {
                 if (ctx.backOff.done()) {
