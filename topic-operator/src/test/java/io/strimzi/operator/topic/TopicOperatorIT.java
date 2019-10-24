@@ -211,7 +211,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         operation().inNamespace(NAMESPACE).create(topicResource);
 
         waitForEvent(context, topicResource,
-                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
+                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels \\{.*\\}: " +
                         "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
     }
@@ -289,7 +289,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
         assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
         assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
-        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals(5, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
         assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
 
         // edit kafka topic
@@ -311,7 +311,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         topicResource = TopicSerialization.toTopicResource(topic3, labels);
         createKafkaTopicResource(context, topicResource);
         assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        assertEquals(3, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals(6, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
         assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
         assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
     }

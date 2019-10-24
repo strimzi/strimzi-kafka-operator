@@ -62,6 +62,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -534,12 +535,12 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             return filtered.stream().anyMatch(event ->
-                    Objects.equals(expectedMessage, event.getMessage()) &&
-                            Objects.equals(expectedType.name, event.getType()) &&
-                            event.getInvolvedObject() != null &&
-                            event.getLastTimestamp() != null &&
-                            Objects.equals("KafkaTopic", event.getInvolvedObject().getKind()) &&
-                            Objects.equals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName()));
+                    Pattern.matches(expectedMessage, event.getMessage()) &&
+                        Objects.equals(expectedType.name, event.getType()) &&
+                        event.getInvolvedObject() != null &&
+                        event.getLastTimestamp() != null &&
+                        Objects.equals("KafkaTopic", event.getInvolvedObject().getKind()) &&
+                        Objects.equals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName()));
         }, timeout, "Expected an error event");
     }
 

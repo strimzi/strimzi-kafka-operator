@@ -132,10 +132,16 @@ class TopicSerialization {
     public static KafkaTopic toTopicResource(Topic topic, Labels labels) {
         ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
+        Map<String, String> lbls = new HashMap<>();
+        lbls.putAll(labels.labels());
+        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL,
+            io.strimzi.operator.common.model.Labels.KUBERNETES_NAME);
+        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL,
+            topic.getTopicName().toString());
+        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL,
+            TopicOperator.KAFKA_TOPIC_OPERATOR_NAME);
         if (om != null) {
             om.setName(resourceName.toString());
-            Map<String, String> lbls = new HashMap<>();
-            lbls.putAll(labels.labels());
             if (topic.getMetadata().getLabels() != null)
                 lbls.putAll(topic.getMetadata().getLabels());
             om.setLabels(lbls);
@@ -144,7 +150,7 @@ class TopicSerialization {
         } else {
             om = new ObjectMetaBuilder()
                     .withName(resourceName.toString())
-                    .withLabels(labels.labels())
+                    .withLabels(lbls)
                     .build();
         }
 

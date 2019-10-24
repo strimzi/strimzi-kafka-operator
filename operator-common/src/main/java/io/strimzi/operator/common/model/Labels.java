@@ -4,15 +4,17 @@
  */
 package io.strimzi.operator.common.model;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableMap;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
  * An immutable set of labels
@@ -88,16 +90,28 @@ public class Labels {
      * @param userLabels The labels
      */
     public static Labels userLabels(Map<String, String> userLabels) {
-        if (userLabels != null) {
-            for (String key : userLabels.keySet()) {
-                if (key.startsWith(STRIMZI_DOMAIN)) {
-                    throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
-                }
-            }
-            return new Labels(userLabels);
+        
+        if (userLabels == null) {
+            return EMPTY;
         }
 
-        return EMPTY;
+        List<String> invalidLabels = userLabels
+            .keySet()
+            .stream()
+            .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
+            .collect(Collectors.toList());
+        if (invalidLabels.size() > 0) {
+            throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
+        }
+
+        // Remove Kubernetes Domain specific labels
+        Map<String, String> filteredLabels = userLabels
+            .entrySet()
+            .stream()
+            .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return new Labels(filteredLabels);
     }
 
     /**

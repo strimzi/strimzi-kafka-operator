@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.common.model;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class LabelsTest {
     @Test
@@ -105,6 +105,35 @@ public class LabelsTest {
 
         Labels nonNullLabels = start.withUserLabels(userLabels);
         assertEquals(expected, nonNullLabels.toMap());
+    }
+
+    @Test
+    public void testWithUserLabelsFiltersKubernetesDomainLabels()   {
+        Labels start = Labels.forCluster("my-cluster");
+
+        Map userLabels = new HashMap<String, String>(5);
+        userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
+        userLabels.put("key1", "value1");
+        userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
+        userLabels.put("key2", "value2");
+        userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
+        String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
+        userLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
+
+        
+        // user labels should appear as if Kubernetes Domain labels are not present
+        Map expectedUserLabels = new HashMap<String, String>(2);
+        expectedUserLabels.put("key1", "value1");
+        expectedUserLabels.put("key2", "value2");
+        expectedUserLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
+
+
+        Map<String, String> expected = new HashMap<String, String>();
+        expected.putAll(start.toMap());
+        expected.putAll(expectedUserLabels);
+
+        Labels labels = start.withUserLabels(userLabels);
+        assertEquals(expected, labels.toMap());
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -157,6 +157,7 @@ public class TopicOperatorMockTest {
                 .withNewMetadata()
                 .withName("my-topic")
                 .addToLabels("strimzi.io/kind", "topic")
+                .addToLabels(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL, io.strimzi.operator.common.model.Labels.KUBERNETES_NAME)
                 .endMetadata()
                 .withNewSpec()
                 .withPartitions(1)

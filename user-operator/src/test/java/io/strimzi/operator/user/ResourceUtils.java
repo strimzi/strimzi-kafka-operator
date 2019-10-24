@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Base64;
@@ -99,7 +100,12 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(NAME)
                     .withNamespace(NAMESPACE)
-                    .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
+                    .withLabels(Labels.userLabels(LABELS)
+                        .withKubernetesName()
+                        .withKubernetesInstance(NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .toMap())
                 .endMetadata()
                 .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
