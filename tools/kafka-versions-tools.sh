@@ -38,6 +38,70 @@ function get_kafka_versions {
 
 }
 
+function get_kafka_source_urls {
+
+    eval kafka_source_urls="$(yq read $VERSIONS_FILE '*.url' -j | tr '[],' '() ')"
+
+}
+
+function get_kafka_source_files {
+
+    eval kafka_source_files="$(yq read $VERSIONS_FILE '*.file' -j | tr '[],' '() ')"
+
+}
+
+function get_url_file_map {
+    # This function loops over the yaml objects for each version, rather the just using a single line 
+    # wild card, because the url and file entries are not guaranteed to always be present and 
+    # therefore the length of their wild card arrays may not match the lengths of versions array.
+
+    declare -Ag version_binary_urls
+    declare -Ag version_binary_files
+
+    finished=0
+    counter=0
+    while [ $finished -lt 1 ] 
+    do
+        version="$(yq read $VERSIONS_FILE [${counter}].version)"
+
+        if [ "$version" = "null" ]
+        then
+            finished=1
+        else
+            source_count=0
+
+            url="$(yq read $VERSIONS_FILE [${counter}].url)"
+            file="$(yq read $VERSIONS_FILE [${counter}].file)"
+            
+            if [ "$url" != null ]
+            then
+                version_binary_urls["${version}"]="$url"
+                source_count=$((source_count+1))
+            fi
+
+            if [ "$file" != null ]
+            then
+                version_binary_files["${version}"]="$file"
+                source_count=$((source_count+1))
+            fi
+
+            if [ $source_count == 0 ]
+            then 
+                echo -e "No binary source specified for Kafka $version. Either 'url' or 'file' fields must be specified in the kafka-versions.yaml file"
+                exit 1
+            fi
+
+            counter=$((counter+1))
+
+        fi
+    done
+
+    unset finished
+    unset counter
+    unset version
+
+}
+
 function get_kafka_checksums {
 
     eval checksums="$(yq read $VERSIONS_FILE '*.checksum' -j | tr '[],' '() ')"
@@ -62,10 +126,12 @@ function get_kafka_formats {
 
 }
 
-# Parses the Kafka versions file and creates two associative arrays:
-# "version_checksums": Maps from version string to sha512 checksum
-# "version_libs": Maps from version string to third party library version string
-function get_checksum_lib_maps {
+# Parses the Kafka versions file and creates three associative arrays:
+# "version_source_urls": Maps from version string to url from which the kafka source 
+# tar will be downloaded.
+# "version_checksums": Maps from version string to sha512 checksum.
+# "version_libs": Maps from version string to third party library version string.
+function get_version_maps {
 
     get_kafka_versions
     get_kafka_checksums
@@ -79,5 +145,7 @@ function get_checksum_lib_maps {
         version_checksums[${versions[$i]}]=${checksums[$i]}
         version_libs[${versions[$i]}]=${libs[$i]}
     done
+    
+    get_url_file_map
     
 }
