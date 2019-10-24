@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.bases.IMetrics;
+import io.strimzi.systemtest.utils.MetricsUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
-class SecurityST extends MessagingBaseST implements IMetrics {
+class SecurityST extends MessagingBaseST {
 
     public static final String NAMESPACE = "security-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
@@ -700,7 +700,7 @@ class SecurityST extends MessagingBaseST implements IMetrics {
         assertThrows(AssertionError.class, () ->  availabilityTest(50, CLUSTER_NAME, false, topic1, kafkaUser, kafkaClientsNewPodName));
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
-        Map<String, String> kafkaExporterMetricsData = collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         kafkaExporterMetricsData.forEach((key, value) -> {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());

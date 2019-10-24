@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
-import io.strimzi.systemtest.bases.IMetrics;
+import io.strimzi.systemtest.utils.MetricsUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-public class MetricsST extends MessagingBaseST implements IMetrics {
+public class MetricsST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
@@ -48,70 +48,70 @@ public class MetricsST extends MessagingBaseST implements IMetrics {
     @Test
     void testKafkaBrokersCount() {
         Pattern brokerOnlineCount = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(brokerOnlineCount, kafkaMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(brokerOnlineCount, kafkaMetricsData);
         assertThat("Broker count doesn't match expected value", values.size(), is(3));
     }
 
     @Test
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(topicPartitions, kafkaMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
         assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(257.0));
     }
 
     @Test
     void testKafkaTopicUnderReplicatedPartitions() {
         Pattern underReplicatedPartitions = Pattern.compile("kafka_server_replicamanager_underreplicatedpartitions ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(underReplicatedPartitions, kafkaMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(underReplicatedPartitions, kafkaMetricsData);
         assertThat("Topic under-replicated partitions doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 0));
     }
 
     @Test
     void testKafkaActiveControllers() {
         Pattern activeControllers = Pattern.compile("kafka_controller_kafkacontroller_activecontrollercount ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(activeControllers, kafkaMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(activeControllers, kafkaMetricsData);
         assertThat("Kafka active controllers count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
     @Test
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(quorumSize, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(quorumSize, zookeeperMetricsData);
         assertThat("Zookeeper quorum size doesn't match expected value", values.stream().mapToDouble(i -> i).max(), is(OptionalDouble.of(3.0)));
     }
 
     @Test
     void testZookeeperAliveConnections() {
         Pattern numAliveConnections = Pattern.compile("zookeeper_numaliveconnections ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
         assertThat("Zookeeper alive connections count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
     @Test
     void testZookeeperWatchersCount() {
         Pattern watchersCount = Pattern.compile("zookeeper_inmemorydatatree_watchcount ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(watchersCount, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(watchersCount, zookeeperMetricsData);
         assertThat("Zookeeper watchers count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
     @Test
     void testKafkaConnectRequests() {
         Pattern connectRequests = Pattern.compile("kafka_connect_connect_metrics_connect_1_request_total ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(connectRequests, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectRequests, kafkaConnectMetricsData);
         assertThat("Kafka Connect requests count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
     @Test
     void testKafkaConnectResponse() {
         Pattern connectResponse = Pattern.compile("kafka_connect_connect_metrics_connect_1_response_total ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(connectResponse, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaConnectMetricsData);
         assertThat("Kafka Connect response count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
     @Test
     void testKafkaConnectIoNetwork() {
         Pattern connectIoNetwork = Pattern.compile("kafka_connect_connect_metrics_connect_1_network_io_total ([\\d.][^\\n]+)");
-        ArrayList<Double> values = collectSpecificMetric(connectIoNetwork, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectIoNetwork, kafkaConnectMetricsData);
         assertThat("Kafka Connect IO network count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
@@ -122,7 +122,7 @@ public class MetricsST extends MessagingBaseST implements IMetrics {
 
         availabilityTest(5000, CLUSTER_NAME, TEST_TOPIC_NAME);
 
-        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         kafkaExporterMetricsData.forEach((key, value) -> {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
@@ -191,9 +191,9 @@ public class MetricsST extends MessagingBaseST implements IMetrics {
         testClassResources().topic(CLUSTER_NAME, "test-topic", 7, 2).done();
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
-        kafkaMetricsData = collectKafkaPodsMetrics(CLUSTER_NAME);
-        zookeeperMetricsData = collectZookeeperPodsMetrics(CLUSTER_NAME);
-        kafkaConnectMetricsData = collectKafkaConnectPodsMetrics(CLUSTER_NAME);
-        kafkaExporterMetricsData = collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);
+        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(CLUSTER_NAME);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
     }
 }

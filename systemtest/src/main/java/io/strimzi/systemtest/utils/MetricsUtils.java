@@ -2,7 +2,7 @@
  * Copyright 2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.bases;
+package io.strimzi.systemtest.utils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -23,17 +23,17 @@ import java.util.regex.Pattern;
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.BaseITST.kubeClient;
 
-public interface IMetrics {
+public class MetricsUtils {
 
-    Logger LOGGER = LogManager.getLogger(IMetrics.class);
-    Object LOCK = new Object();
+    private static final Logger LOGGER = LogManager.getLogger(MetricsUtils.class);
+    private static final Object LOCK = new Object();
 
     /**
      * Collect metrics from specific pod
      * @param podName pod name
      * @return collected metrics
      */
-    default String collectMetrics(String podName, String metricsPath) throws InterruptedException, ExecutionException, IOException {
+    public static String collectMetrics(String podName, String metricsPath) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("curl");
         command.add(kubeClient().getPod(podName).getStatus().getPodIP() + ":9404" + metricsPath);
@@ -52,22 +52,22 @@ public interface IMetrics {
         return exec.out();
     }
 
-    default HashMap<String, String> collectKafkaPodsMetrics(String clusterName) {
+    public static HashMap<String, String> collectKafkaPodsMetrics(String clusterName) {
         LabelSelector kafkaSelector = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName));
         return collectMetricsFromPods(kafkaSelector);
     }
 
-    default HashMap<String, String> collectZookeeperPodsMetrics(String clusterName) {
+    public static HashMap<String, String> collectZookeeperPodsMetrics(String clusterName) {
         LabelSelector zookeeperSelector = kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName));
         return collectMetricsFromPods(zookeeperSelector);
     }
 
-    default HashMap<String, String> collectKafkaConnectPodsMetrics(String clusterName) {
+    public static HashMap<String, String> collectKafkaConnectPodsMetrics(String clusterName) {
         LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaConnectResources.deploymentName(clusterName));
         return collectMetricsFromPods(connectSelector);
     }
 
-    default HashMap<String, String> collectKafkaExporterPodsMetrics(String clusterName) {
+    public static HashMap<String, String> collectKafkaExporterPodsMetrics(String clusterName) {
         LabelSelector connectSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(clusterName));
         return collectMetricsFromPods(connectSelector, "/metrics");
     }
@@ -79,7 +79,7 @@ public interface IMetrics {
      * @param data all metrics data
      * @return list of parsed values
      */
-    default ArrayList<Double> collectSpecificMetric(Pattern pattern, HashMap<String, String> data) {
+    public static ArrayList<Double> collectSpecificMetric(Pattern pattern, HashMap<String, String> data) {
         ArrayList<Double> values = new ArrayList<>();
 
         data.forEach((k, v) -> {
@@ -96,7 +96,7 @@ public interface IMetrics {
      * @param labelSelector pod selector
      * @return map with metrics {podName, metrics}
      */
-    default HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector) {
+    public static HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector) {
         return collectMetricsFromPods(labelSelector, "");
     }
 
@@ -106,7 +106,7 @@ public interface IMetrics {
      * @param metricsPath additional path where metrics are available
      * @return map with metrics {podName, metrics}
      */
-    default HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector, String metricsPath) {
+    public static HashMap<String, String> collectMetricsFromPods(LabelSelector labelSelector, String metricsPath) {
         HashMap<String, String> map = new HashMap<>();
         kubeClient().listPods(labelSelector).forEach(p -> {
             try {
