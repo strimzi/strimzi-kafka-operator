@@ -70,7 +70,7 @@ function build {
         expected_sha=${version_checksums[$kafka_version]}
         lib_directory=${version_libs[$kafka_version]}
 
-        binary_file_dir="./$kafka_image/tmp"
+        binary_file_dir="$kafka_image/tmp"
 
         # If there is a file specified for this version of Kafka use that instead of the specified URL
         if [ ${version_binary_files[$kafka_version]} ]
@@ -110,9 +110,10 @@ function build {
         kafka_checksum="$expected_sha $binary_file_path"
         kafka_checksum_filepath="$binary_file_path.sha512"
         echo "$kafka_checksum" > "$kafka_checksum_filepath"
+        echo "Checking binary file: $binary_file_path"
         sha512sum --check "$kafka_checksum_filepath"
 
-        relative_binary_file_path="./tmp/$binary_file_name"
+        relative_binary_file_path="tmp/$binary_file_name"
 
         for image in $kafka_images
         do
