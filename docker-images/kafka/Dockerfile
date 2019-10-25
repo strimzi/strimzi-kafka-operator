@@ -1,6 +1,6 @@
 FROM strimzi/base:latest
 
-ARG KAFKA_SOURCE_FILENAME
+ARG KAFKA_DIST_FILENAME
 ARG KAFKA_SHA512
 ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
@@ -22,8 +22,8 @@ ENV STRIMZI_VERSION=${strimzi_version}
 COPY $KAFKA_SOURCE_FILENAME .
 
 RUN mkdir $KAFKA_HOME \
-    && tar xvfz $KAFKA_SOURCE_FILENAME -C $KAFKA_HOME --strip-components=1 \
-    && rm -f $KAFKA_SOURCE_FILENAME*
+    && tar xvfz $KAFKA_DIST_FILENAME -C $KAFKA_HOME --strip-components=1 \
+    && rm -f $KAFKA_DIST_FILENAME*
 
 COPY ./scripts/ $KAFKA_HOME
 

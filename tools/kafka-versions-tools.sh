@@ -68,25 +68,20 @@ function get_url_file_map {
         then
             finished=1
         else
-            source_count=0
 
             url="$(yq read $VERSIONS_FILE [${counter}].url)"
             file="$(yq read $VERSIONS_FILE [${counter}].file)"
             
-            if [ "$url" != null ]
-            then
-                version_binary_urls["${version}"]="$url"
-                source_count=$((source_count+1))
-            fi
-
+            # If the file field is present this takes precedence over any url entry.            
             if [ "$file" != null ]
             then
                 version_binary_files["${version}"]="$file"
                 source_count=$((source_count+1))
-            fi
-
-            if [ $source_count == 0 ]
-            then 
+            elif [ "$url" != null ]
+            then
+                version_binary_urls["${version}"]="$url"
+                source_count=$((source_count+1))
+            else
                 echo -e "No binary source specified for Kafka $version. Either 'url' or 'file' fields must be specified in the kafka-versions.yaml file"
                 exit 1
             fi
