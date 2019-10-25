@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -253,6 +254,7 @@ class MockBuilder<T extends HasMetadata,
             }
         });
         when(resource.createOrReplaceWithNew()).thenReturn(doneable(resource::createOrReplace));
+        when(resource.withGracePeriod(anyLong())).thenReturn(resource);
         mockCascading(resource);
         mockPatch(resourceName, resource);
         mockDelete(resourceName, resource);

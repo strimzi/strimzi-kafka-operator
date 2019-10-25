@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -331,7 +332,11 @@ public class StatefulSetOperatorTest
                 .endSpec()
                 .build();
 
+        Deletable mockDeletable = mock(Deletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(sts1);
@@ -371,15 +376,18 @@ public class StatefulSetOperatorTest
         op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
-            verify(mockERPD).delete();
+            verify(mockDeletable).delete();
             async.complete();
         });
     }
 
     @Test
     public void testCascadingDeleteAsync(TestContext context)   {
+        Deletable mockDeletable = mock(Deletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.delete()).thenReturn(Boolean.TRUE);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         ArgumentCaptor<Boolean> cascadingCaptor = ArgumentCaptor.forClass(Boolean.class);
@@ -418,8 +426,11 @@ public class StatefulSetOperatorTest
 
     @Test
     public void testNonCascadingDeleteAsync(TestContext context)   {
+        Deletable mockDeletable = mock(Deletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.delete()).thenReturn(Boolean.TRUE);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         ArgumentCaptor<Boolean> cascadingCaptor = ArgumentCaptor.forClass(Boolean.class);
@@ -495,8 +506,11 @@ public class StatefulSetOperatorTest
 
     @Test
     public void testDeleteAsyncFailing(TestContext context)   {
+        Deletable mockDeletable = mock(Deletable.class);
+        when(mockDeletable.delete()).thenThrow(new MockitoException("Something failed"));
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.delete()).thenThrow(new MockitoException("Something failed"));
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         when(mockRSR.cascading(anyBoolean())).thenReturn(mockERPD);
