@@ -51,6 +51,7 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(20).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();
+    long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
