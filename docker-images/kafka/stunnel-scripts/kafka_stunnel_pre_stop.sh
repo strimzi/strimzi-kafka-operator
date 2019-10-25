@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
-GRACE_PERIOD=$1
-TIMER="0"
-
-while [ $TIMER -lt $GRACE_PERIOD ]; do
-  TIMER=$((TIMER + 1))
+while true; do
   CONNS=$(netstat -ant | grep -w 127.0.0.1:2181 | grep ESTABLISHED | wc -l)
+  LISTENERS=$(netstat -ant | grep -w :9091 | grep LISTEN | wc -l)
 
-  if [ "$CONNS" -eq "0" ]; then
+  if [ "$CONNS" -eq "0" ] && [ "$LISTENERS" -eq "0" ]; then
     break
   fi
 
