@@ -9,6 +9,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -144,5 +146,65 @@ public class LabelsTest {
         userLabelsWithStrimzi.put("strimzi.io/something", "value3");
 
         Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
+    }
+
+    @Test
+    public void testFromResourceWithoutLabels()   {
+        Kafka kafka = new KafkaBuilder()
+                    .withNewMetadata()
+                        .withName("my-kafka")
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewZookeeper()
+                            .withReplicas(3)
+                            .withNewEphemeralStorage()
+                            .endEphemeralStorage()
+                        .endZookeeper()
+                        .withNewKafka()
+                            .withReplicas(3)
+                            .withNewEphemeralStorage()
+                            .endEphemeralStorage()
+                        .endKafka()
+                    .endSpec()
+                .build();
+
+        Labels l = Labels.fromResource(kafka);
+        assertEquals(Labels.EMPTY, l);
+    }
+
+    @Test
+    public void testFromResourceWithLabels()   {
+        Map<String, String> userLabels = new HashMap<String, String>(5);
+        userLabels.put(Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME);
+        userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
+        userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
+        userLabels.put("key1", "value1");
+        userLabels.put("key2", "value2");
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-kafka")
+                    .withLabels(userLabels)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        Map<String, String> expectedLabels = new HashMap<String, String>(2);
+        expectedLabels.put("key1", "value1");
+        expectedLabels.put("key2", "value2");
+
+        Labels l = Labels.fromResource(kafka);
+        assertEquals(expectedLabels, l.toMap());
     }
 }

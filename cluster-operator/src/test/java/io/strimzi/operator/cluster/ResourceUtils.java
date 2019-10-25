@@ -336,7 +336,7 @@ public class ResourceUtils {
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
         meta.setName(clusterCmName);
-        meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
+        meta.setLabels(Labels.userLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap());
         result.setMetadata(meta);
 
         KafkaSpec spec = new KafkaSpec();
@@ -419,7 +419,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                         "my-user-label", "cromulent"))
                 .build())
                 .withNewSpec().endSpec()
@@ -434,7 +434,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec().endSpec()
@@ -449,7 +449,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -465,7 +465,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec().endSpec()
@@ -477,7 +477,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -495,7 +495,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()

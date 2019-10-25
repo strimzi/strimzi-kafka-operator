@@ -81,7 +81,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractModel {
 
-    protected static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
+    public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
