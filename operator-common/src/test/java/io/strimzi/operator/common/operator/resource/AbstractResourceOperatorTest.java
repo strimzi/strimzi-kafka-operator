@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -24,6 +25,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -226,7 +228,10 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
     @Test
     public void deleteWhenResourceExistsStillDeletes(TestContext context) {
+        Deletable mockDeletable = mock(Deletable.class);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -247,14 +252,17 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockERPD).delete();
+            verify(mockDeletable).delete();
             async.complete();
         });
     }
 
     @Test
     public void successfulDeletion(TestContext context) {
+        Deletable mockDeletable = mock(Deletable.class);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -276,7 +284,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             assertTrue(ar.succeeded());
-            verify(mockERPD).delete();
+            verify(mockDeletable).delete();
             async.complete();
         });
     }
@@ -284,8 +292,11 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void deletionThrows(TestContext context) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
+        Deletable mockDeletable = mock(Deletable.class);
+        when(mockDeletable.delete()).thenThrow(ex);
+
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.delete()).thenThrow(ex);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
