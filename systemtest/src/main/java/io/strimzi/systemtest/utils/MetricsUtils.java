@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, Strimzi authors.
+ * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.systemtest.utils;
@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,12 +36,9 @@ public class MetricsUtils {
      * @return collected metrics
      */
     public static String collectMetrics(String podName, String metricsPath) throws InterruptedException, ExecutionException, IOException {
-        ArrayList<String> command = new ArrayList<>();
-        command.add("curl");
-        command.add(kubeClient().getPod(podName).getStatus().getPodIP() + ":9404" + metricsPath);
-        ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", kubeClient().getNamespace(), "--"));
-        executableCommand.addAll(command);
+        List<String> executableCommand = Arrays.asList(cmdKubeClient().toString(), "exec", podName,
+                "-n", kubeClient().getNamespace(),
+                "--", "curl", kubeClient().getPod(podName).getStatus().getPodIP() + ":9404" + metricsPath);
 
         Exec exec = new Exec();
         // 20 seconds should be enough for collect data from the pod
@@ -82,12 +81,13 @@ public class MetricsUtils {
     public static ArrayList<Double> collectSpecificMetric(Pattern pattern, HashMap<String, String> data) {
         ArrayList<Double> values = new ArrayList<>();
 
-        data.forEach((k, v) -> {
-            Matcher t = pattern.matcher(v);
+        for (Map.Entry<String, String> entry : data.entrySet()) {
+            Matcher t = pattern.matcher(entry.getValue());
             if (t.find()) {
                 values.add(Double.parseDouble(t.group(1)));
             }
-        });
+        }
+
         return values;
     }
 
@@ -112,7 +112,7 @@ public class MetricsUtils {
             try {
                 map.put(p.getMetadata().getName(), collectMetrics(p.getMetadata().getName(), metricsPath));
             } catch (InterruptedException | ExecutionException | IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         });
 
