@@ -1454,8 +1454,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             }
                             future.complete();
                         } else {
-                            log.warn("{}: No address found for Service {}", reconciliation, serviceName);
-                            future.fail("No address found for Service " + serviceName);
+                            if (kafkaCluster.isExposedWithNodePort()) {
+                                log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
+                                future.fail("Node port was not assigned for Service " + serviceName + ".");
+                            } else {
+                                log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
+                                future.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                            }
                         }
                     });
                 }, res -> {
@@ -1543,8 +1548,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 routeFuture.complete();
                             } else {
-                                log.warn("{}: No address found for Service {}", reconciliation, serviceName);
-                                routeFuture.fail("No address found for Service " + serviceName);
+                                if (kafkaCluster.isExposedWithNodePort()) {
+                                    log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
+                                    routeFuture.fail("Node port was not assigned for Service " + serviceName + ".");
+                                } else {
+                                    log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
+                                    routeFuture.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                                }
                             }
                         });
 
@@ -1603,8 +1613,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             future.complete();
                         } else {
-                            log.warn("{}: No address found for Route {}", reconciliation, routeName);
-                            future.fail("No address found for Route " + routeName);
+                            log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
+                            future.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
                         }
                     });
                 }, res -> {
@@ -1664,8 +1674,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 routeFuture.complete();
                             } else {
-                                log.warn("{}: No address found for Route {}", reconciliation, routeName);
-                                routeFuture.fail("No address found for Route " + routeName);
+                                log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
+                                future.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
                             }
                         });
 
