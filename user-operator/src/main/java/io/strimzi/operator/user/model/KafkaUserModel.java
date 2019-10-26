@@ -57,7 +57,7 @@ public class KafkaUserModel {
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
-    public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-kafka-user-operator";
+    public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-user-operator";
 
     // Owner Reference information
     private String ownerApiVersion;

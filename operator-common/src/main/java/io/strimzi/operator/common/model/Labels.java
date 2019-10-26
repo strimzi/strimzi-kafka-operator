@@ -32,6 +32,10 @@ public class Labels {
      *   <li>Kafka</li>
      *   <li>KafkaConnect</li>
      *   <li>KafkaConnectS2I</li>
+     *   <li>KafkaMirrorMaker</li>
+     *   <li>KafkaBridge</li>
+     *   <li>KafkaUser</li>
+     *   <li>KafkaTopic</li>
      * </ul>
      */
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
@@ -90,26 +94,26 @@ public class Labels {
      * @param userLabels The labels
      */
     public static Labels userLabels(Map<String, String> userLabels) {
-        
+
         if (userLabels == null) {
             return EMPTY;
         }
 
         List<String> invalidLabels = userLabels
-            .keySet()
-            .stream()
-            .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
-            .collect(Collectors.toList());
+                .keySet()
+                .stream()
+                .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN) && !key.startsWith(Labels.STRIMZI_CLUSTER_LABEL))
+                .collect(Collectors.toList());
         if (invalidLabels.size() > 0) {
             throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
         }
 
         // Remove Kubernetes Domain specific labels
         Map<String, String> filteredLabels = userLabels
-            .entrySet()
-            .stream()
-            .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .entrySet()
+                .stream()
+                .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new Labels(filteredLabels);
     }
@@ -131,7 +135,7 @@ public class Labels {
      * @return the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        return new Labels(resource.getMetadata().getLabels() != null ? resource.getMetadata().getLabels() : emptyMap());
+        return resource.getMetadata().getLabels() != null ? userLabels(resource.getMetadata().getLabels()) : EMPTY;
     }
 
     /**
