@@ -100,6 +100,7 @@
 :DockerTopicOperator: strimzi/operator:{DockerTag}
 :DockerUserOperator: strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaBridge: strimzi/kafka-bridge:{DockerTag}
 :DockerImageUser: 1001
 
 // API Versions current
