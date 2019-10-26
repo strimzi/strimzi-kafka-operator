@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Deletable;
+import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
@@ -21,6 +23,7 @@ import io.vertx.ext.unit.TestContext;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -70,7 +73,11 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(cascade)).thenReturn(mockResource);
+
+        Deletable mockDeletable = mock(Deletable.class);
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        when(mockResource.cascading(cascade)).thenReturn(mockERPD);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -91,7 +98,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
             }
             assertTrue(ar.succeeded());
             verify(mockResource).get();
-            verify(mockResource).delete();
+            verify(mockDeletable).delete();
             verify(mockResource).create(any());
             verify(mockResource, never()).patch(any());
             verify(mockResource, never()).createNew();

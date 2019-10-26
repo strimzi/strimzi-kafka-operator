@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -234,6 +235,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenReturn(true);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher<T> watcher = invocation.getArgument(0);
@@ -269,6 +271,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenReturn(true);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher<T> watcher = invocation.getArgument(0);
@@ -305,6 +308,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenReturn(Boolean.TRUE);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher<T> watcher = invocation.getArgument(0);
@@ -343,6 +347,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenThrow(ex);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher<T> watcher = invocation.getArgument(0);
@@ -409,6 +414,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenReturn(Boolean.FALSE);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher<T> watcher = invocation.getArgument(0);
