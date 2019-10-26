@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
@@ -247,15 +248,16 @@ public class StUtils {
 
     /**
      * Method to wait when DeploymentConfig will be recreated after rolling update
-     * @param name DeploymentConfig name
-     * @param expectedPods Expected number of pods
+     * @param clusterName Kafka Connect S2I cluster name
      * @param snapshot Snapshot of pods for DeploymentConfig before the rolling update
      * @return The snapshot of the DeploymentConfig after rolling update with Uid for every pod
      */
-    public static Map<String, String> waitTillDepConfigHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        TestUtils.waitFor("Deployment roll of " + name,
+    public static Map<String, String> waitTillDepConfigHasRolled(String clusterName, Map<String, String> snapshot) {
+        LOGGER.info("Waiting for Kafka Connect S2I cluster {} rolling update", clusterName);
+        String name = KafkaConnectS2IResources.deploymentName(clusterName);
+        TestUtils.waitFor("DeploymentConfig roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depConfigHasRolled(name, snapshot));
-        StUtils.waitForDeploymentConfigReady(name, expectedPods);
+        StUtils.waitForConnectS2IReady(clusterName);
         return depConfigSnapshot(name);
     }
 
@@ -482,22 +484,14 @@ public class StUtils {
     }
 
     /**
-     * Wait until the given DeploymentConfig is ready.
-     * @param name The name of the DeploymentConfig.
+     * Wait until the given Kafka Connect S2I cluster is ready.
+     * @param name The name of the Kafka Connect S2I cluster.
      */
-    public static void waitForDeploymentConfigReady(String name, int expectedPods) {
-        LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config "  + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getDeploymentConfigStatus(name));
-        LOGGER.info("Deployment Config {} is ready", name);
-        LabelSelector deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(name)).build();
-        waitForPodsReady(deploymentConfigSelector, expectedPods, true);
-        String clusterOperatorPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
-        String log = "BuildConfig " + name + " in namespace " + kubeClient().getNamespace() + " has been created";
-
-        TestUtils.waitFor("build config creation " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().logs(clusterOperatorPodName).contains(log));
-
+    public static void waitForConnectS2IReady(String name) {
+        LOGGER.info("Waiting for Kafka Connect S2I {}", name);
+        TestUtils.waitFor("Test " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals("Ready"));
+        LOGGER.info("Kafka Connect S2I {} is ready", name);
     }
 
     /**

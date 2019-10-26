@@ -58,7 +58,7 @@ class ConnectS2IST extends AbstractST {
         // Start a new image build using the plugins directory
         cmdKubeClient().exec("oc", "start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath(), "-n", NAMESPACE);
         // Wait for rolling update connect pods
-        StUtils.waitTillDepConfigHasRolled(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), 1, connectSnapshot);
+        StUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
@@ -177,7 +177,7 @@ class ConnectS2IST extends AbstractST {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
-        StUtils.waitTillDepConfigHasRolled(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), 1, connectSnapshot);
+        StUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
 
         deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName))).build();
         connectPodName = kubeClient().listPods(deploymentConfigSelector).get(0).getMetadata().getName();
@@ -205,6 +205,6 @@ class ConnectS2IST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Duration.ofMinutes(15).toMillis()).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Duration.ofMinutes(5).toMillis()).done();
     }
 }
