@@ -263,8 +263,7 @@ public class EntityOperator extends AbstractModel {
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
-                            .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh",
-                                    String.valueOf(templateTerminationGracePeriodSeconds))
+                            .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();

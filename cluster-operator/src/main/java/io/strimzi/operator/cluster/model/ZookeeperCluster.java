@@ -512,8 +512,7 @@ public class ZookeeperCluster extends AbstractModel {
                                 createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"),
                                 createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP")))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop()
-                        .withNewExec().withCommand("/opt/stunnel/zookeeper_stunnel_pre_stop.sh",
-                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .withNewExec().withCommand("/opt/stunnel/zookeeper_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
