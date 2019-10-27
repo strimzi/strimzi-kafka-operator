@@ -259,6 +259,27 @@ public class StUtils {
         return depConfigSnapshot(name);
     }
 
+    /**
+     * Method which return UID for specific topic
+     * @param topicName topic name
+     * @return topic UID
+     */
+    public static String topicSnapshot(String topicName) {
+        return Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get().getMetadata().getUid();
+    }
+
+    /**
+     * Method which wait until topic has rolled form one generation to another.
+     * @param topicName topic name
+     * @param topicUid topic UID
+     * @return topic new UID
+     */
+    public static String waitTopicHasRolled(String topicName, String topicUid) {
+        TestUtils.waitFor("Topic " + topicName + " has rolled", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> !topicUid.equals(topicSnapshot(topicName)));
+        return topicSnapshot(topicName);
+    }
+
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public static File downloadAndUnzip(String url) {
         File dir = null;
@@ -653,7 +674,7 @@ public class StUtils {
     public static void waitForKafkaTopicCreation(String topicName) {
         LOGGER.info("Waiting for Kafka topic creation {}", topicName);
         TestUtils.waitFor("Waits for Kafka topic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-                Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() != null
+            Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
         );
     }
 

@@ -116,6 +116,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Producer finished correctly: {}", hasPassed);
 
         sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
+        LOGGER.info("Producer produced {} messages", sent);
 
         return sent;
     }
@@ -157,6 +158,7 @@ public class MessagingBaseST extends AbstractST {
         LOGGER.info("Consumer finished correctly: {}", hasPassed);
 
         received = getReceivedMessagesCount(consumer.getMessages().toString());
+        LOGGER.info("Consumer consumed {} messages", received);
 
         return received;
     }

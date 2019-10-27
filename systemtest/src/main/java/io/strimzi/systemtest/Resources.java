@@ -811,7 +811,7 @@ public class Resources extends AbstractResources {
             .endSpec().build());
     }
 
-    private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+    public KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
         LOGGER.info("Creating topic: {} with {} partitions and {} replicas", topicName, partitions, replicas);
         return new KafkaTopicBuilder()
                 .withMetadata(

@@ -9,6 +9,7 @@ import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
+@DisabledIfEnvironmentVariable(named = "TRAVIS", matches = "true")
 public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
