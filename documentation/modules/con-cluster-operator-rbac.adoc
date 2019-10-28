@@ -29,7 +29,7 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
   - When the rack feature is not used no binding is created.
 * The Zookeeper pods use a `ServiceAccount` called `_cluster-name_-zookeeper`
 * The Entity Operator pod uses a `ServiceAccount` called `_cluster-name_-entity-operator`
-    - The Topic Operator and User Operator produce Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`.
+    - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`.
 * The pods for `KafkaConnect` and `KafkaConnectS2I` resources use a `ServiceAccount` called `_cluster-name_-cluster-connect`
 * The pods for `KafkaMirrorMaker` use a `ServiceAccount` called `_cluster-name_-mirror-maker`
 * The pods for `KafkaBridge` use a `ServiceAccount` called `_cluster-name_-bridge`
