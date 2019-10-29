@@ -33,6 +33,7 @@ public class MetricsUtils {
     /**
      * Collect metrics from specific pod
      * @param podName pod name
+     * @param metricsPath enpoint where metrics should be available
      * @return collected metrics
      */
     public static String collectMetrics(String podName, String metricsPath) throws InterruptedException, ExecutionException, IOException {
