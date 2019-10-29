@@ -22,6 +22,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -756,7 +758,7 @@ public abstract class Ca {
             } finally {
                 delete(keyFile);
             }
-        } catch (Exception e) {
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
@@ -793,7 +795,7 @@ public abstract class Ca {
             } finally {
                 delete(keyFile);
             }
-        } catch (Exception e) {
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
