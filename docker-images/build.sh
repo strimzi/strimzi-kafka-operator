@@ -57,28 +57,15 @@ function build_kafka_images {
         expected_sha=${version_checksums[$kafka_version]}
         lib_directory=${version_libs[$kafka_version]}
 
-        # If there is a file specified for this version of Kafka use that instead of the specified URL
-        if [ ${version_binary_files[$kafka_version]} ]
+        if [ ${version_binary_urls[$kafka_version]} ]
         then
-
-            copy_or_dowload="copy"
-
-            custom_binary_file_path=${version_binary_files[$kafka_version]}
-            binary_file_name=$(basename "$custom_binary_file_path")
-            binary_file_path="$binary_file_dir/$binary_file_name"
-            expected_kafka_checksum="$expected_sha  $binary_file_path"
-            echo "Kafka binary file field was specified, using $custom_binary_file_path instead of URL"
-
-        elif [ ${version_binary_urls[$kafka_version]} ]
-        then
-
-            copy_or_dowload="download"
 
             binary_file_url=${version_binary_urls[$kafka_version]}
             binary_file_name=$(basename "$binary_file_url")
             binary_file_path="$binary_file_dir/$binary_file_name"
             expected_kafka_checksum="$expected_sha  $binary_file_path"
-
+        else
+            >&2 echo "No URL for Kafka version $kafka_version"
         fi
 
         # Check if there is an existing binary file and checksum it against the checksum listed in the kafka-versions file.
@@ -107,15 +94,8 @@ function build_kafka_images {
         # If there is not an existing file, or there is one and it failed the checksum, then download/copy the binary
         if [ $get_file -gt 0 ]
         then
-            if [ $copy_or_dowload == "copy" ]
-            then
-                echo "Copying $binary_file_name to build directory"
-                $CP "$custom_binary_file_path" "$binary_file_path"
-            else
-                echo "Downloading Kafka $kafka_version binaries from: $binary_file_url"
-                curl --output "$binary_file_path" "$binary_file_url"
-            fi
-
+            echo "Downloading Kafka $kafka_version binaries from: $binary_file_url"
+            curl --output "$binary_file_path" "$binary_file_url"
         fi
 
         # If we haven't already checksum'd the file do it now before the build.
@@ -156,7 +136,7 @@ function clean_kafka_images {
 function build {
    
     # This function comes from the tools/kafka-versions-tools.sh script and provides several associative arrays
-    # version_binary_urls, version_binary_file, version_checksums and version_libs which map from version string 
+    # version_binary_urls, version_checksums and version_libs which map from version string 
     # to source tar url (or file if specified), sha512 checksum for those tar files and third party library 
     # version respectively.
     get_version_maps

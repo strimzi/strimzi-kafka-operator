@@ -11,9 +11,8 @@
 #   <default> when `true` this is the version to be used by the CO by default when a `Kafka` resource lacks an explicit version. Only one Kafka version can be marked as default.
 #   <protocol> is the default `inter.broker.protocol.version` used by this Kafka version
 #   <format> is the default `log.message.format.version` used by this Kafka version
-#   <url> is the remote address of the hosted Kafka binary tar archive for this version of Kafka. Either this or 'file' should be set.
-#   <file> is the absolute path to the binary archive tar archive on the local machine for this version of Kafka. Either this or 'url' should be set. If both 'url' and 'file' are set then 'file' will take precedence.
-#   <checksum> is the SHA512 checksum of the Kafka binary which is specified in either the url or file field.
+#   <url> is the remote (using prefix 'http://' or 'https://') or local (using prefix 'file://') address of the Kafka binary tar archive for this version of Kafka. When using a local file path the absolute path to the binary archive should be used. It is assumed in both cases that the name of the file forms the last section of the path.
+#   <checksum> is the SHA512 checksum of the Kafka binary which is specified in the 'url' field.
 #   <third-party-libs> is the version string for the third party libraries
 
 #- version: 1.0.2
