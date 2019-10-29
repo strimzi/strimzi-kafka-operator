@@ -5,7 +5,7 @@
 [id='ref-configuring-container-images-{context}']
 = Container image configurations
 
-Container image which should be used for given components can be specified using the `image` property in:
+You can specify which container image to use for each component using the `image` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.kafka.tlsSidecar`
