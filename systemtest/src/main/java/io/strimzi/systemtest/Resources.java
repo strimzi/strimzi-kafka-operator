@@ -674,7 +674,7 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForDeploymentConfigReady(kafkaConnectS2I.getMetadata().getName() + "-connect", kafkaConnectS2I.getSpec().getReplicas());
+        StUtils.waitForConnectS2IReady(kafkaConnectS2I.getMetadata().getName());
         LOGGER.info("Kafka Connect S2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }
@@ -896,14 +896,18 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
+        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
+    }
+
+    public DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout, reconciliationInterval).build());
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return createNewDeployment(defaultCLusterOperator(namespace, Constants.CONNECT_STATUS_TIMEOUT).build());
+        return createNewDeployment(defaultCLusterOperator(namespace, Constants.CONNECT_STATUS_TIMEOUT, Constants.RECONCILIATION_INTERVAL).build());
     }
 
-    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout) {
+    private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -923,7 +927,7 @@ public class Resources extends AbstractResources {
                     envVar.setValueFrom(null);
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
-                    envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
+                    envVar.setValue(Long.toString(reconciliationInterval));
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
                     envVar.setValue(Long.toString(operationTimeout));
