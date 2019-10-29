@@ -17,7 +17,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.ResourceUtils;
-import io.strimzi.operator.user.operator.PasswordGenerator;
+import io.strimzi.operator.common.PasswordGenerator;
 import org.junit.Test;
 
 import java.util.Base64;

@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
-import io.strimzi.operator.user.operator.PasswordGenerator;
+import io.strimzi.operator.common.PasswordGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

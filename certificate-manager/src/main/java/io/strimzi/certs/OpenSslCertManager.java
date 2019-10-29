@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,12 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +42,20 @@ public class OpenSslCertManager implements CertManager {
     public OpenSslCertManager() {}
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException {
+    public void generateSelfSignedCert(File keyFile, File certFile, int days)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         generateSelfSignedCert(keyFile, certFile, null, days);
     }
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        generateSelfSignedCert(keyFile, certFile, null, null, sbj, days);
+    }
+
+    @Override
+    public void generateSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 
         List<String> cmd = new ArrayList<>(asList("openssl", "req", "-x509", "-new", "-days", String.valueOf(days), "-batch", "-nodes",
                 "-out", certFile.getAbsolutePath(), "-keyout", keyFile.getAbsolutePath()));
@@ -75,11 +90,39 @@ public class OpenSslCertManager implements CertManager {
                 log.warn("{} cannot be deleted", openSslConf.getName());
             }
         }
+
+        if (trustStoreFile != null) {
+            this.createTrustStore(certFile, trustStoreFile, trustStorePassword);
+        }
     }
 
+    /**
+     * Create a truststore, storing the provided certificate
+     *
+     * @param certFile file containing the certificate to add in the truststore
+     * @param trustStoreFile file related to the truststore
+     * @param trustStorePassword password for protecting the truststore
+     */
+    private void createTrustStore(File certFile, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certFile));
+
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
+        trustStore.load(null, null);
+        trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
+        trustStore.store(new FileOutputStream(trustStoreFile), trustStorePassword.toCharArray());
+    }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        renewSelfSignedCert(keyFile, certFile, null, null, sbj, days);
+    }
+
+    @Override
+    public void renewSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
 
         //openssl req -new -key root.key -out newcsr.csr
@@ -131,6 +174,10 @@ public class OpenSslCertManager implements CertManager {
 
         if (!csrFile.delete()) {
             log.warn("{} cannot be deleted", csrFile.getName());
+        }
+
+        if (trustStoreFile != null) {
+            this.createTrustStore(certFile, trustStoreFile, trustStorePassword);
         }
     }
 
