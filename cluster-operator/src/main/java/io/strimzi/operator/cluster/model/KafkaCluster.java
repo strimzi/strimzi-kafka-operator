@@ -1411,8 +1411,7 @@ public class KafkaCluster extends AbstractModel {
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop()
-                        .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh",
-                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();

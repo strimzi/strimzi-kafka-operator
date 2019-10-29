@@ -1455,7 +1455,6 @@ public class KafkaClusterTest {
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
         assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/kafka_stunnel_pre_stop.sh"));
-        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -1470,7 +1469,6 @@ public class KafkaClusterTest {
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
         assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/kafka_stunnel_pre_stop.sh"));
-        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("30"));
     }
 
     /**
