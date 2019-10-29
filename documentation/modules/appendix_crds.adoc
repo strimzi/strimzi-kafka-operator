@@ -1342,7 +1342,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-JaegerTracing-{context}']
 ### `JaegerTracing` schema reference
 
-Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `JaegerTracing` from other subtypes which may be added in the future.
@@ -2120,6 +2120,8 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-Probe-{context}[`Probe`]
 |template          1.2+<.<|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
+|tracing           1.2+<.<|The configuration of tracing in Kafka Bridge. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |====
 
 [id='type-KafkaBridgeTls-{context}']

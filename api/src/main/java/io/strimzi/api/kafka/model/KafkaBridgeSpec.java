@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
+import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -29,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
         "producer", "resources", "jvmOptions", "logging",
-        "metrics", "livenessProbe", "readinessProbe", "template"})
+        "metrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -52,6 +53,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private Probe readinessProbe;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaBridgeTemplate template;
+    private Tracing tracing;
 
     @Description("The number of pods in the `Deployment`.")
     @Minimum(0)
@@ -205,6 +207,16 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setReadinessProbe(Probe readinessProbe) {
         this.readinessProbe = readinessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The configuration of tracing in Kafka Bridge.")
+    public Tracing getTracing() {
+        return tracing;
+    }
+
+    public void setTracing(Tracing tracing) {
+        this.tracing = tracing;
     }
 
     @Override

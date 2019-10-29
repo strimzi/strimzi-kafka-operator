@@ -77,6 +77,29 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         createDelete(KafkaBridge.class, "KafkaBridge-with-template.yaml");
     }
 
+    @Test
+    void testKafkaBridgeWithJaegerTracing() {
+        createDelete(KafkaBridge.class, "KafkaBridge-with-jaeger-tracing.yaml");
+    }
+
+    @Test
+    void testKafkaBridgeWithWrongTracingType() {
+        try {
+            createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.tracing.type in body should be one of [jaeger]"));
+        }
+    }
+
+    @Test
+    void testKafkaBridgeWithMissingTracingType() {
+        try {
+            createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.tracing.type in body is required"));
+        }
+    }
+
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);

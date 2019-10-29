@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -910,5 +911,20 @@ public class KafkaBridgeClusterTest {
         assertEquals(new Integer(30), cont.getReadinessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(31), cont.getReadinessProbe().getPeriodSeconds());
         assertEquals(new Integer(32), cont.getReadinessProbe().getTimeoutSeconds());
+    }
+
+    @Test
+    public void testTracingConfiguration() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withJaegerTracing(new JaegerTracing())
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
+        Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertEquals("jaeger", AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING));
     }
 }
