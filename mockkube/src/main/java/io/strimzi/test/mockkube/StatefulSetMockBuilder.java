@@ -34,6 +34,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -84,6 +85,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
     protected void nameScopedMocks(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
         super.nameScopedMocks(resourceName, resource);
         EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
+        when(c.withGracePeriod(anyLong())).thenReturn(resource);
         when(resource.cascading(false)).thenReturn(c);
         mockNoncascadingPatch(resourceName, c);
         mockScale(resourceName, resource);

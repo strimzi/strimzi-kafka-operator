@@ -291,9 +291,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     /**
-     * Sometimes, patching the resource is not enough. For exaple when the persistent volume claim templates are modified.
+     * Sometimes, patching the resource is not enough. For example when the persistent volume claim templates are modified.
      * In such case we need to delete the STS with cascading=false and recreate it.
-     * A rolling update shoud done finished after the STS is recreated.
+     * A rolling update should done finished after the STS is recreated.
      *
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
@@ -310,7 +310,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
 
-            operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
+            operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
 
             Future<Void> deletedFut = waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
@@ -356,7 +356,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 try {
-                    Boolean deleted = operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
+                    Boolean deleted = operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
 
                     if (deleted) {
                         log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);

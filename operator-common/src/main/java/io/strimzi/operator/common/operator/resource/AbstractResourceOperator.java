@@ -144,7 +144,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         try {
-            operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
+            operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {

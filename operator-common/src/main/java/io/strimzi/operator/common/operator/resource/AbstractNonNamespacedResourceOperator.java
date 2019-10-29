@@ -147,7 +147,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         vertx.executeBlocking(
             f -> {
                 try {
-                    Boolean delete = operation().withName(name).delete();
+                    Boolean delete = operation().withName(name).withGracePeriod(-1L).delete();
                     if (!Boolean.TRUE.equals(delete)) {
                         f.fail(new RuntimeException(resourceKind + "/" + name + " could not be deleted (returned " + delete + ")"));
                     } else {
