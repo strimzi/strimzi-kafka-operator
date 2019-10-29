@@ -105,13 +105,20 @@ public class OpenSslCertManager implements CertManager {
      */
     private void createTrustStore(File certFile, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certFile));
 
-        KeyStore trustStore = KeyStore.getInstance("PKCS12");
-        trustStore.load(null, null);
-        trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
-        trustStore.store(new FileOutputStream(trustStoreFile), trustStorePassword.toCharArray());
+        try (FileInputStream isCertificate = new FileInputStream(certFile);
+             FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
+
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(null, null);
+            trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
+            trustStore.store(osTrustStore, trustStorePassword.toCharArray());
+        } catch (IOException e) {
+            throw e;
+        }
     }
 
     @Override
