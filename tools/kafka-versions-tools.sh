@@ -33,21 +33,15 @@ function get_default_kafka_version {
 }
 
 function get_kafka_versions {
-
     eval versions="$(yq read $VERSIONS_FILE '*.version' -j | tr '[],' '() ')"
-
 }
 
 function get_kafka_source_urls {
-
     eval kafka_source_urls="$(yq read $VERSIONS_FILE '*.url' -j | tr '[],' '() ')"
-
 }
 
 function get_kafka_source_files {
-
     eval kafka_source_files="$(yq read $VERSIONS_FILE '*.file' -j | tr '[],' '() ')"
-
 }
 
 function get_url_file_map {
@@ -82,7 +76,7 @@ function get_url_file_map {
                 version_binary_urls["${version}"]="$url"
                 source_count=$((source_count+1))
             else
-                echo -e "No binary source specified for Kafka $version. Either 'url' or 'file' fields must be specified in the kafka-versions.yaml file"
+                >&2 echo "No binary source specified for Kafka $version. Either 'url' or 'file' fields must be specified in the kafka-versions.yaml file"
                 exit 1
             fi
 
@@ -98,27 +92,19 @@ function get_url_file_map {
 }
 
 function get_kafka_checksums {
-
     eval checksums="$(yq read $VERSIONS_FILE '*.checksum' -j | tr '[],' '() ')"
-
 }
 
 function get_kafka_third_party_libs {
-
     eval libs="$(yq read "$VERSIONS_FILE" '*.third-party-libs' -j | tr '[],' '() ')"
-
 }
 
 function get_kafka_protocols {
-
     eval protocols="$(yq read $VERSIONS_FILE '*.protocol' -j | tr '[],' '() ')"
-
 }
 
 function get_kafka_formats {
-
     eval formats="$(yq read $VERSIONS_FILE '*.format' -j | tr '[],' '() ')"
-
 }
 
 # Parses the Kafka versions file and creates three associative arrays:
