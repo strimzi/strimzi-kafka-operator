@@ -49,7 +49,6 @@ function build_kafka_images {
     binary_file_dir="$kafka_image/tmp"
     test -d "$binary_file_dir" || mkdir -p "$binary_file_dir"
 
-    # Images depending on Kafka version (possibly indirectly thru FROM)
     for kafka_version in "${!version_checksums[@]}"
     do
         echo "Creating container image for Kafka $kafka_version"
@@ -94,7 +93,7 @@ function build_kafka_images {
         # If there is not an existing file, or there is one and it failed the checksum, then download/copy the binary
         if [ $get_file -gt 0 ]
         then
-            echo "Downloading Kafka $kafka_version binaries from: $binary_file_url"
+            echo "Fetching Kafka $kafka_version binaries from: $binary_file_url"
             curl --output "$binary_file_path" "$binary_file_url"
         fi
 
@@ -108,18 +107,26 @@ function build_kafka_images {
             sha512sum --check "$kafka_checksum_filepath"
         fi
 
-        relative_binary_file_path="tmp/$binary_file_name"
+        # We now have a verified tar archive for this version of Kafka. Unpack it into the temp dir
+        dist_dir="$binary_file_dir/$kafka_version"
+        test -d "$dist_dir" || mkdir -p "$dist_dir"
+        tar xvfz "$binary_file_path" -C "$dist_dir" --strip-components=1
+
+        relative_dist_dir="./tmp/$kafka_version"
 
         for image in $kafka_images
         do
 
-            DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_FILENAME=${relative_binary_file_path} --build-arg KAFKA_SHA512=${sha} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
+            DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
             DOCKER_TAG="${tag}-kafka-${kafka_version}" r="build-kafka-${kafka_version}" \
             KAFKA_VERSION="${kafka_version}" \
             THIRD_PARTY_LIBS="${lib_directory}" \
             make -C "$image" "$targets"
 
         done
+
+        # Delete the unpacked tar file
+        rm -r "$dist_dir"
     done
 
 }
@@ -162,6 +169,7 @@ function build {
         clean_kafka_images
     elif [[ $targets == *"clean"* ]]
     then
+        # If the targets include clean plus other targets then do the clean first and then the build
         clean_kafka_images
         build_kafka_images "$tag" "$java_version" "$targets"
     else
