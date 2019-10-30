@@ -187,7 +187,7 @@ public class CertificateRenewalTest {
 
     private List<Secret> initialCaSecrets(CertificateAuthority certificateAuthority, String commonName,
                                           String caKeySecretName, String caCertSecretName)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException{
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
         List<Secret> secrets = new ArrayList<>();
         secrets.add(
