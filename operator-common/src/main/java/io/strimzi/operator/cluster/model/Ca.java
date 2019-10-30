@@ -691,18 +691,20 @@ public abstract class Ca {
             }
         }
 
-        // the certificates removed from the Secret data has tobe removed from the store as well
-        try {
-            File trustStoreFile = File.createTempFile("tls", "-truststore");
-            Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
+        if (removed.size() > 0) {
+            // the certificates removed from the Secret data has tobe removed from the store as well
             try {
-                String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), "US-ASCII");
-                certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
-            } finally {
-                delete(trustStoreFile);
+                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
+                try {
+                    String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), "US-ASCII");
+                    certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
+                } finally {
+                    delete(trustStoreFile);
+                }
+            } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+                // TODO
             }
-        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
-            // TODO
         }
 
         return removed.size();
