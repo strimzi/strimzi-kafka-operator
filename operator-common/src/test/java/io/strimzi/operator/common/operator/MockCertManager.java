@@ -8,17 +8,17 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+//import java.io.FileInputStream;
+//import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.KeyStore;
+//import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+//import java.security.cert.CertificateFactory;
+//import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 public class MockCertManager implements CertManager {
