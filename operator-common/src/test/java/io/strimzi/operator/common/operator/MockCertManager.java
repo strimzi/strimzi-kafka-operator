@@ -15,6 +15,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.List;
 
 public class MockCertManager implements CertManager {
 
@@ -186,6 +187,12 @@ public class MockCertManager implements CertManager {
     public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         // TODO: PKCS12 store from binary resources to be fast during Travis tests
+    }
+
+    @Override
+    public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        // TODO: PKCS12 store deletion handling
     }
 
     /**

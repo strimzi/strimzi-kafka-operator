@@ -132,6 +132,38 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
+    public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+
+        try {
+            FileInputStream isTrustStore = null;
+            try {
+                isTrustStore = new FileInputStream(trustStoreFile);
+                KeyStore trustStore = KeyStore.getInstance("PKCS12");
+                trustStore.load(isTrustStore, trustStorePassword.toCharArray());
+                for (String alias : aliases) {
+                    trustStore.deleteEntry(alias);
+                }
+                FileOutputStream osTrustStore = null;
+                try {
+                    osTrustStore = new FileOutputStream(trustStoreFile);
+                    trustStore.store(osTrustStore, trustStorePassword.toCharArray());
+                } finally {
+                    if (osTrustStore != null) {
+                        osTrustStore.close();
+                    }
+                }
+            } finally {
+                if (isTrustStore != null) {
+                    isTrustStore.close();
+                }
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw e;
+        }
+    }
+
+    @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
 

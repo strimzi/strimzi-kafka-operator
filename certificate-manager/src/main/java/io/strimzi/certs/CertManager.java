@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.List;
 
 public interface CertManager {
     /**
@@ -55,6 +56,20 @@ public interface CertManager {
      * @throws NoSuchAlgorithmException if specified algorithm for truststore is not supported
      */
     void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException;
+
+    /**
+     * Remove entries with provided aliasis from the truststore
+     *
+     * @param aliases aliases to remove
+     * @param trustStoreFile path to the file related to the truststore
+     * @param trustStorePassword password for protecting the truststore
+     * @throws IOException If an input or output file could not be read/written.
+     * @throws CertificateException if any problems reading the certificate file in X509 format
+     * @throws KeyStoreException if any problems with reading/writing the truststore
+     * @throws NoSuchAlgorithmException if specified algorithm for truststore is not supported
+     */
+    void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException;
 
     /**
