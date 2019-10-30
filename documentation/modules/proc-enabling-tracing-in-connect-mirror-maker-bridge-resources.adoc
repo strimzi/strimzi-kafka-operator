@@ -1,19 +1,21 @@
 // Module included in the following assemblies:
 //
-// assembly-setting-up-tracing-mirror-maker-connect.adoc
+// assembly-setting-up-tracing-mirror-maker-connect-bridge.adoc
 
-[id='proc-enabling-tracing-in-connect-mirror-maker-resources-{context}']
-= Enabling tracing in Mirror Maker and Kafka Connect resources
+[id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
+= Enabling tracing in Mirror Maker, Kafka Connect, and Kafka Bridge resources
 
-Update the configuration of `KafkaMirrorMaker`, `KafkaConnect`, and `KafkaConnectS2I` custom resources to specify and configure a Jaeger tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
+Update the configuration of `KafkaMirrorMaker`, `KafkaConnect`, `KafkaConnectS2I`, and `KafkaBridge` custom resources to specify and configure a Jaeger tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
 
-* Interceptor classes are updated in the integrated consumers and producers in Mirror Maker or Kafka Connect.
+* Interceptor classes are updated in the integrated consumers and producers in Mirror Maker, Kafka Connect, or the {ProductName} Kafka Bridge.
 
-* The tracing agent initializes a Jaeger tracer based on the tracing configuration defined in the resource.
+* For Mirror Maker and Kafka Connect, the tracing agent initializes a Jaeger tracer based on the tracing configuration defined in the resource.
+
+* For the Kafka Bridge, a Jaeger tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
 .Procedure
 
-Perform these steps for each `KafkaMirrorMaker`, `KafkaConnect`, and `KafkaConnectS2I` resource.
+Perform these steps for each `KafkaMirrorMaker`, `KafkaConnect`, `KafkaConnectS2I`, and `KafkaBridge` resource.
 
 . In the `spec.template` property, configure the Jaeger tracer service. For example:
 +
@@ -52,6 +54,29 @@ spec:
   #...
   template:
     mirrorMakerContainer:
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+        - name: JAEGER_AGENT_HOST
+          value: jaeger-agent-name
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
+  tracing:
+    type: jaeger
+#...
+
+----
+.Jaeger tracer configuration for the Kafka Bridge
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  #...
+  template:
+    bridgeContainer:
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
