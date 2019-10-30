@@ -167,12 +167,14 @@ public class MockCertManager implements CertManager {
         write(keyFile, CLUSTER_KEY);
         write(certFile, CLUSTER_CERT);
 
+        /*
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
         X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certFile));
         KeyStore trustStore = KeyStore.getInstance("PKCS12");
         trustStore.load(null, null);
         trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
         trustStore.store(new FileOutputStream(trustStoreFile), trustStorePassword.toCharArray());
+        */
     }
 
     /**
