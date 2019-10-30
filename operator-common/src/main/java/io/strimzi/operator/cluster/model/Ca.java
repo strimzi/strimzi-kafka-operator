@@ -158,6 +158,16 @@ public abstract class Ca {
             public String postDescription(String keySecretName, String certSecretName) {
                 return "CA key (in " + keySecretName + ") replaced";
             }
+        },
+        REGENERATED_CERT() {
+            @Override
+            public String preDescription(String keySecretName, String certSecretName) {
+                return "CA (in " + keySecretName + ") needs to be changed";
+            }
+            @Override
+            public String postDescription(String keySecretName, String certSecretName) {
+                return "CA (in " + keySecretName + ") replaced";
+            }
         };
 
         RenewalType() {
@@ -330,6 +340,7 @@ public abstract class Ca {
                 CertAndKey k = generateSignedCert(subject,
                         brokerCsrFile, brokerKeyFile, brokerCertFile);
                 certs.put(podName, k);
+                this.renewalType = RenewalType.REGENERATED_CERT;
             }
         }
 
@@ -535,6 +546,9 @@ public abstract class Ca {
             case NOOP:
                 log.debug("{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
                 break;
+            case REGENERATED_CERT:
+                log.debug("{}: The CA certificate in secret {} already exists however it does need update metadata", this, caCertSecretName);
+                break;
         }
         if (!generateCa) {
             if (renewalType == RenewalType.RENEW_CERT) {
@@ -612,7 +626,15 @@ public abstract class Ca {
      * @return Whether the certificate was renewed.
      */
     public boolean certRenewed() {
-        return renewalType == RenewalType.RENEW_CERT || renewalType == RenewalType.REPLACE_KEY;
+        return renewalType == RenewalType.RENEW_CERT || renewalType == RenewalType.REPLACE_KEY || certChanged();
+    }
+
+    /**
+     * True if the certificate data has changed
+     * @return Whether the certificate metadata has changed.
+     */
+    public boolean certChanged() {
+        return  renewalType == RenewalType.REGENERATED_CERT;
     }
 
     /**
