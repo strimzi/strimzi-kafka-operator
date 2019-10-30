@@ -899,7 +899,7 @@ public class KafkaUserOperatorTest {
             context.assertFalse(res.succeeded());
 
             List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
-            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), "CN=user");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getMessage(), failureMsg);
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
@@ -936,7 +936,7 @@ public class KafkaUserOperatorTest {
             context.assertTrue(res.succeeded());
 
             List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
-            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), ResourceUtils.NAME);
+            context.assertEquals(capturedStatuses.get(0).getStatus().getUsername(), "CN=user");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), "True");
             context.assertEquals(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), "Ready");
             async.complete();

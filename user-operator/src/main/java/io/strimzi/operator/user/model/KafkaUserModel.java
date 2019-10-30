@@ -325,7 +325,7 @@ public class KafkaUserModel {
         } else if (isScramUser()) {
             return getScramUserName(name);
         } else {
-            throw new RuntimeException("At least one authentication mechanism has to be selected");
+            return getName();
         }
     }
 

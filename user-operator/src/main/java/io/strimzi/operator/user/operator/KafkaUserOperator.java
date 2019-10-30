@@ -183,7 +183,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
-                    userStatus.setUsername(user.getName());
+                    userStatus.setUsername(user.getUserName());
 
                     updateStatus(resource, reconciliation, userStatus).setHandler(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well
