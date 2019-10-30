@@ -157,8 +157,8 @@ public class CertificateRenewalTest {
             sbj.setOrganizationName("io.strimzi");
             sbj.setCommonName(commonName);
 
-            certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile,
-                    clusterCaStoreFile, clusterCaStorePassword, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
+            certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
+            certManager.addCertToTrustStore(clusterCaCertFile, "ca", clusterCaStoreFile, clusterCaStorePassword);
             return new CertAndKey(
                     Files.readAllBytes(clusterCaKeyFile.toPath()),
                     Files.readAllBytes(clusterCaCertFile.toPath()),
@@ -568,25 +568,15 @@ public class CertificateRenewalTest {
         assertEquals(4, c.getAllValues().size());
 
         Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-        assertEquals(6, clusterCaCertData.size());
+        assertEquals(4, clusterCaCertData.size());
         String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
         String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
         String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
         assertNotEquals(initialClusterCaCertSecret.getData().get(CA_CRT), newClusterCaCert);
         assertNotEquals(initialClusterCaCertSecret.getData().get(CA_STORE), newClusterCaCertStore);
-        assertNotEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), newClusterCaCertStorePassword);
-        Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".crt"))
-                .findFirst().get();
+        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), newClusterCaCertStorePassword);
+        Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
         assertEquals(initialClusterCaCertSecret.getData().get(CA_CRT), oldClusterCaCert.getValue());
-        Map.Entry oldClusterCaCertStore = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".str"))
-                .findFirst().get();
-        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE), oldClusterCaCertStore.getValue());
-        Map.Entry oldClusterCaCertStorePassword = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".strpwd"))
-                .findFirst().get();
-        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), oldClusterCaCertStorePassword.getValue());
         assertEquals("CN=cluster-ca v1, O=io.strimzi", x509Certificate(newClusterCaCert).getSubjectDN().getName());
 
         Secret clusterCaKeySecret = c.getAllValues().get(1);
@@ -598,25 +588,15 @@ public class CertificateRenewalTest {
         assertNotEquals(initialClusterCaKeySecret.getData().get(CA_KEY), newClusterCaKey);
 
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-        assertEquals(6, clientsCaCertData.size());
+        assertEquals(4, clientsCaCertData.size());
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
         String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
         assertNotEquals(initialClientsCaCertSecret.getData().get(CA_CRT), newClientsCaCert);
         assertNotEquals(initialClientsCaCertSecret.getData().get(CA_STORE), newClientsCaCertStore);
-        assertNotEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), newClientsCaCertStorePassword);
-        Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".crt"))
-                .findFirst().get();
+        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), newClientsCaCertStorePassword);
+        Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
         assertEquals(initialClientsCaCertSecret.getData().get(CA_CRT), oldClientsCaCert.getValue());
-        Map.Entry oldClientsCaCertStore = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".str"))
-                .findFirst().get();
-        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE), oldClientsCaCertStore.getValue());
-        Map.Entry oldClientsCaCertStorePassword = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".strpwd"))
-                .findFirst().get();
-        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), oldClientsCaCertStorePassword.getValue());
         assertEquals("CN=clients-ca v1, O=io.strimzi", x509Certificate(newClientsCaCert).getSubjectDN().getName());
 
         Secret clientsCaKeySecret = c.getAllValues().get(3);
@@ -765,25 +745,15 @@ public class CertificateRenewalTest {
 
         Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
         assertEquals("1", c.getAllValues().get(0).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
-        assertEquals(6, clusterCaCertData.size());
+        assertEquals(4, clusterCaCertData.size());
         String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
         String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
         String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
         assertNotEquals(initialClusterCaCertSecret.getData().get(CA_CRT), newClusterCaCert);
         assertNotEquals(initialClusterCaCertSecret.getData().get(CA_STORE), newClusterCaCertStore);
-        assertNotEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), newClusterCaCertStorePassword);
-        Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".crt"))
-                .findFirst().get();
+        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), newClusterCaCertStorePassword);
+        Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
         assertEquals(initialClusterCaCertSecret.getData().get(CA_CRT), oldClusterCaCert.getValue());
-        Map.Entry oldClusterCaCertStore = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".str"))
-                .findFirst().get();
-        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE), oldClusterCaCertStore.getValue());
-        Map.Entry oldClusterCaCertStorePassword = clusterCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".strpwd"))
-                .findFirst().get();
-        assertEquals(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), oldClusterCaCertStorePassword.getValue());
         assertEquals("CN=cluster-ca v1, O=io.strimzi", x509Certificate(newClusterCaCert).getSubjectDN().getName());
 
         Secret clusterCaKeySecret = c.getAllValues().get(1);
@@ -796,25 +766,15 @@ public class CertificateRenewalTest {
 
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
         assertEquals("1", c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
-        assertEquals(6, clientsCaCertData.size());
+        assertEquals(4, clientsCaCertData.size());
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
         String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
         assertNotEquals(initialClientsCaCertSecret.getData().get(CA_CRT), newClientsCaCert);
         assertNotEquals(initialClientsCaCertSecret.getData().get(CA_STORE), newClientsCaCertStore);
-        assertNotEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), newClientsCaCertStorePassword);
-        Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".crt"))
-                .findFirst().get();
+        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), newClientsCaCertStorePassword);
+        Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
         assertEquals(initialClientsCaCertSecret.getData().get(CA_CRT), oldClientsCaCert.getValue());
-        Map.Entry oldClientsCaCertStore = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".str"))
-                .findFirst().get();
-        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE), oldClientsCaCertStore.getValue());
-        Map.Entry oldClientsCaCertStorePassword = clientsCaCertData.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("ca-") && e.getKey().endsWith(".strpwd"))
-                .findFirst().get();
-        assertEquals(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), oldClientsCaCertStorePassword.getValue());
         assertEquals("CN=clients-ca v1, O=io.strimzi", x509Certificate(newClientsCaCert).getSubjectDN().getName());
 
         Secret clientsCaKeySecret = c.getAllValues().get(3);

@@ -42,20 +42,12 @@ public class OpenSslCertManager implements CertManager {
     public OpenSslCertManager() {}
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, null, days);
     }
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        generateSelfSignedCert(keyFile, certFile, null, null, sbj, days);
-    }
-
-    @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
 
         List<String> cmd = new ArrayList<>(asList("openssl", "req", "-x509", "-new", "-days", String.valueOf(days), "-batch", "-nodes",
                 "-out", certFile.getAbsolutePath(), "-keyout", keyFile.getAbsolutePath()));
@@ -90,46 +82,57 @@ public class OpenSslCertManager implements CertManager {
                 log.warn("{} cannot be deleted", openSslConf.getName());
             }
         }
-
-        if (trustStoreFile != null) {
-            this.createTrustStore(certFile, trustStoreFile, trustStorePassword);
-        }
     }
 
-    /**
-     * Create a truststore, storing the provided certificate
-     *
-     * @param certFile file containing the certificate to add in the truststore
-     * @param trustStoreFile file related to the truststore
-     * @param trustStorePassword password for protecting the truststore
-     */
-    private void createTrustStore(File certFile, File trustStoreFile, String trustStorePassword)
+    @Override
+    public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 
-        try (FileInputStream isCertificate = new FileInputStream(certFile);
-             FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
+        try {
+            FileInputStream isTrustStore = null;
+            try {
+                // check if the truststore file is empty or not, for loading its content eventually
+                if (trustStoreFile.length() > 0) {
+                    isTrustStore = new FileInputStream(trustStoreFile);
+                }
 
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+                FileInputStream isCertificate = null;
+                try {
+                    isCertificate = new FileInputStream(certFile);
 
-            KeyStore trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(null, null);
-            trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
-            trustStore.store(osTrustStore, trustStorePassword.toCharArray());
-        } catch (IOException e) {
+                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                    X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+
+                    KeyStore trustStore = KeyStore.getInstance("PKCS12");
+                    trustStore.load(isTrustStore, trustStorePassword.toCharArray());
+                    trustStore.setEntry(certAlias, new KeyStore.TrustedCertificateEntry(certificate), null);
+
+                    FileOutputStream osTrustStore = null;
+                    try {
+                        osTrustStore = new FileOutputStream(trustStoreFile);
+                        trustStore.store(osTrustStore, trustStorePassword.toCharArray());
+                    } finally {
+                        if (osTrustStore != null) {
+                            osTrustStore.close();
+                        }
+                    }
+                } finally {
+                    if (isCertificate != null) {
+                        isCertificate.close();
+                    }
+                }
+            } finally {
+                if (isTrustStore != null) {
+                    isTrustStore.close();
+                }
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw e;
         }
     }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        renewSelfSignedCert(keyFile, certFile, null, null, sbj, days);
-    }
-
-    @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
 
         //openssl req -new -key root.key -out newcsr.csr
@@ -181,10 +184,6 @@ public class OpenSslCertManager implements CertManager {
 
         if (!csrFile.delete()) {
             log.warn("{} cannot be deleted", csrFile.getName());
-        }
-
-        if (trustStoreFile != null) {
-            this.createTrustStore(certFile, trustStoreFile, trustStorePassword);
         }
     }
 

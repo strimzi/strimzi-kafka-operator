@@ -52,7 +52,8 @@ public class SecretCertProviderTest {
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".str");
 
-        ssl.generateSelfSignedCert(key, cert, store, "123456", null, 365);
+        ssl.generateSelfSignedCert(key, cert, 365);
+        ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
                 key, cert,

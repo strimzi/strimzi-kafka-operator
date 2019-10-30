@@ -92,7 +92,8 @@ public class OpenSslCertManagerTest {
     }
 
     private void testGenerateSelfSignedCert(File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
-        ssl.generateSelfSignedCert(key, cert, trustStore, trustStorePassword, sbj, 365);
+        ssl.generateSelfSignedCert(key, cert, sbj, 365);
+        ssl.addCertToTrustStore(cert, "ca", trustStore, trustStorePassword);
 
         Certificate c = certFactory.generateCertificate(new FileInputStream(cert));
 
@@ -254,7 +255,8 @@ public class OpenSslCertManagerTest {
         // Generate a renewed CA certificate
         File newCert = File.createTempFile("crt-", ".crt");
         File newStore = File.createTempFile("crt-", ".str");
-        ssl.renewSelfSignedCert(caKey, newCert, newStore, "123456", caSubject, 365);
+        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
+        ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
 
         // verify the client cert is valid wrt the new cert.
         CertificateFactory cf = CertificateFactory.getInstance("X.509");

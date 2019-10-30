@@ -422,16 +422,27 @@ public abstract class Ca {
                     keyData = new HashMap<>();
                     certData = new HashMap<>(caCertSecret.getData());
                     if (certData.containsKey(CA_CRT)) {
-                        String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
-                    }
-                    if (certData.containsKey(CA_STORE)) {
-                        String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        certData.put("ca-" + notAfterDate + ".str", certData.remove(CA_STORE));
-                    }
-                    if (certData.containsKey(CA_STORE_PASSWORD)) {
-                        String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        certData.put("ca-" + notAfterDate + ".strpwd", certData.remove(CA_STORE_PASSWORD));
+                        try {
+                            File certFile = File.createTempFile("tls", "-cert");
+                            Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
+                            try {
+                                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                                Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                                try {
+                                    String trustStorePassword = new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)));
+                                    String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+                                    certManager.addCertToTrustStore(certFile, "ca-" + notAfterDate, trustStoreFile, trustStorePassword);
+                                    certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
+                                    certData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
+                                } finally {
+                                    delete(trustStoreFile);
+                                }
+                            } finally {
+                                delete(certFile);
+                            }
+                        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     ++caCertGeneration;
                     generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
@@ -737,9 +748,17 @@ public abstract class Ca {
                 File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
                 try {
                     File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                    String trustStorePassword;
+                    // if secret already contains the truststore, we have to reuse it without changing password
+                    if (certData.containsKey(CA_STORE)) {
+                        Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                        trustStorePassword = new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)));
+                    } else {
+                        trustStorePassword = passwordGenerator.generate();
+                    }
                     try {
-                        String trustStorePassword = passwordGenerator.generate();
-                        certManager.generateSelfSignedCert(keyFile, certFile, trustStoreFile, trustStorePassword, subject, validityDays);
+                        certManager.generateSelfSignedCert(keyFile, certFile, subject, validityDays);
+                        certManager.addCertToTrustStore(certFile, "ca", trustStoreFile, trustStorePassword);
                         CertAndKey ca = new CertAndKey(
                                 Files.readAllBytes(keyFile.toPath()),
                                 Files.readAllBytes(certFile.toPath()),
@@ -777,7 +796,8 @@ public abstract class Ca {
                     File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
                     try {
                         String trustStorePassword = passwordGenerator.generate();
-                        certManager.renewSelfSignedCert(keyFile, certFile, trustStoreFile, trustStorePassword, subject, validityDays);
+                        certManager.renewSelfSignedCert(keyFile, certFile, subject, validityDays);
+                        certManager.addCertToTrustStore(certFile, "ca", trustStoreFile, trustStorePassword);
                         CertAndKey ca = new CertAndKey(
                                 bytes,
                                 Files.readAllBytes(certFile.toPath()),

@@ -8,17 +8,12 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 
 import java.io.File;
-//import java.io.FileInputStream;
-//import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-//import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-//import java.security.cert.CertificateFactory;
-//import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 public class MockCertManager implements CertManager {
@@ -154,27 +149,10 @@ public class MockCertManager implements CertManager {
      * @throws IOException
      */
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-
-        generateSelfSignedCert(keyFile, certFile, null, null, sbj, days);
-    }
-
-    @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
 
         write(keyFile, CLUSTER_KEY);
         write(certFile, CLUSTER_CERT);
-
-        /*
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new FileInputStream(certFile));
-        KeyStore trustStore = KeyStore.getInstance("PKCS12");
-        trustStore.load(null, null);
-        trustStore.setEntry("ca", new KeyStore.TrustedCertificateEntry(certificate), null);
-        trustStore.store(new FileOutputStream(trustStoreFile), trustStorePassword.toCharArray());
-        */
     }
 
     /**
@@ -186,8 +164,7 @@ public class MockCertManager implements CertManager {
      * @throws IOException
      */
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, null, days);
     }
 
@@ -201,15 +178,14 @@ public class MockCertManager implements CertManager {
      * @throws IOException
      */
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        generateSelfSignedCert(keyFile, certFile, null, null, sbj, days);
+    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+        generateSelfSignedCert(keyFile, certFile, sbj, days);
     }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, File trustStoreFile, String trustStorePassword, Subject sbj, int days) throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        // TODO: to test PKCS12 store
-        generateSelfSignedCert(keyFile, certFile, trustStoreFile, trustStorePassword, sbj, days);
+    public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        // TODO: PKCS12 store from binary resources to be fast during Travis tests
     }
 
     /**
