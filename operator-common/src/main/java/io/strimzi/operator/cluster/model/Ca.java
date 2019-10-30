@@ -703,7 +703,7 @@ public abstract class Ca {
                     delete(trustStoreFile);
                 }
             } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
-                // TODO
+                throw new RuntimeException(e);
             }
         }
 
