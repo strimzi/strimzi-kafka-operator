@@ -44,6 +44,12 @@ function build_kafka_images {
     local tag=$1
     local java_version=$2
     local targets=${@:3}
+
+    echo -e "\n\nDebug:\n"
+    echo "$tag"
+    echo "$java_version"
+    echo "$targets"
+    echo -e "\n\n"
        
     # Set the cache folder to store the binary files
     binary_file_dir="$kafka_image/tmp"
@@ -103,13 +109,16 @@ function build_kafka_images {
             # Do the checksum on the Kafka binaries
             kafka_checksum_filepath="$binary_file_path.sha512"
             echo "$expected_kafka_checksum" > "$kafka_checksum_filepath"
-            echo "Checking binary file: $binary_file_path"
+            echo "Checking binary archive file: $binary_file_path"
             sha512sum --check "$kafka_checksum_filepath"
         fi
 
         # We now have a verified tar archive for this version of Kafka. Unpack it into the temp dir
         dist_dir="$binary_file_dir/$kafka_version"
-        test -d "$dist_dir" || mkdir -p "$dist_dir"
+        # If an unpacked directory exists, due to an error in a previous run, then delete it
+        test -d "$dist_dir" && rm -r "$dist_dir"
+        mkdir -p "$dist_dir"
+        echo "Unpacking binary archive"
         tar xvfz "$binary_file_path" -C "$dist_dir" --strip-components=1
 
         relative_dist_dir="./tmp/$kafka_version"
@@ -118,14 +127,15 @@ function build_kafka_images {
         do
 
             DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
-            DOCKER_TAG="${tag}-kafka-${kafka_version}" r="build-kafka-${kafka_version}" \
+            DOCKER_TAG="${tag}-kafka-${kafka_version}" \
+            BUILD_TAG="build-kafka-${kafka_version}" \
             KAFKA_VERSION="${kafka_version}" \
             THIRD_PARTY_LIBS="${lib_directory}" \
             make -C "$image" "$targets"
 
         done
 
-        # Delete the unpacked tar file
+        # Delete the unpacked tar file directory
         rm -r "$dist_dir"
     done
 
