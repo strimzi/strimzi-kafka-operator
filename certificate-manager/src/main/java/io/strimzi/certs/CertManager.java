@@ -59,7 +59,7 @@ public interface CertManager {
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException;
 
     /**
-     * Remove entries with provided aliasis from the truststore
+     * Remove entries with provided aliases from the truststore
      *
      * @param aliases aliases to remove
      * @param trustStoreFile path to the file related to the truststore

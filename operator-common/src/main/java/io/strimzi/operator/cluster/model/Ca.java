@@ -211,9 +211,9 @@ public abstract class Ca {
         this.renewalType = RenewalType.NOOP;
     }
 
-    private static void delete(File brokerCsrFile) {
-        if (!brokerCsrFile.delete()) {
-            log.warn("{} cannot be deleted", brokerCsrFile.getName());
+    private static void delete(File file) {
+        if (!file.delete()) {
+            log.warn("{} cannot be deleted", file.getName());
         }
     }
 
@@ -699,6 +699,7 @@ public abstract class Ca {
                 try {
                     String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), "US-ASCII");
                     certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
+                    newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
                 } finally {
                     delete(trustStoreFile);
                 }
