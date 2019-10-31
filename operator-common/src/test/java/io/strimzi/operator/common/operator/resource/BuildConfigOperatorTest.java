@@ -14,6 +14,8 @@ import io.fabric8.openshift.api.model.DoneableBuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.TestContext;
+import org.junit.Test;
 
 import static org.mockito.Mockito.when;
 
@@ -49,5 +51,11 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
             .withNewSpec()
                 .withTriggers(new BuildTriggerPolicy())
             .endSpec().build();
+    }
+
+    @Override
+    @Test
+    public void createWhenExistsIsAPatch(TestContext context) {
+        createWhenExistsIsAPatch(context, false);
     }
 }
