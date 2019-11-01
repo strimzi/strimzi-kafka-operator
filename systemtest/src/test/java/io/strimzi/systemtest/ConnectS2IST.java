@@ -205,6 +205,6 @@ class ConnectS2IST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Duration.ofSeconds(30).toMillis()).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.RECONCILIATION_INTERVAL, Duration.ofSeconds(30).toMillis()).done();
     }
 }
