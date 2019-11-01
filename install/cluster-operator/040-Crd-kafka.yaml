@@ -149,6 +149,10 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            notJwt:
+                              type: boolean
+                            skipTypeCheck:
+                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -253,6 +257,10 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            notJwt:
+                              type: boolean
+                            skipTypeCheck:
+                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -373,6 +381,10 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
+                            notJwt:
+                              type: boolean
+                            skipTypeCheck:
+                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:

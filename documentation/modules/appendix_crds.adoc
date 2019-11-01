@@ -263,6 +263,10 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
 |integer
+|notJwt                          1.2+<.<|Configure if access token should not be treated as JWT. Set this to `true` if authorization server returns opaque tokens. Defaults to `false`.
+|boolean
+|skipTypeCheck                   1.2+<.<|Configure if access token type check should be skipped. Set this to `true` if authorization server doesn't return 'typ' claim inside JWT token. Defaults to `false`.
+|boolean
 |tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |type                            1.2+<.<|Must be `oauth`.
@@ -1550,6 +1554,10 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
+|boolean
+|maxTokenExpirySeconds           1.2+<.<|Set or limit time-to-live of the access tokens to the specified number of seconds. Set this if authorization server returns opaque tokens.
+|integer
+|notJwt                          1.2+<.<|Configure if access token should not be treated as JWT. Set this to `true` if authorization server returns opaque tokens. Defaults to `false`.
 |boolean
 |refreshToken                    1.2+<.<|Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]

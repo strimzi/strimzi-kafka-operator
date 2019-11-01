@@ -104,6 +104,10 @@ spec:
                       - secretName
                     disableTlsHostnameVerification:
                       type: boolean
+                    maxTokenExpirySeconds:
+                      type: integer
+                    notJwt:
+                      type: boolean
                     passwordSecret:
                       type: object
                       properties:
@@ -215,6 +219,10 @@ spec:
                       - key
                       - secretName
                     disableTlsHostnameVerification:
+                      type: boolean
+                    maxTokenExpirySeconds:
+                      type: integer
+                    notJwt:
                       type: boolean
                     passwordSecret:
                       type: object

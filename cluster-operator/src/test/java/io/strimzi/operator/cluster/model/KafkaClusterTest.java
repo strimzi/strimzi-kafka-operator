@@ -3478,6 +3478,8 @@ public class KafkaClusterTest {
                                             .withJwksExpirySeconds(160)
                                             .withJwksRefreshSeconds(50)
                                             .withUserNameClaim("preferred_username")
+                                            .withNotJwt(false)
+                                            .withSkipTypeCheck(false)
                                             .build())
                             .endPlain()
                         .endListeners()

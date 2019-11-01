@@ -37,6 +37,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private GenericSecretSource refreshToken;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
+    private int maxTokenExpirySeconds = 0;
+    private boolean notJwt = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -113,5 +115,27 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setDisableTlsHostnameVerification(boolean disableTlsHostnameVerification) {
         this.disableTlsHostnameVerification = disableTlsHostnameVerification;
+    }
+
+    @Description("Set or limit time-to-live of the access tokens to the specified number of seconds. " +
+            "Set this if authorization server returns opaque tokens.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public int getMaxTokenExpirySeconds() {
+        return maxTokenExpirySeconds;
+    }
+
+    public void setMaxTokenExpirySeconds(int maxTokenExpirySeconds) {
+        this.maxTokenExpirySeconds = maxTokenExpirySeconds;
+    }
+
+    @Description("Configure if access token should not be treated as JWT. Set this to `true` if authorization " +
+            "server returns opaque tokens. Defaults to `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isNotJwt() {
+        return notJwt;
+    }
+
+    public void setNotJwt(boolean notJwt) {
+        this.notJwt = notJwt;
     }
 }

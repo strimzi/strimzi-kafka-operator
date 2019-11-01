@@ -1301,6 +1301,8 @@ public class KafkaMirrorMakerClusterTest {
                                         .endClientSecret()
                                         .withDisableTlsHostnameVerification(true)
                                         .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                        .withNotJwt(false)
+                                        .withMaxTokenExpirySeconds(Integer.MAX_VALUE)
                                         .build())
                     .endConsumer()
                     .editProducer()

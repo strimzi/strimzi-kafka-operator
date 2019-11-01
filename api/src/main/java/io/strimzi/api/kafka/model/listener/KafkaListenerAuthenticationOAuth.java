@@ -40,6 +40,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private int jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
+    private boolean skipTypeCheck;
+    private boolean notJwt;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
 
@@ -136,6 +138,28 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserNameClaim(String userNameClaim) {
         this.userNameClaim = userNameClaim;
+    }
+
+    @Description("Configure if access token type check should be skipped. Set this to `true` if authorization server " +
+            "doesn't return 'typ' claim inside JWT token. Defaults to `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isSkipTypeCheck() {
+        return skipTypeCheck;
+    }
+
+    public void setSkipTypeCheck(boolean skipTypeCheck) {
+        this.skipTypeCheck = skipTypeCheck;
+    }
+
+    @Description("Configure if access token should not be treated as JWT. Set this to `true` if authorization " +
+            "server returns opaque tokens. Defaults to `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isNotJwt() {
+        return notJwt;
+    }
+
+    public void setNotJwt(boolean notJwt) {
+        this.notJwt = notJwt;
     }
 
     @Description("Trusted certificates for TLS connection to the OAuth server.")

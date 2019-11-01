@@ -728,6 +728,8 @@ public class KafkaBridgeClusterTest {
                                     .withSecretName("my-secret-secret")
                                     .withKey("my-secret-key")
                                 .endClientSecret()
+                                .withNotJwt(false)
+                                .withMaxTokenExpirySeconds(Integer.MAX_VALUE)
                                 .build())
                 .endSpec()
                 .build();
@@ -810,6 +812,8 @@ public class KafkaBridgeClusterTest {
                                 .endClientSecret()
                                 .withDisableTlsHostnameVerification(true)
                                 .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                .withNotJwt(false)
+                                .withMaxTokenExpirySeconds(0)
                                 .build())
                 .endSpec()
                 .build();

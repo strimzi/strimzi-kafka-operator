@@ -1673,6 +1673,17 @@ public class KafkaCluster extends AbstractModel {
             log.error("{}: The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`", listener);
             throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
+
+        if (oAuth.isNotJwt()) {
+            if (oAuth.getUserNameClaim() != null) {
+                log.error("{}: userNameClaim can't be set when notJwt is true", listener);
+                throw new InvalidResourceException(listener + ": userNameClaim can't be set when notJwt is true");
+            }
+            if (oAuth.isSkipTypeCheck()) {
+                log.error("{}: skipTypeCheck can't be set when notJwt is true", listener);
+                throw new InvalidResourceException(listener + ": skipTypeCheck can't be set when notJwt is true");
+            }
+        }
     }
 
     /**
@@ -1692,6 +1703,8 @@ public class KafkaCluster extends AbstractModel {
         if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
+        if (oauth.isNotJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
+        if (oauth.isSkipTypeCheck()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
         if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
 
         return String.join(" ", options);
