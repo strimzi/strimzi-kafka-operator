@@ -8,9 +8,9 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 
 import java.util.Arrays;
@@ -177,10 +177,10 @@ public class ClusterOperatorConfig {
 
     private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String connectS2IImages, String mirrorMakerImages) {
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
-                ModelUtils.parseMap(kafkaImages),
-                ModelUtils.parseMap(connectImages),
-                ModelUtils.parseMap(connectS2IImages),
-                ModelUtils.parseMap(mirrorMakerImages));
+                Util.parseMap(kafkaImages),
+                Util.parseMap(connectImages),
+                Util.parseMap(connectS2IImages),
+                Util.parseMap(mirrorMakerImages));
         try {
             lookup.validateKafkaImages(lookup.supportedVersions());
             lookup.validateKafkaConnectImages(lookup.supportedVersions());

@@ -6,6 +6,7 @@ package io.strimzi.operator;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
@@ -13,6 +14,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.text.ParseException;
 
 /**
  * Gives a info about certain features availability regarding to kubernetes version
@@ -66,7 +69,50 @@ public class PlatformFeaturesAvailability {
         }
     }
 
-    private static Future<VersionInfo> getVersionInfo(Vertx vertx, KubernetesClient client)   {
+    /**
+     * Gets the Kubernetes VersionInfo. It either used from the /version endpoint or from the STRIMZI_KUBERNETES_VERSION
+     * environment variable. If defined, the environment variable will take the precedence. Otherwise the API server
+     * endpoint will be used.
+     *
+     * And example of the STRIMZI_KUBERNETES_VERSION environment variable in Cluster Operator deployment:
+     * <pre><code>
+     *       env:
+     *         - name: STRIMZI_KUBERNETES_VERSION
+     *           value: |
+     *                 major=1
+     *                 minor=16
+     *                 gitVersion=v1.16.2
+     *                 gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b
+     *                 gitTreeState=clean
+     *                 buildDate=2019-10-15T19:09:08Z
+     *                 goVersion=go1.12.10
+     *                 compiler=gc
+     *                 platform=linux/amd64
+     * </code></pre>
+     *
+     * @param vertx Instance of Vert.x
+     * @param client    Fabric8 Kubernetes client
+     * @return  Future with the VersionInfo object describing the Kubernetes version
+     */
+    private static Future<VersionInfo> getVersionInfo(Vertx vertx, KubernetesClient client) {
+        Future<VersionInfo> futureVersion;
+
+        String kubernetesVersion = System.getenv("STRIMZI_KUBERNETES_VERSION");
+
+        if (kubernetesVersion != null) {
+            try {
+                futureVersion = Future.succeededFuture(new VersionInfo(Util.parseMap(kubernetesVersion)));
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse the Kubernetes version information provided through STRIMZI_KUBERNETES_VERSION environment variable", e);
+            }
+        } else {
+            futureVersion = getVersionInfoFromKubernetes(vertx, client);
+        }
+
+        return futureVersion;
+    }
+
+    private static Future<VersionInfo> getVersionInfoFromKubernetes(Vertx vertx, KubernetesClient client)   {
         Future<VersionInfo> fut = Future.future();
 
         vertx.executeBlocking(request -> {

@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,12 +32,10 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 public class ModelUtils {
 
@@ -89,32 +88,6 @@ public class ModelUtils {
     public static String defaultResourceLabels(String cluster) {
         return String.format("%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster);
-    }
-
-    /**
-     * Parse a map from String.
-     * For example a map of images {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}
-     * or a map with labels / annotations {@code key1=value1 key2=value2}.
-     *
-     * @param str The string to parse.
-     *
-     * @return The parsed map.
-     */
-    public static Map<String, String> parseMap(String str) {
-        if (str != null) {
-            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
-            HashMap<String, String> map = new HashMap<>();
-            while (tok.hasMoreTokens()) {
-                String record = tok.nextToken();
-                int endIndex = record.indexOf('=');
-                String key = record.substring(0, endIndex);
-                String value = record.substring(endIndex + 1);
-                map.put(key.trim(), value.trim());
-            }
-            return Collections.unmodifiableMap(map);
-        } else {
-            return Collections.emptyMap();
-        }
     }
 
     /**
@@ -344,6 +317,6 @@ public class ModelUtils {
      * @return A map with labels or annotations
      */
     public static Map<String, String> getCustomLabelsOrAnnotations(String envVarName)   {
-        return parseMap(System.getenv().get(envVarName));
+        return Util.parseMap(System.getenv().get(envVarName));
     }
 }
