@@ -92,6 +92,7 @@ public class OpenSslCertManager implements CertManager {
             FileInputStream isTrustStore = null;
             try {
                 // check if the truststore file is empty or not, for loading its content eventually
+                // the KeyStore class is able to create an empty store if the input stream is null
                 if (trustStoreFile.length() > 0) {
                     isTrustStore = new FileInputStream(trustStoreFile);
                 }

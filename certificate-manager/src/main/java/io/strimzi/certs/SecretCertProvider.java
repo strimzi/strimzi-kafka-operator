@@ -27,8 +27,8 @@ public class SecretCertProvider {
 
     public static final String DEFAULT_KEY_KEY = "tls.key";
     public static final String DEFAULT_KEY_CERT = "tls.crt";
-    public static final String DEFAULT_KEY_STORE = "tls.str";
-    public static final String DEFAULT_KEY_STORE_PASSWORD = "tls.strpwd";
+    public static final String DEFAULT_KEY_STORE = "tls.p12";
+    public static final String DEFAULT_KEY_STORE_PASSWORD = "tls.password";
 
 
     /**

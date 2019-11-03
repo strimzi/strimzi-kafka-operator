@@ -67,8 +67,8 @@ public class SecretCertProviderTest {
         assertEquals(4, secret.getData().size());
         assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
         assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));
-        assertTrue(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("tls.str"))));
-        assertEquals("123456", new String(decoder.decode(secret.getData().get("tls.strpwd"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("tls.p12"))));
+        assertEquals("123456", new String(decoder.decode(secret.getData().get("tls.password"))));
 
         key.delete();
         cert.delete();

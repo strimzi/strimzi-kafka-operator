@@ -83,8 +83,8 @@ public abstract class Ca {
             .toFormatter().withChronology(IsoChronology.INSTANCE);
     public static final String CA_KEY = "ca.key";
     public static final String CA_CRT = "ca.crt";
-    public static final String CA_STORE = "ca.str";
-    public static final String CA_STORE_PASSWORD = "ca.strpwd";
+    public static final String CA_STORE = "truststore.p12";
+    public static final String CA_STORE_PASSWORD = "truststore.password";
     public static final String IO_STRIMZI = "io.strimzi";
 
     public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = Annotations.STRIMZI_DOMAIN + "/force-replace";
@@ -677,7 +677,7 @@ public abstract class Ca {
             } catch (CertificateException e) {
 
                 // doesn't remove stores and related password
-                if (!certName.endsWith(".str") && !certName.endsWith(".strpwd")) {
+                if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
                     remove = true;
                     log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
                             certName.replace(".", "\\."));
