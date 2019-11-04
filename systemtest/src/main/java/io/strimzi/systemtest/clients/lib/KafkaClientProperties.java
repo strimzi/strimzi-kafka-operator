@@ -127,24 +127,14 @@ class KafkaClientProperties {
         properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
 
         try {
-            String tsPassword = "foo";
+            Secret clusterCaCertSecret = kubeClient(namespace).getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
+
+            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("truststore.password")), "US-ASCII");
             File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
+            String truststore = clusterCaCertSecret.getData().get("truststore.p12");
+            Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
             tsFile.deleteOnExit();
-            KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
-            ts.load(null, tsPassword.toCharArray());
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            for (Map.Entry<String, String> entry : kubeClient(namespace).getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)).getData().entrySet()) {
-                String clusterCaCert = entry.getValue();
-                Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
-                ts.setCertificateEntry(entry.getKey(), cert);
-            }
-            FileOutputStream tsOs = new FileOutputStream(tsFile);
-            try {
-                ts.store(tsOs, tsPassword.toCharArray());
-            } finally {
-                tsOs.close();
-            }
-            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
         } catch (Exception e) {
