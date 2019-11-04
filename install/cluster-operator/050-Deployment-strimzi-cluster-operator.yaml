@@ -19,7 +19,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/operator:latest
+        image: ppatierno/operator:p12-test
         args:
         - /opt/strimzi/bin/cluster_operator_run.sh
         env:

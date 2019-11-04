@@ -4,7 +4,7 @@
  */
 package io.strimzi.certs;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class CertAndKey {
@@ -54,6 +54,6 @@ public class CertAndKey {
     }
 
     public String storePasswordAsBase64String() {
-        return Base64.getEncoder().encodeToString(storePassword.getBytes(Charset.forName("US-ASCII")));
+        return Base64.getEncoder().encodeToString(storePassword.getBytes(StandardCharsets.US_ASCII));
     }
 }

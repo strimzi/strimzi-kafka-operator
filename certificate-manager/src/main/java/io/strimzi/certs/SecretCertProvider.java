@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
@@ -92,7 +92,7 @@ public class SecretCertProvider {
         if (storeFile != null) {
             store = Files.readAllBytes(storeFile.toPath());
         }
-        byte[] password = storePassword != null ? storePassword.getBytes(Charset.forName("US-ASCII")) : null;
+        byte[] password = storePassword != null ? storePassword.getBytes(StandardCharsets.US_ASCII) : null;
 
 
         return createSecret(namespace, name, keyKey, certKey, key, cert, storeKey, storePasswordKey, store, password, labels, annotations, ownerReference);

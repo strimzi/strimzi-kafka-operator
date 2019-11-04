@@ -208,7 +208,7 @@ public class CertificateRenewalTest {
         KeyStore trustStore = KeyStore.getInstance("PKCS12");
         trustStore.load(new ByteArrayInputStream(
                 Base64.getDecoder().decode(data.get(CA_STORE))),
-                new String(Base64.getDecoder().decode(data.get(CA_STORE_PASSWORD)), "US-ASCII").toCharArray()
+                new String(Base64.getDecoder().decode(data.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII).toCharArray()
         );
         return trustStore.isCertificateEntry(alias);
     }
@@ -218,7 +218,7 @@ public class CertificateRenewalTest {
         KeyStore trustStore = KeyStore.getInstance("PKCS12");
         trustStore.load(new ByteArrayInputStream(
                 Base64.getDecoder().decode(data.get(CA_STORE))),
-                new String(Base64.getDecoder().decode(data.get(CA_STORE_PASSWORD)), "US-ASCII").toCharArray()
+                new String(Base64.getDecoder().decode(data.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII).toCharArray()
         );
         return (X509Certificate) trustStore.getCertificate(alias);
     }
@@ -895,7 +895,7 @@ public class CertificateRenewalTest {
         Files.write(certFile.toPath(), Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get("ca-2018-07-01T09-00-00.crt")));
         File trustStoreFile = File.createTempFile("tls", "-truststore");
         Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get(CA_STORE)));
-        String trustStorePassword = new String(Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)), "US-ASCII");
+        String trustStorePassword = new String(Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
         certManager.addCertToTrustStore(certFile, "ca-2018-07-01T09-00-00.crt", trustStoreFile, trustStorePassword);
         initialClusterCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
         assertTrue(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", initialClusterCaCertSecret.getData()));
@@ -922,7 +922,7 @@ public class CertificateRenewalTest {
         Files.write(certFile.toPath(), Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get("ca-2018-07-01T09-00-00.crt")));
         trustStoreFile = File.createTempFile("tls", "-truststore");
         Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get(CA_STORE)));
-        trustStorePassword = new String(Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)), "US-ASCII");
+        trustStorePassword = new String(Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
         certManager.addCertToTrustStore(certFile, "ca-2018-07-01T09-00-00.crt", trustStoreFile, trustStorePassword);
         initialClientsCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
         assertTrue(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", initialClientsCaCertSecret.getData()));

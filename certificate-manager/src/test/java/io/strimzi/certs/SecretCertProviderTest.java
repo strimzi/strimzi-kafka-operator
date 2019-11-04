@@ -12,11 +12,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -44,7 +40,7 @@ public class SecretCertProviderTest {
     }
 
     @Test
-    public void testKeyAndCertInSecret() throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void testKeyAndCertInSecret() throws Exception {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
@@ -76,7 +72,7 @@ public class SecretCertProviderTest {
     }
 
     @Test
-    public void testAddKeyAndCertInSecret() throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void testAddKeyAndCertInSecret() throws Exception {
 
         Base64.Decoder decoder = Base64.getDecoder();
 

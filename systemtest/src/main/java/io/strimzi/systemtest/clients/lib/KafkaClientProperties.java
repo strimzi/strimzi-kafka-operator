@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Properties;
@@ -123,7 +124,7 @@ class KafkaClientProperties {
         try {
             Secret clusterCaCertSecret = kubeClient(namespace).getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
 
-            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("truststore.password")), "US-ASCII");
+            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("truststore.password")), StandardCharsets.US_ASCII);
             File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
             String truststore = clusterCaCertSecret.getData().get("truststore.p12");
             Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
