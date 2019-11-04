@@ -9,7 +9,7 @@ Logging allows you to diagnose error and performance issues for {ProductName}.
 
 The following logger implementations are used in {ProductName}:
 
-* `log4j` logger for Kafka and Zookeeper
+* `log4j` logger for Kafka and {Zookeeper}
 * `log4j2` logger for Topic Operator, User Operator, and other components
 
 {ProductName} components have their own configurable loggers.

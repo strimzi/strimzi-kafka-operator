@@ -8,17 +8,17 @@
 :parent-context: {context}
 
 [id='assembly-storage-{context}']
-= Kafka and Zookeeper storage types
+= Kafka and {Zookeeper} storage types
 
-As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three storage types for this data:
+As stateful applications, Kafka and {Zookeeper} need to store data on disk. {ProductName} supports three storage types for this data:
 
 * Ephemeral
 * Persistent
 * JBOD storage
 
-NOTE: JBOD storage is supported only for Kafka, not for Zookeeper.
+NOTE: JBOD storage is supported only for Kafka, not for {Zookeeper}.
 
-When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding Zookeeper node. You configure the storage type using the `storage` property in the following resources:
+When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding {Zookeeper} node. You configure the storage type using the `storage` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`

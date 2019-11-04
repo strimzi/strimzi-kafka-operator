@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Zookeeper cluster resources.
+ * Representation of a template for ZooKeeper cluster resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -41,7 +41,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     private ContainerTemplate tlsSidecarContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Zookeeper `StatefulSet`.")
+    @Description("Template for ZooKeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getStatefulset() {
         return statefulset;
@@ -51,7 +51,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.statefulset = statefulset;
     }
 
-    @Description("Template for Zookeeper `Pods`.")
+    @Description("Template for ZooKeeper `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -61,7 +61,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.pod = pod;
     }
 
-    @Description("Template for Zookeeper client `Service`.")
+    @Description("Template for ZooKeeper client `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getClientService() {
         return clientService;
@@ -71,7 +71,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.clientService = clientService;
     }
 
-    @Description("Template for Zookeeper nodes `Service`.")
+    @Description("Template for ZooKeeper nodes `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getNodesService() {
         return nodesService;
@@ -81,7 +81,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.nodesService = nodesService;
     }
 
-    @Description("Template for all Zookeeper `PersistentVolumeClaims`.")
+    @Description("Template for all ZooKeeper `PersistentVolumeClaims`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getPersistentVolumeClaim() {
         return persistentVolumeClaim;
@@ -91,7 +91,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.persistentVolumeClaim = persistentVolumeClaim;
     }
 
-    @Description("Template for Zookeeper `PodDisruptionBudget`.")
+    @Description("Template for ZooKeeper `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;
@@ -101,7 +101,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for the Zookeeper container")
+    @Description("Template for the ZooKeeper container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getZookeeperContainer() {
         return zookeeperContainer;

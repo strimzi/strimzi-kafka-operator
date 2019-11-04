@@ -33,7 +33,7 @@ a|
 * Kafka Broker
 * Kafka Connect / S2I
 * Kafka Mirror Maker
-* Zookeeper
+* {Zookeeper}
 * TLS Sidecars
 
 |Operator

@@ -57,7 +57,7 @@ import static java.util.Collections.unmodifiableList;
                         ),
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired ZK replicas",
-                                description = "The desired number of Zookeeper replicas in the cluster",
+                                description = "The desired number of ZooKeeper replicas in the cluster",
                                 jsonPath = ".spec.zookeeper.replicas",
                                 type = "integer"
                         )
@@ -125,7 +125,7 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the Kafka and Zookeeper clusters, and Topic Operator.")
+    @Description("The specification of the Kafka and ZooKeeper clusters, and Topic Operator.")
     public KafkaSpec getSpec() {
         return spec;
     }
@@ -134,7 +134,7 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka and Zookeeper clusters, and Topic Operator.")
+    @Description("The status of the Kafka and ZooKeeper clusters, and Topic Operator.")
     public KafkaStatus getStatus() {
         return status;
     }

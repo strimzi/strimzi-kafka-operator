@@ -18,7 +18,7 @@ When you create a cluster, the Cluster Operator you deployed watches for new Kaf
 
 . Log in to the Kubernetes cluster as a non-privileged user.
 
-. Create a new `my-cluster` Kafka cluster with one Zookeeper and one Kafka broker.
+. Create a new `my-cluster` Kafka cluster with one {Zookeeper} and one Kafka broker.
 +
 * Use `persistent-claim` storage
 * Expose the Kafka cluster outside of the Kubernetes cluster using an external listener configured to use a `nodeport`.

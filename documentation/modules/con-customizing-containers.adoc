@@ -25,11 +25,11 @@ The following table lists the {ProductName} containers and the relevant template
 |`kafka.template.initContainer.env`
 
 |Kafka
-|Zookeeper Node
+|{Zookeeper} Node
 |`zookeeper.template.zookeeperContainer.env`
 
 |Kafka
-|Zookeeper TLS Sidecar
+|{Zookeeper} TLS Sidecar
 |`zookeeper.template.tlsSidecarContainer.env`
 
 |Kafka

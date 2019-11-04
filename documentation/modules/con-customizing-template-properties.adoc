@@ -58,16 +58,16 @@ spec:
 
 xref:type-KafkaClusterTemplate-reference[].
 
-== Supported template properties for a Zookeeper cluster
+== Supported template properties for a {Zookeeper} cluster
 
-`statefulset`:: Configures the Zookeeper `StatefulSet`.
-`pod`:: Configures the Zookeeper `Pods` created by the `StatefulSet`.
-`clientsService`:: Configures the service used by clients to access Zookeeper.
+`statefulset`:: Configures the {Zookeeper} `StatefulSet`.
+`pod`:: Configures the {Zookeeper} `Pods` created by the `StatefulSet`.
+`clientsService`:: Configures the service used by clients to access {Zookeeper}.
 `nodesService`:: Configures the headless service.
-`podDisruptionBudget`:: Configures the Pod Disruption Budget for Zookeeper `StatefulSet`.
-`zookeeperContainer`:: Configures the container used to run the Zookeeper Node, including custom environment variables.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for {Zookeeper} `StatefulSet`.
+`zookeeperContainer`:: Configures the container used to run the {Zookeeper} Node, including custom environment variables.
 `tlsSidecarContainer`:: Configures the TLS sidecar container, including custom environment variables.
-`persistentVolumeClaim`:: Configures the metadata of the Zookeeper `PersistentVolumeClaims`.
+`persistentVolumeClaim`:: Configures the metadata of the {Zookeeper} `PersistentVolumeClaims`.
 
 .Additional resources
 

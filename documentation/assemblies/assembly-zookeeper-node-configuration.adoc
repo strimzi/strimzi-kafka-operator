@@ -8,9 +8,9 @@
 
 [id='assembly-zookeeper-node-configuration-{context}']
 
-= Zookeeper configuration
+= {Zookeeper} configuration
 
-{ProductName} allows you to customize the configuration of Apache Zookeeper nodes.
+{ProductName} allows you to customize the configuration of Apache {Zookeeper} nodes.
 You can specify and configure most of the options listed in the {ApacheZookeeperConfig}.
 
 Options which cannot be configured are those related to the following areas:
@@ -18,7 +18,7 @@ Options which cannot be configured are those related to the following areas:
 * Security (Encryption, Authentication, and Authorization)
 * Listener configuration
 * Configuration of data directories
-* Zookeeper cluster composition
+* {Zookeeper} cluster composition
 
 These options are automatically configured by {ProductName}.
 

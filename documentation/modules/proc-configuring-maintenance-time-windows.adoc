@@ -42,4 +42,4 @@ kubectl apply -f _your-file_
 .Additional resources
 
 * Performing a rolling update of a Kafka cluster, see xref:proc-manual-rolling-update-kafka-{context}[]
-* Performing a rolling update of a Zookeeper cluster, see xref:proc-manual-rolling-update-zookeeper-{context}[]
+* Performing a rolling update of a {Zookeeper} cluster, see xref:proc-manual-rolling-update-zookeeper-{context}[]

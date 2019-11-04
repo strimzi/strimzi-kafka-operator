@@ -13,7 +13,7 @@ Use a terminal to run a Kafka producer and consumer on a local machine.
 .Prerequisites
 
 * {ProductName} is installed on the Kubernetes cluster
-* Zookeeper and Kafka are running
+* {Zookeeper} and Kafka are running
 
 .Procedure
 

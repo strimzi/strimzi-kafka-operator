@@ -14,7 +14,7 @@ The `entityOperator` property supports several sub-properties:
 * `userOperator`
 * `template`
 
-The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with Zookeeper.
+The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with {Zookeeper}.
 For more details about configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
 
 The `template` property can be used to configure details of the Entity Operator pod, such as labels, annotations, affinity, tolerations and so on.
@@ -59,7 +59,7 @@ The interval between periodic reconciliations in seconds.
 Default `90`.
 
 `zookeeperSessionTimeoutSeconds`::
-The Zookeeper session timeout in seconds.
+The {Zookeeper} session timeout in seconds.
 Default `20`.
 
 `topicMetadataMaxAttempts`::
@@ -117,7 +117,7 @@ The interval between periodic reconciliations in seconds.
 Default `120`.
 
 `zookeeperSessionTimeoutSeconds`::
-The Zookeeper session timeout in seconds.
+The {Zookeeper} session timeout in seconds.
 Default `6`.
 
 `image`::

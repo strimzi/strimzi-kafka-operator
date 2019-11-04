@@ -79,7 +79,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
 
-    @Description("Timeout for the Zookeeper session")
+    @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
     public long getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;

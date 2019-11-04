@@ -35,10 +35,10 @@ The Cluster Operator performs the following process to renew CA certificates:
 
 . Generate a new CA certificate, but retaining the existing key. The new certificate replaces the old one with the name `ca.crt` within the corresponding `Secret`.
 
-. Generate new client certificates (for Zookeeper nodes, Kafka brokers, and the Entity Operator).
+. Generate new client certificates (for {Zookeeper} nodes, Kafka brokers, and the Entity Operator).
 This is not strictly necessary because the signing key has not changed, but it keeps the validity period of the client certificate in sync with the CA certificate.
 
-. Restart Zookeeper nodes so that they will trust the new CA certificate and use the new client certificates.
+. Restart {Zookeeper} nodes so that they will trust the new CA certificate and use the new client certificates.
 
 . Restart Kafka brokers so that they will trust the new CA certificate and use the new client certificates.
 
