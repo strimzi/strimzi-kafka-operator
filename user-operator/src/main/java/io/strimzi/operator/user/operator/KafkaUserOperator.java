@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -30,7 +31,7 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
@@ -164,7 +165,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
         String password = null;
 
         if (desired != null && desired.getData().get("password") != null)   {
-            password = new String(Base64.getDecoder().decode(desired.getData().get("password")), Charset.forName("US-ASCII"));
+            password = new String(Base64.getDecoder().decode(desired.getData().get("password")), StandardCharsets.US_ASCII);
         }
 
         Set<SimpleAclRule> tlsAcls = null;

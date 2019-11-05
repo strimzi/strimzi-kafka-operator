@@ -13,6 +13,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.PasswordGenerator;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +21,10 @@ import org.apache.logging.log4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -31,6 +35,7 @@ import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
@@ -54,6 +59,7 @@ import static java.util.Collections.singletonMap;
 /**
  * A Certificate Authority which can renew its own (self-signed) certificates, and generate signed certificates
  */
+@SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
     protected static final Logger log = LogManager.getLogger(Ca.class);
@@ -78,6 +84,8 @@ public abstract class Ca {
             .toFormatter().withChronology(IsoChronology.INSTANCE);
     public static final String CA_KEY = "ca.key";
     public static final String CA_CRT = "ca.crt";
+    public static final String CA_STORE = "truststore.p12";
+    public static final String CA_STORE_PASSWORD = "truststore.password";
     public static final String IO_STRIMZI = "io.strimzi";
 
     public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = Annotations.STRIMZI_DOMAIN + "/force-replace";
@@ -87,6 +95,13 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/cluster-ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
+
+    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+            "abcdefghijklmnopqrstuvwxyz" +
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "abcdefghijklmnopqrstuvwxyz" +
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                    "0123456789");
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -207,9 +222,9 @@ public abstract class Ca {
         this.renewalType = RenewalType.NOOP;
     }
 
-    private static void delete(File brokerCsrFile) {
-        if (!brokerCsrFile.delete()) {
-            log.warn("{} cannot be deleted", brokerCsrFile.getName());
+    private static void delete(File file) {
+        if (!file.delete()) {
+            log.warn("{} cannot be deleted", file.getName());
         }
     }
 
@@ -419,8 +434,28 @@ public abstract class Ca {
                     keyData = new HashMap<>();
                     certData = new HashMap<>(caCertSecret.getData());
                     if (certData.containsKey(CA_CRT)) {
-                        String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
+                        // using the current store for storing the current CA cert as an "old" one
+                        try {
+                            File certFile = File.createTempFile("tls", "-cert");
+                            Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
+                            try {
+                                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                                Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                                try {
+                                    String trustStorePassword = new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
+                                    String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+                                    certManager.addCertToTrustStore(certFile, "ca-" + notAfterDate + ".crt", trustStoreFile, trustStorePassword);
+                                    certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
+                                    certData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
+                                } finally {
+                                    delete(trustStoreFile);
+                                }
+                            } finally {
+                                delete(certFile);
+                            }
+                        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     ++caCertGeneration;
                     generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
@@ -647,13 +682,13 @@ public abstract class Ca {
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {
-        int removed = 0;
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
+        List<String> removed = new ArrayList<>();
         while (iter.hasNext()) {
             Map.Entry<String, String> entry = iter.next();
             String certName = entry.getKey();
             String certText = entry.getValue();
-            boolean remove;
+            boolean remove = false;
             try {
                 X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
                 Instant expiryDate = cert.getNotAfter().toInstant();
@@ -663,18 +698,40 @@ public abstract class Ca {
                             certName.replace(".", "\\."), expiryDate);
                 }
             } catch (CertificateException e) {
-                remove = true;
-                log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
-                        certName.replace(".", "\\."));
+
+                // doesn't remove stores and related password
+                if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
+                    remove = true;
+                    log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
+                            certName.replace(".", "\\."));
+                }
             }
             if (remove) {
                 log.debug("Removing data.{} from Secret",
                         certName.replace(".", "\\."));
                 iter.remove();
-                removed++;
+                removed.add(certName);
             }
         }
-        return removed;
+
+        if (removed.size() > 0) {
+            // the certificates removed from the Secret data has tobe removed from the store as well
+            try {
+                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
+                try {
+                    String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
+                    certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
+                    newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
+                } finally {
+                    delete(trustStoreFile);
+                }
+            } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return removed.size();
     }
 
     private boolean certNeedsRenewal(X509Certificate cert)  {
@@ -728,17 +785,38 @@ public abstract class Ca {
             try {
                 File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
                 try {
-                    certManager.generateSelfSignedCert(keyFile, certFile, subject, validityDays);
-                    CertAndKey ca = new CertAndKey(Files.readAllBytes(keyFile.toPath()), Files.readAllBytes(certFile.toPath()));
-                    certData.put(CA_CRT, ca.certAsBase64String());
-                    keyData.put(CA_KEY, ca.keyAsBase64String());
+                    File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                    String trustStorePassword;
+                    // if secret already contains the truststore, we have to reuse it without changing password
+                    if (certData.containsKey(CA_STORE)) {
+                        Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                        trustStorePassword = new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
+                    } else {
+                        trustStorePassword = passwordGenerator.generate();
+                    }
+                    try {
+                        certManager.generateSelfSignedCert(keyFile, certFile, subject, validityDays);
+                        certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
+                        CertAndKey ca = new CertAndKey(
+                                Files.readAllBytes(keyFile.toPath()),
+                                Files.readAllBytes(certFile.toPath()),
+                                Files.readAllBytes(trustStoreFile.toPath()),
+                                null,
+                                trustStorePassword);
+                        certData.put(CA_CRT, ca.certAsBase64String());
+                        keyData.put(CA_KEY, ca.keyAsBase64String());
+                        certData.put(CA_STORE, ca.trustStoreAsBase64String());
+                        certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
+                    } finally {
+                        delete(trustStoreFile);
+                    }
                 } finally {
                     delete(certFile);
                 }
             } finally {
                 delete(keyFile);
             }
-        } catch (IOException e) {
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
@@ -754,16 +832,30 @@ public abstract class Ca {
                 Files.write(keyFile.toPath(), bytes);
                 File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
                 try {
-                    certManager.renewSelfSignedCert(keyFile, certFile, subject, validityDays);
-                    CertAndKey ca = new CertAndKey(bytes, Files.readAllBytes(certFile.toPath()));
-                    certData.put(CA_CRT, ca.certAsBase64String());
+                    File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                    try {
+                        String trustStorePassword = passwordGenerator.generate();
+                        certManager.renewSelfSignedCert(keyFile, certFile, subject, validityDays);
+                        certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
+                        CertAndKey ca = new CertAndKey(
+                                bytes,
+                                Files.readAllBytes(certFile.toPath()),
+                                Files.readAllBytes(trustStoreFile.toPath()),
+                                null,
+                                trustStorePassword);
+                        certData.put(CA_CRT, ca.certAsBase64String());
+                        certData.put(CA_STORE, ca.trustStoreAsBase64String());
+                        certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
+                    } finally {
+                        delete(trustStoreFile);
+                    }
                 } finally {
                     delete(certFile);
                 }
             } finally {
                 delete(keyFile);
             }
-        } catch (IOException e) {
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }

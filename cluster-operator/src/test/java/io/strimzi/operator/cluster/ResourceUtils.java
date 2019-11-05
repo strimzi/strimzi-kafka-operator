@@ -164,7 +164,7 @@ public class ResourceUtils {
     public static List<Secret> createKafkaClusterInitialSecrets(String clusterNamespace, String clusterName) {
         List<Secret> secrets = new ArrayList<>();
         secrets.add(createInitialCaCertSecret(clusterNamespace, clusterName,
-                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert()));
+                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"));
         secrets.add(createInitialCaKeySecret(clusterNamespace, clusterName,
                 AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey()));
         return secrets;
@@ -172,7 +172,7 @@ public class ResourceUtils {
 
     public static ClusterCa createInitialClusterCa(String clusterNamespace, String clusterName) {
         Secret initialClusterCaCertSecret = createInitialCaCertSecret(clusterNamespace, clusterName,
-                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert());
+                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456");
         Secret initialClusterCaKeySecret = createInitialCaKeySecret(clusterNamespace, clusterName,
                 AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey());
         return createInitialClusterCa(clusterName, initialClusterCaCertSecret, initialClusterCaKeySecret);
@@ -183,11 +183,11 @@ public class ResourceUtils {
     }
 
     public static ClientsCa createInitialClientsCa(String clusterNamespace, String clusterName) {
-        Secret initialClusterCaCertSecret = createInitialCaCertSecret(clusterNamespace, clusterName,
-                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert());
-        Secret initialClusterCaKeySecret = createInitialCaKeySecret(clusterNamespace, clusterName,
-                AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey());
-        return createInitialClientsCa(clusterName, initialClusterCaCertSecret, initialClusterCaKeySecret);
+        Secret initialClientsCaCert = createInitialCaCertSecret(clusterNamespace, clusterName,
+                KafkaCluster.clientsCaCertSecretName(clusterName), MockCertManager.clientsCaCert(), MockCertManager.clientsCaCertStore(), "123456");
+        Secret initialClientsCaKey = createInitialCaKeySecret(clusterNamespace, clusterName,
+                KafkaCluster.clientsCaKeySecretName(clusterName), MockCertManager.clientsCaKey());
+        return createInitialClientsCa(clusterName, initialClientsCaCert, initialClientsCaKey);
     }
 
     public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
@@ -199,7 +199,8 @@ public class ResourceUtils {
                 365, 30, true, null);
     }
 
-    public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName, String caCert) {
+    public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,
+                                                   String caCert, String caStore, String caStorePassword) {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(secretName)
@@ -208,6 +209,8 @@ public class ResourceUtils {
                     .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
+                .addToData("truststore.p12", caStore)
+                .addToData("truststore.password", caStorePassword)
                 .build();
     }
 
@@ -229,7 +232,7 @@ public class ResourceUtils {
         secrets.add(createInitialCaKeySecret(clusterCmNamespace, clusterName,
                 AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey()));
         secrets.add(createInitialCaCertSecret(clusterCmNamespace, clusterName,
-                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert()));
+                AbstractModel.clusterCaCertSecretName(clusterName), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"));
 
         secrets.add(
                 new SecretBuilder()

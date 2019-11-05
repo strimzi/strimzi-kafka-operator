@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
@@ -24,28 +25,6 @@ import static java.util.Collections.singletonList;
  */
 public class SecretCertProvider {
 
-    public static final String DEFAULT_KEY_KEY = "tls.key";
-    public static final String DEFAULT_KEY_CERT = "tls.crt";
-
-
-    /**
-     * Create a Kubernetes secret containing the provided private key and related certificate
-     * using default values for the keys in the Secret data section
-     *
-     * @param namespace Namespace
-     * @param name Secret name
-     * @param keyFile private key to store
-     * @param certFile certificate to store
-     * @param labels Labels to add to the Secret
-     * @param annotations annotations to add to the Secret
-     * @param ownerReference owner of the Secret
-     * @return the Secret
-     * @throws IOException If a file could not be read.
-     */
-    public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
-        return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels, annotations, ownerReference);
-    }
-
     /**
      * Create a Kubernetes secret containing the provided private key and related certificate
      *
@@ -55,17 +34,33 @@ public class SecretCertProvider {
      * @param certKey key field in the Secret data section for the certificate
      * @param keyFile private key to store
      * @param certFile certificate to store
+     * @param storeKey key field in the Secret data section for the PKCS12 store
+     * @param storePasswordKey key field in the Secret data section for the PKCS12 store password
+     * @param storeFile PKCS12 store
+     * @param storePassword PKCS12 store password
      * @param labels Labels to add to the Secret
      * @param annotations annotations to add to the Secret
      * @param ownerReference owner of the Secret
      * @return the Secret
      * @throws IOException If a file could not be read.
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
+    public Secret createSecret(String namespace, String name,
+                               String keyKey, String certKey,
+                               File keyFile, File certFile,
+                               String storeKey, String storePasswordKey,
+                               File storeFile, String storePassword,
+                               Map<String, String> labels, Map<String, String> annotations,
+                               OwnerReference ownerReference) throws IOException {
         byte[] key = Files.readAllBytes(keyFile.toPath());
         byte[] cert = Files.readAllBytes(certFile.toPath());
+        byte[] store = null;
+        if (storeFile != null) {
+            store = Files.readAllBytes(storeFile.toPath());
+        }
+        byte[] password = storePassword != null ? storePassword.getBytes(StandardCharsets.US_ASCII) : null;
 
-        return createSecret(namespace, name, keyKey, certKey, key, cert, labels, annotations, ownerReference);
+
+        return createSecret(namespace, name, keyKey, certKey, key, cert, storeKey, storePasswordKey, store, password, labels, annotations, ownerReference);
     }
 
     /**
@@ -77,18 +72,34 @@ public class SecretCertProvider {
      * @param certKey key field in the Secret data section for the certificate
      * @param key private key to store
      * @param cert certificate to store
+     * @param storeKey key field in the Secret data section for the PKCS12 store
+     * @param storePasswordKey key field in the Secret data section for the PKCS12 store password
+     * @param store PKCS12 store
+     * @param storePassword PKCS12 store password
      * @param labels Labels to add to the Secret
      * @param annotations annotations to add to the Secret
      * @param ownerReference owner of the Secret
      * @return the Secret
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
+    public Secret createSecret(String namespace, String name,
+                               String keyKey, String certKey,
+                               byte[] key, byte[] cert,
+                               String storeKey, String storePasswordKey,
+                               byte[] store, byte[] storePassword,
+                               Map<String, String> labels, Map<String, String> annotations,
+                               OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
 
         Base64.Encoder encoder = Base64.getEncoder();
 
         data.put(keyKey, encoder.encodeToString(key));
         data.put(certKey, encoder.encodeToString(cert));
+        if (store != null) {
+            data.put(storeKey, encoder.encodeToString(store));
+        }
+        if (storePassword != null) {
+            data.put(storePasswordKey, encoder.encodeToString(storePassword));
+        }
 
         return createSecret(namespace, name, data, labels, annotations, ownerReference);
     }

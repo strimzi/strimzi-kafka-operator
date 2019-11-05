@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,12 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +84,85 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
+    @Override
+    public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+
+        try {
+            FileInputStream isTrustStore = null;
+            try {
+                // check if the truststore file is empty or not, for loading its content eventually
+                // the KeyStore class is able to create an empty store if the input stream is null
+                if (trustStoreFile.length() > 0) {
+                    isTrustStore = new FileInputStream(trustStoreFile);
+                }
+
+                FileInputStream isCertificate = null;
+                try {
+                    isCertificate = new FileInputStream(certFile);
+
+                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                    X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+
+                    KeyStore trustStore = KeyStore.getInstance("PKCS12");
+                    trustStore.load(isTrustStore, trustStorePassword.toCharArray());
+                    trustStore.setEntry(certAlias, new KeyStore.TrustedCertificateEntry(certificate), null);
+
+                    FileOutputStream osTrustStore = null;
+                    try {
+                        osTrustStore = new FileOutputStream(trustStoreFile);
+                        trustStore.store(osTrustStore, trustStorePassword.toCharArray());
+                    } finally {
+                        if (osTrustStore != null) {
+                            osTrustStore.close();
+                        }
+                    }
+                } finally {
+                    if (isCertificate != null) {
+                        isCertificate.close();
+                    }
+                }
+            } finally {
+                if (isTrustStore != null) {
+                    isTrustStore.close();
+                }
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw e;
+        }
+    }
+
+    @Override
+    public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+
+        try {
+            FileInputStream isTrustStore = null;
+            try {
+                isTrustStore = new FileInputStream(trustStoreFile);
+                KeyStore trustStore = KeyStore.getInstance("PKCS12");
+                trustStore.load(isTrustStore, trustStorePassword.toCharArray());
+                for (String alias : aliases) {
+                    trustStore.deleteEntry(alias);
+                }
+                FileOutputStream osTrustStore = null;
+                try {
+                    osTrustStore = new FileOutputStream(trustStoreFile);
+                    trustStore.store(osTrustStore, trustStorePassword.toCharArray());
+                } finally {
+                    if (osTrustStore != null) {
+                        osTrustStore.close();
+                    }
+                }
+            } finally {
+                if (isTrustStore != null) {
+                    isTrustStore.close();
+                }
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw e;
+        }
+    }
 
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {

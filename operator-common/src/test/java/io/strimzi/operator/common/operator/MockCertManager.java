@@ -7,11 +7,18 @@ package io.strimzi.operator.common.operator;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.List;
 
 public class MockCertManager implements CertManager {
 
@@ -114,6 +121,16 @@ public class MockCertManager implements CertManager {
             "QtlIdmFljGSaGGY6aJjUvUdgoPp1yQPa5oS+afr5g9gaEp4lxP6mc+Li\n" +
             "-----END CERTIFICATE-----\n";
 
+    private static final byte[] CLUSTER_CERT_STORE;
+    private static final byte[] CLIENTS_CERT_STORE;
+
+    static {
+        InputStream is = MockCertManager.class.getClassLoader().getResourceAsStream("CLUSTER_CERT.str");
+        CLUSTER_CERT_STORE = loadResource(is);
+        is = MockCertManager.class.getClassLoader().getResourceAsStream("CLIENTS_CERT.str");
+        CLIENTS_CERT_STORE = loadResource(is);
+    }
+
     public static String clusterCaCert() {
         return Base64.getEncoder().encodeToString(CLUSTER_CERT.getBytes(Charset.defaultCharset()));
     }
@@ -130,10 +147,32 @@ public class MockCertManager implements CertManager {
         return Base64.getEncoder().encodeToString(CLIENTS_KEY.getBytes(Charset.defaultCharset()));
     }
 
+    public static String clusterCaCertStore() {
+        return Base64.getEncoder().encodeToString(CLUSTER_CERT_STORE);
+    }
+
+    public static String clientsCaCertStore() {
+        return Base64.getEncoder().encodeToString(CLIENTS_CERT_STORE);
+    }
+
     private void write(File keyFile, String str) throws IOException {
         try (FileWriter writer = new FileWriter(keyFile)) {
             writer.write(str);
         }
+    }
+
+    private static byte[] loadResource(InputStream is) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try {
+            int read;
+            byte[] data = new byte[2048];
+            while ((read = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, read);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return buffer.toByteArray();
     }
 
     /**
@@ -177,6 +216,22 @@ public class MockCertManager implements CertManager {
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, sbj, days);
+    }
+
+    @Override
+    public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        if (certFile.getName().contains("cluster")) {
+            Files.write(trustStoreFile.toPath(), CLUSTER_CERT_STORE);
+        } else if (certFile.getName().contains("clients")) {
+            Files.write(trustStoreFile.toPath(), CLIENTS_CERT_STORE);
+        }
+    }
+
+    @Override
+    public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        // never called during the tests which use this MockCertManager
     }
 
     /**
