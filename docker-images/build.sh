@@ -57,7 +57,6 @@ function fetch_and_unpack_kafka_binaries {
         echo "Fetching and unpacking binary for Kafka $kafka_version"
 
         expected_sha=${version_checksums[$kafka_version]}
-        lib_directory=${version_libs[$kafka_version]}
 
         if [ ${version_binary_urls[$kafka_version]} ]
         then
@@ -155,8 +154,9 @@ function build {
 
     for kafka_version in "${!version_checksums[@]}"
     do
+        lib_directory=${version_libs[$kafka_version]}
 
-        if [[ -v version_dist_dirs ]]
+        if [[ $targets == *"docker_build"* ]]
         then
             relative_dist_dir=${version_dist_dirs[$kafka_version]}
         fi
