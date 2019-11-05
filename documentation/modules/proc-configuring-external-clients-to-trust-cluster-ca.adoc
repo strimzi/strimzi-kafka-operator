@@ -3,7 +3,7 @@
 // assembly-security.adoc
 
 [id='configuring-external-clients-to-trust-cluster-ca-{context}']
-= Configuring external clients to trust the cluster CA 
+= Configuring external clients to trust the cluster CA
 
 This procedure describes how to configure a Kafka client that resides outside the Kubernetes cluster – connecting to the `external` listener on port 9094 – to trust the cluster CA certificate.
 
@@ -16,8 +16,8 @@ IMPORTANT: The `_<cluster-name>_-cluster-ca-cert` `Secret` will contain more tha
 .Prerequisites
 
 * The Cluster Operator is running.
-* A `Kafka` resource within the {ProductPlatformName} cluster.
-* A Kafka client application outside the {ProductPlatformName} cluster which will connect using TLS and needs to trust the cluster CA certificate.
+* A `Kafka` resource within the Kubernetes cluster.
+* A Kafka client application outside the Kubernetes cluster which will connect using TLS and needs to trust the cluster CA certificate.
 
 .Procedure
 
@@ -36,7 +36,7 @@ keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
 
 . To configure the Kafka client, specify the following properties:
 
-* `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication), or `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS. 
+* `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication), or `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
 * `ssl.truststore.location`: the truststore location where the certificates were imported.
 * `ssl.truststore.password`: the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
 
