@@ -52,10 +52,13 @@ class DefaultAdminClientProvider implements AdminClientProvider {
                 Properties p = new Properties();
                 p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, hostname);
                 p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+
                 p.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststoreFile.getAbsolutePath());
+                p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
                 p.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, trustStorePassword);
-                p.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, trustStorePassword);
+
                 p.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, keystoreFile.getAbsolutePath());
+                p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
                 p.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keyStorePassword);
                 p.setProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, keyStorePassword);
                 p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
