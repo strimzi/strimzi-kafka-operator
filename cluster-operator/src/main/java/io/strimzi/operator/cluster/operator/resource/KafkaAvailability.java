@@ -61,25 +61,24 @@ class KafkaAvailability {
     }
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
-        Future<List<TopicDescription>> topicsOnBroker = descriptions
-                .compose(tds -> {
-                    log.debug("Got {} topic descriptions", tds.size());
-                    return Future.succeededFuture(groupTopicsByBroker(tds).getOrDefault(podId, Collections.emptyList()));
+        Future<List<TopicDescription>> topicsOnGivenBroker = descriptions
+                .compose(topicDescriptions -> {
+                    log.debug("Got {} topic descriptions", topicDescriptions.size());
+                    return Future.succeededFuture(groupTopicsByBroker(topicDescriptions).getOrDefault(podId, Collections.emptyList()));
                 }).recover(error -> {
                     log.warn(error);
                     return Future.failedFuture(error);
                 });
 
         // 4. Get topic configs (for those on $broker)
-        Future<Map<String, Config>> configs = topicsOnBroker
+        Future<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
                 .compose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toList())));
 
         // 5. join
-        return configs.map(x -> {
-            Collection<TopicDescription> tds = topicsOnBroker.result();
-            Map<String, Config> nameToConfig = x;
+        return topicConfigsOnGivenBroker.map(topicNameToConfig -> {
+            Collection<TopicDescription> tds = topicsOnGivenBroker.result();
             boolean canRoll = tds.stream().noneMatch(
-                td -> wouldAffectAvailability(podId, nameToConfig, td));
+                td -> wouldAffectAvailability(podId, topicNameToConfig, td));
             if (!canRoll) {
                 log.debug("Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
             }
@@ -105,15 +104,15 @@ class KafkaAvailability {
             if (minIsr >= 0) {
                 if (isr.size() < minIsr) {
                     if (contains(pi.replicas(), broker)) {
-                        log.debug("{}/{} is below its min ISR of {} and broker {} has a replica, " +
-                                        "so avoiding rolling",
-                                td.name(), pi.partition(), minIsr, broker);
+                        log.info("{}/{} is already underreplicated (|ISR|={}, min ISR={}); broker {} has a replica, " +
+                                        "so should not be restarted right now.",
+                                td.name(), pi.partition(), isr.size(), minIsr, broker);
                         return true;
                     }
                 } else if (isr.size() == minIsr) {
                     if (contains(isr, broker)) {
-                        log.debug("rolling broker {} would put {}/{} below its min ISR of {}",
-                                broker, td.name(), pi.partition(), minIsr);
+                        log.info("{}/{} will be underreplicated (|ISR|={} and min ISR={}) if broker {} is restarted.",
+                                td.name(), pi.partition(), isr.size(), minIsr, broker);
                         return true;
                     }
                 }
@@ -161,7 +160,6 @@ class KafkaAvailability {
                 }
             }
         }
-        log.debug("returning");
         return byBroker;
     }
 

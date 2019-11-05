@@ -194,7 +194,7 @@ public class KafkaRoller {
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
-            } catch (FatalException e) {
+            } catch (FatalProblem e) {
                 log.info("Could not restart pod {}, giving up after {} attempts/{}ms",
                         podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                 ctx.future.fail(e);
@@ -226,16 +226,16 @@ public class KafkaRoller {
      * @param podId The id of the pod to roll.
      * @param finalAttempt True if this is the last attempt to roll this pod.
      * @throws InterruptedException Interrupted while waiting.
-     * @throws ForceableException Some error. Not thrown when finalAttempt==true.
-     * @throws UnforceableException Some error, still thrown when finalAttempt==true.
+     * @throws ForceableProblem Some error. Not thrown when finalAttempt==true.
+     * @throws UnforceableProblem Some error, still thrown when finalAttempt==true.
      */
     private void restartIfNecessary(int podId, boolean finalAttempt)
-            throws InterruptedException, ForceableException, UnforceableException, FatalException {
+            throws InterruptedException, ForceableProblem, UnforceableProblem, FatalProblem {
         Pod pod;
         try {
             pod = podOperations.get(namespace, KafkaCluster.kafkaPodName(cluster, podId));
         } catch (KubernetesClientException e) {
-            throw new UnforceableException("Error getting pod " + podName(podId), e);
+            throw new UnforceableProblem("Error getting pod " + podName(podId), e);
         }
 
         if (podNeedsRestart.test(pod)) {
@@ -249,20 +249,20 @@ public class KafkaRoller {
                             0, Integer::sum);
                     if (controller == podId && stillRunning > 1) {
                         log.debug("Pod {} is controller and there are other pods to roll", podId);
-                        throw new ForceableException("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
+                        throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                     } else {
                         if (canRoll(adminClient, podId, 1, TimeUnit.MINUTES)) {
                             log.debug("Pod {} can be rolled now", podId);
                             restartAndAwaitReadiness(pod, 5, TimeUnit.MINUTES);
                         } else {
                             log.debug("Pod {} cannot be rolled right now", podId);
-                            throw new UnforceableException("Pod " + podName(podId) + " is currently not rollable");
+                            throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
                         }
                     }
                 } finally {
                     closeLoggingAnyError(adminClient);
                 }
-            } catch (ForceableException e) {
+            } catch (ForceableProblem e) {
                 if (finalAttempt) {
                     restartAndAwaitReadiness(pod, 5, TimeUnit.MINUTES);
                 } else {
@@ -275,7 +275,7 @@ public class KafkaRoller {
             // We rely on Kube to try restarting such pods.
             log.debug("Pod {} does not need to be restarted", podId);
             log.debug("Waiting for non-restarted pod {} to become ready", podId);
-            await(isReady(pod), 5, TimeUnit.MINUTES, e -> new FatalException("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
+            await(isReady(pod), 5, TimeUnit.MINUTES, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
             log.debug("Pod {} is now ready", podId);
         }
     }
@@ -291,36 +291,36 @@ public class KafkaRoller {
     }
 
     /** Exceptions which we're prepared to ignore in the final attempt */
-    static final class ForceableException extends Exception {
-        ForceableException(String msg) {
+    static final class ForceableProblem extends Exception {
+        ForceableProblem(String msg) {
             this(msg, null);
         }
-        ForceableException(String msg, Throwable cause) {
+        ForceableProblem(String msg, Throwable cause) {
             super(msg, cause);
         }
     }
 
     /** Exceptions which we're prepared to ignore in the final attempt */
-    static final class UnforceableException extends Exception {
-        UnforceableException(String msg) {
+    static final class UnforceableProblem extends Exception {
+        UnforceableProblem(String msg) {
             this(msg, null);
         }
-        UnforceableException(String msg, Throwable cause) {
+        UnforceableProblem(String msg, Throwable cause) {
             super(msg, cause);
         }
     }
 
     /** Immediately aborts rolling */
-    static final class FatalException extends Exception {
-        FatalException(String msg, Throwable cause) {
+    static final class FatalProblem extends Exception {
+        FatalProblem(String msg, Throwable cause) {
             super(msg, cause);
         }
     }
 
     private boolean canRoll(AdminClient adminClient, int podId, long timeout, TimeUnit unit)
-            throws ForceableException, InterruptedException {
+            throws ForceableProblem, InterruptedException {
         return await(availability(adminClient).canRoll(podId), timeout, unit,
-            t -> new ForceableException("An error while trying to determine rollability", t));
+            t -> new ForceableProblem("An error while trying to determine rollability", t));
     }
 
     /**
@@ -331,12 +331,12 @@ public class KafkaRoller {
      * @param unit The timeout unit.
      */
     private void restartAndAwaitReadiness(Pod pod, long timeout, TimeUnit unit)
-            throws InterruptedException, UnforceableException, FatalException {
+            throws InterruptedException, UnforceableProblem, FatalProblem {
         String podName = pod.getMetadata().getName();
         log.debug("Rolling pod {}", podName);
-        await(restart(pod), timeout, unit, e -> new UnforceableException("Error while trying to restart pod " + podName + " to become ready", e));
+        await(restart(pod), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
         log.debug("Waiting for restarted pod {} to become ready", podName);
-        await(isReady(pod), timeout, unit, e -> new FatalException("Error while waiting for restarted pod " + podName + " to become ready", e));
+        await(isReady(pod), timeout, unit, e -> new FatalProblem("Error while waiting for restarted pod " + podName + " to become ready", e));
         log.debug("Pod {} is now ready", podName);
     }
 
@@ -386,13 +386,13 @@ public class KafkaRoller {
     /**
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
-    protected AdminClient adminClient(Integer podId) throws ForceableException {
+    protected AdminClient adminClient(Integer podId) throws ForceableProblem {
         try {
             String hostname = KafkaCluster.podDnsName(this.namespace, this.cluster, podName(podId)) + ":" + KafkaCluster.REPLICATION_PORT;
             log.debug("Creating AC for {}", hostname);
             return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret);
         } catch (RuntimeException e) {
-            throw new ForceableException("An error while try to create an admin client for pod " + podName(podId), e);
+            throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
         }
     }
 
@@ -411,16 +411,16 @@ public class KafkaRoller {
      * @return A future which completes the the node id of the controller of the cluster,
      * or -1 if there is not currently a controller.
      */
-    int controller(int podId, AdminClient ac, long timeout, TimeUnit unit) throws ForceableException, InterruptedException {
+    int controller(int podId, AdminClient ac, long timeout, TimeUnit unit) throws ForceableProblem, InterruptedException {
         Node controllerNode = null;
         try {
             DescribeClusterResult describeClusterResult = ac.describeCluster();
             KafkaFuture<Node> controller = describeClusterResult.controller();
             controllerNode = controller.get(timeout, unit);
         } catch (ExecutionException e) {
-            throw new ForceableException("Error while trying to determine the cluster controller from pod " + podName(podId), e.getCause());
+            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), e.getCause());
         } catch (TimeoutException e) {
-            throw new ForceableException("Error while trying to determine the cluster controller from pod " + podName(podId), e);
+            throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), e);
         }
         int id = Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
         log.debug("controller is {}", id);
