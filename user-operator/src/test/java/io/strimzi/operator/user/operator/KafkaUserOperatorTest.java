@@ -662,6 +662,8 @@ public class KafkaUserOperatorTest {
         context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user",
                 "new-scram-sha-user", "existing-scram-sha-user")))));
         context.verify(() -> assertThat(deleted, is(new HashSet(asList("second-deleted-user", "deleted-scram-sha-user")))));
+
+        context.completeNow();
     }
 
     @Test

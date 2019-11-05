@@ -215,7 +215,7 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }

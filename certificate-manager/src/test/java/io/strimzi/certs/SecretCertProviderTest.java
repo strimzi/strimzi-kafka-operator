@@ -62,8 +62,8 @@ public class SecretCertProviderTest {
         assertThat(secret.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(secret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
         assertThat(secret.getData().size(), is(4));
-        assertThat(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))), is(true));
-        assertThat(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))), is(true));
+        assertThat(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("ca.key"))), is(true));
+        assertThat(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("ca.crt"))), is(true));
         assertThat(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("truststore.p12"))), is(true));
         assertThat(new String(decoder.decode(secret.getData().get("truststore.password"))), is("123456"));
 

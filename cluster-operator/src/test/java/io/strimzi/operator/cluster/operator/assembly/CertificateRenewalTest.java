@@ -651,7 +651,7 @@ public class CertificateRenewalTest {
         assertThat(newClusterCaKey, is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
 
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-        assertThat(clusterCaCertData.size(), is(4));
+        assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificate(CA_CRT, clientsCaCertData);
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
@@ -845,7 +845,7 @@ public class CertificateRenewalTest {
 
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
         assertThat(c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
-        assertThat(clusterCaCertData.size(), is(4));
+        assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificate(CA_CRT, clientsCaCertData);
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
