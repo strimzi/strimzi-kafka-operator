@@ -36,6 +36,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -163,7 +164,11 @@ class KafkaST extends MessagingBaseST {
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
 
         String firstTopicName = "test-topic";
-        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, initialReplicas)
+                .editSpec()
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
+                .endSpec()
+            .done();
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
