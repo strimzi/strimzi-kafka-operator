@@ -68,7 +68,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
     public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart,
                                            Secret clusterCaCertSecret, Secret coKeySecret) {
         return new KafkaRoller(vertx, podOperations, 1_000, operationTimeoutMs,
-            () -> new BackOff(), ss, clusterCaCertSecret, coKeySecret, adminClientProvider)
+            () -> new BackOff(250, 2, 10), ss, clusterCaCertSecret, coKeySecret, adminClientProvider)
                 .rollingRestart(podNeedsRestart);
     }
 
