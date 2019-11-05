@@ -25,41 +25,6 @@ import static java.util.Collections.singletonList;
  */
 public class SecretCertProvider {
 
-    public static final String DEFAULT_KEY_KEY = "tls.key";
-    public static final String DEFAULT_KEY_CERT = "tls.crt";
-    public static final String DEFAULT_KEY_STORE = "tls.p12";
-    public static final String DEFAULT_KEY_STORE_PASSWORD = "tls.password";
-
-
-    /**
-     * Create a Kubernetes secret containing the provided private key and related certificate
-     * using default values for the keys in the Secret data section
-     *
-     * @param namespace Namespace
-     * @param name Secret name
-     * @param keyFile private key to store
-     * @param certFile certificate to store
-     * @param storeFile PKCS12 store
-     * @param storePassword PKCS12 store password
-     * @param labels Labels to add to the Secret
-     * @param annotations annotations to add to the Secret
-     * @param ownerReference owner of the Secret
-     * @return the Secret
-     * @throws IOException If a file could not be read.
-     */
-    public Secret createSecret(String namespace, String name,
-                               File keyFile, File certFile,
-                               File storeFile, String storePassword,
-                               Map<String, String> labels, Map<String, String> annotations,
-                               OwnerReference ownerReference) throws IOException {
-        return createSecret(namespace, name,
-                DEFAULT_KEY_KEY, DEFAULT_KEY_CERT,
-                keyFile, certFile,
-                DEFAULT_KEY_STORE, DEFAULT_KEY_STORE_PASSWORD,
-                storeFile, storePassword,
-                labels, annotations, ownerReference);
-    }
-
     /**
      * Create a Kubernetes secret containing the provided private key and related certificate
      *

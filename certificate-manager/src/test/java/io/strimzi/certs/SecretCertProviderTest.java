@@ -52,7 +52,9 @@ public class SecretCertProviderTest {
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
+                "ca.key", "ca.crt",
                 key, cert,
+                "truststore.p12", "truststore.password",
                 store, "123456",
                 emptyMap(), emptyMap(), ownerReference);
 
@@ -61,10 +63,10 @@ public class SecretCertProviderTest {
         assertEquals(1, secret.getMetadata().getOwnerReferences().size());
         assertEquals(ownerReference, secret.getMetadata().getOwnerReferences().get(0));
         assertEquals(4, secret.getData().size());
-        assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
-        assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));
-        assertTrue(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("tls.p12"))));
-        assertEquals("123456", new String(decoder.decode(secret.getData().get("tls.password"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("ca.key"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("ca.crt"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("truststore.p12"))));
+        assertEquals("123456", new String(decoder.decode(secret.getData().get("truststore.password"))));
 
         key.delete();
         cert.delete();
@@ -82,7 +84,9 @@ public class SecretCertProviderTest {
         ssl.generateSelfSignedCert(key, cert, 365);
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
+                "ca.key", "ca.crt",
                 key, cert,
+                null, null,
                 null, null,
                 emptyMap(), emptyMap(), ownerReference);
 
@@ -98,8 +102,8 @@ public class SecretCertProviderTest {
         assertEquals(1, secret.getMetadata().getOwnerReferences().size());
         assertEquals(ownerReference, secret.getMetadata().getOwnerReferences().get(0));
         assertEquals(4, secret.getData().size());
-        assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
-        assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("ca.key"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("ca.crt"))));
         assertTrue(Arrays.equals(Files.readAllBytes(addedKey.toPath()), decoder.decode(secret.getData().get("added-key"))));
         assertTrue(Arrays.equals(Files.readAllBytes(addedCert.toPath()), decoder.decode(secret.getData().get("added-cert"))));
 
