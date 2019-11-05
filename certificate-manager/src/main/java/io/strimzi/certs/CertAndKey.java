@@ -11,17 +11,19 @@ public class CertAndKey {
 
     private final byte[] key;
     private final byte[] cert;
-    private final byte[] store;
+    private final byte[] trustStore;
+    private final byte[] keyStore;
     private final String storePassword;
 
     public CertAndKey(byte[] key, byte[] cert) {
-        this(key, cert, null, null);
+        this(key, cert, null, null, null);
     }
 
-    public CertAndKey(byte[] key, byte[] cert, byte[] store, String storePassword) {
+    public CertAndKey(byte[] key, byte[] cert, byte[] trustStore, byte[] keyStore, String storePassword) {
         this.key = key;
         this.cert = cert;
-        this.store = store;
+        this.trustStore = trustStore;
+        this.keyStore = keyStore;
         this.storePassword = storePassword;
     }
 
@@ -41,12 +43,20 @@ public class CertAndKey {
         return Base64.getEncoder().encodeToString(cert());
     }
 
-    public byte[] store() {
-        return store;
+    public byte[] trustStore() {
+        return trustStore;
     }
 
-    public String storeAsBase64String() {
-        return Base64.getEncoder().encodeToString(store());
+    public String trustStoreAsBase64String() {
+        return Base64.getEncoder().encodeToString(trustStore());
+    }
+
+    public byte[] keyStore() {
+        return keyStore;
+    }
+
+    public String keyStoreAsBase64String() {
+        return Base64.getEncoder().encodeToString(keyStore());
     }
 
     public String storePassword() {

@@ -166,6 +166,7 @@ public class CertificateRenewalTest {
                     Files.readAllBytes(clusterCaKeyFile.toPath()),
                     Files.readAllBytes(clusterCaCertFile.toPath()),
                     Files.readAllBytes(clusterCaStoreFile.toPath()),
+                    null,
                     clusterCaStorePassword);
         } finally {
             clusterCaKeyFile.delete();
@@ -198,7 +199,7 @@ public class CertificateRenewalTest {
         );
         secrets.add(
                 ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, caCertSecretName,
-                        result.certAsBase64String(), result.storeAsBase64String(), result.storePasswordAsBase64String())
+                        result.certAsBase64String(), result.trustStoreAsBase64String(), result.storePasswordAsBase64String())
         );
         return secrets;
     }

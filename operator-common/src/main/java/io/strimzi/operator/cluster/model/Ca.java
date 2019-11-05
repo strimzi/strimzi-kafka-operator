@@ -779,10 +779,11 @@ public abstract class Ca {
                                 Files.readAllBytes(keyFile.toPath()),
                                 Files.readAllBytes(certFile.toPath()),
                                 Files.readAllBytes(trustStoreFile.toPath()),
+                                null,
                                 trustStorePassword);
                         certData.put(CA_CRT, ca.certAsBase64String());
                         keyData.put(CA_KEY, ca.keyAsBase64String());
-                        certData.put(CA_STORE, ca.storeAsBase64String());
+                        certData.put(CA_STORE, ca.trustStoreAsBase64String());
                         certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
                     } finally {
                         delete(trustStoreFile);
@@ -818,9 +819,10 @@ public abstract class Ca {
                                 bytes,
                                 Files.readAllBytes(certFile.toPath()),
                                 Files.readAllBytes(trustStoreFile.toPath()),
+                                null,
                                 trustStorePassword);
                         certData.put(CA_CRT, ca.certAsBase64String());
-                        certData.put(CA_STORE, ca.storeAsBase64String());
+                        certData.put(CA_STORE, ca.trustStoreAsBase64String());
                         certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
                     } finally {
                         delete(trustStoreFile);
