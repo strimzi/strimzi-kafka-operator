@@ -204,7 +204,7 @@ public class BaseITST {
      */
     protected void createCustomResources(String... resources) {
         for (String resource : resources) {
-            LOGGER.info("Creating resources {}", resource);
+            LOGGER.info("Creating resources {} in namespace {}", resource, getNamespace());
             deploymentResources.add(resource);
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
         }

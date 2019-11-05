@@ -13,19 +13,21 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxTestContext;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -83,7 +85,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     }
 
     @Test
-    public void testUpdateStatusAsync(TestContext context) throws IOException {
+    public void testUpdateStatusAsync(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -96,18 +98,16 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Response response = new Response.Builder().code(200).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Created").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-            context.assertTrue(res.succeeded());
-            async.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
+            async.flag();
         });
-
-        async.awaitSuccess();
     }
 
     @Test
-    public void testHttp422AfterUpgrade(TestContext context) throws IOException {
+    public void testHttp422AfterUpgrade(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -120,16 +120,16 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Response response = new Response.Builder().code(422).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Unprocessable Entity").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-            context.assertTrue(res.succeeded());
-            async.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
+            async.flag();
         });
     }
 
     @Test
-    public void testHttp422DifferentError(TestContext context) throws IOException {
+    public void testHttp422DifferentError(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -142,16 +142,16 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Response response = new Response.Builder().code(422).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Unprocessable Entity").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-            context.assertFalse(res.succeeded());
-            async.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(false)));
+            async.flag();
         });
     }
 
     @Test
-    public void testHttp422NoBody(TestContext context) throws IOException {
+    public void testHttp422NoBody(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -164,16 +164,16 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Response response = new Response.Builder().code(422).request(new Request.Builder().url(fakeUrl).build()).message("Unprocessable Entity").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-            context.assertFalse(res.succeeded());
-            async.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(false)));
+            async.flag();
         });
     }
 
     @Test
-    public void testHttp409(TestContext context) throws IOException {
+    public void testHttp409(VertxTestContext context) throws IOException {
         KubernetesClient mockClient = mock(KubernetesClient.class);
 
         OkHttpClient mockOkHttp = mock(OkHttpClient.class);
@@ -186,11 +186,11 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Response response = new Response.Builder().code(409).request(new Request.Builder().url(fakeUrl).build()).body(body).message("Conflict").protocol(Protocol.HTTP_1_1).build();
         when(mockCall.execute()).thenReturn(response);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> op = createResourceOperations(vertx, mockClient);
         op.updateStatusAsync(resource()).setHandler(res -> {
-            context.assertFalse(res.succeeded());
-            async.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(false)));
+            async.flag();
         });
     }
 }

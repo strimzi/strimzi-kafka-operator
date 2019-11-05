@@ -12,11 +12,11 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StatefulSetDiffTest {
     @Test
@@ -51,7 +51,7 @@ public class StatefulSetDiffTest {
                 .endTemplate()
             .endSpec()
             .build();
-        assertFalse(new StatefulSetDiff(ss1, ss2).changesSpecTemplate());
+        assertThat(new StatefulSetDiff(ss1, ss2).changesSpecTemplate(), is(false));
     }
 
     public StatefulSetDiff testCpuResources(ResourceRequirements requirements1, ResourceRequirements requirements2) {
@@ -90,7 +90,7 @@ public class StatefulSetDiffTest {
 
     @Test
     public void testCpuResources() {
-        assertTrue(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("cpu", new Quantity("1000m")))
                         .addToRequests(singletonMap("memory", new Quantity("1.1Gi")))
@@ -102,41 +102,41 @@ public class StatefulSetDiffTest {
                         .addToRequests(singletonMap("memory", new Quantity("1181116006")))
                         .addToLimits(singletonMap("cpu", new Quantity("1")))
                         .addToLimits(singletonMap("memory", new Quantity("524288000")))
-                        .build()).isEmpty());
+                        .build()).isEmpty(), is(true));
 
-        assertFalse(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("cpu", new Quantity("1001m")))
                         .build(),
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("cpu", new Quantity("1")))
-                        .build()).isEmpty());
+                        .build()).isEmpty(), is(false));
 
-        assertFalse(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("memory", new Quantity("1.1Gi")))
                         .build(),
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("memory", new Quantity("1181116007")))
-                        .build()).isEmpty());
+                        .build()).isEmpty(), is(false));
 
-        assertFalse(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .build(),
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("memory", new Quantity("1181116007")))
-                        .build()).isEmpty());
+                        .build()).isEmpty(), is(false));
 
-        assertTrue(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .build(),
                 new ResourceRequirementsBuilder()
-                        .build()).isEmpty());
+                        .build()).isEmpty(), is(true));
 
-        assertTrue(testCpuResources(
+        assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
                         .build(),
-                null).isEmpty());
+                null).isEmpty(), is(true));
     }
 
     @Test
@@ -185,8 +185,8 @@ public class StatefulSetDiffTest {
                             .build())
                 .endSpec()
                 .build();
-        assertFalse(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates());
-        assertTrue(new StatefulSetDiff(ss1, ss2).changesVolumeSize());
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(true));
     }
 
     @Test
@@ -242,7 +242,7 @@ public class StatefulSetDiffTest {
                                     .build())
                 .endSpec()
                 .build();
-        assertTrue(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates());
-        assertFalse(new StatefulSetDiff(ss1, ss2).changesVolumeSize());
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(true));
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
     }
 }

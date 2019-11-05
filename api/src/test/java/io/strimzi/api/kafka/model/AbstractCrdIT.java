@@ -11,7 +11,9 @@ import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public abstract class AbstractCrdIT extends BaseITST {
@@ -24,7 +26,7 @@ public abstract class AbstractCrdIT extends BaseITST {
 
     protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);
-        assertNotNull("Class path resource " + resource + " was missing", ssStr);
+        assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));
         createDelete(ssStr);
         T model = TestUtils.fromYaml(resource, resourceClass, false);
         ssStr = TestUtils.toYamlString(model);

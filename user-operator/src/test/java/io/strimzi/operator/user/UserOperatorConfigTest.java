@@ -6,12 +6,14 @@ package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UserOperatorConfigTest {
     private static Map<String, String> envVars = new HashMap<>(5);
@@ -38,29 +40,33 @@ public class UserOperatorConfigTest {
     public void testConfig()    {
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
 
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE), config.getNamespace());
-        assertEquals(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS)), config.getReconciliationIntervalMs());
-        assertEquals(expectedLabels, config.getLabels());
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME), config.getCaCertSecretName());
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE), config.getCaNamespace());
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT), config.getZookeperConnect());
-        assertEquals(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS)), config.getZookeeperSessionTimeoutMs());
+        assertThat(config.getNamespace(), is(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
+        assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS))));
+        assertThat(config.getLabels(), is(expectedLabels));
+        assertThat(config.getCaCertSecretName(), is(envVars.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME)));
+        assertThat(config.getCaNamespace(), is(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE)));
+        assertThat(config.getZookeperConnect(), is(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT)));
+        assertThat(config.getZookeeperSessionTimeoutMs(), is(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS))));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testMissingNamespace()  {
-        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
+        assertThrows(InvalidConfigurationException.class, () -> {
+            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+            envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
 
-        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        });
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testMissingCaName()  {
-        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
+        assertThrows(InvalidConfigurationException.class, () -> {
+            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+            envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
 
-        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        });
     }
 
     @Test
@@ -69,7 +75,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        assertEquals(UserOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
+        assertThat(config.getReconciliationIntervalMs(), is(UserOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
     }
 
     @Test
@@ -78,7 +84,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_LABELS);
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        assertEquals(Labels.EMPTY, config.getLabels());
+        assertThat(config.getLabels(), is(Labels.EMPTY));
     }
 
     @Test
@@ -87,22 +93,26 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE), config.getCaNamespace());
+        assertThat(config.getCaNamespace(), is(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testInvalidReconciliationInterval()  {
-        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
+        assertThrows(NumberFormatException.class, () -> {
+            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+            envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
 
-        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        });
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testInvalidLabels()  {
-        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
+        assertThrows(InvalidConfigurationException.class, () -> {
+            Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+            envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
 
-        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+            UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        });
     }
 }

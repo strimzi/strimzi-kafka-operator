@@ -4,14 +4,16 @@
  */
 package io.strimzi.operator.topic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigTest {
 
@@ -23,21 +25,25 @@ public class ConfigTest {
         MANDATORY.put(Config.NAMESPACE.key, "default");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void unknownKey() {
-        new Config(Collections.singletonMap("foo", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Config(Collections.singletonMap("foo", "bar"));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void empty() {
-        Config c = new Config(Collections.emptyMap());
+        assertThrows(IllegalArgumentException.class, () -> {
+            Config c = new Config(Collections.emptyMap());
+        });
     }
 
     @Test
     public void defaults() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         Config c = new Config(map);
-        assertEquals(20_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        assertThat(c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(), is(20_000));
     }
 
     @Test
@@ -46,7 +52,7 @@ public class ConfigTest {
         map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13000");
 
         Config c = new Config(map);
-        assertEquals(13_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        assertThat(c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(), is(13_000));
     }
 
     @Test
@@ -73,6 +79,6 @@ public class ConfigTest {
         map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
 
         Config c = new Config(map);
-        assertEquals(3, c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue());
+        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue(), is(3));
     }
 }

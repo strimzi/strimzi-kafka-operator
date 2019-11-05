@@ -15,7 +15,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -26,9 +26,10 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicSerializationTest {
 
@@ -50,21 +51,20 @@ public class TopicSerializationTest {
         Topic wroteTopic = builder.build();
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
 
-        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
-        assertEquals(4, kafkaTopic.getMetadata().getLabels().size());
-        assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
-        assertEquals(
-            io.strimzi.operator.common.model.Labels.KUBERNETES_NAME,
-            kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL));
-        assertEquals(topicName, kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL));
-        assertEquals(TopicOperator.KAFKA_TOPIC_OPERATOR_NAME, kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL));
-        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getSpec().getTopicName());
-        assertEquals(Integer.valueOf(2), kafkaTopic.getSpec().getPartitions());
-        assertEquals(Integer.valueOf(1), kafkaTopic.getSpec().getReplicas());
-        assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getSpec().getConfig());
+        assertThat(kafkaTopic.getMetadata().getName(), is(wroteTopic.getTopicName().toString()));
+        assertThat(kafkaTopic.getMetadata().getLabels().size(), is(4));
+        assertThat(kafkaTopic.getMetadata().getLabels().get("app"), is("strimzi"));
+        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL),
+                is(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME));
+        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL), is(topicName));
+        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL), is(TopicOperator.KAFKA_TOPIC_OPERATOR_NAME));
+        assertThat(kafkaTopic.getSpec().getTopicName(), is(wroteTopic.getTopicName().toString()));
+        assertThat(kafkaTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
+        assertThat(kafkaTopic.getSpec().getReplicas(), is(Integer.valueOf(1)));
+        assertThat(kafkaTopic.getSpec().getConfig(), is(singletonMap("cleanup.policy", "bar")));
 
         Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);
-        assertEquals(wroteTopic, readTopic);
+        assertThat(readTopic, is(wroteTopic));
     }
 
 
@@ -79,14 +79,14 @@ public class TopicSerializationTest {
         Topic wroteTopic = builder.build();
         byte[] bytes = TopicSerialization.toJson(wroteTopic);
         String json = new String(bytes, "UTF-8");
-        assertEquals("{\"map-name\":\"bob\"," +
+        assertThat(json, is("{\"map-name\":\"bob\"," +
                 "\"topic-name\":\"tom\"," +
                 "\"partitions\":2," +
                 "\"replicas\":1," +
                 "\"config\":{\"foo\":\"bar\"}" +
-                "}", json);
+                "}"));
         Topic readTopic = TopicSerialization.fromJson(bytes);
-        assertEquals(wroteTopic, readTopic);
+        assertThat(readTopic, is(wroteTopic));
     }
 
 
@@ -100,11 +100,11 @@ public class TopicSerializationTest {
                 .withMapName("gee")
                 .build();
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
-        assertEquals("test-topic", newTopic.name());
-        assertEquals(3, newTopic.numPartitions());
-        assertEquals(2, newTopic.replicationFactor());
-        assertEquals(null, newTopic.replicasAssignments());
-        assertEquals(singletonMap("foo", "bar"), newTopic.configs());
+        assertThat(newTopic.name(), is("test-topic"));
+        assertThat(newTopic.numPartitions(), is(3));
+        assertThat(newTopic.replicationFactor(), is((short) 2));
+        assertThat(newTopic.replicasAssignments(), is(nullValue()));
+        assertThat(newTopic.configs(), is(singletonMap("foo", "bar")));
     }
 
     @Test
@@ -117,15 +117,15 @@ public class TopicSerializationTest {
                 .withMapName("gee")
                 .build();
         Map<ConfigResource, Collection<AlterConfigOp>> config = TopicSerialization.toTopicConfig(topic);
-        assertEquals(1, config.size());
+        assertThat(config.size(), is(1));
         Map.Entry<ConfigResource, Collection<AlterConfigOp>> c = config.entrySet().iterator().next();
-        assertEquals(c.getKey().type(), ConfigResource.Type.TOPIC);
-        assertEquals(c.getKey().name(), "test-topic");
-        assertEquals(1, c.getValue().size());
+        assertThat(c.getKey().type(), is(ConfigResource.Type.TOPIC));
+        assertThat(c.getKey().name(), is("test-topic"));
+        assertThat(c.getValue().size(), is(1));
         AlterConfigOp alterConfigOp = c.getValue().iterator().next();
-        assertEquals("foo", alterConfigOp.configEntry().name());
-        assertEquals("bar", alterConfigOp.configEntry().value());
-        assertEquals(AlterConfigOp.OpType.SET, alterConfigOp.opType());
+        assertThat(alterConfigOp.configEntry().name(), is("foo"));
+        assertThat(alterConfigOp.configEntry().value(), is("bar"));
+        assertThat(alterConfigOp.opType(), is(AlterConfigOp.OpType.SET));
     }
 
     @Test
@@ -135,12 +135,12 @@ public class TopicSerializationTest {
         Config topicConfig = new Config(entries);
         TopicMetadata meta = Utils.getTopicMetadata("test-topic", topicConfig);
         Topic topic = TopicSerialization.fromTopicMetadata(meta);
-        assertEquals(new TopicName("test-topic"), topic.getTopicName());
+        assertThat(topic.getTopicName(), is(new TopicName("test-topic")));
         // Null map name because Kafka doesn't know about the map
-        assertNull(topic.getResourceName());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
-        assertEquals(2, topic.getNumPartitions());
-        assertEquals(3, topic.getNumReplicas());
+        assertThat(topic.getResourceName(), is(nullValue()));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
+        assertThat(topic.getNumPartitions(), is(2));
+        assertThat(topic.getNumReplicas(), is((short) 3));
     }
 
     @Test
@@ -163,9 +163,9 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
+            assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
                     "Topic name is illegal, it can't be longer than 249 characters, topic name: " +
-                    illegalAsATopicName, e.getMessage());
+                    illegalAsATopicName));
         }
     }
 
@@ -183,7 +183,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+            assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'"));
         }
     }
 
@@ -202,7 +202,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopic's spec.partitions should be strictly greater than 0", e.getMessage());
+            assertThat(e.getMessage(), is("KafkaTopic's spec.partitions should be strictly greater than 0"));
         }
     }
 
@@ -221,7 +221,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopic's spec.replicas should be between 1 and 32767 inclusive", e.getMessage());
+            assertThat(e.getMessage(), is("KafkaTopic's spec.replicas should be between 1 and 32767 inclusive"));
         }
     }
 
@@ -240,8 +240,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but was of type java.lang.Object",
-                    e.getMessage());
+            assertThat(e.getMessage(), is("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but was of type java.lang.Object"));
         }
     }
 
@@ -260,8 +259,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null",
-                    e.getMessage());
+            assertThat(e.getMessage(), is("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null"));
         }
     }
 
@@ -277,4 +275,3 @@ public class TopicSerializationTest {
         TopicSerialization.fromTopicResource(kafkaTopic);
     }
 }
-

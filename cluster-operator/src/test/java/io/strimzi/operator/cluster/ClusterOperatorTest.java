@@ -20,31 +20,36 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import okhttp3.OkHttpClient;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
 
     private Vertx vertx;
@@ -60,43 +65,43 @@ public class ClusterOperatorTest {
         return env;
     }
 
-    @Before
-    public void createClient(TestContext context) {
+    @BeforeEach
+    public void createClient() {
         vertx = Vertx.vertx();
     }
 
-    @After
+    @AfterEach
     public void closeClient() {
         vertx.close();
     }
 
     @Test
-    public void startStopSingleNamespaceOs(TestContext context) {
+    public void startStopSingleNamespaceOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStop(context, "namespace", true);
     }
 
     @Test
-    public void startStopMultiNamespaceOs(TestContext context) {
+    public void startStopMultiNamespaceOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStop(context, "namespace1,namespace2", true);
     }
 
     @Test
-    public void startStopSingleNamespaceK8s(TestContext context) {
+    public void startStopSingleNamespaceK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStop(context, "namespace", false);
     }
 
     @Test
-    public void startStopMultiNamespaceK8s(TestContext context) {
+    public void startStopMultiNamespaceK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStop(context, "namespace1,namespace2", false);
     }
 
     @Test
-    public void startStopAllNamespacesOs(TestContext context) {
+    public void startStopAllNamespacesOs(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStopAllNamespaces(context, "*", true);
     }
 
     @Test
-    public void startStopAllNamespacesK8s(TestContext context) {
+    public void startStopAllNamespacesK8s(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         startStopAllNamespaces(context, "*", false);
     }
 
@@ -105,7 +110,7 @@ public class ClusterOperatorTest {
      * @param context
      * @param namespaces
      */
-    private void startStop(TestContext context, String namespaces, boolean openShift) {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, ExecutionException, TimeoutException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -152,34 +157,31 @@ public class ClusterOperatorTest {
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
         }
 
-        Async async = context.async();
+        CompletableFuture<Boolean> async = new CompletableFuture<>();
 
         Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
-            context.assertNull(ar.cause(), "Expected all verticles to start OK");
-            async.complete();
+            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+            async.complete(true);
         });
-        async.await();
+        async.get(60, TimeUnit.SECONDS);
 
-        context.assertEquals(namespaceList.size(), vertx.deploymentIDs().size(), "A verticle per namespace");
+        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(namespaceList.size())));
 
-        List<Async> asyncs = new ArrayList<>();
         for (String deploymentId: vertx.deploymentIDs()) {
-            Async async2 = context.async();
-            asyncs.add(async2);
+            CompletableFuture<Boolean> async2 = new CompletableFuture<>();
             vertx.undeploy(deploymentId, ar -> {
-                context.assertNull(ar.cause(), "Didn't expect error when undeploying verticle " + deploymentId);
-                async2.complete();
+                context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
+                async2.complete(true);
             });
+            async2.get(60, TimeUnit.SECONDS);
         }
 
-        for (Async async2: asyncs) {
-            async2.await();
-        }
 
         if (numWatchers.get() > (openShift ? 5 : 4) * namespaceList.size()) { // we do not have connectS2I on k8s
-            context.fail("Looks like there were more watchers than namespaces");
+            context.failNow(new Throwable("Looks like there were more watchers than namespaces"));
         }
+        context.completeNow();
     }
 
     /**
@@ -187,7 +189,7 @@ public class ClusterOperatorTest {
      * @param context
      * @param namespaces
      */
-    private void startStopAllNamespaces(TestContext context, String namespaces, boolean openShift) {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, ExecutionException, TimeoutException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -229,33 +231,29 @@ public class ClusterOperatorTest {
         });
         when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
 
-        Async async = context.async();
+        CompletableFuture<Boolean> async = new CompletableFuture<>();
 
         Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
-            context.assertNull(ar.cause(), "Expected all verticles to start OK");
-            async.complete();
+            context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
+            async.complete(true);
         });
-        async.await();
+        async.get(60, TimeUnit.SECONDS);
 
-        context.assertEquals(1, vertx.deploymentIDs().size(), "A verticle per namespace");
+        context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(1)));
 
-        List<Async> asyncs = new ArrayList<>();
         for (String deploymentId: vertx.deploymentIDs()) {
-            Async async2 = context.async();
-            asyncs.add(async2);
+            CompletableFuture<Boolean> async2 = new CompletableFuture<>();
             vertx.undeploy(deploymentId, ar -> {
-                context.assertNull(ar.cause(), "Didn't expect error when undeploying verticle " + deploymentId);
-                async2.complete();
+                context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
+                async2.complete(true);
             });
-        }
-
-        for (Async async2: asyncs) {
-            async2.await();
+            async2.get(60, TimeUnit.SECONDS);
         }
 
         if (numWatchers.get() > (openShift ? 5 : 4)) { // we do not have connectS2I on k8s
-            context.fail("Looks like there were more watchers than should be");
+            context.failNow(new Throwable("Looks like there were more watchers than should be"));
         }
+        context.completeNow();
     }
 }

@@ -26,9 +26,9 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -151,7 +151,7 @@ class UserST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
-            assertEquals("Ready", kafkaCondition.getType());
+            assertThat(kafkaCondition.getType(), is("Ready"));
             LOGGER.info("Kafka User {} is in desired state: {}", userName, kafkaCondition.getType());
         }
     }

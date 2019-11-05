@@ -21,18 +21,22 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SelfSignedCertificate;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -43,13 +47,13 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class ZookeeperLeaderFinderTest {
 
     private static final Logger log = LogManager.getLogger(ZookeeperLeaderFinderTest.class);
@@ -152,30 +156,33 @@ public class ZookeeperLeaderFinderTest {
         }
     }
 
-    private int[] startMockZks(TestContext context, int num, BiFunction<Integer, Integer, Boolean> fn) {
+    private int[] startMockZks(VertxTestContext context, int num, BiFunction<Integer, Integer, Boolean> fn) throws InterruptedException, ExecutionException, TimeoutException {
         int[] result = new int[num];
-        Async async = context.async(num);
+        CompletableFuture<Boolean> async = new CompletableFuture<>();
         for (int i = 0; i < num; i++) {
             final int id = i;
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
             zks.add(zk);
+            int finalI = i;
             zk.start().setHandler(ar -> {
                 if (ar.succeeded()) {
                     Integer port = ar.result();
                     log.debug("ZK {} listening on port {}", id, port);
                     result[id] = port;
-                    async.countDown();
+                    if (finalI == num - 1) {
+                        async.complete(true);
+                    }
                 } else {
-                    context.fail(ar.cause());
-                    async.complete();
+                    context.failNow(ar.cause());
+                    async.complete(false);
                 }
             });
         }
-        async.await();
+        async.get(60, TimeUnit.SECONDS);
         return result;
     }
 
-    @After
+    @AfterEach
     public void stopZks() {
         for (FakeZk zk : zks) {
             zk.stop();
@@ -189,9 +196,8 @@ public class ZookeeperLeaderFinderTest {
     @Test
     public void test0Pods() {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
-        assertEquals(Integer.valueOf(-1),
-                finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        emptyList(), coKeySecret()).result());
+        assertThat(finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+                        emptyList(), coKeySecret()).result(), is(Integer.valueOf(-1)));
     }
 
     BackOff backoff() {
@@ -201,9 +207,8 @@ public class ZookeeperLeaderFinderTest {
     @Test
     public void test1Pods() {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
-        assertEquals(Integer.valueOf(0),
-                finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        asList(getPod(0)), coKeySecret()).result());
+        assertThat(finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+                        asList(getPod(0)), coKeySecret()).result(), is(Integer.valueOf(0)));
     }
 
     @Test
@@ -221,15 +226,15 @@ public class ZookeeperLeaderFinderTest {
                                 .endMetadata()
                                 .withData(emptyMap())
                                 .build()));
-        assertEquals("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key",
-                finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+        assertThat(finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                         asList(getPod(0), getPod(1)), new SecretBuilder()
                                 .withNewMetadata()
                                 .withName(ClusterOperator.secretName(CLUSTER))
                                 .withNamespace(NAMESPACE)
                                 .endMetadata()
                                 .withData(emptyMap())
-                                .build()).cause().getMessage());
+                                .build()).cause().getMessage(),
+                is("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key"));
     }
 
     @Test
@@ -255,12 +260,12 @@ public class ZookeeperLeaderFinderTest {
                         .withData(map("cluster-operator.key", "notacert",
                                 "cluster-operator.crt", "notacert"))
                         .build()).cause();
-        assertTrue(cause instanceof RuntimeException);
-        assertEquals("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns", cause.getMessage());
+        assertThat(cause instanceof RuntimeException, is(true));
+        assertThat(cause.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 
     @Test
-    public void testTimeout(TestContext context) {
+    public void testTimeout(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String coSecretName = ClusterOperator.secretName(CLUSTER);
         when(mock.getAsync(eq(NAMESPACE), eq(coSecretName)))
                 .thenReturn(Future.succeededFuture(
@@ -287,26 +292,25 @@ public class ZookeeperLeaderFinderTest {
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
-        Async a = context.async();
+        Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                     asList(getPod(0), getPod(1)), coKeySecret())
             .setHandler(ar -> {
                 if (ar.succeeded()) {
-                    context.assertEquals(-1, ar.result());
+                    context.verify(() -> assertThat(ar.result(), is(-1)));
                     for (FakeZk zk : zks) {
-                        context.assertEquals(MAX_ATTEMPTS + 1, zk.attempts.get(),
-                                "Unexpected number of attempts for node " + zk.id);
+                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(MAX_ATTEMPTS + 1)));
                     }
                 } else {
                     ar.cause().printStackTrace();
-                    context.fail();
+                    context.failNow(new Throwable());
                 }
-                a.complete();
+                a.flag();
             });
     }
 
     @Test
-    public void testTimeoutDueToNetworkExceptions(TestContext context) {
+    public void testTimeoutDueToNetworkExceptions(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
                         new SecretBuilder()
@@ -333,21 +337,20 @@ public class ZookeeperLeaderFinderTest {
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
-        Async a = context.async();
+        Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(result -> {
-                    context.assertEquals(ZookeeperLeaderFinder.UNKNOWN_LEADER, result.result());
+                    context.verify(() -> assertThat(result.result(), is(ZookeeperLeaderFinder.UNKNOWN_LEADER)));
                     for (FakeZk zk : zks) {
-                        context.assertEquals(0, zk.attempts.get(),
-                                "Unexpected number of attempts for node " + zk.id);
+                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(0)));
                     }
-                    a.complete();
+                    a.flag();
                 });
     }
 
     @Test
-    public void testLeaderFoundThirdAttempt(TestContext context) {
+    public void testLeaderFoundThirdAttempt(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         int leader = 1;
         int succeedOnAttempt = 2;
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
@@ -374,26 +377,25 @@ public class ZookeeperLeaderFinderTest {
 
         TestingZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
-        Async a = context.async();
+        Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(ar -> {
                     if (ar.succeeded()) {
-                        context.assertEquals(leader, ar.result());
+                        context.verify(() -> assertThat(ar.result(), is(leader)));
                         for (FakeZk zk : zks) {
-                            context.assertEquals(succeedOnAttempt + 1, zk.attempts.get(),
-                                    "Unexpected number of attempts for node " + zk.id);
+                            context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(succeedOnAttempt + 1)));
                         }
                     } else {
                         ar.cause().printStackTrace();
-                        context.fail();
+                        context.failNow(new Throwable());
                     }
-                    a.complete();
+                    a.flag();
                 });
     }
 
     @Test
-    public void testLeaderFoundFirstAttempt(TestContext context) {
+    public void testLeaderFoundFirstAttempt(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         int leader = 1;
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
                 .thenAnswer(i -> Future.succeededFuture(
@@ -419,19 +421,18 @@ public class ZookeeperLeaderFinderTest {
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
-        Async a = context.async();
+        Checkpoint a = context.checkpoint();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(asyncResult -> {
                     if (asyncResult.failed()) {
                         asyncResult.cause().printStackTrace();
                     }
-                    context.assertTrue(asyncResult.succeeded());
-                    context.assertEquals(leader, asyncResult.result());
+                    context.verify(() -> assertThat(asyncResult.succeeded(), is(true)));
+                    context.verify(() -> assertThat(asyncResult.result(), is(leader)));
                     for (FakeZk zk : zks) {
-                        context.assertEquals(1, zk.attempts.get(),
-                                "Unexpected number of attempts for node " + zk.id);
+                        context.verify(() -> assertThat("Unexpected number of attempts for node " + zk.id, zk.attempts.get(), is(1)));
                     }
-                    a.complete();
+                    a.flag();
                 });
     }
 
@@ -448,7 +449,7 @@ public class ZookeeperLeaderFinderTest {
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster")
                 .endMetadata()
             .build();
-        assertEquals("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local",
-                new ZookeeperLeaderFinder(vertx, null, this::backoff).host(pod));
+        assertThat(new ZookeeperLeaderFinder(vertx, null, this::backoff).host(pod),
+                is("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local"));
     }
 }

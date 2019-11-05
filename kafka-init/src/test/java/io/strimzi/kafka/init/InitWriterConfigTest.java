@@ -4,14 +4,15 @@
  */
 package io.strimzi.kafka.init;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class InitWriterConfigTest {
 
@@ -27,23 +28,25 @@ public class InitWriterConfigTest {
     public void testEnvVars() {
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        assertEquals("localhost", config.getNodeName());
-        assertEquals("failure-domain.beta.kubernetes.io/zone", config.getRackTopologyKey());
-        assertTrue(config.isExternalAddress());
+        assertThat(config.getNodeName(), is("localhost"));
+        assertThat(config.getRackTopologyKey(), is("failure-domain.beta.kubernetes.io/zone"));
+        assertThat(config.isExternalAddress(), is(true));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyEnvVars() {
-
-        InitWriterConfig.fromMap(Collections.emptyMap());
+        assertThrows(IllegalArgumentException.class, () -> {
+            InitWriterConfig.fromMap(Collections.emptyMap());
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNoNodeName() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, String> envVars = new HashMap<>(InitWriterConfigTest.envVars);
+            envVars.remove(InitWriterConfig.NODE_NAME);
 
-        Map<String, String> envVars = new HashMap<>(InitWriterConfigTest.envVars);
-        envVars.remove(InitWriterConfig.NODE_NAME);
-
-        InitWriterConfig.fromMap(envVars);
+            InitWriterConfig.fromMap(envVars);
+        });
     }
 }

@@ -22,8 +22,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
 public class TopicST extends MessagingBaseST {
@@ -252,10 +251,10 @@ public class TopicST extends MessagingBaseST {
 
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {
         LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
-        assertNotNull(kafkaTopic);
+        assertThat(kafkaTopic, is(notNullValue()));
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
-        assertEquals(topicName, kafkaTopic.getMetadata().getName());
-        assertEquals(topicPartitions, kafkaTopic.getSpec().getPartitions());
+        assertThat(kafkaTopic.getMetadata().getName(), is(topicName));
+        assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
     }
 
     @BeforeEach

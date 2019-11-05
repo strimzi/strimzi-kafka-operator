@@ -4,14 +4,15 @@
  */
 package io.strimzi.operator.topic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TopicNameTest {
 
     private void checkMappedName(String name, String expect) {
-        assertEquals(expect, new TopicName(name).asKubeName().toString());
+        assertThat(new TopicName(name).asKubeName().toString(), is(expect));
     }
 
     @Test

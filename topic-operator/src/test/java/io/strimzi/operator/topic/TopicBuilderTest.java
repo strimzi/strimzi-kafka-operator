@@ -4,42 +4,43 @@
  */
 package io.strimzi.operator.topic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TopicBuilderTest {
 
     @Test
     public void testConstructorWithNameAndPartitions() {
         Topic topic = new Topic.Builder("my_topic", 1).build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(emptyMap(), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(emptyMap()));
     }
 
     @Test
     public void testConstructorWithNameAndPartitions2() {
         Topic topic = new Topic.Builder(new TopicName("my_topic"), 1).build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(emptyMap(), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(emptyMap()));
     }
 
     @Test
     public void testConstructorWithConfig() {
         Topic topic = new Topic.Builder("my_topic", 1, singletonMap("foo", "bar")).build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
 
         // Check we take a copy of the config
         Map<String, String> config = new HashMap<>();
@@ -47,10 +48,10 @@ public class TopicBuilderTest {
         Topic.Builder builder = new Topic.Builder("my_topic", 1, config);
         config.clear();
         topic = builder.build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
     }
 
     // TODO testConstructorWithTopic
@@ -61,10 +62,10 @@ public class TopicBuilderTest {
         Topic.Builder builder = new Topic.Builder("my_topic", 1);
         builder.withConfig(singletonMap("foo", "bar"));
         Topic topic = builder.build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
 
         // Check we take a copy of the config
         Map<String, String> config = new HashMap<>();
@@ -73,10 +74,10 @@ public class TopicBuilderTest {
         builder.withConfig(config);
         config.clear();
         topic = builder.build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
     }
 
     @Test
@@ -84,10 +85,10 @@ public class TopicBuilderTest {
         Topic.Builder builder = new Topic.Builder("my_topic", 1);
         builder.withConfigEntry("foo", "bar");
         Topic topic = builder.build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(singletonMap("foo", "bar"), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(singletonMap("foo", "bar")));
     }
 
     @Test
@@ -95,9 +96,9 @@ public class TopicBuilderTest {
         Topic.Builder builder = new Topic.Builder("my_topic", 1, singletonMap("foo", "bar"));
         builder.withoutConfigEntry("foo");
         Topic topic = builder.build();
-        assertEquals(new TopicName("my_topic"), topic.getTopicName());
-        assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());
-        assertEquals(emptyMap(), topic.getConfig());
+        assertThat(topic.getTopicName(), is(new TopicName("my_topic")));
+        assertThat(topic.getNumPartitions(), is(1));
+        assertThat(topic.getNumReplicas(), is((short) -1));
+        assertThat(topic.getConfig(), is(emptyMap()));
     }
 }

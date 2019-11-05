@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.vertx.core.Future;
-import io.vertx.ext.unit.TestContext;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.NewTopic;
 
 import java.lang.reflect.Field;
@@ -21,6 +21,8 @@ import static io.vertx.core.Future.succeededFuture;
 import static java.lang.Integer.min;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MockKafka implements Kafka {
 
@@ -195,20 +197,20 @@ public class MockKafka implements Kafka {
         return topicsListResponse;
     }
 
-    public void assertExists(TestContext context, TopicName topicName) {
-        context.assertTrue(topics.containsKey(topicName), "The topic "  + topicName + " should exist in " + this);
+    public void assertExists(VertxTestContext context, TopicName topicName) {
+        context.verify(() -> assertThat("The topic "  + topicName + " should exist in " + this, topics.containsKey(topicName), is(true)));
     }
 
-    public void assertNotExists(TestContext context, TopicName topicName) {
-        context.assertFalse(topics.containsKey(topicName), "The topic "  + topicName + " should not exist in " + this);
+    public void assertNotExists(VertxTestContext context, TopicName topicName) {
+        context.verify(() -> assertThat("The topic "  + topicName + " should not exist in " + this, topics.containsKey(topicName), is(false)));
     }
 
-    public void assertEmpty(TestContext context) {
-        context.assertTrue(topics.isEmpty(), "No topics should exist in " + this);
+    public void assertEmpty(VertxTestContext context) {
+        context.verify(() -> assertThat("No topics should exist in " + this, topics.isEmpty(), is(true)));
     }
 
-    public void assertContains(TestContext context, Topic topic) {
-        context.assertEquals(topic, topics.get(topic.getTopicName()), "The topic " + topic.getTopicName() + " either didn't exist, or had unexpected state");
+    public void assertContains(VertxTestContext context, Topic topic) {
+        context.verify(() -> assertThat("The topic " + topic.getTopicName() + " either didn't exist, or had unexpected state", topics.get(topic.getTopicName()), is(topic)));
     }
 
     public Topic getTopicState(TopicName topicName) {

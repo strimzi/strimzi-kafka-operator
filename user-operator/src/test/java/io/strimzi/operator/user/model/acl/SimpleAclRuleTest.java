@@ -18,9 +18,11 @@ import kafka.security.auth.Resource;
 import kafka.security.auth.Topic$;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 public class SimpleAclRuleTest {
     private static AclRuleResource crdResource;
@@ -43,30 +45,30 @@ public class SimpleAclRuleTest {
         rule.setOperation(AclOperation.READ);
 
         SimpleAclRule simple = SimpleAclRule.fromCrd(rule);
-        assertEquals(AclOperation.READ, simple.getOperation());
-        assertEquals(AclRuleType.ALLOW, simple.getType());
-        assertEquals("127.0.0.1", simple.getHost());
-        assertEquals(resource, simple.getResource());
+        assertThat(simple.getOperation(), is(AclOperation.READ));
+        assertThat(simple.getType(), is(AclRuleType.ALLOW));
+        assertThat(simple.getHost(), is("127.0.0.1"));
+        assertThat(simple.getResource(), is(resource));
     }
 
     @Test
     public void testToKafka()   {
         SimpleAclRule strimzi = new SimpleAclRule(AclRuleType.ALLOW, resource, "127.0.0.1", AclOperation.READ);
         Acl kafka = new Acl(kafkaPrincipal, Allow$.MODULE$, "127.0.0.1", Read$.MODULE$);
-        assertEquals(kafka, strimzi.toKafkaAcl(kafkaPrincipal));
+        assertThat(strimzi.toKafkaAcl(kafkaPrincipal), is(kafka));
     }
 
     @Test
     public void testFromKafka()   {
         SimpleAclRule strimzi = new SimpleAclRule(AclRuleType.ALLOW, resource, "127.0.0.1", AclOperation.READ);
         Acl kafka = new Acl(kafkaPrincipal, Allow$.MODULE$, "127.0.0.1", Read$.MODULE$);
-        assertEquals(strimzi, SimpleAclRule.fromKafkaAcl(resource, kafka));
+        assertThat(SimpleAclRule.fromKafkaAcl(resource, kafka), is(strimzi));
     }
 
     @Test
     public void testRoundtrip()   {
         Acl kafka = new Acl(kafkaPrincipal, Allow$.MODULE$, "127.0.0.1", Read$.MODULE$);
-        assertEquals(kafka, SimpleAclRule.fromKafkaAcl(resource, kafka).toKafkaAcl(kafkaPrincipal));
+        assertThat(SimpleAclRule.fromKafkaAcl(resource, kafka).toKafkaAcl(kafkaPrincipal), is(kafka));
     }
 
     @Test
@@ -79,6 +81,6 @@ public class SimpleAclRuleTest {
 
         Acl kafka = new Acl(kafkaPrincipal, Allow$.MODULE$, "127.0.0.1", Read$.MODULE$);
 
-        assertEquals(kafka, SimpleAclRule.fromCrd(rule).toKafkaAcl(kafkaPrincipal));
+        assertThat(SimpleAclRule.fromCrd(rule).toKafkaAcl(kafkaPrincipal), is(kafka));
     }
 }

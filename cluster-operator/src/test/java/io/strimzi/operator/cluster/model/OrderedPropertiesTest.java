@@ -4,13 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-import org.junit.Assert;
-import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OrderedPropertiesTest {
 
@@ -23,11 +26,11 @@ public class OrderedPropertiesTest {
     }
 
     private void assertKeyOrder(OrderedProperties pairs, String... expected) {
-        Assert.assertArrayEquals(expected, pairs.asMap().keySet().toArray(new String[] {}));
+        assertThat(pairs.asMap().keySet().toArray(new String[] {}), is(expected));
     }
 
     private void assertValueOrder(OrderedProperties pairs, String... expected) {
-        Assert.assertArrayEquals(expected, pairs.asMap().values().toArray(new String[] {}));
+        assertThat(pairs.asMap().values().toArray(new String[] {}), is(expected));
     }
 
     @Test
@@ -76,7 +79,7 @@ public class OrderedPropertiesTest {
 
     @Test
     public void asPairs() {
-        Assert.assertEquals("first=1\nsecond=2\nthird=3\nFOURTH=4\n", createTestKeyValues().asPairs());
+        assertThat(createTestKeyValues().asPairs(), is("first=1\nsecond=2\nthird=3\nFOURTH=4\n"));
     }
 
     @Test
@@ -95,13 +98,13 @@ public class OrderedPropertiesTest {
     static private void propertiesCompatibility(OrderedProperties pairs) throws IOException {
         Properties actual = loadProperties(pairs.asPairs());
         Map<String, String> expected = pairs.asMap();
-        Assert.assertEquals(expected, actual);
+        assertThat(actual, is(expected));
     }
 
     static private Map<String, String> propertiesCompatibility(String pairs) throws IOException {
         Properties expected = loadProperties(pairs);
         Map<String, String> actual = new OrderedProperties().addStringPairs(pairs).asMap();
-        Assert.assertEquals(expected, actual);
+        assertThat(actual, is(expected));
         return actual;
     }
 
@@ -131,7 +134,7 @@ public class OrderedPropertiesTest {
             .addPair("two\nparts", " leading and trailing ")
             .addPair("\\", "\\")
             .addPair("", "");
-        Assert.assertEquals(expected, new OrderedProperties().addMapPairs(expected.asMap()));
+        assertThat(new OrderedProperties().addMapPairs(expected.asMap()), is(expected));
     }
 
     @Test
@@ -139,7 +142,7 @@ public class OrderedPropertiesTest {
         Map<String, String> actual = propertiesCompatibility("! ignore\n  # ignore #\n bare_key");
 
         OrderedProperties expected = new OrderedProperties().addPair("bare_key", "");
-        Assert.assertEquals(expected.asMap(), actual);
+        assertThat(actual, is(expected.asMap()));
     }
 
     @Test
@@ -147,7 +150,7 @@ public class OrderedPropertiesTest {
         Map<String, String> actual = propertiesCompatibility("key : multi\\\n \\\r\n \t line");
 
         OrderedProperties expected = new OrderedProperties().addPair("key", "multiline");
-        Assert.assertEquals(expected.asMap(), actual);
+        assertThat(actual, is(expected.asMap()));
     }
 
     @Test
@@ -157,7 +160,7 @@ public class OrderedPropertiesTest {
         OrderedProperties expected = new OrderedProperties()
             .addPair("before", "1")
             .addPair("after", "2");
-        Assert.assertEquals(expected.asMap(), actual);
+        assertThat(actual, is(expected.asMap()));
     }
 
     @Test
@@ -169,7 +172,7 @@ public class OrderedPropertiesTest {
             .addPair("nl", "splitvalue")
             .addPair("crnl", "splitvalue")
             .addPair("no", "split");
-        Assert.assertEquals(expected.asMap(), actual);
+        assertThat(actual, is(expected.asMap()));
     }
 
     @Test
@@ -178,23 +181,25 @@ public class OrderedPropertiesTest {
 
         OrderedProperties expected = new OrderedProperties()
             .addPair("unicode", "\u0123X\uAbBa");
-        Assert.assertEquals(expected.asMap(), actual);
+        assertThat(actual, is(expected.asMap()));
     }
 
     @Test
     public void pairsWithComment() {
-        Assert.assertEquals("# this is a comment\n" +
-                "first=1\n" +
-                "second=2\n" +
-                "third=3\n" +
-                "FOURTH=4\n", createTestKeyValues().asPairsWithComment("this is a comment"));
+        assertThat(createTestKeyValues().asPairsWithComment("this is a comment"),
+                is("# this is a comment\n" +
+                        "first=1\n" +
+                        "second=2\n" +
+                        "third=3\n" +
+                        "FOURTH=4\n"));
     }
 
     @Test
     public void pairsWithMultineComment() {
-        Assert.assertEquals("# this\n" +
-                "# is\n" +
-                "# a\n" +
-                "# comment\\\n", new OrderedProperties().asPairsWithComment("this\nis\n\ra\rcomment\\"));
+        assertThat(new OrderedProperties().asPairsWithComment("this\nis\n\ra\rcomment\\"),
+                is("# this\n" +
+                        "# is\n" +
+                        "# a\n" +
+                        "# comment\\\n"));
     }
 }

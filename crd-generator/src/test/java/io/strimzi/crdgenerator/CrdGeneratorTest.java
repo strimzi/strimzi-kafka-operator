@@ -6,7 +6,7 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -14,7 +14,8 @@ import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CrdGeneratorTest {
     @Test
@@ -23,7 +24,7 @@ public class CrdGeneratorTest {
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
-        assertEquals(CrdTestUtils.readResource("simpleTest.yaml"), s);
+        assertThat(CrdTestUtils.readResource("simpleTest.yaml"), is(s));
     }
 
     @Test
@@ -38,6 +39,6 @@ public class CrdGeneratorTest {
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
-        assertEquals(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), s);
+        assertThat(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), is(s));
     }
 }

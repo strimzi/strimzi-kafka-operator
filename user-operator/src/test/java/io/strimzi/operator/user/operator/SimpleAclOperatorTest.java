@@ -16,12 +16,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import kafka.security.auth.Acl;
 import kafka.security.auth.Allow$;
 import kafka.security.auth.Cluster$;
@@ -34,37 +35,40 @@ import kafka.security.auth.Topic$;
 import kafka.security.auth.Write$;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import scala.collection.Iterator;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class SimpleAclOperatorTest {
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
 
     @Test
-    public void testGetUsersFromAcls(TestContext context)  {
+    public void testGetUsersFromAcls(VertxTestContext context)  {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
+        Checkpoint async = context.checkpoint();
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
         Acl fooAcl = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
         KafkaPrincipal bar = new KafkaPrincipal("User", "CN=bar");
@@ -84,12 +88,13 @@ public class SimpleAclOperatorTest {
 
         ArgumentCaptor<KafkaPrincipal> principalCaptor = ArgumentCaptor.forClass(KafkaPrincipal.class);
         when(mockAuthorizer.getAcls(principalCaptor.capture())).thenReturn(map);
+        async.flag();
 
-        context.assertEquals(new HashSet(asList("foo", "bar", "baz")), aclOp.getUsersWithAcls());
+        context.verify(() -> assertThat(aclOp.getUsersWithAcls(), is(new HashSet(asList("foo", "bar", "baz")))));
     }
 
     @Test
-    public void testInternalCreate(TestContext context)  {
+    public void testInternalCreate(VertxTestContext context) throws InterruptedException {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
@@ -117,23 +122,21 @@ public class SimpleAclOperatorTest {
         scala.collection.immutable.Set<Acl> set3 = new scala.collection.immutable.Set.Set1<>(acl3);
         Resource res2 = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(rule1, rule2, rule3)));
         fut.setHandler(res -> {
-            context.assertTrue(res.succeeded());
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
 
             List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
             List<Resource> capturedResource = resourceCaptor.getAllValues();
 
-            context.assertEquals(2, capturedAcls.size());
-            context.assertEquals(2, capturedResource.size());
+            context.verify(() -> assertThat(capturedAcls.size(), is(2)));
+            context.verify(() -> assertThat(capturedResource.size(), is(2)));
 
-            boolean option1 = res1.equals(capturedResource.get(0)) && res2.equals(capturedResource.get(1));
-            boolean option2 = res1.equals(capturedResource.get(1)) && res2.equals(capturedResource.get(0));
-            context.assertTrue(option1 || option2);
+            context.verify(() -> assertThat(res1.equals(capturedResource.get(0)) && res2.equals(capturedResource.get(1)) || res1.equals(capturedResource.get(1)) && res2.equals(capturedResource.get(0)), is(true)));
 
             if (capturedAcls.get(0).size() == 1) {
-                context.assertEquals(capturedAcls.get(0), set3);
+                context.verify(() -> assertThat(capturedAcls.get(0), is(set3)));
             } else {
                 // the order can be changed
                 if (capturedAcls.get(0).size() == 2) {
@@ -144,14 +147,12 @@ public class SimpleAclOperatorTest {
                     Acl capturedAcl1 = iter.next();
                     Acl capturedAcl2 = iter.next();
 
-                    option1 = aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2);
-                    option2 = aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2);
-                    context.assertTrue(option1 || option2);
+                    context.verify(() -> assertThat(aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2) || aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2), is(true)));
                 }
             }
 
             if (capturedAcls.get(1).size() == 1) {
-                context.assertEquals(capturedAcls.get(1), set3);
+                context.verify(() -> assertThat(capturedAcls.get(1), is(set3)));
             } else {
                 // the order can be changed
                 if (capturedAcls.get(1).size() == 2) {
@@ -162,17 +163,16 @@ public class SimpleAclOperatorTest {
                     Acl capturedAcl1 = iter.next();
                     Acl capturedAcl2 = iter.next();
 
-                    option1 = aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2);
-                    option2 = aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2);
-                    context.assertTrue(option1 || option2);
+                    context.verify(() -> assertThat(aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2) || aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2), is(true)));
                 }
             }
-            async.complete();
+            async.flag();
         });
+        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
     }
 
     @Test
-    public void testInternalUpdate(TestContext context)  {
+    public void testInternalUpdate(VertxTestContext context) throws InterruptedException {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
@@ -199,33 +199,34 @@ public class SimpleAclOperatorTest {
         ArgumentCaptor<Resource> deleterResourceCaptor = ArgumentCaptor.forClass(Resource.class);
         when(mockAuthorizer.removeAcls(deleteAclCaptor.capture(), deleterResourceCaptor.capture())).thenReturn(true);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<Void> fut = aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)));
         fut.setHandler(res -> {
-            context.assertTrue(res.succeeded());
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
 
             List<scala.collection.immutable.Set<Acl>> capturedAcls = aclCaptor.getAllValues();
             List<Resource> capturedResource = resourceCaptor.getAllValues();
             List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
             List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
-            context.assertEquals(1, capturedResource.size());
-            context.assertEquals(1, deleteCapturedAcls.size());
-            context.assertEquals(1, deleteCapturedResource.size());
+            context.verify(() -> assertThat(capturedAcls.size(), is(1)));
+            context.verify(() -> assertThat(capturedResource.size(), is(1)));
+            context.verify(() -> assertThat(deleteCapturedAcls.size(), is(1)));
+            context.verify(() -> assertThat(deleteCapturedResource.size(), is(1)));
 
-            context.assertEquals(res2, capturedResource.get(0));
-            context.assertEquals(res1, deleteCapturedResource.get(0));
+            context.verify(() -> assertThat(capturedResource.get(0), is(res2)));
+            context.verify(() -> assertThat(deleteCapturedResource.get(0), is(res1)));
 
-            context.assertEquals(set2, capturedAcls.get(0));
-            context.assertEquals(set1, deleteCapturedAcls.get(0));
+            context.verify(() -> assertThat(capturedAcls.get(0), is(set2)));
+            context.verify(() -> assertThat(deleteCapturedAcls.get(0), is(set1)));
+            async.flag();
 
-            async.complete();
         });
+        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
     }
 
     @Test
-    public void testInternalDelete(TestContext context) {
+    public void testInternalDelete(VertxTestContext context) throws InterruptedException {
         SimpleAclAuthorizer mockAuthorizer = mock(SimpleAclAuthorizer.class);
         SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAuthorizer);
 
@@ -242,22 +243,23 @@ public class SimpleAclOperatorTest {
         ArgumentCaptor<Resource> deleterResourceCaptor = ArgumentCaptor.forClass(Resource.class);
         when(mockAuthorizer.removeAcls(deleteAclCaptor.capture(), deleterResourceCaptor.capture())).thenReturn(true);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", null);
         fut.setHandler(res -> {
-            context.assertTrue(res.succeeded());
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
 
             List<scala.collection.immutable.Set<Acl>> deleteCapturedAcls = deleteAclCaptor.getAllValues();
             List<Resource> deleteCapturedResource = deleterResourceCaptor.getAllValues();
 
-            context.assertEquals(1, deleteCapturedAcls.size());
-            context.assertEquals(1, deleteCapturedResource.size());
+            context.verify(() -> assertThat(deleteCapturedAcls.size(), is(1)));
+            context.verify(() -> assertThat(deleteCapturedResource.size(), is(1)));
 
-            context.assertEquals(res1, deleteCapturedResource.get(0));
+            context.verify(() -> assertThat(deleteCapturedResource.get(0), is(res1)));
 
-            context.assertEquals(set1, deleteCapturedAcls.get(0));
+            context.verify(() -> assertThat(deleteCapturedAcls.get(0), is(set1)));
 
-            async.complete();
+            async.flag();
         });
+        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
     }
 }

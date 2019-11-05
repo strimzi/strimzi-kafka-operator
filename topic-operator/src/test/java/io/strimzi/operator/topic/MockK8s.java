@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatusBuilder;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.ext.unit.TestContext;
+import io.vertx.junit5.VertxTestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +22,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MockK8s implements K8s {
 
@@ -178,32 +181,32 @@ public class MockK8s implements K8s {
         return handler;
     }
 
-    public void assertExists(TestContext context, ResourceName resourceName) {
+    public void assertExists(VertxTestContext context, ResourceName resourceName) {
         AsyncResult<KafkaTopic> got = byName.get(resourceName);
-        context.assertTrue(got != null && got.succeeded());
+        context.verify(() -> assertThat(got != null && got.succeeded(), is(true)));
     }
 
-    public void assertContains(TestContext context, KafkaTopic resource) {
+    public void assertContains(VertxTestContext context, KafkaTopic resource) {
         AsyncResult<KafkaTopic> resourceResult = byName.get(new ResourceName(resource));
-        context.assertTrue(resourceResult.succeeded());
-        context.assertEquals(resource, resourceResult.result());
+        context.verify(() -> assertThat(resourceResult.succeeded(), is(true)));
+        context.verify(() -> assertThat(resourceResult.result(), is(resource)));
     }
 
-    public void assertNotExists(TestContext context, ResourceName resourceName) {
-        context.assertFalse(byName.containsKey(resourceName));
+    public void assertNotExists(VertxTestContext context, ResourceName resourceName) {
+        context.verify(() -> assertThat(byName.containsKey(resourceName), is(false)));
     }
 
-    public void assertContainsEvent(TestContext context, Predicate<Event> test) {
+    public void assertContainsEvent(VertxTestContext context, Predicate<Event> test) {
         for (Event event : events) {
             if (test.test(event)) {
                 return;
             }
         }
-        context.fail("Missing event");
+        context.failNow(new Throwable("Missing event"));
     }
 
-    public void assertNoEvents(TestContext context) {
-        context.assertTrue(events.isEmpty());
+    public void assertNoEvents(VertxTestContext context) {
+        context.verify(() -> assertThat(events.isEmpty(), is(true)));
     }
 
     public void setGetFromNameResponse(ResourceName resourceName, AsyncResult<KafkaTopic> futureResource) {

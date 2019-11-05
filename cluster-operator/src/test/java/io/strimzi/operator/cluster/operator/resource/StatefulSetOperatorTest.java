@@ -28,9 +28,9 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import org.junit.Test;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.exceptions.base.MockitoException;
 
@@ -39,7 +39,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -120,7 +121,7 @@ public class StatefulSetOperatorTest
 
     @Override
     @Test
-    public void createWhenExistsIsAPatch(TestContext context) {
+    public void createWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, false);
     }
 
@@ -159,7 +160,7 @@ public class StatefulSetOperatorTest
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertTrue(result.succeeded());
+        assertThat(result.succeeded(), is(true));
     }
     @Test
     public void rollingUpdateDeletionTimeout() {
@@ -203,8 +204,8 @@ public class StatefulSetOperatorTest
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertTrue(result.failed());
-        assertTrue(result.cause() instanceof TimeoutException);
+        assertThat(result.failed(), is(true));
+        assertThat(result.cause() instanceof TimeoutException, is(true));
     }
 
     @Test
@@ -242,8 +243,8 @@ public class StatefulSetOperatorTest
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertTrue(result.failed());
-        assertTrue(result.cause() instanceof TimeoutException);
+        assertThat(result.failed(), is(true));
+        assertThat(result.cause() instanceof TimeoutException, is(true));
     }
 
     @Test
@@ -281,12 +282,12 @@ public class StatefulSetOperatorTest
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
-        assertTrue(result.failed());
-        assertTrue(result.cause().getMessage().equals("reconcile failed"));
+        assertThat(result.failed(), is(true));
+        assertThat(result.cause().getMessage().equals("reconcile failed"), is(true));
     }
 
     @Test
-    public void testInternalReplace(TestContext context)   {
+    public void testInternalReplace(VertxTestContext context)   {
         StatefulSet sts1 = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
@@ -372,17 +373,17 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockDeletable).delete();
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testCascadingDeleteAsync(TestContext context)   {
+    public void testCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
 
@@ -412,20 +413,19 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, true).setHandler(res -> {
             if (res.succeeded())    {
-                context.assertTrue(cascadingCaptor.getValue());
+                context.verify(() -> assertThat(cascadingCaptor.getValue(), is(true)));
             } else {
-                context.fail();
+                context.failNow(new Throwable());
             }
-
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testNonCascadingDeleteAsync(TestContext context)   {
+    public void testNonCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
 
@@ -455,20 +455,19 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                context.assertFalse(cascadingCaptor.getValue());
+                context.verify(() -> assertThat(cascadingCaptor.getValue(), is(false)));
             } else {
-                context.fail();
+                context.failNow(new Throwable());
             }
-
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testDeleteAsyncNotDeleted(TestContext context)   {
+    public void testDeleteAsyncNotDeleted(VertxTestContext context)   {
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
         when(mockERPD.delete()).thenReturn(Boolean.FALSE);
 
@@ -494,18 +493,17 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                context.fail();
+                context.failNow(new Throwable());
             }
-
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testDeleteAsyncFailing(TestContext context)   {
+    public void testDeleteAsyncFailing(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenThrow(new MockitoException("Something failed"));
 
@@ -534,16 +532,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                context.fail();
+                context.failNow(new Throwable());
             } else {
-                context.assertTrue("org.mockito.exceptions.base.MockitoException".equals(res.cause().getClass().getName()));
-                context.assertTrue("Something failed".equals(res.cause().getMessage()));
+                context.verify(() -> assertThat("org.mockito.exceptions.base.MockitoException".equals(res.cause().getClass().getName()), is(true)));
+                context.verify(() -> assertThat("Something failed".equals(res.cause().getMessage()), is(true)));
             }
-
-            async.complete();
+            async.flag();
         });
     }
 }

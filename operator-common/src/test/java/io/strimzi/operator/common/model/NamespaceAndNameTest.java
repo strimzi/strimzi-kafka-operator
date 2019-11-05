@@ -4,24 +4,27 @@
  */
 package io.strimzi.operator.common.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class NamespaceAndNameTest {
     @Test
     public void testEquals()   {
         NamespaceAndName original = new NamespaceAndName("namespace1", "name1");
 
-        Assert.assertTrue(original.equals(new NamespaceAndName("namespace1", "name1")));
-        Assert.assertFalse(original.equals(new NamespaceAndName("namespace2", "name1")));
-        Assert.assertFalse(original.equals(new NamespaceAndName("namespace1", "name2")));
-        Assert.assertFalse(original.equals(new NamespaceAndName("namespace2", "name2")));
+        assertThat(original, is(new NamespaceAndName("namespace1", "name1")));
+        assertThat(original, is(not(new NamespaceAndName("namespace2", "name1"))));
+        assertThat(original, is(not(new NamespaceAndName("namespace1", "name2"))));
+        assertThat(original, is(not(new NamespaceAndName("namespace2", "name2"))));
     }
 
     @Test
     public void testToString()   {
         NamespaceAndName nan = new NamespaceAndName("namespace1", "name1");
 
-        Assert.assertEquals("namespace1/name1", nan.toString());
+        assertThat(nan.toString(), is("namespace1/name1"));
     }
 }

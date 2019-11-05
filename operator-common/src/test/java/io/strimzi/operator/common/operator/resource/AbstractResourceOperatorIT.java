@@ -6,8 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -15,14 +13,19 @@ import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.strimzi.test.BaseITST.cmdKubeClient;
+import static io.strimzi.test.BaseITST.kubeClient;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -30,55 +33,55 @@ import org.junit.runner.RunWith;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+    protected static final Logger log = LogManager.getLogger(AbstractResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
-    protected static String namespace;
-    protected static String defaultNamespace = "my-test-namespace";
+    protected static String namespace = "resource-operator-it-namespace";
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
-            Assume.assumeTrue(e.getMessage(), false);
+            assumeTrue(false, e.getMessage());
         }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
 
-        namespace = client.getNamespace();
-        if (namespace == null) {
-            Namespace ns = client.namespaces().withName(defaultNamespace).get();
-
-            if (ns == null) {
-                client.namespaces().create(new NamespaceBuilder()
-                        .withNewMetadata()
-                        .withName(defaultNamespace)
-                        .endMetadata()
-                        .build());
-            }
-
-            namespace = defaultNamespace;
+        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+            log.warn("Namespace {} is already created, going to delete it", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
+
+        log.info("Creating namespace: {}", namespace);
+        kubeClient().createNamespace(namespace);
+        cmdKubeClient().waitForResourceCreation("Namespace", namespace);
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         if (vertx != null) {
             vertx.close();
+        }
+        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+            log.warn("Deleting namespace {} after tests run", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
     }
 
     abstract AbstractResourceOperator<C, T, L, D, R> operator();
     abstract T getOriginal();
     abstract T getModified();
-    abstract void assertResources(TestContext context, T expected, T actual);
+    abstract void assertResources(VertxTestContext context, T expected, T actual);
 
     @Test
-    public void testFullCycle(TestContext context)    {
-        Async async = context.async();
+    public void testFullCycle(VertxTestContext context)    {
+        Checkpoint async = context.checkpoint();
         AbstractResourceOperator<C, T, L, D, R> op = operator();
 
         T newResource = getOriginal();
@@ -91,8 +94,8 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                 T created = op.get(namespace, RESOURCE_NAME);
 
                 if (created == null)    {
-                    context.fail("Failed to get created Resource");
-                    async.complete();
+                    context.failNow(new Throwable("Failed to get created Resource"));
+                    async.flag();
                 } else  {
                     assertResources(context, newResource, created);
 
@@ -102,8 +105,8 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                             T modified = op.get(namespace, RESOURCE_NAME);
 
                             if (modified == null)    {
-                                context.fail("Failed to get modified Resource");
-                                async.complete();
+                                context.failNow(new Throwable("Failed to get modified Resource"));
+                                async.flag();
                             } else {
                                 assertResources(context, modResource, modified);
 
@@ -113,27 +116,27 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                                         T deleted = op.get(namespace, RESOURCE_NAME);
 
                                         if (deleted == null)    {
-                                            async.complete();
+                                            async.flag();
                                         } else {
-                                            context.fail("Failed to delete Resource");
-                                            async.complete();
+                                            context.failNow(new Throwable("Failed to delete Resource"));
+                                            async.flag();
                                         }
                                     } else {
-                                        context.fail(delete.cause());
-                                        async.complete();
+                                        context.failNow(delete.cause());
+                                        async.flag();
                                     }
                                 });
                             }
                         } else {
-                            context.fail(modify.cause());
-                            async.complete();
+                            context.failNow(modify.cause());
+                            async.flag();
                         }
                     });
                 }
 
             } else {
-                context.fail(create.cause());
-                async.complete();
+                context.failNow(create.cause());
+                async.flag();
             }
         });
     }

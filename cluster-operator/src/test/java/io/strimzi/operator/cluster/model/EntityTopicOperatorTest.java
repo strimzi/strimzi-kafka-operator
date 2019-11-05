@@ -17,16 +17,16 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.test.TestUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EntityTopicOperatorTest {
 
@@ -104,33 +104,33 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testEnvVars()   {
-        Assert.assertEquals(getExpectedEnvVars(), entityTopicOperator.getEnvVars());
+        assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @Test
     public void testFromCrd() {
-        assertEquals(namespace, entityTopicOperator.namespace);
-        assertEquals(cluster, entityTopicOperator.cluster);
-        assertEquals(toImage, entityTopicOperator.image);
-        assertEquals(readinessProbe.getInitialDelaySeconds(), entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds());
-        assertEquals(readinessProbe.getTimeoutSeconds(), entityTopicOperator.readinessProbeOptions.getTimeoutSeconds());
-        assertEquals(readinessProbe.getSuccessThreshold(), entityTopicOperator.readinessProbeOptions.getSuccessThreshold());
-        assertEquals(readinessProbe.getFailureThreshold(), entityTopicOperator.readinessProbeOptions.getFailureThreshold());
-        assertEquals(readinessProbe.getPeriodSeconds(), entityTopicOperator.readinessProbeOptions.getPeriodSeconds());
-        assertEquals(livenessProbe.getInitialDelaySeconds(), entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds());
-        assertEquals(livenessProbe.getTimeoutSeconds(), entityTopicOperator.livenessProbeOptions.getTimeoutSeconds());
-        assertEquals(livenessProbe.getSuccessThreshold(), entityTopicOperator.livenessProbeOptions.getSuccessThreshold());
-        assertEquals(livenessProbe.getFailureThreshold(), entityTopicOperator.livenessProbeOptions.getFailureThreshold());
-        assertEquals(livenessProbe.getPeriodSeconds(), entityTopicOperator.livenessProbeOptions.getPeriodSeconds());
-        assertEquals(toWatchedNamespace, entityTopicOperator.getWatchedNamespace());
-        assertEquals(toReconciliationInterval * 1000, entityTopicOperator.getReconciliationIntervalMs());
-        assertEquals(toZookeeperSessionTimeout * 1000, entityTopicOperator.getZookeeperSessionTimeoutMs());
-        assertEquals(EntityTopicOperator.defaultZookeeperConnect(cluster), entityTopicOperator.getZookeeperConnect());
-        assertEquals(EntityTopicOperator.defaultBootstrapServers(cluster), entityTopicOperator.getKafkaBootstrapServers());
-        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getResourceLabels());
-        assertEquals(toTopicMetadataMaxAttempts, entityTopicOperator.getTopicMetadataMaxAttempts());
-        assertEquals(topicOperatorLogging.getType(), entityTopicOperator.getLogging().getType());
-        assertEquals(topicOperatorLogging.getLoggers(), ((InlineLogging) entityTopicOperator.getLogging()).getLoggers());
+        assertThat(entityTopicOperator.namespace, is(namespace));
+        assertThat(entityTopicOperator.cluster, is(cluster));
+        assertThat(entityTopicOperator.image, is(toImage));
+        assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(readinessProbe.getInitialDelaySeconds()));
+        assertThat(entityTopicOperator.readinessProbeOptions.getTimeoutSeconds(), is(readinessProbe.getTimeoutSeconds()));
+        assertThat(entityTopicOperator.readinessProbeOptions.getSuccessThreshold(), is(readinessProbe.getSuccessThreshold()));
+        assertThat(entityTopicOperator.readinessProbeOptions.getFailureThreshold(), is(readinessProbe.getFailureThreshold()));
+        assertThat(entityTopicOperator.readinessProbeOptions.getPeriodSeconds(), is(readinessProbe.getPeriodSeconds()));
+        assertThat(entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds(), is(livenessProbe.getInitialDelaySeconds()));
+        assertThat(entityTopicOperator.livenessProbeOptions.getTimeoutSeconds(), is(livenessProbe.getTimeoutSeconds()));
+        assertThat(entityTopicOperator.livenessProbeOptions.getSuccessThreshold(), is(livenessProbe.getSuccessThreshold()));
+        assertThat(entityTopicOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
+        assertThat(entityTopicOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
+        assertThat(entityTopicOperator.getWatchedNamespace(), is(toWatchedNamespace));
+        assertThat(entityTopicOperator.getReconciliationIntervalMs(), is(toReconciliationInterval * 1000));
+        assertThat(entityTopicOperator.getZookeeperSessionTimeoutMs(), is(toZookeeperSessionTimeout * 1000));
+        assertThat(entityTopicOperator.getZookeeperConnect(), is(EntityTopicOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityTopicOperator.getKafkaBootstrapServers(), is(EntityTopicOperator.defaultBootstrapServers(cluster)));
+        assertThat(entityTopicOperator.getResourceLabels(), is(ModelUtils.defaultResourceLabels(cluster)));
+        assertThat(entityTopicOperator.getTopicMetadataMaxAttempts(), is(toTopicMetadataMaxAttempts));
+        assertThat(entityTopicOperator.getLogging().getType(), is(topicOperatorLogging.getType()));
+        assertThat(((InlineLogging) entityTopicOperator.getLogging()).getLoggers(), is(topicOperatorLogging.getLoggers()));
     }
 
     @Test
@@ -148,19 +148,19 @@ public class EntityTopicOperatorTest {
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
 
-        assertEquals(namespace, entityTopicOperator.getWatchedNamespace());
-        assertEquals("strimzi/operator:latest", entityTopicOperator.getImage());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityTopicOperator.getReconciliationIntervalMs());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityTopicOperator.getZookeeperSessionTimeoutMs());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, entityTopicOperator.getTopicMetadataMaxAttempts());
-        assertEquals(EntityTopicOperator.defaultZookeeperConnect(cluster), entityTopicOperator.getZookeeperConnect());
-        assertEquals(EntityTopicOperator.defaultBootstrapServers(cluster), entityTopicOperator.getKafkaBootstrapServers());
-        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getResourceLabels());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.readinessProbeOptions.getTimeoutSeconds());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.livenessProbeOptions.getTimeoutSeconds());
-        assertNull(entityTopicOperator.getLogging());
+        assertThat(entityTopicOperator.getWatchedNamespace(), is(namespace));
+        assertThat(entityTopicOperator.getImage(), is("strimzi/operator:latest"));
+        assertThat(entityTopicOperator.getReconciliationIntervalMs(), is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
+        assertThat(entityTopicOperator.getZookeeperSessionTimeoutMs(), is(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
+        assertThat(entityTopicOperator.getTopicMetadataMaxAttempts(), is(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
+        assertThat(entityTopicOperator.getZookeeperConnect(), is(EntityTopicOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityTopicOperator.getKafkaBootstrapServers(), is(EntityTopicOperator.defaultBootstrapServers(cluster)));
+        assertThat(entityTopicOperator.getResourceLabels(), is(ModelUtils.defaultResourceLabels(cluster)));
+        assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(entityTopicOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(entityTopicOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(entityTopicOperator.getLogging(), is(nullValue()));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class EntityTopicOperatorTest {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
-        assertNull(entityTopicOperator);
+        assertThat(entityTopicOperator, is(nullValue()));
     }
 
     @Test
@@ -181,37 +181,37 @@ public class EntityTopicOperatorTest {
                         .endSpec()
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
-        assertNull(entityTopicOperator);
+        assertThat(entityTopicOperator, is(nullValue()));
     }
 
     @Test
     public void testGetContainers() {
         List<Container> containers = entityTopicOperator.getContainers(null);
-        assertEquals(1, containers.size());
+        assertThat(containers.size(), is(1));
 
         Container container = containers.get(0);
-        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME, container.getName());
-        assertEquals(entityTopicOperator.getImage(), container.getImage());
-        assertEquals(getExpectedEnvVars(), container.getEnv());
-        assertEquals(new Integer(livenessProbe.getInitialDelaySeconds()), container.getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(livenessProbe.getTimeoutSeconds()), container.getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(readinessProbe.getInitialDelaySeconds()), container.getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(readinessProbe.getTimeoutSeconds()), container.getReadinessProbe().getTimeoutSeconds());
-        assertEquals(1, container.getPorts().size());
-        assertEquals(new Integer(EntityTopicOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
-        assertEquals(EntityTopicOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
-        assertEquals("TCP", container.getPorts().get(0).getProtocol());
-        assertEquals(map("entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
+        assertThat(container.getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
+        assertThat(container.getImage(), is(entityTopicOperator.getImage()));
+        assertThat(container.getEnv(), is(getExpectedEnvVars()));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(livenessProbe.getInitialDelaySeconds())));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(new Integer(livenessProbe.getTimeoutSeconds())));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(readinessProbe.getInitialDelaySeconds())));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(new Integer(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getPorts().size(), is(1));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(new Integer(EntityTopicOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
+        assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(
+                map("entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
                 EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
-                EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
-                EntityOperatorTest.volumeMounts(container.getVolumeMounts()));
+                EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
     }
 
     @Test
     public void testRoleBinding()   {
         RoleBinding binding = entityTopicOperator.generateRoleBinding(namespace, toWatchedNamespace);
 
-        assertEquals(namespace, binding.getSubjects().get(0).getNamespace());
-        assertEquals(toWatchedNamespace, binding.getMetadata().getNamespace());
+        assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
+        assertThat(binding.getMetadata().getNamespace(), is(toWatchedNamespace));
     }
 }

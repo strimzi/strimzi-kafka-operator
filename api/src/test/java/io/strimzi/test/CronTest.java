@@ -5,7 +5,7 @@
 package io.strimzi.test;
 
 import org.apache.logging.log4j.core.util.CronExpression;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.time.LocalDateTime;
@@ -13,8 +13,8 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.TimeZone;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CronTest {
 
@@ -24,13 +24,13 @@ public class CronTest {
         CronExpression cronExpression = new CronExpression("* * 14-15 * * ?");
 
         Date d = Date.from(LocalDateTime.of(2018, 11, 26, 13, 59, 0).atZone(ZoneId.systemDefault()).toInstant());
-        assertFalse(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(false));
         d = Date.from(LocalDateTime.of(2018, 11, 26, 14, 00, 0).atZone(ZoneId.systemDefault()).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
         d = Date.from(LocalDateTime.of(2018, 11, 26, 15, 59, 0).atZone(ZoneId.systemDefault()).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
         d = Date.from(LocalDateTime.of(2018, 11, 26, 16, 00, 1).atZone(ZoneId.systemDefault()).toInstant());
-        assertFalse(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(false));
     }
 
     @Test
@@ -40,14 +40,14 @@ public class CronTest {
 
         // Saturday November 24th, 2018
         Date d = Date.from(LocalDateTime.of(2018, 11, 24, 14, 00, 0).atZone(ZoneId.systemDefault()).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
         // Sunday November 25th, 2018
         d = Date.from(LocalDateTime.of(2018, 11, 25, 14, 00, 0).atZone(ZoneId.systemDefault()).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
         // the working day Monday to Friday, November 26th to November 30th, 2018
         for (int day = 26; day <= 30; day++) {
             d = Date.from(LocalDateTime.of(2018, 11, day, 14, 00, 0).atZone(ZoneId.systemDefault()).toInstant());
-            assertFalse(cronExpression.isSatisfiedBy(d));
+            assertThat(cronExpression.isSatisfiedBy(d), is(false));
         }
     }
 
@@ -62,7 +62,7 @@ public class CronTest {
 
         // it's really 08:00 in "Pacific/Easter" but 14:00 for "user"
         Date d = Date.from(LocalDateTime.of(2018, 11, 26, 8, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
     }
 
     @Test
@@ -76,6 +76,6 @@ public class CronTest {
 
         // it's really 09:00 in "Pacific/Easter" but 15:00 for "user" so 14:00 in UTC
         Date d = Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant());
-        assertTrue(cronExpression.isSatisfiedBy(d));
+        assertThat(cronExpression.isSatisfiedBy(d), is(true));
     }
 }

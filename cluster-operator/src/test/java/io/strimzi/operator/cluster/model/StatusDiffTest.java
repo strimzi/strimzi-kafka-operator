@@ -11,14 +11,14 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StatusDiffTest {
     @Test
@@ -90,22 +90,22 @@ public class StatusDiffTest {
                 .build();
 
         StatusDiff diff = new StatusDiff(status1, status2);
-        assertTrue(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(true));
 
         diff = new StatusDiff(status1, status3);
-        assertFalse(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(false));
 
         diff = new StatusDiff(status1, status4);
-        assertFalse(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(false));
 
         diff = new StatusDiff(status3, status4);
-        assertFalse(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(false));
 
         diff = new StatusDiff(status3, status5);
-        assertFalse(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(false));
 
         diff = new StatusDiff(status5, status6);
-        assertFalse(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(false));
     }
 
     @Test
@@ -149,6 +149,6 @@ public class StatusDiffTest {
                 .build();
 
         StatusDiff diff = new StatusDiff(status1, status2);
-        assertTrue(diff.isEmpty());
+        assertThat(diff.isEmpty(), is(true));
     }
 }

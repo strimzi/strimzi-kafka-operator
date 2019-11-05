@@ -10,11 +10,13 @@ import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.message.FormattedMessageFactory;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestLogger extends AbstractLogger {
     public static class LoggedMessage {
@@ -60,11 +62,11 @@ public class TestLogger extends AbstractLogger {
     }
 
     public void assertLoggedAtLeastOnce(Predicate<LoggedMessage> test) {
-        Assert.assertTrue("Expected message was not logged", getLoggedMessages().stream().anyMatch(test));
+        assertThat("Expected message was not logged", getLoggedMessages().stream().anyMatch(test), is(true));
     }
 
     public void assertNotLogged(Predicate<LoggedMessage> test) {
-        Assert.assertTrue("Unexpected message was logged", getLoggedMessages().stream().noneMatch(test));
+        assertThat("Unexpected message was logged", getLoggedMessages().stream().noneMatch(test), is(true));
     }
 
     @Override

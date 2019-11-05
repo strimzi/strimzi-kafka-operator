@@ -10,7 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -47,7 +48,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaUser.class, "KafkaUser-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.authentication in body is required"));
+            assertThat(e.getMessage().contains("spec.authentication in body is required"), is(true));
         }
     }
 

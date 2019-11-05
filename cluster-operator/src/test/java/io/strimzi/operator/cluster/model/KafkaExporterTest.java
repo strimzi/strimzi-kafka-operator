@@ -28,20 +28,18 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaExporterTest {
     private final String namespace = "test";
@@ -89,8 +87,8 @@ public class KafkaExporterTest {
     private final KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
-        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
     private Map<String, String> expectedLabels(String name)    {
@@ -128,23 +126,22 @@ public class KafkaExporterTest {
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, new KafkaExporterSpec());
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
-        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, ke.getImage());
-        assertEquals("info", ke.logging);
-        assertEquals(".*", ke.groupRegex);
-        assertEquals(".*", ke.topicRegex);
-        assertEquals(false, ke.saramaLoggingEnabled);
+        assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(ke.logging, is("info"));
+        assertThat(ke.groupRegex, is(".*"));
+        assertThat(ke.topicRegex, is(".*"));
+        assertThat(ke.saramaLoggingEnabled, is(false));
     }
 
     @Test
     public void testFromConfigMap() {
-        Assert.assertEquals(namespace, ke.namespace);
-        Assert.assertEquals(cluster, ke.cluster);
-        assertEquals(keImage, ke.getImage());
-        assertEquals("debug", ke.logging);
-        assertEquals("my-group-.*", ke.groupRegex);
-        assertEquals("my-topic-.*", ke.topicRegex);
-        assertEquals(true, ke.saramaLoggingEnabled);
-
+        assertThat(ke.namespace, is(namespace));
+        assertThat(ke.cluster, is(cluster));
+        assertThat(ke.getImage(), is(keImage));
+        assertThat(ke.logging, is("debug"));
+        assertThat(ke.groupRegex, is("my-group-.*"));
+        assertThat(ke.topicRegex, is("my-topic-.*"));
+        assertThat(ke.saramaLoggingEnabled, is(true));
     }
 
     @Test
@@ -153,62 +150,59 @@ public class KafkaExporterTest {
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(1, containers.size());
+        assertThat(containers.size(), is(1));
 
-        Assert.assertEquals(KafkaExporterResources.deploymentName(cluster), dep.getMetadata().getName());
-        assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(1, dep.getMetadata().getOwnerReferences().size());
-        assertEquals(ke.createOwnerReference(), dep.getMetadata().getOwnerReferences().get(0));
+        assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getNamespace(), is(namespace));
+        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(ke.createOwnerReference()));
 
         // checks on the main Exporter container
-        assertEquals(ke.image, containers.get(0).getImage());
-        assertEquals(getExpectedEnvVars(), containers.get(0).getEnv());
-        assertEquals(1, containers.get(0).getPorts().size());
-        assertEquals(KafkaExporter.METRICS_PORT_NAME, containers.get(0).getPorts().get(0).getName());
-        assertEquals("TCP", containers.get(0).getPorts().get(0).getProtocol());
-        assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
+        assertThat(containers.get(0).getImage(), is(ke.image));
+        assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
+        assertThat(containers.get(0).getPorts().size(), is(1));
+        assertThat(containers.get(0).getPorts().get(0).getName(), is(KafkaExporter.METRICS_PORT_NAME));
+        assertThat(containers.get(0).getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
 
         // Test volumes
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
-        assertEquals(2, volumes.size());
+        assertThat(volumes.size(), is(2));
 
         Volume volume = volumes.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().get();
-        assertNotNull(volume);
-        assertEquals(KafkaResources.clusterCaCertificateSecretName(cluster), volume.getSecret().getSecretName());
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.clusterCaCertificateSecretName(cluster)));
 
         volume = volumes.stream().filter(vol -> KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().get();
-        assertNotNull(volume);
-        assertEquals(KafkaExporterResources.secretName(cluster), volume.getSecret().getSecretName());
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaExporterResources.secretName(cluster)));
 
         // Test volume mounts
         List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
-        assertEquals(2, volumesMounts.size());
+        assertThat(volumesMounts.size(), is(2));
 
         VolumeMount volumeMount = volumesMounts.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().get();
-        assertNotNull(volumeMount);
-        assertEquals(KafkaExporter.CLUSTER_CA_CERTS_VOLUME_MOUNT, volumeMount.getMountPath());
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(KafkaExporter.CLUSTER_CA_CERTS_VOLUME_MOUNT));
 
         volumeMount = volumesMounts.stream().filter(vol -> KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().get();
-        assertNotNull(volumeMount);
-        assertEquals(KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_MOUNT, volumeMount.getMountPath());
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
 
     }
 
     @Test
     public void testEnvVars()   {
-        Assert.assertEquals(getExpectedEnvVars(), ke.getEnvVars());
+        assertThat(ke.getEnvVars(), is(getExpectedEnvVars()));
     }
-
-    @Rule
-    public ResourceTester<Kafka, KafkaExporter> helper = new ResourceTester<>(Kafka.class, VERSIONS, KafkaExporter::fromCrd);
 
     @Test
     public void testImagePullPolicy() {
         Deployment dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
-        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
         dep = ke.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
-        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @Test
@@ -243,8 +237,8 @@ public class KafkaExporterTest {
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
-        assertEquals(testEnvOneValue, kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get());
-        assertEquals(testEnvTwoValue, kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get());
+        assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
+        assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvTwoValue));
     }
 
     @Test
@@ -279,8 +273,8 @@ public class KafkaExporterTest {
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
-        assertEquals(testEnvOneValue, kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get());
-        assertEquals(groupRegex, kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get());
+        assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
+        assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(groupRegex));
     }
 
     @Test
@@ -290,23 +284,23 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        assertNull(ke.generateDeployment(true, null, null));
-        assertNull(ke.generateService());
-        assertNull(ke.generateSecret(null));
+        assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
+        assertThat(ke.generateService(), is(nullValue()));
+        assertThat(ke.generateSecret(null), is(nullValue()));
     }
 
     @Test
     public void testGenerateService()   {
         Service svc = ke.generateService();
 
-        assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(expectedLabels(ke.getServiceName()), svc.getMetadata().getLabels());
-        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
-        assertEquals(1, svc.getSpec().getPorts().size());
-        assertEquals(AbstractModel.METRICS_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(KafkaCluster.METRICS_PORT), svc.getSpec().getPorts().get(0).getPort());
-        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
-        assertEquals(ke.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+        assertThat(svc.getSpec().getType(), is("ClusterIP"));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(ke.getServiceName())));
+        assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(svc.getSpec().getPorts().size(), is(1));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.METRICS_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getMetadata().getAnnotations(), is(ke.getPrometheusAnnotations()));
 
         checkOwnerReference(ke.createOwnerReference(), svc);
     }
@@ -318,7 +312,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        assertNull(ke.generateService());
+        assertThat(ke.generateService(), is(nullValue()));
     }
 
     @Test
@@ -365,22 +359,22 @@ public class KafkaExporterTest {
 
         // Check Deployment
         Deployment dep = ke.generateDeployment(true, null, null);
-        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
-        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 
         // Check Pods
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
-        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
-        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
 
         // Check Service
         Service svc = ke.generateService();
-        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
-        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }

@@ -26,11 +26,11 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,12 +50,16 @@ import static io.strimzi.operator.cluster.model.KafkaConfiguration.LOG_MESSAGE_F
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaUpdateTest {
 
     public static final String NAMESPACE = "test";
@@ -116,7 +120,7 @@ public class KafkaUpdateTest {
         }
     }
 
-    private List<StatefulSet> upgrade(TestContext context, Map<String, String> versionMap,
+    private List<StatefulSet> upgrade(VertxTestContext context, Map<String, String> versionMap,
                                       Kafka initialKafka, StatefulSet initialSs, Kafka updatedKafka,
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
@@ -148,7 +152,7 @@ public class KafkaUpdateTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<KafkaAssemblyOperator.ReconciliationState> future = op
                 .new ReconciliationState(reconciliation, updatedKafka) {
                     @Override
@@ -162,9 +166,9 @@ public class KafkaUpdateTest {
             if (ar.failed()) {
                 ex.set(new UpgradeException(states, ar.cause()));
             }
-            async.complete();
+            async.flag();
         });
-        async.await();
+        ex.get();
         if (ex.get() != null) {
             throw ex.get();
         }
@@ -172,17 +176,17 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgradeMinorToPrevWithEmptyConfig(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithEmptyConfig(VertxTestContext context) throws IOException {
         try {
             testUpgradeMinorToPrevMessageFormatConfig(context, emptyMap(), true);
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
-            context.assertTrue(e.states.isEmpty());
+            context.verify(() -> assertThat(e.getCause() instanceof KafkaUpgradeException, is(true)));
+            context.verify(() -> assertThat(e.states.isEmpty(), is(true)));
         }
     }
 
     @Test
-    public void upgradeMinorToPrevWithSameMessageFormatConfig(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithSameMessageFormatConfig(VertxTestContext context) throws IOException {
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
                 // Minor version upgrade doesn't require proto or mvg version change, so single phase
@@ -190,12 +194,12 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgradeMinorToPrevWithOldMessageFormatConfig(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithOldMessageFormatConfig(VertxTestContext context) throws IOException {
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), true);
     }
 
     @Test
-    public void upgradeMinorToPrevWithSameProtocolVersion(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithSameProtocolVersion(VertxTestContext context) throws IOException {
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
@@ -204,7 +208,7 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void upgradeMinorToPrevWithOldProtocolVersion(TestContext context) throws IOException {
+    public void upgradeMinorToPrevWithOldProtocolVersion(VertxTestContext context) throws IOException {
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"),
@@ -212,7 +216,7 @@ public class KafkaUpdateTest {
                 true);
     }
 
-    private void testUpgradeMinorToPrevMessageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
+    private void testUpgradeMinorToPrevMessageFormatConfig(VertxTestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String upgradedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
@@ -223,41 +227,41 @@ public class KafkaUpdateTest {
                 upgradedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
-        context.assertEquals(expectSinglePhase ? 1 : 2, states.size());
+        context.verify(() -> assertThat(states.size(), is(expectSinglePhase ? 1 : 2)));
 
         if (!expectSinglePhase) {
             StatefulSet phase1 = states.get(0);
-            context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-            context.assertEquals(initialKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION));
-            context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION), is(initialKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION), is(upgradedKafkaVersion)));
             Container container1 = phase1.getSpec().getTemplate().getSpec().getContainers().get(0);
-            context.assertEquals(upgradedImage, container1.getImage());
+            context.verify(() -> assertThat(container1.getImage(), is(upgradedImage)));
             List<EnvVar> env = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
-                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
-                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.verify(() -> assertThat(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION),
+                    is(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION))));
+            context.verify(() -> assertThat(config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+                    is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION))));
         }
 
         StatefulSet phase2 = states.get(expectSinglePhase ? 0 : 1);
-        context.assertEquals(upgradedKafkaVersion, phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION), is(false)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION), is(false)));
         Container container2 = phase2.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(upgradedImage, container2.getImage());
+        context.verify(() -> assertThat(container2.getImage(), is(upgradedImage)));
         List<EnvVar> env2 = container2.getEnv();
         EnvVar env = findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION);
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(env != null ? env.getValue() : "");
-        context.assertEquals(config.get(INTERBROKER_PROTOCOL_VERSION), config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
+        context.verify(() -> assertThat(config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION), is(config.get(INTERBROKER_PROTOCOL_VERSION))));
+        context.verify(() -> assertThat("Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value",
                 config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
-                "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
+                is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION))));
     }
 
     /** Test we can recover from an exception during phase 1 rolling of the upgrade */
     @Test
-    public void testUpgradeMinorToPrevMessageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
+    public void testUpgradeMinorToPrevMessageFormatConfig_exceptionDuringPhase0Roll(VertxTestContext context) throws IOException {
         Map<String, Object> initialConfig = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION);
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
@@ -280,25 +284,26 @@ public class KafkaUpdateTest {
                         throw new RuntimeException("Testing exception during roll");
                     }
                 });
-            context.fail();
+            context.failNow(new Throwable());
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof RuntimeException, e.getCause().getMessage());
+            context.verify(() -> assertThat(e.getCause().getMessage(), e.getCause() instanceof RuntimeException, is(true)));
             states = e.states;
         }
 
-        context.assertTrue(exceptionThrown.get());
-        context.assertEquals(1, states.size());
+        context.verify(() -> assertThat(exceptionThrown.get(), is(true)));
+        List<StatefulSet> finalStates1 = states;
+        context.verify(() -> assertThat(finalStates1.size(), is(1)));
         StatefulSet phase1 = states.get(0);
-        context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertNull(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertNull(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION), is(nullValue())));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION), is(nullValue())));
         Container container1 = phase1.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(upgradedImage, container1.getImage());
+        context.verify(() -> assertThat(container1.getImage(), is(upgradedImage)));
         List<EnvVar> env1 = container1.getEnv();
         KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertNull(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION),
-                config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+        context.verify(() -> assertThat(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION), is(nullValue())));
+        context.verify(() -> assertThat(config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+                is(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION))));
 
         // Do the upgrade again, but without throwing this time
         states = upgrade(context,
@@ -311,48 +316,49 @@ public class KafkaUpdateTest {
         // TODO Need to assert that the pods get rolled in this 2nd attempt before the start of phase 2
 
         // We expect the only observer reconcile() state to be from phase 2 (i.e. we didn't repeat phase 1)
-        context.assertEquals(0, states.size());
+        List<StatefulSet> finalStates = states;
+        context.verify(() -> assertThat(finalStates.size(), is(0)));
     }
 
     /////////////////
 
     @Test
-    public void upgradePrevToLatestWithEmptyConfig(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithEmptyConfig(VertxTestContext context) throws IOException {
         try {
             testUpgradePrevToLatestMessageFormatConfig(context, emptyMap(), false);
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
-            context.assertTrue(e.states.isEmpty());
+            context.verify(() -> assertThat(e.getCause() instanceof KafkaUpgradeException, is(true)));
+            context.verify(() -> assertThat(e.states.isEmpty(), is(true)));
         }
     }
 
     @Test
-    public void upgradePrevToLatestWithPrevMessageFormatConfig(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithPrevMessageFormatConfig(VertxTestContext context) throws IOException {
         testUpgradePrevToLatestMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION), false);
     }
 
     @Test
-    public void upgradePrevToLatestWithOldMessageFormatConfig(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithOldMessageFormatConfig(VertxTestContext context) throws IOException {
         testUpgradePrevToLatestMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 "1.0"), false);
     }
 
     @Test
-    public void upgradePrevToLatestWithPrevProtocolVersion(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithPrevProtocolVersion(VertxTestContext context) throws IOException {
         testUpgradePrevToLatestMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION), true);
     }
 
     @Test
-    public void upgradePrevToLatestWithOldProtocolVersion(TestContext context) throws IOException {
+    public void upgradePrevToLatestWithOldProtocolVersion(VertxTestContext context) throws IOException {
         testUpgradePrevToLatestMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"), true);
     }
 
-    private void testUpgradePrevToLatestMessageFormatConfig(TestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
+    private void testUpgradePrevToLatestMessageFormatConfig(VertxTestContext context, Map<String, Object> config, boolean expectSinglePhase) throws IOException {
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String upgradedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
@@ -363,40 +369,40 @@ public class KafkaUpdateTest {
             upgradedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
-        context.assertEquals(expectSinglePhase ? 1 : 2, states.size());
+        context.verify(() -> assertThat(states.size(), is(expectSinglePhase ? 1 : 2)));
 
         if (!expectSinglePhase) {
             StatefulSet phase1 = states.get(0);
-            context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-            context.assertEquals(initialKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION));
-            context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION), is(initialKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION), is(upgradedKafkaVersion)));
             Container container1 = phase1.getSpec().getTemplate().getSpec().getContainers().get(0);
-            context.assertEquals(upgradedImage, container1.getImage());
+            context.verify(() -> assertThat(container1.getImage(), is(upgradedImage)));
             List<EnvVar> env = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
-                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
-                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.verify(() -> assertThat(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION),
+                    is(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION))));
+            context.verify(() -> assertThat(config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+                    is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
         }
 
         StatefulSet phase2 = states.get(expectSinglePhase ? 0 : 1);
-        context.assertEquals(upgradedKafkaVersion, phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION), is(false)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION), is(false)));
         Container container2 = phase2.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(upgradedImage, container2.getImage());
+        context.verify(() -> assertThat(container2.getImage(), is(upgradedImage)));
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertEquals(config.get(INTERBROKER_PROTOCOL_VERSION), config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+        context.verify(() -> assertThat(config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION), is(config.get(INTERBROKER_PROTOCOL_VERSION))));
+        context.verify(() -> assertThat("Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value",
                 config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
-                "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
+                is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
     }
 
     /** Test we can recover from an exception during phase 1 rolling of the upgrade */
     @Test
-    public void testUpgradePrevToLatestMessageFormatConfig_exceptionDuringPhase0Roll(TestContext context) throws IOException {
+    public void testUpgradePrevToLatestMessageFormatConfig_exceptionDuringPhase0Roll(VertxTestContext context) throws IOException {
         Map<String, Object> config = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
@@ -419,26 +425,27 @@ public class KafkaUpdateTest {
                         throw new RuntimeException("Testing exception during roll");
                     }
                 });
-            context.fail();
+            context.failNow(new Throwable());
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof RuntimeException, e.getCause().getMessage());
+            context.verify(() -> assertThat(e.getCause().getMessage(), e.getCause() instanceof RuntimeException, is(true)));
             states = e.states;
         }
 
-        context.assertTrue(exceptionThrown.get());
-        context.assertEquals(1, states.size());
+        context.verify(() -> assertThat(exceptionThrown.get(), is(true)));
+        List<StatefulSet> finalStates1 = states;
+        context.verify(() -> assertThat(finalStates1.size(), is(1)));
         StatefulSet phase1 = states.get(0);
-        context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertEquals(initialKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertEquals(upgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION), is(initialKafkaVersion)));
+        context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION), is(upgradedKafkaVersion)));
         Container container1 = phase1.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(upgradedImage, container1.getImage());
+        context.verify(() -> assertThat(container1.getImage(), is(upgradedImage)));
         List<EnvVar> env1 = container1.getEnv();
         KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertEquals(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
-                config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
-                config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+        context.verify(() -> assertThat(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION),
+                is(config.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION))));
+        context.verify(() -> assertThat(config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+                is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
 
         // Do the upgrade again, but without throwing this time
         states = upgrade(context,
@@ -451,53 +458,54 @@ public class KafkaUpdateTest {
         // TODO Need to assert that the pods get rolled in this 2nd attempt before the start of phase 2
 
         // We expect the only observer reconcile() state to be from phase 2 (i.e. we didn't repeat phase 1)
-        context.assertEquals(1, states.size());
+        List<StatefulSet> finalStates = states;
+        context.verify(() -> assertThat(finalStates.size(), is(1)));
 
         StatefulSet phase2 = states.get(0);
-        context.assertEquals(upgradedKafkaVersion, phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(upgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION), is(false)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION), is(false)));
         Container container2 = phase2.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(upgradedImage, container2.getImage());
+        context.verify(() -> assertThat(container2.getImage(), is(upgradedImage)));
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertEquals(null, config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+        context.verify(() -> assertThat(config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION), is(nullValue())));
+        context.verify(() -> assertThat("Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value",
                 config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
-                "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
+                is(config.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
     }
 
     @Test
-    public void downgradeLatestToPrevWithEmptyConfig(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithEmptyConfig(VertxTestContext context) throws IOException {
         try {
             testDowngradeLatestToPrevMessageFormatConfig(context, emptyMap(), true);
-            context.fail();
+            context.failNow(new Throwable());
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
-            context.assertTrue(e.states.isEmpty());
+            context.verify(() -> assertThat(e.getCause() instanceof KafkaUpgradeException, is(true)));
+            context.verify(() -> assertThat(e.states.isEmpty(), is(true)));
         }
     }
 
     @Test
-    public void downgradeLatestToPrevWithLatestMessageFormatConfig(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithLatestMessageFormatConfig(VertxTestContext context) throws IOException {
         try {
             testDowngradeLatestToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                     KafkaVersionTestUtils.LATEST_FORMAT_VERSION), true);
-            context.fail();
+            context.failNow(new Throwable());
         } catch (UpgradeException e) {
-            context.assertTrue(e.getCause() instanceof KafkaUpgradeException);
-            context.assertTrue(e.states.isEmpty());
+            context.verify(() -> assertThat(e.getCause() instanceof KafkaUpgradeException, is(true)));
+            context.verify(() -> assertThat(e.states.isEmpty(), is(true)));
         }
     }
 
     @Test
-    public void downgradeLatestToPrevWithPrevMessageFormatConfig(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithPrevMessageFormatConfig(VertxTestContext context) throws IOException {
         testDowngradeLatestToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION), true);
     }
 
     @Test
-    public void downgradeLatestToPrevWithLatestProtocolVersion(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithLatestProtocolVersion(VertxTestContext context) throws IOException {
         testDowngradeLatestToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION),
@@ -505,14 +513,14 @@ public class KafkaUpdateTest {
     }
 
     @Test
-    public void downgradeLatestToPrevWithPrevProtocolVersion(TestContext context) throws IOException {
+    public void downgradeLatestToPrevWithPrevProtocolVersion(VertxTestContext context) throws IOException {
         testDowngradeLatestToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
                 false);
     }
 
-    private void testDowngradeLatestToPrevMessageFormatConfig(TestContext context, Map<String, Object> initialConfig, boolean expectFirstPhase) throws IOException {
+    private void testDowngradeLatestToPrevMessageFormatConfig(VertxTestContext context, Map<String, Object> initialConfig, boolean expectFirstPhase) throws IOException {
         String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String downgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String downgradedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
@@ -523,35 +531,34 @@ public class KafkaUpdateTest {
             upgradedKafka(initialKafka, downgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
-        context.assertEquals(expectFirstPhase ? 2 : 1, states.size());
+        context.verify(() -> assertThat(states.size(), is(expectFirstPhase ? 2 : 1)));
 
         if (expectFirstPhase) {
             StatefulSet phase1 = states.get(0);
-            context.assertEquals(initialKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-            context.assertEquals(initialKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION));
-            context.assertEquals(downgradedKafkaVersion, phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(initialKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION), is(initialKafkaVersion)));
+            context.verify(() -> assertThat(phase1.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION), is(downgradedKafkaVersion)));
             Container container1 = phase1.getSpec().getTemplate().getSpec().getContainers().get(0);
-            context.assertNotEquals(downgradedImage, container1.getImage());
+            context.verify(() -> assertThat(container1.getImage(), is(not(downgradedImage))));
             List<EnvVar> env1 = container1.getEnv();
             KafkaConfiguration config1 = KafkaConfiguration.unvalidated(findEnv(env1, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-            context.assertEquals(initialConfig.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION),
-                    config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-            context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
-                    config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION));
+            context.verify(() -> assertThat(config1.getConfigOption(INTERBROKER_PROTOCOL_VERSION),
+                    is(initialConfig.getOrDefault(INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION))));
+            context.verify(() -> assertThat(config1.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
+                    is(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
         }
 
         StatefulSet phase2 = states.get(expectFirstPhase ? 1 : 0);
-        context.assertEquals(downgradedKafkaVersion, phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION));
-        context.assertFalse(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION), is(downgradedKafkaVersion)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_FROM_VERSION), is(false)));
+        context.verify(() -> assertThat(phase2.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_TO_VERSION), is(false)));
         Container container2 = phase2.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.assertEquals(downgradedImage, container2.getImage());
+        context.verify(() -> assertThat(container2.getImage(), is(downgradedImage)));
         List<EnvVar> env2 = container2.getEnv();
         KafkaConfiguration config2 = KafkaConfiguration.unvalidated(findEnv(env2, ENV_VAR_KAFKA_CONFIGURATION).getValue());
-        context.assertEquals(null, config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION));
-        context.assertEquals(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION),
+        context.verify(() -> assertThat(config2.getConfigOption(INTERBROKER_PROTOCOL_VERSION), is(nullValue())));
+        context.verify(() -> assertThat("Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value",
                 config2.getConfigOption(LOG_MESSAGE_FORMAT_VERSION),
-                "Expect the log.message.format.version to be unchanged from configured or default (for kafka " + initialKafkaVersion + ") value");
+                is(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
     }
-
 }

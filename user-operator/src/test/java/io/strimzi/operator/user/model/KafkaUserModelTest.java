@@ -18,14 +18,16 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.common.PasswordGenerator;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
+import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaUserModelTest {
     private final KafkaUser tlsUser = ResourceUtils.createKafkaUserTls();
@@ -36,27 +38,26 @@ public class KafkaUserModelTest {
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
-        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
     @Test
     public void testFromCrd()   {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
 
-        assertEquals(ResourceUtils.NAMESPACE, model.namespace);
-        assertEquals(ResourceUtils.NAME, model.name);
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
-                .withKind(KafkaUser.RESOURCE_KIND)
-                .withKubernetesName()
-                .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME),
-            model.labels);
-        assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
+        assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
+        assertThat(model.name, is(ResourceUtils.NAME));
+        assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
+        assertThat(model.authentication.getType(), is(KafkaUserTlsClientAuthentication.TYPE_TLS));
 
         KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) tlsUser.getSpec().getAuthorization();
-        assertEquals(ResourceUtils.createExpectedSimpleAclRules(tlsUser).size(), model.getSimpleAclRules().size());
-        assertEquals(ResourceUtils.createExpectedSimpleAclRules(tlsUser), model.getSimpleAclRules());
+        assertThat(model.getSimpleAclRules().size(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser).size()));
+        assertThat(model.getSimpleAclRules(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser)));
     }
 
     @Test
@@ -64,18 +65,17 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();
 
-        assertEquals(set("ca.crt", "user.crt", "user.key"), generated.getData().keySet());
+        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key")));
 
-        assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
-        assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
-                .withKind(KafkaUser.RESOURCE_KIND)
-                .withKubernetesName()
-                .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                .toMap(), 
-            generated.getMetadata().getLabels());
-
+        assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generated.getMetadata().getLabels(),
+                is(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .toMap()));
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
     }
@@ -85,9 +85,9 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();
 
-        assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
-        assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
-        assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -104,9 +104,9 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCertSecret, clientsCaKeSecret, userCert);
         Secret generated = model.generateSecret();
 
-        assertEquals("different-clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
-        assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
-        assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("different-clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -118,9 +118,9 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, userCert);
         Secret generated = model.generateSecret();
 
-        assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
-        assertEquals("expected-crt", new String(model.decodeFromSecret(generated, "user.crt")));
-        assertEquals("expected-key", new String(model.decodeFromSecret(generated, "user.key")));
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("expected-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("expected-key"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -132,9 +132,9 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, userCert);
         Secret generated = model.generateSecret();
 
-        assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
-        assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
-        assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -145,18 +145,18 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();
 
-        assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
-        assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
-                .withKind(KafkaUser.RESOURCE_KIND)
-                .withKubernetesName()
-                .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                .toMap(),
-            generated.getMetadata().getLabels());
+        assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generated.getMetadata().getLabels(),
+                is(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .toMap()));
 
-        assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+        assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
+        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -169,19 +169,17 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCaCert, clientsCaKey, userPassword);
         Secret generated = model.generateSecret();
 
-        assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
-        assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
-                .withKubernetesName()
-                .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                .withKind(KafkaUser.RESOURCE_KIND)
-                .toMap(), 
-            generated.getMetadata()
-                .getLabels());
-
-        assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
-        assertEquals(existing, generated.getData().get(KafkaUserModel.KEY_PASSWORD));
+        assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generated.getMetadata().getLabels(),
+                is(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .toMap()));
+        assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
+        assertThat(generated.getData().get(KafkaUserModel.KEY_PASSWORD), is(existing));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -193,18 +191,18 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCaCert, clientsCaKey, userCert);
         Secret generated = model.generateSecret();
 
-        assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
-        assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
-                .withKind(KafkaUser.RESOURCE_KIND)
-                .withKubernetesName()
-                .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                .toMap(), 
-            generated.getMetadata().getLabels());
+        assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generated.getMetadata().getLabels(),
+                is(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .toMap()));
 
-        assertEquals(singleton("password"), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+        assertThat(generated.getData().keySet(), is(singleton("password")));
+        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -217,7 +215,7 @@ public class KafkaUserModelTest {
         user.setSpec(new KafkaUserSpec());
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, user, clientsCaCert, clientsCaKey, userCert);
 
-        assertNull(model.generateSecret());
+        assertThat(model.generateSecret(), is(nullValue()));
     }
 
     @Test
@@ -227,32 +225,34 @@ public class KafkaUserModelTest {
         user.setSpec(new KafkaUserSpec());
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, user, clientsCaCert, clientsCaKey, userCert);
 
-        assertNull(model.getSimpleAclRules());
+        assertThat(model.getSimpleAclRules(), is(nullValue()));
     }
 
     @Test
     public void testDecodeUsername()    {
-        assertEquals("my-user", KafkaUserModel.decodeUsername("CN=my-user"));
-        assertEquals("my-user", KafkaUserModel.decodeUsername("CN=my-user,OU=my-org"));
-        assertEquals("my-user", KafkaUserModel.decodeUsername("OU=my-org,CN=my-user"));
+        assertThat(KafkaUserModel.decodeUsername("CN=my-user"), is("my-user"));
+        assertThat(KafkaUserModel.decodeUsername("CN=my-user,OU=my-org"), is("my-user"));
+        assertThat(KafkaUserModel.decodeUsername("OU=my-org,CN=my-user"), is("my-user"));
     }
 
     @Test
     public void testGetUsername()    {
-        assertEquals("CN=my-user", KafkaUserModel.getTlsUserName("my-user"));
-        assertEquals("my-user", KafkaUserModel.getScramUserName("my-user"));
+        assertThat(KafkaUserModel.getTlsUserName("my-user"), is("CN=my-user"));
+        assertThat(KafkaUserModel.getScramUserName("my-user"), is("my-user"));
     }
 
-    @Test(expected = InvalidResourceException.class)
+    @Test
     public void test65CharTlsUsername()    {
-        // 65 characters => Should throw exception with TLS
-        KafkaUser tooLong = new KafkaUserBuilder(tlsUser)
-                .editMetadata()
-                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
-                .endMetadata()
-                .build();
+        assertThrows(InvalidResourceException.class, () -> {
+            // 65 characters => Should throw exception with TLS
+            KafkaUser tooLong = new KafkaUserBuilder(tlsUser)
+                    .editMetadata()
+                        .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                    .endMetadata()
+                    .build();
 
-        KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
+            KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tooLong, clientsCaCert, clientsCaKey, null);
+        });
     }
 
     @Test

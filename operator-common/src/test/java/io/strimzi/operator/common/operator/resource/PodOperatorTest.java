@@ -16,42 +16,55 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.server.mock.OpenShiftServer;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import org.junit.Rule;
-import org.junit.Test;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
         AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
 
-    @Rule
     public OpenShiftServer server = new OpenShiftServer(false, true);
 
+    @BeforeEach
+    public void initServer() {
+        server.before();
+    }
+
+    @AfterEach
+    public void cleanUpServer() {
+        server.after();
+    }
+
     @Test
-    public void testCreateReadUpdate(TestContext context) {
+    public void testCreateReadUpdate(VertxTestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = server.getKubernetesClient();
         PodOperator pr = new PodOperator(vertx, client);
 
-        context.assertEquals(emptyList(), pr.list(NAMESPACE, Labels.EMPTY));
+        pr.list(NAMESPACE, Labels.EMPTY);
+        context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
-        Async async = context.async(1);
+        Checkpoint async = context.checkpoint(1);
         pr.createOrUpdate(resource()).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
-            context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, Labels.EMPTY).stream()
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
+            context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))));
             //Pod got = pr.get(NAMESPACE, RESOURCE_NAME);
             //context.assertNotNull(got);
             //context.assertNotNull(got.getMetadata());
             //context.assertEquals(RESOURCE_NAME, got.getMetadata().getName());
-            context.assertFalse(pr.isReady(NAMESPACE, RESOURCE_NAME));
+            context.verify(() -> assertThat(pr.isReady(NAMESPACE, RESOURCE_NAME), is(false)));
             /*pr.watch(NAMESPACE, RESOURCE_NAME, new Watcher<Pod>() {
                 @Override
                 public void eventReceived(Action action, Pod resource) {
@@ -77,8 +90,8 @@ public class PodOperatorTest extends
             });
             patchAsync.await();*/
             pr.reconcile(NAMESPACE, RESOURCE_NAME, null).setHandler(deleteResult -> {
-                context.assertTrue(deleteResult.succeeded());
-                async.countDown();
+                context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
+                async.flag();
             });
 
         });

@@ -22,9 +22,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.Timeout;
+import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -40,12 +38,10 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,17 +54,22 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT extends BaseITST {
@@ -96,21 +97,17 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     };
     protected final long timeout = 600_000L;
 
-    @Rule
-    public Timeout timeoutRule = new Timeout(10, TimeUnit.MINUTES);
-
-
     protected volatile String deploymentId;
     protected Set<String> preExistingEvents;
 
     protected Session session;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupKubeCluster() throws IOException {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
-            Assume.assumeTrue(e.getMessage(), false);
+            assumeTrue(false, e.getMessage());
         }
         cmdKubeClient()
                 .createNamespace(NAMESPACE);
@@ -127,7 +124,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         cmdKubeClient().create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardownKubeCluster() {
         if (oldNamespace != null) {
             cmdKubeClient()
@@ -139,8 +136,9 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }
     }
 
-    @Before
-    public void setup(TestContext context) throws Exception {
+    @BeforeEach
+    public void setup(VertxTestContext context) throws Exception {
+        context.completeNow();
         LOGGER.info("Setting up test");
         kubeCluster().before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
@@ -192,8 +190,8 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
      */
     protected abstract Properties kafkaClusterConfig();
 
-    @After
-    public void teardown(TestContext context) throws InterruptedException {
+    @AfterEach
+    public void teardown(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
         LOGGER.info("Tearing down test");
 
         boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
@@ -231,24 +229,30 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }
         Runtime.getRuntime().removeShutdownHook(kafkaHook);
         LOGGER.info("Finished tearing down test");
+        context.completeNow();
     }
 
-    protected void startTopicOperator(TestContext context) {
+    protected void startTopicOperator(VertxTestContext context) {
 
         LOGGER.info("Starting Topic Operator");
         session = new Session(kubeClient, new Config(topicOperatorConfig()));
 
-        Async async = context.async();
+        CompletableFuture<Boolean> async = new CompletableFuture<>();
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
-                async.complete();
+                async.complete(true);
             } else {
                 ar.cause().printStackTrace();
-                context.fail("Failed to deploy session");
+                context.failNow(new Throwable("Failed to deploy session"));
             }
         });
-        async.await();
+        try {
+            async.get(60, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            context.failNow(e);
+        }
         LOGGER.info("Started Topic Operator");
     }
 
@@ -275,24 +279,26 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }
     }
 
-    protected void stopTopicOperator(TestContext context) {
+    protected void stopTopicOperator(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Stopping Topic Operator");
-        Async async = context.async();
+        CompletableFuture<Boolean> async = new CompletableFuture<>();
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
                 deploymentId = null;
                 if (ar.failed()) {
                     LOGGER.error("Error undeploying session", ar.cause());
-                    context.fail("Error undeploying session");
+                    context.failNow(new Throwable("Error undeploying session"));
+                    async.complete(false);
+                } else {
+                    async.complete(true);
                 }
-                async.complete();
             });
         }
-        async.await();
+        async.get(60, TimeUnit.SECONDS);
         LOGGER.info("Stopped Topic Operator");
     }
 
-    protected KafkaTopic createKafkaTopicResource(TestContext context, KafkaTopic topicResource) {
+    protected KafkaTopic createKafkaTopicResource(VertxTestContext context, KafkaTopic topicResource) throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = new TopicName(topicResource).toString();
         // Create a Topic Resource
         operation().inNamespace(NAMESPACE).create(topicResource);
@@ -303,14 +309,14 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return topicResource;
     }
 
-    protected void assertStatusReady(TestContext testContext, String topicName) {
+    protected void assertStatusReady(VertxTestContext testContext, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(testContext, () -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
                 if (kafkaTopic.getStatus() != null
                         && kafkaTopic.getStatus().getConditions() != null) {
                     List<Condition> conditions = kafkaTopic.getStatus().getConditions();
-                    testContext.assertTrue(conditions.size() > 0);
+                    testContext.verify(() -> assertThat(conditions.size() > 0, is(true)));
                     if (conditions.stream().anyMatch(condition ->
                             "Ready".equals(condition.getType()) &&
                                     "True".equals(condition.getStatus()))) {
@@ -326,19 +332,19 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, 60000, "status ready for topic " + topicName);
     }
 
-    protected void assertStatusNotReady(TestContext testContext, String topicName, String message) {
+    protected void assertStatusNotReady(VertxTestContext testContext, String topicName, String message) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(testContext, () -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
                 if (kafkaTopic.getStatus() != null
                         && kafkaTopic.getStatus().getConditions() != null) {
                     List<Condition> conditions = kafkaTopic.getStatus().getConditions();
-                    testContext.assertTrue(conditions.size() > 0);
+                    testContext.verify(() -> assertThat(conditions.size() > 0, is(true)));
                     Optional<Condition> unreadyCondition = conditions.stream().filter(condition ->
                             "NotReady".equals(condition.getType()) &&
                             "True".equals(condition.getStatus())).findFirst();
                     if (unreadyCondition.isPresent()) {
-                        assertEquals(message, unreadyCondition.get().getMessage());
+                        assertThat(unreadyCondition.get().getMessage(), is(message));
                         return true;
                     } else {
                         LOGGER.info(conditions);
@@ -351,7 +357,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, 60000, "status ready");
     }
 
-    protected KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
+    protected KafkaTopic createKafkaTopicResource(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         return createKafkaTopicResource(context, topicResource);
@@ -365,7 +371,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    protected String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+    protected String createTopic(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         return createTopic(context, topicName, new NewTopic(topicName, 1, (short) 1));
     }
 
@@ -378,11 +384,11 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    protected String createTopic(TestContext context, String topicName, List<Integer> replicaAssignments) throws InterruptedException, ExecutionException {
+    protected String createTopic(VertxTestContext context, String topicName, List<Integer> replicaAssignments) throws InterruptedException, ExecutionException, TimeoutException {
         return createTopic(context, topicName, new NewTopic(topicName, singletonMap(0, replicaAssignments)));
     }
 
-    private String createTopic(TestContext context, String topicName, NewTopic o) throws InterruptedException, ExecutionException {
+    private String createTopic(VertxTestContext context, String topicName, NewTopic o) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
         String resourceName = new TopicName(topicName).asKubeName().toString();
@@ -396,11 +402,11 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return resourceName;
     }
 
-    protected void waitForTopicInKube(TestContext context, String resourceName) {
+    protected void waitForTopicInKube(VertxTestContext context, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         waitForTopicInKube(context, resourceName, true);
     }
 
-    protected void waitForTopicInKube(TestContext context, String resourceName, boolean exist) {
+    protected void waitForTopicInKube(VertxTestContext context, String resourceName, boolean exist) {
         waitFor(context, () -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
             LOGGER.info("Polled topic {} waiting for " + (exist ? "existence" : "non-existence"), resourceName);
@@ -408,13 +414,13 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, timeout, "Expected the KafkaTopic '" + resourceName + "' to " + (exist ? "exist" : "not exist") + " in Kubernetes by now");
     }
 
-    protected void alterTopicConfigInKafkaAndAwaitReconciliation(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
+    protected void alterTopicConfigInKafkaAndAwaitReconciliation(VertxTestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         String key = "compression.type";
         final String changedValue = alterTopicConfigInKafka(topicName, key, value -> "snappy".equals(value) ? "lz4" : "snappy");
         awaitTopicConfigInKube(context, resourceName, key, changedValue);
     }
 
-    protected void awaitTopicConfigInKube(TestContext context, String resourceName, String key, String expectedValue) {
+    protected void awaitTopicConfigInKube(VertxTestContext context, String resourceName, String key, String expectedValue) {
 
         // Wait for the resource to be modified
         waitFor(context, () -> {
@@ -446,7 +452,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return changedValue;
     }
 
-    protected void alterTopicNumPartitions(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
+    protected void alterTopicNumPartitions(VertxTestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         int changedValue = 2;
 
         NewPartitions newPartitions = NewPartitions.increaseTo(changedValue);
@@ -480,12 +486,12 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
     }
 
-    protected void createAndAlterTopicConfig(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+    protected void createAndAlterTopicConfig(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         String resourceName = createTopic(context, topicName);
         alterTopicConfigInKafkaAndAwaitReconciliation(context, topicName, resourceName);
     }
 
-    protected void deleteTopicInKafkaAndAwaitReconciliation(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
+    protected void deleteTopicInKafkaAndAwaitReconciliation(VertxTestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         deleteTopicInKafka(topicName, resourceName);
 
         // Wait for the resource to be deleted
@@ -504,28 +510,33 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         LOGGER.info("Deleted topic {}", topicName);
     }
 
-    protected void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+    protected void createAndDeleteTopic(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         String resourceName = createTopic(context, topicName);
         deleteTopicInKafkaAndAwaitReconciliation(context, topicName, resourceName);
     }
 
-    protected void createAndAlterNumPartitions(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+    protected void createAndAlterNumPartitions(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         String resourceName = createTopic(context, topicName);
         alterTopicNumPartitions(context, topicName, resourceName);
     }
 
-    protected void waitFor(TestContext context, BooleanSupplier ready, long timeout, String message) {
-        Async async = context.async();
+    protected void waitFor(VertxTestContext context, BooleanSupplier ready, long timeout, String message) {
+        CountDownLatch async = new CountDownLatch(1);
         Util.waitFor(vertx, message, 3_000, timeout, ready).setHandler(ar -> {
             if (ar.failed()) {
-                context.fail(ar.cause());
+                context.failNow(ar.cause());
             }
-            async.complete();
+            async.countDown();
         });
-        async.awaitSuccess();
+        try {
+            async.await(600, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            context.failNow(e);
+        }
     }
 
-    protected void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
+    protected void waitForEvent(VertxTestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(context, () -> {
             List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().getItems();
             List<Event> filtered = items.stream().
@@ -548,11 +559,11 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
-    protected void waitForTopicInKafka(TestContext context, String topicName) {
+    protected void waitForTopicInKafka(VertxTestContext context, String topicName) throws InterruptedException, ExecutionException, TimeoutException {
         waitForTopicInKafka(context, topicName, true);
     }
 
-    protected void waitForTopicInKafka(TestContext context, String topicName, boolean exist) {
+    protected void waitForTopicInKafka(VertxTestContext context, String topicName, boolean exist) {
         waitFor(context, () -> {
             try {
                 adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
@@ -570,7 +581,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, timeout, "Expected topic '" + topicName + "' to " + (exist ? "exist" : "not exist") + " in Kafka by now");
     }
 
-    protected void deleteInKubeAndAwaitReconciliation(TestContext context, String topicName, KafkaTopic topicResource) {
+    protected void deleteInKubeAndAwaitReconciliation(VertxTestContext context, String topicName, KafkaTopic topicResource) throws InterruptedException, ExecutionException, TimeoutException {
         deleteInKube(context, topicResource.getMetadata().getName());
 
         // Wait for the topic to be deleted
@@ -591,7 +602,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, timeout, "Expected topic to be deleted by now");
     }
 
-    protected void deleteInKube(TestContext context, String resourceName) {
+    protected void deleteInKube(VertxTestContext context, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         // can now delete the topicResource
         operation().inNamespace(NAMESPACE).withName(resourceName).delete();
         waitFor(context, () -> {
@@ -599,7 +610,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         }, Long.MAX_VALUE, "verified deletion of KafkaTopic " + resourceName);
     }
 
-    protected void awaitTopicConfigInKafka(TestContext context, String topicName, String key, String expectedValue) {
+    protected void awaitTopicConfigInKafka(VertxTestContext context, String topicName, String key, String expectedValue) throws InterruptedException, ExecutionException, TimeoutException {
         // Wait for that to be reflected in the kafka topic
         waitFor(context, () -> {
             ConfigResource configResource = topicConfigResource(topicName);

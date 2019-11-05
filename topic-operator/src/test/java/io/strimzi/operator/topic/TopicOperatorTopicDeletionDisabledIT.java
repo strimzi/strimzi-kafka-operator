@@ -6,15 +6,17 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.Future;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
     @Override
@@ -30,7 +32,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
     }
 
     @Test
-    public void testKafkaTopicDeletionDisabled(TestContext context) {
+    public void testKafkaTopicDeletionDisabled(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         // create the Topic Resource
         String topicName = "test-topic-deletion-disabled";
         // The creation method will wait for the topic to be ready in K8s
@@ -51,6 +53,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
         // Wait for the KafkaTopic to be recreated
         waitForTopicInKube(context, topicName, true);
+        context.completeNow();
     }
 }
 

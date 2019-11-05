@@ -10,41 +10,45 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith(VertxUnitRunner.class)
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+@ExtendWith(VertxExtension.class)
 public class MainIT {
     private Vertx vertx;
     private KubernetesClient client;
 
-    @Before
-    public void createClient(TestContext context) {
+    @BeforeEach
+    public void createClient() {
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
     }
 
-    @After
+    @AfterEach
     public void closeClient() {
         vertx.close();
         client.close();
     }
 
     @Test
-    public void testCreateClusterRoles(TestContext context) {
+    public void testCreateClusterRoles(VertxTestContext context) {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
-            Assume.assumeTrue(e.getMessage(), false);
+            assumeTrue(false, e.getMessage());
         }
         Map<String, String> envVars = new HashMap<>(1);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
@@ -57,19 +61,17 @@ public class MainIT {
 
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Main.maybeCreateClusterRoles(vertx, config, client).setHandler(res -> {
-            context.assertTrue(res.succeeded());
+            context.verify(() -> assertThat(res.succeeded(), is(true)));
 
-            context.assertNotNull(cro.get("strimzi-cluster-operator-namespaced"));
-            context.assertNotNull(cro.get("strimzi-cluster-operator-global"));
-            context.assertNotNull(cro.get("strimzi-kafka-broker"));
-            context.assertNotNull(cro.get("strimzi-entity-operator"));
-            context.assertNotNull(cro.get("strimzi-topic-operator"));
+            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue())));
+            context.verify(() -> assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue())));
+            context.verify(() -> assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue())));
+            context.verify(() -> assertThat(cro.get("strimzi-entity-operator"), is(notNullValue())));
+            context.verify(() -> assertThat(cro.get("strimzi-topic-operator"), is(notNullValue())));
 
-            async.complete();
+            async.flag();
         });
-
-        async.awaitSuccess();
     }
 }

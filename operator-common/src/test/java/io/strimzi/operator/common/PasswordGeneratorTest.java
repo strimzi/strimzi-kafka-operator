@@ -4,30 +4,30 @@
  */
 package io.strimzi.operator.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class PasswordGeneratorTest {
 
     @Test
     public void length() {
         PasswordGenerator generator = new PasswordGenerator(10, "a", "a");
-        assertEquals("aaaaaaaaaa", generator.generate());
+        assertThat(generator.generate(), is("aaaaaaaaaa"));
     }
 
     @Test
     public void alphabet() {
         PasswordGenerator generator = new PasswordGenerator(10, "ab", "ab");
-        assertTrue(generator.generate().matches("[ab]{10}"));
+        assertThat(generator.generate().matches("[ab]{10}"), is(true));
     }
 
     @Test
     public void firstLetterAlphabet() {
         PasswordGenerator generator = new PasswordGenerator(10, "a", "b");
         String password = generator.generate();
-        assertEquals("a", password.substring(0, 1));
-        assertEquals("bbbbbbbbb", password.substring(1, 10));
+        assertThat(password.substring(0, 1), is("a"));
+        assertThat(password.substring(1, 10), is("bbbbbbbbb"));
     }
 }

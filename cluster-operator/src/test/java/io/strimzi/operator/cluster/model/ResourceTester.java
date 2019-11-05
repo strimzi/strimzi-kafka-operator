@@ -10,9 +10,6 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import org.junit.rules.MethodRule;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,11 +20,12 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
-class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements MethodRule {
+class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
 
     private final KafkaVersion.Lookup lookup;
     private Class<R> cls;
@@ -36,16 +34,20 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
     private BiFunction<R, KafkaVersion.Lookup, M> fromK8sResource;
     private String resourceName;
 
-    ResourceTester(Class<R> cls, KafkaVersion.Lookup lookup, BiFunction<R, KafkaVersion.Lookup, M> fromK8sResource) {
+    ResourceTester(Class<R> cls, KafkaVersion.Lookup lookup, BiFunction<R, KafkaVersion.Lookup, M> fromK8sResource, String prefix) {
         this.lookup = lookup;
         this.cls = cls;
         this.fromK8sResource = fromK8sResource;
+        this.prefix = prefix;
+        beforeEach();
     }
 
-    ResourceTester(Class<R> cls, Function<R, M> fromK8sResource) {
+    ResourceTester(Class<R> cls, Function<R, M> fromK8sResource, String prefix) {
         this.lookup = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
         this.cls = cls;
         this.fromK8sResource = (x, y) -> fromK8sResource.apply(x);
+        this.prefix = prefix;
+        beforeEach();
     }
 
     static <T> T fromYaml(URL url, Class<T> c) {
@@ -72,11 +74,11 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
     }
 
     protected void assertDesiredResource(String suffix, Function<M, ?> fn) throws IOException {
-        assertNotNull("The resource " + resourceName + " does not exist", model);
+        assertThat("The resource " + resourceName + " does not exist", model, is(notNullValue()));
         String content = readResource(prefix + suffix);
         if (content != null) {
             String ssStr = toYamlString(fn.apply(model));
-            assertEquals(content.trim(), ssStr.trim());
+            assertThat(ssStr.trim(), is(content.trim()));
         } else {
             fail("The resource " + prefix + suffix + " does not exist");
         }
@@ -102,9 +104,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
         }
     }
 
-    @Override
-    public Statement apply(Statement base, FrameworkMethod method, Object target) {
-        this.prefix = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+    public void beforeEach() {
         // Parse resource into CM
         try {
             resourceName = CustomResource.class.isAssignableFrom(cls) ?
@@ -121,6 +121,5 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
             // Construct the desired resources from the CM
             model = fromK8sResource.apply(cm, lookup);
         }
-        return base;
     }
 }

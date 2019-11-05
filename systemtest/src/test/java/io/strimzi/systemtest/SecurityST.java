@@ -20,6 +20,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -51,11 +52,10 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -197,7 +197,7 @@ class SecurityST extends MessagingBaseST {
         for (String secretName : secretsToAnnotate) {
             Secret secret = kubeClient().getSecret(secretName);
             String value = secret.getData().get("ca.crt");
-            assertNotNull("ca.crt in " + secretName + " should not be null", value);
+            assertThat("ca.crt in " + secretName + " should not be null", value, is(notNullValue()));
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
@@ -224,11 +224,11 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secretsToAnnotate) {
             Secret secret = kubeClient().getSecret(secretName);
-            assertNotNull(secret, "Secret " + secretName + " should exist");
-            assertNotNull(secret.getData(), "CA cert in " + secretName + " should have non-null 'data'");
+            assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
+            assertThat("CA cert in " + secretName + " should have non-null 'data'", is(notNullValue()));
             String value = secret.getData().get("ca.crt");
-            assertNotEquals("CA cert in " + secretName + " should have changed",
-                    initialCaCerts.get(secretName), value);
+            assertThat("CA cert in " + secretName + " should have changed",
+                    value, is(not(initialCaCerts.get(secretName))));
         }
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
@@ -241,18 +241,15 @@ class SecurityST extends MessagingBaseST {
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
 
         if (!zkShouldRoll) {
-            assertEquals(zkPods, StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)),
-                    "ZK pods should not roll, but did.");
+            assertThat("ZK pods should not roll, but did.", StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
 
         }
         if (!kafkaShouldRoll) {
-            assertEquals(kafkaPods, StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)),
-                    "Kafka pods should not roll, but did.");
+            assertThat("Kafka pods should not roll, but did.", StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
         }
         if (!eoShouldRoll) {
-            assertEquals(eoPod, StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)),
-                    "EO pod should not roll, but did.");
+            assertThat("EO pod should not roll, but did.", StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)), is(eoPod));
         }
     }
 
@@ -317,7 +314,7 @@ class SecurityST extends MessagingBaseST {
         for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
             String value = secret.getData().get("ca.key");
-            assertNotNull("ca.key in " + secretName + " should not be null", value);
+            assertThat("ca.key in " + secretName + " should not be null", value, is(Matchers.notNullValue()));
             initialCaKeys.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
@@ -357,12 +354,12 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
-            assertNotNull(secret, "Secret " + secretName + " should exist");
-            assertNotNull(secret.getData(), "CA key in " + secretName + " should have non-null 'data'");
+            assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
+            assertThat("CA key in " + secretName + " should have non-null 'data'", secret.getData(), is(notNullValue()));
             String value = secret.getData().get("ca.key");
-            assertNotNull("CA key in " + secretName + " should exist", value);
-            assertNotEquals("CA key in " + secretName + " should have changed",
-                    initialCaKeys.get(secretName), value);
+            assertThat("CA key in " + secretName + " should exist", value, is(notNullValue()));
+            assertThat("CA key in " + secretName + " should have changed",
+                    value, is(not(initialCaKeys.get(secretName))));
         }
 
         waitForClusterAvailabilityTls(aliceUserName, NAMESPACE, CLUSTER_NAME);
@@ -377,18 +374,15 @@ class SecurityST extends MessagingBaseST {
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
 
         if (!zkShouldRoll) {
-            assertEquals(zkPods, StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)),
-                    "ZK pods should not roll, but did.");
+            assertThat("ZK pods should not roll, but did.", StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
 
         }
         if (!kafkaShouldRoll) {
-            assertEquals(kafkaPods, StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)),
-                    "Kafka pods should not roll, but did.");
+            assertThat("Kafka pods should not roll, but did.", StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
         }
         if (!eoShouldRoll) {
-            assertEquals(eoPod, StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)),
-                    "EO pod should not roll, but did.");
+            assertThat("EO pod should not roll, but did.", StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)), is(eoPod));
         }
     }
 
@@ -622,7 +616,7 @@ class SecurityST extends MessagingBaseST {
 
         for (Secret s : secrets) {
             LOGGER.info("Verifying that secret {} with name {} is present", s, s.getMetadata().getName());
-            assertNotNull(s.getData());
+            assertThat(s.getData(), is(notNullValue()));
         }
 
         for (Secret s : secrets) {

@@ -10,7 +10,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -48,9 +49,9 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.consumer.bootstrapServers in body is required"));
-            assertTrue(e.getMessage().contains("spec.producer in body is required"));
-            assertTrue(e.getMessage().contains("spec.whitelist in body is required"));
+            assertThat(e.getMessage().contains("spec.consumer.bootstrapServers in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.producer in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.whitelist in body is required"), is(true));
         }
     }
 
@@ -69,8 +70,8 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.producer.authentication.certificateAndKey.certificate in body is required"));
-            assertTrue(e.getMessage().contains("spec.producer.authentication.certificateAndKey.key in body is required"));
+            assertThat(e.getMessage().contains("spec.producer.authentication.certificateAndKey.certificate in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.producer.authentication.certificateAndKey.key in body is required"), is(true));
         }
     }
 

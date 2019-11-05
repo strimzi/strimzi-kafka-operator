@@ -82,11 +82,9 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -260,24 +258,24 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = kubeClient().getPod(podName);
-        assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-                kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+        assertThat("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
+                kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
-        assertTrue(optional.isPresent(), "Not found an expected container " + containerName);
+        assertThat("Not found an expected container " + containerName, optional.isPresent(), is(true));
 
         Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
-        assertEquals(memoryLimit, limits.get("memory").getAmount());
-        assertEquals(cpuLimit, limits.get("cpu").getAmount());
+        assertThat(limits.get("memory").getAmount(), is(memoryLimit));
+        assertThat(limits.get("cpu").getAmount(), is(cpuLimit));
         Map<String, Quantity> requests = container.getResources().getRequests();
-        assertEquals(memoryRequest, requests.get("memory").getAmount());
-        assertEquals(cpuRequest, requests.get("cpu").getAmount());
+        assertThat(requests.get("memory").getAmount(), is(memoryRequest));
+        assertThat(requests.get("cpu").getAmount(), is(cpuRequest));
     }
 
     protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
         List<List<String>> cmdLines = commandLines(podName, containerName, "java");
-        assertEquals(1, cmdLines.size(), "Expected exactly 1 java process to be running");
+        assertThat("Expected exactly 1 java process to be running", cmdLines.size(), is(1));
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
         if (toIndex != -1) {
@@ -440,12 +438,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 String podName = pod.getMetadata().getName();
                 LOGGER.info("Verifying labels for pod {}", podName);
                 Map<String, String> labels = pod.getMetadata().getLabels();
-                assertEquals(appName, labels.get("app"));
-                assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"));
-                assertEquals(podName, labels.get("statefulset.kubernetes.io/pod-name"));
-                assertEquals(clusterName, labels.get("strimzi.io/cluster"));
-                assertEquals("Kafka", labels.get("strimzi.io/kind"));
-                assertEquals(clusterName.concat("-").concat(podType), labels.get("strimzi.io/name"));
+                assertThat(labels.get("app"), is(appName));
+                assertThat(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"), is(true));
+                assertThat(labels.get("statefulset.kubernetes.io/pod-name"), is(podName));
+                assertThat(labels.get("strimzi.io/cluster"), is(clusterName));
+                assertThat(labels.get("strimzi.io/kind"), is("Kafka"));
+                assertThat(labels.get("strimzi.io/name"), is(clusterName.concat("-").concat(podType)));
             }
         );
     }
@@ -455,9 +453,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         LOGGER.info("Verifying labels for cluster-operator pod");
 
         Map<String, String> coLabels = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getLabels();
-        assertEquals("strimzi-cluster-operator", coLabels.get("name"));
-        assertTrue(coLabels.get("pod-template-hash").matches("\\d+"));
-        assertEquals("cluster-operator", coLabels.get("strimzi.io/kind"));
+        assertThat(coLabels.get("name"), is("strimzi-cluster-operator"));
+        assertThat(coLabels.get("pod-template-hash").matches("\\d+"), is(true));
+        assertThat(coLabels.get("strimzi.io/kind"), is("cluster-operator"));
     }
 
     protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
@@ -466,11 +464,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
-                assertEquals(appName, pod.getMetadata().getLabels().get("app"));
-                assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
-                assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
-                assertEquals(kind, pod.getMetadata().getLabels().get("strimzi.io/kind"));
-                assertEquals(clusterName.concat("-" + podType), pod.getMetadata().getLabels().get("strimzi.io/name"));
+                assertThat(pod.getMetadata().getLabels().get("app"), is(appName));
+                assertThat(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"), is(true));
+                assertThat(pod.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                assertThat(pod.getMetadata().getLabels().get("strimzi.io/kind"), is(kind));
+                assertThat(pod.getMetadata().getLabels().get("strimzi.io/name"), is(clusterName.concat("-" + podType)));
             });
     }
 
@@ -480,7 +478,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
             .forEach(crd -> {
                 LOGGER.info("Verifying labels for custom resource {]", crd.getMetadata().getName());
-                assertEquals("strimzi", crd.getMetadata().getLabels().get("app"));
+                assertThat(crd.getMetadata().getLabels().get("app"), is("strimzi"));
             });
     }
 
@@ -497,10 +495,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .filter(service -> service.getMetadata().getName().equals(serviceName))
                 .forEach(service -> {
                     LOGGER.info("Verifying labels for service {}", serviceName);
-                    assertEquals(appName, service.getMetadata().getLabels().get("app"));
-                    assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("Kafka", service.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertThat(service.getMetadata().getLabels().get("app"), is(appName));
+                    assertThat(service.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                    assertThat(service.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                    assertThat(service.getMetadata().getLabels().get("strimzi.io/name"), is(serviceName));
                 });
         }
     }
@@ -513,9 +511,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(service -> service.getMetadata().getName().equals(serviceName))
             .forEach(service -> {
                 LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
-                assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
-                assertEquals(kind, service.getMetadata().getLabels().get("strimzi.io/kind"));
-                assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                assertThat(service.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                assertThat(service.getMetadata().getLabels().get("strimzi.io/kind"), is(kind));
+                assertThat(service.getMetadata().getLabels().get("strimzi.io/name"), is(serviceName));
             }
         );
     }
@@ -526,9 +524,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
             .forEach(p -> {
                 LOGGER.info("Verifying secret {}", p.getMetadata().getName());
-                assertEquals(appName, p.getMetadata().getLabels().get("app"));
-                assertEquals("Kafka", p.getMetadata().getLabels().get("strimzi.io/kind"));
-                assertEquals(clusterName, p.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertThat(p.getMetadata().getLabels().get("app"), is(appName));
+                assertThat(p.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                assertThat(p.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
             }
         );
     }
@@ -540,16 +538,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .forEach(cm -> {
                 LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
                 if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
-                    assertNull(cm.getMetadata().getLabels().get("app"));
-                    assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaConnect"));
                 } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
-                    assertNull(cm.getMetadata().getLabels().get("app"));
-                    assertEquals("KafkaMirrorMaker", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker"));
                 } else {
-                    assertEquals(appName, cm.getMetadata().getLabels().get("app"));
-                    assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertTrue(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
-                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName));
+                    assertThat(cm.getMetadata().getLabels().get("app"), is(appName));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                    assertThat(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
+                            cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName), is(true));
                 }
             }
         );
@@ -562,7 +560,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
-                assertEquals("strimzi", sa.getMetadata().getLabels().get("app"));
+                assertThat(sa.getMetadata().getLabels().get("app"), is("strimzi"));
             }
         );
 
@@ -571,16 +569,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
                 if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
-                    assertNull(sa.getMetadata().getLabels().get("app"));
-                    assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaConnect"));
                 } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
-                    assertNull(sa.getMetadata().getLabels().get("app"));
-                    assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
+                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("KafkaMirrorMaker"));
                 } else {
-                    assertEquals(appName, sa.getMetadata().getLabels().get("app"));
-                    assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertThat(sa.getMetadata().getLabels().get("app"), is(appName));
+                    assertThat(sa.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
                 }
-                assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+                assertThat(sa.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
             }
         );
     }
@@ -591,16 +589,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
-                assertEquals("strimzi", rb.getMetadata().getLabels().get("app"));
+                assertThat(rb.getMetadata().getLabels().get("app"), is("strimzi"));
             });
 
         kubeClient().listRoleBindings().stream()
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
-                assertEquals(appName, rb.getMetadata().getLabels().get("app"));
-                assertEquals(clusterName, rb.getMetadata().getLabels().get("strimzi.io/cluster"));
-                assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
+                assertThat(rb.getMetadata().getLabels().get("app"), is(appName));
+                assertThat(rb.getMetadata().getLabels().get("strimzi.io/cluster"), is(clusterName));
+                assertThat(rb.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
             }
         );
     }
@@ -990,7 +988,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .map(envVar -> loadProperties(envVar.getValue()))
                 .collect(Collectors.toList()).get(0);
 
-            assertTrue(actual.entrySet().containsAll(config.entrySet()));
+            assertThat(actual.entrySet().containsAll(config.entrySet()), is(true));
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
@@ -1044,16 +1042,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .collect(Collectors.toList());
 
             containerList.forEach(container -> {
-                assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
-                assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
-                assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
-                assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
-                assertEquals(periodSeconds, container.getLivenessProbe().getPeriodSeconds());
-                assertEquals(periodSeconds, container.getReadinessProbe().getPeriodSeconds());
-                assertEquals(successThreshold, container.getLivenessProbe().getSuccessThreshold());
-                assertEquals(successThreshold, container.getReadinessProbe().getSuccessThreshold());
-                assertEquals(failureThreshold, container.getLivenessProbe().getFailureThreshold());
-                assertEquals(failureThreshold, container.getReadinessProbe().getFailureThreshold());
+                assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(initialDelaySeconds));
+                assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(initialDelaySeconds));
+                assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(timeoutSeconds));
+                assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(timeoutSeconds));
+                assertThat(container.getLivenessProbe().getPeriodSeconds(), is(periodSeconds));
+                assertThat(container.getReadinessProbe().getPeriodSeconds(), is(periodSeconds));
+                assertThat(container.getLivenessProbe().getSuccessThreshold(), is(successThreshold));
+                assertThat(container.getReadinessProbe().getSuccessThreshold(), is(successThreshold));
+                assertThat(container.getLivenessProbe().getFailureThreshold(), is(failureThreshold));
+                assertThat(container.getReadinessProbe().getFailureThreshold(), is(failureThreshold));
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");

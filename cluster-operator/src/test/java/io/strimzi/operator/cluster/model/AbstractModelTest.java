@@ -17,8 +17,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +25,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AbstractModelTest {
 
@@ -42,9 +42,9 @@ public class AbstractModelTest {
     public void testJvmMemoryOptionsExplicit() {
         Map<String, String> env = getStringStringMap("4", "4",
                 0.5, 4_000_000_000L, null);
-        assertEquals("-Xms4 -Xmx4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4 -Xmx4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
     private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax,
@@ -71,18 +71,18 @@ public class AbstractModelTest {
     public void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = getStringStringMap(null, "4",
                 0.5, 5_000_000_000L, null);
-        assertEquals("-Xms4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
     @Test
     public void testJvmMemoryOptionsXmxOnly() {
         Map<String, String> env = getStringStringMap("4", null,
                 0.5, 5_000_000_000L, null);
-        assertEquals("-Xmx4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xmx4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
 
@@ -90,9 +90,9 @@ public class AbstractModelTest {
     public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
         Map<String, String> env = getStringStringMap(null, null,
                 0.5, 5_000_000_000L, null);
-        assertEquals("-Xms" + AbstractModel.DEFAULT_JVM_XMS, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + AbstractModel.DEFAULT_JVM_XMS));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
     private ResourceRequirements getResourceLimit() {
@@ -104,31 +104,31 @@ public class AbstractModelTest {
     public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
         Map<String, String> env = getStringStringMap(null, "4",
                 0.5, 5_000_000_000L, getResourceLimit());
-        assertEquals("-Xms4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals("0.5", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals("5000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.5"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
     }
 
     @Test
     public void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = getStringStringMap(null, null,
                 0.7, 10_000_000_000L, getResourceLimit());
-        assertEquals(null, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals("0.7", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals("10000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.7"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
     }
 
     @Test
     public void testJvmPerformanceOptions() {
         JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
 
-        assertNull(getPerformanceOptions(opts));
+        assertThat(getPerformanceOptions(opts), is(nullValue()));
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": \"true\"" +
                 "}", JvmOptions.class);
 
-        assertEquals("-server", getPerformanceOptions(opts));
+        assertThat(getPerformanceOptions(opts), is("-server"));
 
         opts = TestUtils.fromJson("{" +
                 "    \"-XX\":" +
@@ -138,7 +138,7 @@ public class AbstractModelTest {
                 "            \"key4\": 10}" +
                 "}", JvmOptions.class);
 
-        assertEquals("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10", getPerformanceOptions(opts));
+        assertThat(getPerformanceOptions(opts), is("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10"));
     }
 
     private String getPerformanceOptions(JvmOptions opts) {
@@ -188,10 +188,10 @@ public class AbstractModelTest {
 
         OwnerReference ref = am.createOwnerReference();
 
-        assertEquals(kafka.getApiVersion(), ref.getApiVersion());
-        assertEquals(kafka.getKind(), ref.getKind());
-        assertEquals(kafka.getMetadata().getName(), ref.getName());
-        assertEquals(kafka.getMetadata().getUid(), ref.getUid());
+        assertThat(ref.getApiVersion(), is(kafka.getApiVersion()));
+        assertThat(ref.getKind(), is(kafka.getKind()));
+        assertThat(ref.getName(), is(kafka.getMetadata().getName()));
+        assertThat(ref.getUid(), is(kafka.getMetadata().getUid()));
     }
 
     @Test
@@ -208,11 +208,11 @@ public class AbstractModelTest {
             }
         };
 
-        Assert.assertEquals(ImagePullPolicy.ALWAYS.toString(), am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"));
-        Assert.assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"));
-        Assert.assertEquals(ImagePullPolicy.NEVER.toString(), am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"));
-        Assert.assertEquals(ImagePullPolicy.ALWAYS.toString(), am.determineImagePullPolicy(null, "docker.io/repo/image:latest"));
-        Assert.assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"));
+        assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));
+        assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"), is(ImagePullPolicy.NEVER.toString()));
+        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest"), is(ImagePullPolicy.ALWAYS.toString()));
+        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", "1Gi");
-        Assert.assertEquals("1Gi", volume.getEmptyDir().getSizeLimit().getAmount());
+        assertThat(volume.getEmptyDir().getSizeLimit().getAmount(), is("1Gi"));
     }
 
     @Test
@@ -246,7 +246,7 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", null);
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
     @Test
@@ -263,6 +263,6 @@ public class AbstractModelTest {
             }
         };
         Volume volume = am.createEmptyDirVolume("bar", "");
-        Assert.assertNull(volume.getEmptyDir().getSizeLimit());
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 }

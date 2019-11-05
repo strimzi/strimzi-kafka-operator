@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
@@ -104,65 +104,65 @@ class LogSettingST extends AbstractST {
     @Order(1)
     void testLoggersKafka() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), "Kafka's log level is set properly");
+        assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), is(true));
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), "Zookeeper's log level is set properly");
+        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), is(true));
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), "Topic operator's log level is set properly");
+        assertThat("Topic operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), is(true));
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), "User operator's log level is set properly");
+        assertThat("User operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), is(true));
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), "Kafka connect's log level is set properly");
+        assertThat("Kafka connect's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), is(true));
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertTrue(checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), "Mirror maker's log level is set properly");
+        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), is(true));
     }
 
     @Test
     @Order(7)
     void testGcLoggingNonSetEnabled() {
-        assertTrue(checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), "Kafka GC logging is enabled");
-        assertTrue(checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is enabled");
+        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(true));
+        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(true));
 
-        assertTrue(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is enabled");
-        assertTrue(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is enabled");
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), is(true));
+        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), is(true));
     }
 
     @Test
     @Order(8)
     void testGcLoggingSetEnabled() {
-        assertTrue(checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), "Kafka GC logging is enabled");
-        assertTrue(checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
+        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(true));
+        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(true));
 
-        assertTrue(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is enabled");
-        assertTrue(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is enabled");
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), is(true));
+        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(true));
 
-        assertTrue(checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), "Connect GC logging is enabled");
-        assertTrue(checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), "Mirror-maker GC logging is enabled");
+        assertThat("Connect GC logging is enabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), is(true));
+        assertThat("Mirror-maker GC logging is enabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(true));
     }
 
     @Test
@@ -201,14 +201,14 @@ class LogSettingST extends AbstractST {
         StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
         StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
-        assertFalse(checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), "Kafka GC logging is disabled");
-        assertFalse(checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");
+        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
+        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(false));
 
-        assertFalse(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is disabled");
+        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), is(false));
+        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(false));
 
-        assertFalse(checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), "Connect GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), "Mirror-maker GC logging is disabled");
+        assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), is(false));
+        assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
     }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, int since, String configMapName) {
@@ -255,7 +255,7 @@ class LogSettingST extends AbstractST {
     }
 
     private Boolean checkEnvVarValue(Container container) {
-        assertNotNull(container, "Container is null!");
+        assertThat("Container is null!", container, is(notNullValue()));
 
         List<EnvVar> loggingEnvVar = container.getEnv().stream().filter(envVar -> envVar.getName().contains("GC_LOG_ENABLED")).collect(Collectors.toList());
         LOGGER.info("{}={}", loggingEnvVar.get(0).getName(), loggingEnvVar.get(0).getValue());

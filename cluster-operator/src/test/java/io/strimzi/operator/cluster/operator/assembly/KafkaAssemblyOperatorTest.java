@@ -74,14 +74,14 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
@@ -95,6 +95,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -104,6 +106,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -115,8 +119,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorTest {
 
     public static final Map<String, Object> METRICS_CONFIG = singletonMap("foo", "bar");
@@ -133,16 +136,16 @@ public class KafkaAssemblyOperatorTest {
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 
-    private final boolean openShift;
-    private final boolean metrics;
-    private final KafkaListeners kafkaListeners;
-    private final Map<String, Object> kafkaConfig;
-    private final Map<String, Object> zooConfig;
-    private final Storage kafkaStorage;
-    private final SingleVolumeStorage zkStorage;
-    private final TopicOperatorSpec toConfig;
-    private final EntityOperatorSpec eoConfig;
-    private MockCertManager certManager = new MockCertManager();
+    private static boolean openShift;
+    private static boolean metrics;
+    private static KafkaListeners kafkaListeners;
+    private static Map<String, Object> kafkaConfig;
+    private static Map<String, Object> zooConfig;
+    private static Storage kafkaStorage;
+    private static SingleVolumeStorage zkStorage;
+    private static TopicOperatorSpec toConfig;
+    private static EntityOperatorSpec eoConfig;
+    private static MockCertManager certManager = new MockCertManager();
 
     public static class Params {
         private final boolean openShift;
@@ -180,7 +183,6 @@ public class KafkaAssemblyOperatorTest {
         }
     }
 
-    @Parameterized.Parameters(name = "{0}")
     public static Iterable<Params> data() {
         boolean[] shiftiness = {true, false};
         boolean[] metrics = {true, false};
@@ -290,32 +292,34 @@ public class KafkaAssemblyOperatorTest {
         return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
     }
 
-    public KafkaAssemblyOperatorTest(Params params) {
-        this.openShift = params.openShift;
-        this.metrics = params.metrics;
-        this.kafkaListeners = params.kafkaListeners;
-        this.kafkaConfig = params.kafkaConfig;
-        this.zooConfig = params.zooConfig;
-        this.kafkaStorage = params.kafkaStorage;
-        this.zkStorage = params.zkStorage;
-        this.toConfig = params.toConfig;
-        this.eoConfig = params.eoConfig;
+    public static void setFields(Params params) {
+        openShift = params.openShift;
+        metrics = params.metrics;
+        kafkaListeners = params.kafkaListeners;
+        kafkaConfig = params.kafkaConfig;
+        zooConfig = params.zooConfig;
+        kafkaStorage = params.kafkaStorage;
+        zkStorage = params.zkStorage;
+        toConfig = params.toConfig;
+        eoConfig = params.eoConfig;
     }
 
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
 
-    @Test
-    public void testCreateCluster(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testCreateCluster(Params params, VertxTestContext context) {
+        setFields(params);
         createCluster(context, getKafkaAssembly("foo"),
                 emptyList()); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
@@ -343,7 +347,7 @@ public class KafkaAssemblyOperatorTest {
         return pvcs;
     }
 
-    private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
+    private void createCluster(VertxTestContext context, Kafka clusterCm, List<Secret> secrets) {
         ClusterCa clusterCa = new ClusterCa(new MockCertManager(), clusterCm.getMetadata().getName(),
                 findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
                 findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
@@ -466,12 +470,12 @@ public class KafkaAssemblyOperatorTest {
             if (desired != null) {
                 if (name.contains("operator")) {
                     if (topicOperator != null) {
-                        context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), desired.getMetadata().getName());
+                        context.verify(() -> assertThat(desired.getMetadata().getName(), is(TopicOperator.topicOperatorName(clusterCmName))));
                     } else if (entityOperator != null) {
-                        context.assertEquals(EntityOperator.entityOperatorName(clusterCmName), desired.getMetadata().getName());
+                        context.verify(() -> assertThat(desired.getMetadata().getName(), is(EntityOperator.entityOperatorName(clusterCmName))));
                     }
                 } else if (name.contains("exporter"))   {
-                    context.assertTrue(metrics);
+                    context.verify(() -> assertThat(metrics, is(true)));
                 }
             }
             return Future.succeededFuture(ReconcileResult.created(desired));
@@ -528,12 +532,12 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to create a KafkaCluster based on this CM
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             // No metrics config  => no CMs created
             Set<String> logsAndMetricsNames = new HashSet<>();
@@ -559,29 +563,31 @@ public class KafkaAssemblyOperatorTest {
             }
 
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(expectedServices.size(), capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()).size());
-            context.assertEquals(expectedServices, capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
+            context.verify(() -> assertThat(capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()).size(),
+                    is(expectedServices.size())));
+            context.verify(() -> assertThat(capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()),
+                    is(expectedServices)));
 
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
             // We expect a statefulSet for kafka and zookeeper...
-            context.assertEquals(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)),
-                    capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
+            context.verify(() -> assertThat(capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()),
+                    is(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)))));
 
             // expected Secrets with certificates
-            context.assertEquals(new TreeSet(expectedSecrets), new TreeSet(createdOrUpdatedSecrets));
+            context.verify(() -> assertThat(new TreeSet(createdOrUpdatedSecrets), is(new TreeSet(expectedSecrets))));
 
             // Check PDBs
-            context.assertEquals(2, pdbCaptor.getAllValues().size());
-            context.assertEquals(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)),
-                    pdbCaptor.getAllValues().stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
+            context.verify(() -> assertThat(pdbCaptor.getAllValues().size(), is(2)));
+            context.verify(() -> assertThat(pdbCaptor.getAllValues().stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()),
+                    is(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)))));
 
             // Check PVCs
-            context.assertEquals(expectedPvcs.size(), pvcCaptor.getAllValues().size());
-            context.assertEquals(expectedPvcs,
-                    pvcCaptor.getAllValues().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet()));
+            context.verify(() -> assertThat(pvcCaptor.getAllValues().size(), is(expectedPvcs.size())));
+            context.verify(() -> assertThat(pvcCaptor.getAllValues().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet()),
+                    is(expectedPvcs)));
             for (PersistentVolumeClaim pvc : pvcCaptor.getAllValues()) {
-                context.assertTrue(Annotations.hasAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+                context.verify(() -> assertThat(Annotations.hasAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is(true)));
             }
 
             // Verify deleted routes
@@ -592,13 +598,12 @@ public class KafkaAssemblyOperatorTest {
                     expectedRoutes.add(KafkaCluster.externalServiceName(clusterCmName, i));
                 }
 
-                context.assertEquals(expectedRoutes,
-                        captured(routeNameCaptor));
+                context.verify(() -> assertThat(captured(routeNameCaptor), is(expectedRoutes)));
             } else {
-                context.assertEquals(0, routeNameCaptor.getAllValues().size());
+                context.verify(() -> assertThat(routeNameCaptor.getAllValues().size(), is(0)));
             }
 
-            async.complete();
+            async.flag();
         });
     }
 
@@ -640,28 +645,32 @@ public class KafkaAssemblyOperatorTest {
         return new HashSet<>(captor.getAllValues());
     }
 
-    @Test
-    public void testUpdateClusterNoop(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateClusterNoop(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateKafkaClusterChangeImage(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateKafkaClusterChangeImage(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setImage("a-changed-image");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZookeeperClusterChangeImage(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZookeeperClusterChangeImage(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setImage("a-changed-image");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZookeeperClusterChangeStunnelImage(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                 .editSpec().editZookeeper()
@@ -670,43 +679,49 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateKafkaClusterScaleUp(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateKafkaClusterScaleUp(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateKafkaClusterScaleDown(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateKafkaClusterScaleDown(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(2);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZookeeperClusterScaleUp(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZookeeperClusterScaleUp(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(4);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZookeeperClusterScaleDown(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZookeeperClusterScaleDown(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(2);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateClusterMetricsConfig(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateClusterLogConfig(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
@@ -714,15 +729,17 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZkClusterMetricsConfig(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZkClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setMetrics(singletonMap("something", "changed"));
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateZkClusterLogConfig(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateZkClusterLogConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("zookeeper.root.logger", "DEBUG"));
@@ -730,8 +747,10 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @Test
-    public void testUpdateTopicOperatorConfig(TestContext context) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateTopicOperatorConfig(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         if (toConfig != null) {
             kafkaAssembly.getSpec().getTopicOperator().setImage("some/other:image");
@@ -741,9 +760,10 @@ public class KafkaAssemblyOperatorTest {
                     .endTlsSidecar().endTopicOperator().endSpec().build();
             updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
         }
+        context.completeNow();
     }
 
-    private void updateCluster(TestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
+    private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly, VERSIONS);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly, VERSIONS);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly, VERSIONS);
@@ -1025,12 +1045,12 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to update a KafkaCluster based on this CM
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName) {
 
         }, updatedAssembly).setHandler(createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             int steps = updatedAssembly.getSpec().getZookeeper().getReplicas();
             // rolling restart
@@ -1049,13 +1069,15 @@ public class KafkaAssemblyOperatorTest {
             // No metrics config  => no CMs created
             verify(mockZsOps, times(1)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
             verify(mockCmOps, never()).createOrUpdate(any());
-            async.complete();
+            async.flag();
         });
     }
 
-    @Test
-    public void testReconcile(TestContext context) throws InterruptedException {
-        Async async = context.async(2);
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testReconcile(Params params, VertxTestContext context) throws InterruptedException {
+        setFields(params);
+        CountDownLatch async = new CountDownLatch(2);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -1145,14 +1167,17 @@ public class KafkaAssemblyOperatorTest {
             ignored -> { }
         );
 
-        async.await();
+        async.await(60, TimeUnit.SECONDS);
 
-        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
+        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
+        context.completeNow();
     }
 
-    @Test
-    public void testReconcileAllNamespaces(TestContext context) throws InterruptedException {
-        Async async = context.async(2);
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testReconcileAllNamespaces(Params params, VertxTestContext context) throws InterruptedException {
+        setFields(params);
+        Checkpoint async = context.checkpoint(2);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -1216,7 +1241,7 @@ public class KafkaAssemblyOperatorTest {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
-                async.countDown();
+                async.flag();
                 return Future.succeededFuture();
             }
         };
@@ -1226,12 +1251,12 @@ public class KafkaAssemblyOperatorTest {
             ignored -> { }
         );
 
-        async.await(30_000);
+        context.awaitCompletion(60, TimeUnit.SECONDS);
 
-        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
+        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }

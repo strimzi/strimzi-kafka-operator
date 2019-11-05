@@ -14,16 +14,18 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,19 +35,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public abstract class AbstractNonNamespacedResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList, D, R extends Resource<T, D>> {
 
     public static final String RESOURCE_NAME = "my-resource";
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
@@ -82,11 +84,11 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     }
 
     @Test
-    public void createWhenExistsIsAPatch(TestContext context) {
+    public void createWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, true);
     }
 
-    public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
+    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -103,25 +105,25 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<ReconcileResult<T>> fut = op.createOrUpdate(resource());
         fut.setHandler(ar -> {
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());
             verify(mockCms, never()).createOrReplace(any());
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void existenceCheckThrows(TestContext context) {
+    public void existenceCheckThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException();
 
@@ -139,16 +141,16 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
-            context.assertTrue(ar.failed());
-            context.assertEquals(ex, ar.cause());
-            async.complete();
+            context.verify(() -> assertThat(ar.failed(), is(true)));
+            context.verify(() -> assertThat(ar.cause(), is(ex)));
+            async.flag();
         });
     }
 
     @Test
-    public void successfulCreation(TestContext context) {
+    public void successfulCreation(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
@@ -165,18 +167,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(
                 vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void creationThrows(TestContext context) {
+    public void creationThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
@@ -195,16 +197,16 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
-            context.assertTrue(ar.failed());
-            context.assertEquals(ex, ar.cause());
-            async.complete();
+            context.verify(() -> assertThat(ar.failed(), is(true)));
+            context.verify(() -> assertThat(ar.cause(), is(ex)));
+            async.flag();
         });
     }
 
     @Test
-    public void deletionWhenResourceDoesNotExistIsANop(TestContext context) {
+    public void deletionWhenResourceDoesNotExistIsANop(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -219,18 +221,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockResource).get();
             verify(mockResource, never()).delete();
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void deletionWhenResourceExistsStillDeletes(TestContext context) {
+    public void deletionWhenResourceExistsStillDeletes(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
@@ -256,17 +258,17 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockResource).delete();
-            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
-            async.complete();
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
         });
     }
 
     @Test
-    public void deletionTimesOut(TestContext context) {
+    public void deletionTimesOut(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
@@ -291,19 +293,19 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertFalse(ar.succeeded());
-            context.assertTrue(ar.cause() instanceof TimeoutException, "Got " + ar.cause());
+            context.verify(() -> assertThat(ar.succeeded(), is(false)));
+            context.verify(() -> assertThat("Got " + ar.cause(), ar.cause() instanceof TimeoutException, is(true)));
             verify(mockResource).delete();
-            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
-            async.complete();
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
         });
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void deletionSuccessful(TestContext context) {
+    public void deletionSuccessful(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
@@ -329,18 +331,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             verify(mockResource).delete();
-            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
-            async.complete();
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
         });
     }
 
     @Test
-    public void deletion_deleteMethodThrows(TestContext context) {
+    public void deletion_deleteMethodThrows(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
@@ -368,17 +370,17 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertTrue(ar.failed());
-            context.assertEquals(ex, ar.cause());
-            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
-            async.complete();
+            context.verify(() -> assertThat(ar.failed(), is(true)));
+            context.verify(() -> assertThat(ar.cause(), is(ex)));
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
         });
     }
 
     @Test
-    public void deletion_watchMethodThrows(TestContext context) {
+    public void deletion_watchMethodThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
@@ -398,18 +400,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertTrue(ar.failed());
-            context.assertEquals(ex, ar.cause());
-            async.complete();
+            context.verify(() -> assertThat(ar.failed(), is(true)));
+            context.verify(() -> assertThat(ar.cause(), is(ex)));
+            async.flag();
         });
     }
 
 
     @Test
     @SuppressWarnings("unchecked")
-    public void deletion_deleteMethodReturnsFalse(TestContext context) {
+    public void deletion_deleteMethodReturnsFalse(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
@@ -435,12 +437,12 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getName(), null).setHandler(ar -> {
-            context.assertFalse(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(false)));
             verify(mockResource).delete();
-            context.assertTrue(watchWasClosed.get(), "Watch was not closed");
-            async.complete();
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
         });
     }
 

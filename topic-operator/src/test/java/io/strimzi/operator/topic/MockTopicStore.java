@@ -5,11 +5,14 @@
 package io.strimzi.operator.topic;
 
 import io.vertx.core.Future;
-import io.vertx.ext.unit.TestContext;
+import io.vertx.junit5.VertxTestContext;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MockTopicStore implements TopicStore {
 
@@ -64,16 +67,16 @@ public class MockTopicStore implements TopicStore {
         return response;
     }
 
-    public void assertExists(TestContext context, TopicName topicName) {
-        context.assertTrue(topics.containsKey(topicName));
+    public void assertExists(VertxTestContext context, TopicName topicName) {
+        context.verify(() -> assertThat(topics.containsKey(topicName), is(true)));
     }
 
-    public void assertNotExists(TestContext context, TopicName topicName) {
-        context.assertFalse(topics.containsKey(topicName));
+    public void assertNotExists(VertxTestContext context, TopicName topicName) {
+        context.verify(() -> assertThat(topics.containsKey(topicName), is(false)));
     }
 
-    public void assertContains(TestContext context, Topic topic) {
-        context.assertEquals(topic, topics.get(topic.getTopicName()));
+    public void assertContains(VertxTestContext context, Topic topic) {
+        context.verify(() -> assertThat(topics.get(topic.getTopicName()), is(topic)));
     }
 
     public MockTopicStore setCreateTopicResponse(TopicName createTopic, Exception exception) {
@@ -136,8 +139,8 @@ public class MockTopicStore implements TopicStore {
         return this;
     }
 
-    public void assertEmpty(TestContext context) {
-        context.assertTrue(this.topics.isEmpty());
+    public void assertEmpty(VertxTestContext context) {
+        context.verify(() -> assertThat(this.topics.isEmpty(), is(true)));
     }
 
 }

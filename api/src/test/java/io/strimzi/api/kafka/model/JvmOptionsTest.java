@@ -5,13 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
+import org.junit.jupiter.api.Test;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 public class JvmOptionsTest {
     @Test
     public void testXmxXms() {
@@ -20,16 +17,16 @@ public class JvmOptionsTest {
                 "  \"-Xms\": \"1g\"" +
                 "}", JvmOptions.class);
 
-        assertEquals("1g", opts.getXms());
-        assertEquals("2g", opts.getXmx());
+        assertThat(opts.getXms(), is("1g"));
+        assertThat(opts.getXmx(), is("2g"));
     }
 
     @Test
     public void testEmptyXmxXms() {
         JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
 
-        assertNull(opts.getXms());
-        assertNull(opts.getXmx());
+        assertThat(opts.getXms(), is(nullValue()));
+        assertThat(opts.getXmx(), is(nullValue()));
     }
 
     @Test
@@ -38,24 +35,24 @@ public class JvmOptionsTest {
                 "  \"-server\": \"true\"" +
                 "}", JvmOptions.class);
 
-        assertTrue(opts.isServer());
+        assertThat(opts.isServer(), is(true));
 
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": true" +
                 "}", JvmOptions.class);
 
-        assertTrue(opts.isServer());
+        assertThat(opts.isServer(), is(true));
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": \"false\"" +
                 "}", JvmOptions.class);
 
-        assertFalse(opts.isServer());
+        assertThat(opts.isServer(), is(false));
 
         opts = TestUtils.fromJson("{}", JvmOptions.class);
 
-        assertNull(opts.isServer());
+        assertThat(opts.isServer(), is(nullValue()));
     }
 
     @Test
@@ -69,7 +66,7 @@ public class JvmOptionsTest {
                 "            \"key5\": 10}" +
                 "}", JvmOptions.class);
 
-        assertEquals(TestUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10"), opts.getXx());
+        assertThat(opts.getXx(), is(TestUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10")));
     }
 }
 

@@ -5,11 +5,12 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaConfigurationTests {
 
@@ -17,7 +18,7 @@ public class KafkaConfigurationTests {
 
     void assertConfigError(String key, Object value, String errorMsg) {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(singletonMap(key, value).entrySet());
-        assertEquals(singletonList(errorMsg), kafkaConfiguration.validate(kafkaVersion));
+        assertThat(kafkaConfiguration.validate(kafkaVersion), is(singletonList(errorMsg)));
     }
 
     @Test

@@ -12,29 +12,30 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
@@ -53,48 +54,56 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
 
     @Test
-    public void testTopicAdded(TestContext context) throws Exception {
+    public void testTopicAdded(VertxTestContext context) throws Exception {
         createTopic(context, "test-topic-added");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicAddedWithEncodableName(TestContext context) throws Exception {
+    public void testTopicAddedWithEncodableName(VertxTestContext context) throws Exception {
         createTopic(context, "test-TOPIC_ADDED_ENCODABLE");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicDeleted(TestContext context) throws Exception {
+    public void testTopicDeleted(VertxTestContext context) throws Exception {
         createAndDeleteTopic(context, "test-topic-deleted");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicDeletedWithEncodableName(TestContext context) throws Exception {
+    public void testTopicDeletedWithEncodableName(VertxTestContext context) throws Exception {
         createAndDeleteTopic(context, "test-TOPIC_DELETED_ENCODABLE");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicConfigChanged(TestContext context) throws Exception {
+    public void testTopicConfigChanged(VertxTestContext context) throws Exception {
         createAndAlterTopicConfig(context, "test-topic-config-changed");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicConfigChangedWithEncodableName(TestContext context) throws Exception {
+    public void testTopicConfigChangedWithEncodableName(VertxTestContext context) throws Exception {
         createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED_ENCODABLE");
+        context.completeNow();
     }
 
     @Test
-    public void testTopicNumPartitionsChanged(TestContext context) throws Exception {
+    public void testTopicNumPartitionsChanged(VertxTestContext context) throws Exception {
         createAndAlterNumPartitions(context, "test-topic-partitions-changed");
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicAdded(TestContext context) {
+    public void testKafkaTopicAdded(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = "test-kafkatopic-created";
         createKafkaTopicResource(context, topicName);
+        context.completeNow();
     }
 
-    void createKafkaTopicResourceError(TestContext context, String topicName, Map<String, String> objectObjectMap, int rf,
-                                       String expectedMessage) {
+    void createKafkaTopicResourceError(VertxTestContext context, String topicName, Map<String, String> objectObjectMap, int rf,
+                                       String expectedMessage) throws InterruptedException, ExecutionException, TimeoutException {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, objectObjectMap).build();
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
         kafkaTopic.getSpec().setReplicas(rf);
@@ -104,33 +113,36 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         assertStatusNotReady(context, topicName, expectedMessage);
     }
 
-    public void testKafkaTopicAddedWithMoreReplicasThanBrokers(TestContext context) {
+    public void testKafkaTopicAddedWithMoreReplicasThanBrokers(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError(context, "test-resource-created-with-more-replicas-than-brokers", emptyMap(), 42, "Replication factor: 42 larger than available brokers: 1.");
     }
 
     @Test
-    public void testKafkaTopicAddedWithHigherMinIsrThanBrokers(TestContext context) {
+    public void testKafkaTopicAddedWithHigherMinIsrThanBrokers(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError(context, "test-resource-created-with-higher-min-isr-than-brokers",
                 singletonMap("min.insync.replicas", "42"), 42,
                "Replication factor: 42 larger than available brokers: 1.");
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicAddedWithUnknownConfig(TestContext context) {
+    public void testKafkaTopicAddedWithUnknownConfig(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError(context, "test-resource-created-with-unknown-config",
                 singletonMap("aardvark", "zebra"), 1,
                "Unknown topic config name: aardvark");
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicAddedWithInvalidConfig(TestContext context) {
+    public void testKafkaTopicAddedWithInvalidConfig(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError(context, "test-resource-created-with-invalid-config",
                 singletonMap("message.format.version", "zebra"), 1,
                "Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicAddedWithBadData(TestContext context) {
+    public void testKafkaTopicAddedWithBadData(VertxTestContext context) {
         String topicName = "test-resource-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
@@ -140,31 +152,33 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         try {
             operation().inNamespace(NAMESPACE).create(kafkaTopic);
         } catch (KubernetesClientException e) {
-            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+            assertThat(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"), is(true));
+            context.completeNow();
         }
     }
 
     @Test
-    public void testKafkaTopicDeleted(TestContext context) {
+    public void testKafkaTopicDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         // create the Topic Resource
         String topicName = "test-kafkatopic-deleted";
         KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
         deleteInKubeAndAwaitReconciliation(context, topicName, topicResource);
-
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicModifiedRetentionChanged(TestContext context) throws Exception {
+    public void testKafkaTopicModifiedRetentionChanged(VertxTestContext context) throws Exception {
         // create the topic
         String topicName = "test-kafkatopic-modified-retention-changed";
         KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
         String expectedValue = alterTopicConfigInKube(topicResource.getMetadata().getName(),
                 "retention.ms", currentValue -> Integer.toString(Integer.parseInt(currentValue) + 1));
         awaitTopicConfigInKafka(context, topicName, "retention.ms", expectedValue);
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicModifiedWithBadData(TestContext context) throws Exception {
+    public void testKafkaTopicModifiedWithBadData(VertxTestContext context) throws Exception {
         // create the topicResource
         String topicName = "test-kafkatopic-modified-with-bad-data";
         KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
@@ -175,12 +189,13 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         try {
             operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
         } catch (KubernetesClientException e) {
-            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+            assertThat(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"), is(true));
         }
+        context.completeNow();
     }
 
     @Test
-    public void testKafkaTopicModifiedNameChanged(TestContext context) throws Exception {
+    public void testKafkaTopicModifiedNameChanged(VertxTestContext context) throws Exception {
         // create the topicResource
         String topicName = "test-kafkatopic-modified-name-changed";
         KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
@@ -196,11 +211,12 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         waitForEvent(context, topicResource,
                 "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
                 TopicOperator.EventType.WARNING);
+        context.completeNow();
 
     }
 
     @Test
-    public void testCreateTwoResourcesManagingOneTopic(TestContext context) {
+    public void testCreateTwoResourcesManagingOneTopic(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = "two-resources-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
@@ -214,11 +230,12 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
                 "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels \\{.*\\}: " +
                         "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
+        context.completeNow();
     }
 
 
     @Test
-    public void testReconcile(TestContext context) {
+    public void testReconcile(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = "test-reconcile";
 
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
@@ -247,13 +264,14 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Wait for the topic to be created
         waitForTopicInKafka(context, topicName);
         assertStatusReady(context, topicName);
+        context.completeNow();
     }
 
     // TODO: What happens if we create and then change labels to the resource predicate isn't matched any more
     //       What then happens if we change labels back?
 
     @Test
-    public void testKafkaTopicWithOwnerRef(TestContext context) {
+    public void testKafkaTopicWithOwnerRef(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = "test-kafka-topic-with-owner-ref-1";
 
         // this CM is created to be the owner of the KafkaTopic we're about to create.
@@ -285,12 +303,12 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         createKafkaTopicResource(context, topicResource);
-        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
-        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
-        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
-        assertEquals(5, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
-        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid(), is(uid));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size(), is(1));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"), is("groot"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(5));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"), is("root"));
 
         // edit kafka topic
         topicName = "test-kafka-topic-with-owner-ref-2";
@@ -299,10 +317,10 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         topicResource = TopicSerialization.toTopicResource(topic2, labels);
         topicResource.getMetadata().getAnnotations().put("han", "solo");
         createKafkaTopicResource(context, topicResource2);
-        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
-        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
-        assertEquals("solo", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("han"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid(), is(uid));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size(), is(2));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"), is("groot"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("han"), is("solo"));
 
         // edit k8s topic
         topicName = "test-kafka-topic-with-owner-ref-3";
@@ -310,10 +328,11 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         topic3.getMetadata().getLabels().put("stan", "lee");
         topicResource = TopicSerialization.toTopicResource(topic3, labels);
         createKafkaTopicResource(context, topicResource);
-        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        assertEquals(6, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
-        assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
-        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid(), is(uid));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(6));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"), is("lee"));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"), is("root"));
+        context.completeNow();
     }
 
     /**
@@ -325,7 +344,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
      * 5. Verify topics A, X and Y exist on both sides
      */
     @Test
-    public void testReconciliationOnStartup(TestContext testContext) throws ExecutionException, InterruptedException {
+    public void testReconciliationOnStartup(VertxTestContext context) throws ExecutionException, InterruptedException, TimeoutException {
         // 1. Create topic A in Kube and reconcile
         String topicNameZ = "topic-z";
         {
@@ -333,8 +352,8 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
             KafkaTopic topicResourceZ = TopicSerialization.toTopicResource(topicZ, labels);
             String resourceNameZ = topicResourceZ.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceZ);
-            waitForTopicInKafka(testContext, topicNameZ);
-            assertStatusReady(testContext, topicNameZ);
+            waitForTopicInKafka(context, topicNameZ);
+            assertStatusReady(context, topicNameZ);
         }
 
         String topicNameA = "topic-a";
@@ -343,8 +362,8 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
             KafkaTopic topicResourceA = TopicSerialization.toTopicResource(topicA, labels);
             String resourceNameA = topicResourceA.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceA);
-            waitForTopicInKafka(testContext, topicNameA);
-            assertStatusReady(testContext, topicNameA);
+            waitForTopicInKafka(context, topicNameA);
+            assertStatusReady(context, topicNameA);
         }
         String topicNameB = "topic-b";
         String resourceNameB;
@@ -353,8 +372,8 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
             KafkaTopic topicResourceB = TopicSerialization.toTopicResource(topicB, labels);
             resourceNameB = topicResourceB.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceB);
-            waitForTopicInKafka(testContext, topicNameB);
-            assertStatusReady(testContext, topicNameB);
+            waitForTopicInKafka(context, topicNameB);
+            assertStatusReady(context, topicNameB);
         }
         String topicNameC = "topic-c";
         {
@@ -362,12 +381,12 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
             KafkaTopic topicResourceC = TopicSerialization.toTopicResource(topicC, labels);
             String resourceNameC = topicResourceC.getMetadata().getName();
             operation().inNamespace(NAMESPACE).create(topicResourceC);
-            waitForTopicInKafka(testContext, topicNameC);
-            assertStatusReady(testContext, topicNameC);
+            waitForTopicInKafka(context, topicNameC);
+            assertStatusReady(context, topicNameC);
         }
 
         // 2. Stop TO
-        stopTopicOperator(testContext);
+        stopTopicOperator(context);
 
         // 3. Modify topic A in kubernetes and topic Z in Kafka
         String alteredConfigA = alterTopicConfigInKafka(topicNameA,
@@ -377,7 +396,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
         // 3. Delete topic B in Kafka, delete topic C in Kubernetes
         deleteTopicInKafka(topicNameB, resourceNameB);
-        deleteInKube(testContext, topicNameC);
+        deleteInKube(context, topicNameC);
 
         // 3. Create topic X in Kafka, topic Y in Kubernetes
         String topicNameX = "topic-x";
@@ -396,30 +415,30 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         }
 
         // 4. Start TO
-        startTopicOperator(testContext);
+        startTopicOperator(context);
 
         // 5. Verify topics A, X and Y exist on both sides
-        waitForTopicInKafka(testContext, topicNameA);
-        waitForTopicInKafka(testContext, topicNameX);
-        waitForTopicInKafka(testContext, topicNameY);
-        assertStatusReady(testContext, topicNameA);
-        assertStatusReady(testContext, topicNameX);
-        assertStatusReady(testContext, topicNameY);
-        waitForTopicInKube(testContext, topicNameA);
-        waitForTopicInKube(testContext, topicNameX);
-        waitForTopicInKube(testContext, topicNameY);
+        waitForTopicInKafka(context, topicNameA);
+        waitForTopicInKafka(context, topicNameX);
+        waitForTopicInKafka(context, topicNameY);
+        assertStatusReady(context, topicNameA);
+        assertStatusReady(context, topicNameX);
+        assertStatusReady(context, topicNameY);
+        waitForTopicInKube(context, topicNameA);
+        waitForTopicInKube(context, topicNameX);
+        waitForTopicInKube(context, topicNameY);
 
         // 5. Verify topics B and C deleted on both sides
-        waitForTopicInKube(testContext, topicNameB, false);
-        waitForTopicInKube(testContext, topicNameC, false);
-        waitForTopicInKafka(testContext, topicNameB, false);
-        waitForTopicInKafka(testContext, topicNameC, false);
+        waitForTopicInKube(context, topicNameB, false);
+        waitForTopicInKube(context, topicNameC, false);
+        waitForTopicInKafka(context, topicNameB, false);
+        waitForTopicInKafka(context, topicNameC, false);
 
         // 5. Verify topics A and Z were changed.
-        awaitTopicConfigInKube(testContext, topicNameA, "retention.ms", alteredConfigA);
-        awaitTopicConfigInKube(testContext, topicNameZ, "retention.ms", alteredConfigZ);
-        awaitTopicConfigInKafka(testContext, topicNameA, "retention.ms", alteredConfigA);
-        awaitTopicConfigInKafka(testContext, topicNameZ, "retention.ms", alteredConfigZ);
-
+        awaitTopicConfigInKube(context, topicNameA, "retention.ms", alteredConfigA);
+        awaitTopicConfigInKube(context, topicNameZ, "retention.ms", alteredConfigZ);
+        awaitTopicConfigInKafka(context, topicNameA, "retention.ms", alteredConfigA);
+        awaitTopicConfigInKafka(context, topicNameZ, "retention.ms", alteredConfigZ);
+        context.completeNow();
     }
 }
