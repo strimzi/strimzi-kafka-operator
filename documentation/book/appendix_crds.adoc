@@ -2266,24 +2266,7 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |string
 |tasksMax  1.2+<.<|The maximum number of tasks for the Kafka Connector.
 |integer
-|topics    1.2+<.<|A list of topics to use as input for the Kafka Connector.
-|string array
-|config    1.2+<.<|The Config for the Kafka Connector Spec.
-|xref:type-KafkaConnectorConfig-{context}[`KafkaConnectorConfig`] array
-|====
-
-[id='type-KafkaConnectorConfig-{context}']
-### `KafkaConnectorConfig` schema reference
-
-Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
-
-
-[options="header"]
-|====
-|Property      |Description
-|name   1.2+<.<|The name of the connector configuration parameter.
-|string
-|value  1.2+<.<|The value of the connector configuration parameter.
-|string
+|config    1.2+<.<|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
+|map
 |====
 
