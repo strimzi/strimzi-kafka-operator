@@ -95,18 +95,21 @@ class KafkaAvailability {
         int minIsr;
         if (minIsrConfig != null && minIsrConfig.value() != null) {
             minIsr = parseInt(minIsrConfig.value());
+            log.debug("{} has {}={}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
         } else {
             minIsr = -1;
+            log.debug("{} lacks {}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
+            log.debug("{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), isr, pi.replicas());
             if (minIsr >= 0) {
                 if (isr.size() < minIsr) {
                     if (contains(pi.replicas(), broker)) {
-                        log.info("{}/{} is already underreplicated (|ISR|={}, min ISR={}); broker {} has a replica, " +
-                                        "so should not be restarted right now.",
-                                td.name(), pi.partition(), isr.size(), minIsr, broker);
+                        log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
+                                        "so should not be restarted right now (it might be first to catch up).",
+                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         return true;
                     }
                 } else if (isr.size() == minIsr) {
