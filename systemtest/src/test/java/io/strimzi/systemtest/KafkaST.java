@@ -174,12 +174,14 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
+        LOGGER.info("Scaled up to {}", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE, firstTopicName);
+        LOGGER.info("Could produce/consume with topic {}", firstTopicName);
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(getOperationID());
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
@@ -190,7 +192,8 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
+        LOGGER.info("Scaled down to {}", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
@@ -207,6 +210,7 @@ class KafkaST extends MessagingBaseST {
         String secondTopicName = "test-topic-2";
         testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
         waitForClusterAvailability(NAMESPACE, secondTopicName);
+        LOGGER.info("Could produce/consume with topic {}", secondTopicName);
     }
 
     @Test
