@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -581,17 +582,18 @@ public class KafkaAssemblyOperatorMockTest {
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed delete claim");
-        Checkpoint updateAsync = context.checkpoint();
+        CountDownLatch updateAsync = new CountDownLatch(1);
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            updateAsync.flag();
+            updateAsync.countDown();
         });
+        updateAsync.await();
 
         // check that the new delete-claim annotation is on the PVCs
         for (String pvcName: kafkaPvcs) {
             assertThat(Boolean.valueOf(mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).get()
-                    .getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM)), is(originalKafkaDeleteClaim));
+                    .getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM)), is(!originalKafkaDeleteClaim));
         }
 
 
