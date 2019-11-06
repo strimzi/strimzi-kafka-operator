@@ -267,7 +267,7 @@ public abstract class Ca {
                 certFile, subject, validityDays);
 
         String keyStorePassword = passwordGenerator.generate();
-        certManager.addKeyAndCertToKeyStore(keyFile, certFile, "test", keyStoreFile, keyStorePassword);
+        certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
 
         return new CertAndKey(
                 Files.readAllBytes(keyFile.toPath()),
