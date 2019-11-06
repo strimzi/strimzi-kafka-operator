@@ -85,6 +85,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -148,10 +149,21 @@ class KafkaST extends MessagingBaseST {
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
+
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
 
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertThat(initialReplicas, is(3));
+
+        assertEquals(3, initialReplicas);
+
+        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
+        String firstTopicName = "test-topic";
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, 3, initialReplicas)
+                .editSpec()
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
+                .endSpec()
+            .done();
+
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
@@ -162,13 +174,6 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
-
-        String firstTopicName = "test-topic";
-        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, initialReplicas)
-                .editSpec()
-                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
-                .endSpec()
-            .done();
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
