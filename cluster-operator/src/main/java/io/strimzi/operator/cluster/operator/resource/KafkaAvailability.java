@@ -17,10 +17,8 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,10 +59,10 @@ class KafkaAvailability {
     }
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
-        Future<List<TopicDescription>> topicsOnGivenBroker = descriptions
+        Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> {
                     log.debug("Got {} topic descriptions", topicDescriptions.size());
-                    return Future.succeededFuture(groupTopicsByBroker(topicDescriptions).getOrDefault(podId, Collections.emptyList()));
+                    return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
                 }).recover(error -> {
                     log.warn(error);
                     return Future.failedFuture(error);
@@ -72,7 +70,7 @@ class KafkaAvailability {
 
         // 4. Get topic configs (for those on $broker)
         Future<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
-                .compose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toList())));
+                .compose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toSet())));
 
         // 5. join
         return topicConfigsOnGivenBroker.map(topicNameToConfig -> {
@@ -103,25 +101,32 @@ class KafkaAvailability {
 
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
-            log.debug("{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), isr, pi.replicas());
             if (minIsr >= 0) {
-                if (isr.size() < minIsr) {
-                    if (contains(pi.replicas(), broker)) {
-                        log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
-                                        "so should not be restarted right now (it might be first to catch up).",
-                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
-                        return true;
-                    }
-                } else if (isr.size() == minIsr) {
-                    if (contains(isr, broker)) {
-                        log.info("{}/{} will be underreplicated (|ISR|={} and min ISR={}) if broker {} is restarted.",
-                                td.name(), pi.partition(), isr.size(), minIsr, broker);
-                        return true;
-                    }
+                if (isr.size() < minIsr && contains(pi.replicas(), broker)) {
+                    logIsrReplicas(td, pi, isr);
+                    log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
+                                    "so should not be restarted right now (it might be first to catch up).",
+                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                    return true;
+                } else if (isr.size() == minIsr && contains(isr, broker)) {
+                    logIsrReplicas(td, pi, isr);
+                    log.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
+                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                    return true;
                 }
             }
         }
         return false;
+    }
+
+    private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
+        if (log.isDebugEnabled()) {
+            log.debug("{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
+        }
+    }
+
+    String nodeList(List<Node> nodes) {
+        return nodes.stream().map(n -> String.valueOf(n.id())).collect(Collectors.joining(",", "[", "]"));
     }
 
     private boolean contains(List<Node> isr, int broker) {
@@ -148,22 +153,19 @@ class KafkaAvailability {
         return f;
     }
 
-    private Map<Integer, List<TopicDescription>> groupTopicsByBroker(Collection<TopicDescription> tds) {
-        Map<Integer, List<TopicDescription>> byBroker = new HashMap<>();
+    private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
+        Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
             log.trace("{}", td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
-                    List<TopicDescription> topicPartitionInfos = byBroker.get(broker.id());
-                    if (topicPartitionInfos == null) {
-                        topicPartitionInfos = new ArrayList<>();
-                        byBroker.put(broker.id(), topicPartitionInfos);
+                    if (podId == broker.id()) {
+                        topicPartitionInfos.add(td);
                     }
-                    topicPartitionInfos.add(td);
                 }
             }
         }
-        return byBroker;
+        return topicPartitionInfos;
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
