@@ -133,6 +133,16 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
+    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
+
+        List<String> cmd = new ArrayList<>(asList("openssl", "pkcs12", "-export", "-in", certFile.getAbsolutePath(),
+                "-inkey", keyFile.getAbsolutePath(), "-name", alias, "-out", keyStoreFile.getAbsolutePath(), "-passout",
+                "pass:" + keyStorePassword));
+
+        exec(cmd);
+    }
+
+    @Override
     public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 

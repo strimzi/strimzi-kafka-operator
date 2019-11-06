@@ -12,12 +12,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +46,7 @@ public class OpenSslCertManagerTest {
     public void testGenerateSelfSignedCert() throws Exception {
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".str");
+        File store = File.createTempFile("crt-", ".p12");
 
         testGenerateSelfSignedCert(key, cert, store, "123456", null);
 
@@ -58,7 +60,7 @@ public class OpenSslCertManagerTest {
 
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".str");
+        File store = File.createTempFile("crt-", ".p12");
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
@@ -75,7 +77,7 @@ public class OpenSslCertManagerTest {
 
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".str");
+        File store = File.createTempFile("crt-", ".p12");
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
@@ -137,6 +139,7 @@ public class OpenSslCertManagerTest {
         long fileCount = Files.list(path).count();
         File caKey = File.createTempFile("ca-key-", ".key");
         File caCert = File.createTempFile("ca-crt-", ".crt");
+        File store = File.createTempFile("store-", ".p12");
 
         Subject caSbj = new Subject();
         caSbj.setCommonName("CACommonName");
@@ -149,13 +152,14 @@ public class OpenSslCertManagerTest {
         sbj.setOrganizationName("MyOrganization");
         File cert = File.createTempFile("crt-", ".crt");
 
-        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, sbj);
+        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
         caCert.delete();
         key.delete();
         csr.delete();
         cert.delete();
+        store.delete();
 
         assertThat(Files.list(path).count(), is(fileCount));
     }
@@ -165,6 +169,7 @@ public class OpenSslCertManagerTest {
 
         File caKey = File.createTempFile("ca-key-", ".key");
         File caCert = File.createTempFile("ca-crt-", ".crt");
+        File store = File.createTempFile("store-", ".p12");
 
         Subject caSbj = new Subject();
         caSbj.setCommonName("CACommonName");
@@ -182,22 +187,26 @@ public class OpenSslCertManagerTest {
 
         File cert = File.createTempFile("crt-", ".crt");
 
-        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, sbj);
+        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
         caCert.delete();
         key.delete();
         csr.delete();
         cert.delete();
+        store.delete();
     }
 
-    private void testGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert, Subject sbj) throws Exception {
+    private void testGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert,
+                                        File keyStore, String keyStorePassword, Subject sbj) throws Exception {
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
 
         ssl.generateCsr(key, csr, sbj);
 
         ssl.generateCert(csr, caKey, caCert, cert, sbj, 365);
+
+        ssl.addKeyAndCertToKeyStore(caKey, caCert, "ca", keyStore, keyStorePassword);
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate c = cf.generateCertificate(new FileInputStream(cert));
@@ -224,6 +233,24 @@ public class OpenSslCertManagerTest {
         } else {
             fail();
         }
+
+        // keystore verification if provided
+        if (keyStore != null) {
+            KeyStore store = KeyStore.getInstance("PKCS12");
+            store.load(new FileInputStream(keyStore), keyStorePassword.toCharArray());
+
+            Key storeKey = store.getKey("ca", keyStorePassword.toCharArray());
+            StringBuilder sb = new StringBuilder()
+                    .append("-----BEGIN PRIVATE KEY-----")
+                    .append(Base64.getEncoder().encodeToString(storeKey.getEncoded()))
+                    .append("-----END PRIVATE KEY-----");
+
+            assertTrue(sb.toString()
+                    .equals(new String(Files.readAllBytes(caKey.toPath())).replace("\n", "")));
+
+            X509Certificate storeCert = (X509Certificate) store.getCertificate("ca");
+            storeCert.verify(storeCert.getPublicKey());
+        }
     }
 
     @Test
@@ -231,7 +258,7 @@ public class OpenSslCertManagerTest {
         // First generate a self-signed cert
         File caKey = File.createTempFile("key-", ".key");
         File originalCert = File.createTempFile("crt-", ".crt");
-        File originalStore = File.createTempFile("crt-", ".str");
+        File originalStore = File.createTempFile("crt-", ".p12");
         Subject caSubject = new Subject();
         caSubject.setCommonName("MyCommonName");
         caSubject.setOrganizationName("MyOrganization");
@@ -254,7 +281,7 @@ public class OpenSslCertManagerTest {
 
         // Generate a renewed CA certificate
         File newCert = File.createTempFile("crt-", ".crt");
-        File newStore = File.createTempFile("crt-", ".str");
+        File newStore = File.createTempFile("crt-", ".p12");
         ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
         ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
 

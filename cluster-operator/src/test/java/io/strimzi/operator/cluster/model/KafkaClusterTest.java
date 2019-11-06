@@ -1078,9 +1078,9 @@ public class KafkaClusterTest {
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateBrokerSecret(null, emptyMap());
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
@@ -1105,9 +1105,9 @@ public class KafkaClusterTest {
 
         Secret secret = generateBrokerSecret(Collections.singleton("123.10.125.140"), externalAddresses);
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
@@ -1133,9 +1133,9 @@ public class KafkaClusterTest {
 
         Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses);
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(

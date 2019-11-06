@@ -195,6 +195,8 @@ public class ModelUtils {
                 CertAndKey eoCertAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
                 data.put(keyCertName + ".key", eoCertAndKey.keyAsBase64String());
                 data.put(keyCertName + ".crt", eoCertAndKey.certAsBase64String());
+                data.put(keyCertName + ".p12", eoCertAndKey.keyStoreAsBase64String());
+                data.put(keyCertName + ".password", eoCertAndKey.storePasswordAsBase64String());
             } catch (IOException e) {
                 log.warn("Error while generating certificates", e);
             }
@@ -202,6 +204,8 @@ public class ModelUtils {
         } else {
             data.put(keyCertName + ".key", secret.getData().get(keyCertName + ".key"));
             data.put(keyCertName + ".crt", secret.getData().get(keyCertName + ".crt"));
+            data.put(keyCertName + ".p12", secret.getData().get(keyCertName + ".p12"));
+            data.put(keyCertName + ".password", secret.getData().get(keyCertName + ".password"));
         }
         return createSecret(secretName, namespace, labels, ownerReference, data);
     }
