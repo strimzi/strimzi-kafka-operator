@@ -20,5 +20,5 @@ The operator will create the topic corresponding to "my-topic" and also store a 
 The private copy allows the operator to cope with scenarios where the topic configuration gets changed both in Kafka and in Kubernetes, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values).
 In the case of incompatible changes, the Kafka configuration wins, and the `KafkaTopic` will be updated to reflect that.
 
-The private copy is held in the same {Zookeeper} ensemble used by Kafka itself.
-This mitigates availability concerns, because if {Zookeeper} is not running then Kafka itself cannot run, so the operator will be no less available than it would even if it was stateless.
+The private copy is held in the same ZooKeeper ensemble used by Kafka itself.
+This mitigates availability concerns, because if ZooKeeper is not running then Kafka itself cannot run, so the operator will be no less available than it would even if it was stateless.

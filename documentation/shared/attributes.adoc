@@ -18,7 +18,6 @@
 :ContextProduct: strimzi
 :OpenShiftVersion: 3.11 and later
 :KubernetesVersion: 1.11 and later
-:Zookeeper: ZooKeeper
 :oauth: OAuth 2.0
 
 // Kafka upgrade attributes used in kafka upgrades section
@@ -66,7 +65,7 @@
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
 :ApacheKafkaBrokerConfig: link:http://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
-:ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[{Zookeeper} documentation^]
+:ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[ZooKeeper documentation^]
 :ApacheKafkaConsumerConfig: link:http://kafka.apache.org/20/documentation.html#newconsumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka configuration documentation for producers^]
 :ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]

@@ -3,17 +3,17 @@
 // assembly-deployment-configuration.adoc
 
 [id='proc-manual-delete-pod-pvc-zookeeper-{context}']
-= Deleting {Zookeeper} nodes manually
+= Deleting ZooKeeper nodes manually
 
-This procedure describes how to delete an existing {Zookeeper} node by using a Kubernetes annotation.
-Deleting a {Zookeeper} node consists of deleting both the `Pod` on which {Zookeeper} is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
+This procedure describes how to delete an existing ZooKeeper node by using a Kubernetes annotation.
+Deleting a ZooKeeper node consists of deleting both the `Pod` on which ZooKeeper is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
 After deletion, the `Pod` and its related `PersistentVolumeClaim` are recreated automatically.
 
 WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The following procedure should only be performed if you have encountered storage issues.
 
 .Prerequisites
 
-* A running {Zookeeper} cluster.
+* A running ZooKeeper cluster.
 * A running Cluster Operator.
 
 .Procedure
@@ -33,4 +33,4 @@ kubectl annotate pod _cluster-name_-zookeeper-_index_ strimzi.io/delete-pod-and-
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the {Zookeeper} cluster, see xref:deploying-kafka-cluster-str[].
+* For more information about deploying the ZooKeeper cluster, see xref:deploying-kafka-cluster-str[].

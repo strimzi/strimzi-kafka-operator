@@ -12,14 +12,14 @@ NOTE: The Topic Operator should be configured using the `Kafka.spec.entityOperat
 `STRIMZI_RESOURCE_LABELS`::
 The label selector used to identify `KafkaTopics` to be managed by the operator.
 `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`::
-The {Zookeeper} session timeout, in milliseconds.
+The ZooKeeper session timeout, in milliseconds.
 For example, `10000`.
 Default `20000` (20 seconds).
 `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`::
 The list of Kafka bootstrap servers.
 This variable is mandatory.
 `STRIMZI_ZOOKEEPER_CONNECT`::
-The {Zookeeper} connection information.
+The ZooKeeper connection information.
 This variable is mandatory.
 `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`::
 The interval between periodic reconciliations, in milliseconds.

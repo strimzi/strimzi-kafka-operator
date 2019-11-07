@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
-    
+
 # Generates documentation/book/snip-images.adoc
 # according to the values in kafka-versions
 
 . $(dirname $0)/../multi-platform-support.sh
 
-# Parse the Kafka versions file and get a list of version strings in an array 
+# Parse the Kafka versions file and get a list of version strings in an array
 # called "versions"
 get_kafka_versions
 
@@ -21,7 +21,7 @@ cat <<EOF
 |Kafka
 a|
 EOF
-for kafka_version in "${versions[@]}" 
+for kafka_version in "${versions[@]}"
 do
 echo "* {DockerOrg}/kafka:{DockerTag}-kafka-${kafka_version}"
 done
@@ -33,7 +33,7 @@ a|
 * Kafka Broker
 * Kafka Connect / S2I
 * Kafka Mirror Maker
-* {Zookeeper}
+* ZooKeeper
 * TLS Sidecars
 
 |Operator

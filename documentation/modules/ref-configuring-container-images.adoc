@@ -58,10 +58,10 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 * For Kafka broker TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaStunnel}` container image.
-* For {Zookeeper} nodes:
+* For ZooKeeper nodes:
 . Container image specified in the `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerZookeeper}` container image.
-* For {Zookeeper} node TLS sidecar:
+* For ZooKeeper node TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerZookeeperStunnel}` container image.
 * For Topic Operator:

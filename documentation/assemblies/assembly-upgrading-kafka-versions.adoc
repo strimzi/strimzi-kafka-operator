@@ -13,7 +13,7 @@ Kafka upgrades are performed using the Cluster Operator. How the Cluster Operato
 
 * Interbroker protocol
 * Log message format
-* {Zookeeper}
+* ZooKeeper
 
 When the versions are the same for the current and target Kafka version, as is typically the case for a patch level upgrade, the Cluster Operator can upgrade through a single rolling update of the Kafka brokers.
 

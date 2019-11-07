@@ -3,10 +3,10 @@
 // assembly-zookeeper-node-configuration.adoc
 
 [id='ref-zookeeper-node-configuration-{context}']
-= {Zookeeper} configuration
+= ZooKeeper configuration
 
-{Zookeeper} nodes are configured using the `config` property in `Kafka.spec.zookeeper`.
-This property contains the {Zookeeper} configuration options as keys.
+ZooKeeper nodes are configured using the `config` property in `Kafka.spec.zookeeper`.
+This property contains the ZooKeeper configuration options as keys.
 The values can be described using one of the following JSON types:
 
 * String
@@ -25,11 +25,11 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `requireClientAuthScheme`
 
 When one of the forbidden options is present in the `config` property, it is ignored and a warning message is printed to the Custer Operator log file.
-All other options are passed to {Zookeeper}.
+All other options are passed to ZooKeeper.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
-When invalid configuration is provided, the {Zookeeper} cluster might not start or might become unstable.
-In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the Cluster Operator will roll out the new configuration to all {Zookeeper} nodes.
+When invalid configuration is provided, the ZooKeeper cluster might not start or might become unstable.
+In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the Cluster Operator will roll out the new configuration to all ZooKeeper nodes.
 
 Selected options have default values:
 
@@ -40,7 +40,7 @@ Selected options have default values:
 
 These options will be automatically configured when they are not present in the `Kafka.spec.zookeeper.config` property.
 
-.An example showing {Zookeeper} configuration
+.An example showing ZooKeeper configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}

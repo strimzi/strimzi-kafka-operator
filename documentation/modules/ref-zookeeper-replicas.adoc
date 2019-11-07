@@ -3,9 +3,9 @@
 // assembly-zookeeper-replicas.adoc
 
 [id='ref-zookeeper-replicas-{context}']
-= Number of {Zookeeper} nodes
+= Number of ZooKeeper nodes
 
-The number of {Zookeeper} nodes can be configured using the `replicas` property in `Kafka.spec.zookeeper`.
+The number of ZooKeeper nodes can be configured using the `replicas` property in `Kafka.spec.zookeeper`.
 
 .An example showing replicas configuration
 [source,yaml,subs="attributes+"]
