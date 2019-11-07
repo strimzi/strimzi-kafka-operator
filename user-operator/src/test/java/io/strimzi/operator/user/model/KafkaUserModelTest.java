@@ -66,8 +66,12 @@ public class KafkaUserModelTest {
 
         assertEquals(ResourceUtils.NAMESPACE, model.namespace);
         assertEquals(ResourceUtils.NAME, model.name);
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND), model.labels);
-
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+                        .withKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName()
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME),
+                model.labels);
         KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
         assertEquals(quotas.getConsumerByteRate(), model.getQuotas().getConsumerByteRate());
         assertEquals(quotas.getProducerByteRate(), model.getQuotas().getProducerByteRate());
