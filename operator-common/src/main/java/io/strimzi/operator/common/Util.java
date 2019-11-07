@@ -11,6 +11,10 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
 
 public class Util {
@@ -71,5 +75,36 @@ public class Util {
         handler.handle(null);
 
         return fut;
+    }
+
+    /**
+     * Parse a map from String.
+     * For example a map of images {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}
+     * or a map with labels / annotations {@code key1=value1 key2=value2}.
+     *
+     * @param str The string to parse.
+     *
+     * @return The parsed map.
+     */
+    public static Map<String, String> parseMap(String str) {
+        if (str != null) {
+            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
+            HashMap<String, String> map = new HashMap<>();
+            while (tok.hasMoreTokens()) {
+                String record = tok.nextToken();
+                int endIndex = record.indexOf('=');
+
+                if (endIndex == -1)  {
+                    throw new RuntimeException("Failed to parse Map from String");
+                }
+
+                String key = record.substring(0, endIndex);
+                String value = record.substring(endIndex + 1);
+                map.put(key.trim(), value.trim());
+            }
+            return Collections.unmodifiableMap(map);
+        } else {
+            return Collections.emptyMap();
+        }
     }
 }

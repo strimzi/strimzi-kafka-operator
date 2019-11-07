@@ -6,6 +6,7 @@
 * Improve Kafka Exporter Grafana dashboard
 * Add sizeLimit option to ephemeral storage (#1505)
 * Add `schedulerName` to `podTemplate` (#2114)
+* Allow overriding the auto-detected Kubernetes version
 
 ## 0.14.0
 

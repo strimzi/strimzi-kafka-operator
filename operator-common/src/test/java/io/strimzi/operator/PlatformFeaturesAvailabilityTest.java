@@ -4,9 +4,10 @@
  */
 package io.strimzi.operator;
 
-
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
@@ -19,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -211,6 +213,24 @@ public class PlatformFeaturesAvailabilityTest {
 
         async.awaitSuccess();
         stopMockApi(context, mockHttp);
+    }
+
+    @Test
+    public void versionInfoFromMap(TestContext context) throws ParseException {
+        String version =  "major=1\n" +
+                "minor=16\n" +
+                "gitVersion=v1.16.2\n" +
+                "gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b\n" +
+                "gitTreeState=clean\n" +
+                "buildDate=2019-10-15T19:09:08Z\n" +
+                "goVersion=go1.12.10\n" +
+                "compiler=gc\n" +
+                "platform=linux/amd64";
+
+        VersionInfo vi = new VersionInfo(Util.parseMap(version));
+
+        context.assertEquals("1", vi.getMajor());
+        context.assertEquals("16", vi.getMinor());
     }
 
     public HttpServer startMockApi(TestContext context, String version, List<String> apis)   {
