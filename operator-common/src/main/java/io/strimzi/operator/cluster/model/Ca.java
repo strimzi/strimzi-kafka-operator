@@ -347,7 +347,7 @@ public abstract class Ca {
             Collection<String> currentSbjAltNames =
                     getSubjectAltNames(asCertAndKey(secret,
                                                 podName + ".key", podName + ".crt",
-                                            podName + ".p12", podName + ".password").cert());
+                                                podName + ".p12", podName + ".password").cert());
 
             if (currentSbjAltNames != null && desiredSbjAltNames.containsAll(currentSbjAltNames) && currentSbjAltNames.containsAll(desiredSbjAltNames))   {
                 log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
@@ -356,7 +356,7 @@ public abstract class Ca {
                         podName,
                         asCertAndKey(secret,
                                 podName + ".key", podName + ".crt",
-                            podName + ".p12", podName + ".password"));
+                                podName + ".p12", podName + ".password"));
             } else {
                 if (log.isTraceEnabled()) {
                     if (currentSbjAltNames != null) {

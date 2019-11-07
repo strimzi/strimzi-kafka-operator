@@ -135,9 +135,9 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
 
-        List<String> cmd = new ArrayList<>(asList("openssl", "pkcs12", "-export", "-in", certFile.getAbsolutePath(),
+        List<String> cmd = asList("openssl", "pkcs12", "-export", "-in", certFile.getAbsolutePath(),
                 "-inkey", keyFile.getAbsolutePath(), "-name", alias, "-out", keyStoreFile.getAbsolutePath(), "-passout",
-                "pass:" + keyStorePassword));
+                "pass:" + keyStorePassword);
 
         exec(cmd);
     }
