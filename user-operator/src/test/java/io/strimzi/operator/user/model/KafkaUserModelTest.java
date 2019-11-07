@@ -65,7 +65,7 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();
 
-        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key")));
+        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
