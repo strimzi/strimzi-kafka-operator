@@ -19,11 +19,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,7 +37,6 @@ class ConnectS2IST extends AbstractST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
-    @Tag(ACCEPTANCE)
     void testDeployS2IWithMongoDBPlugin() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
@@ -205,6 +202,6 @@ class ConnectS2IST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Duration.ofMinutes(5).toMillis()).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT,  Constants.RECONCILIATION_INTERVAL).done();
     }
 }
