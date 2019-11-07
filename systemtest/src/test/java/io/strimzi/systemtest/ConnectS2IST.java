@@ -38,7 +38,6 @@ class ConnectS2IST extends AbstractST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
-    @Tag(ACCEPTANCE)
     void testDeployS2IWithMongoDBPlugin() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
