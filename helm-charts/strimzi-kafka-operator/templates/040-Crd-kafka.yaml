@@ -33,7 +33,7 @@ spec:
     JSONPath: .spec.kafka.replicas
     type: integer
   - name: Desired ZK replicas
-    description: The desired number of Zookeeper replicas in the cluster
+    description: The desired number of ZooKeeper replicas in the cluster
     JSONPath: .spec.zookeeper.replicas
     type: integer
   subresources:

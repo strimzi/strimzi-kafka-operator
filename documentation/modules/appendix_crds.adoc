@@ -2213,3 +2213,4 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
 |string
 |====
+
