@@ -7,6 +7,7 @@ package io.strimzi.certs;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -27,7 +28,7 @@ public class SecretCertProviderTest {
 
     @BeforeAll
     public static void before() {
-        assertThat(System.getProperty("os.name").contains("nux"), is(true));
+        Assumptions.assumeTrue(System.getProperty("os.name").contains("nux"));
         ssl = new OpenSslCertManager();
         secretCertProvider = new SecretCertProvider();
         ownerReference = new OwnerReferenceBuilder()

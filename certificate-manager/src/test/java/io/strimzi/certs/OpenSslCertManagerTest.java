@@ -4,6 +4,7 @@
  */
 package io.strimzi.certs;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ public class OpenSslCertManagerTest {
 
     @BeforeAll
     public static void before() throws CertificateException {
-        assertThat(System.getProperty("os.name").contains("nux"), is(true));
+        Assumptions.assumeTrue(System.getProperty("os.name").contains("nux"));
         certFactory = CertificateFactory.getInstance("X.509");
         ssl = new OpenSslCertManager();
     }
