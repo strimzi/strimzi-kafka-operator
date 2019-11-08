@@ -12,19 +12,19 @@ public class KafkaResources {
     private KafkaResources() { }
 
     /**
-     * Returns the name of the Zookeeper {@code StatefulSet} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the ZooKeeper {@code StatefulSet} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Zookeeper {@code StatefulSet}.
+     * @return The name of the corresponding ZooKeeper {@code StatefulSet}.
      */
     public static String zookeeperStatefulSetName(String clusterName) {
         return clusterName + "-zookeeper";
     }
 
     /**
-     * Returns the name of the Zookeeper {@code Pod} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the ZooKeeper {@code Pod} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the Zookeeper pod
-     * @return The name of the corresponding Zookeeper {@code Pod}.
+     * @param podNum The number of the ZooKeeper pod
+     * @return The name of the corresponding ZooKeeper {@code Pod}.
      */
     public static String zookeeperPodName(String clusterName, int podNum) {
         return zookeeperStatefulSetName(clusterName) + "-" + podNum;
@@ -178,9 +178,9 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the Zookeeper metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the ZooKeeper metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Zookeeper metrics and log {@code ConfigMap}.
+     * @return The name of the corresponding ZooKeeper metrics and log {@code ConfigMap}.
      */
     public static String zookeeperMetricsAndLogConfigMapName(String clusterName) {
         return clusterName + "-zookeeper-config";

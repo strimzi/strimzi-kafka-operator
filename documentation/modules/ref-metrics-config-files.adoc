@@ -34,7 +34,7 @@ metrics
 <2> Grafana dashboard configuration
 <3> Grafana dashboard configuration specific to xref:assembly-kafka-exporter-{context}[Kafka Exporter]
 <4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
-<5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and Zookeeper
+<5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
 <6> Configuration to add roles for service monitoring
 <7> Hook definitions for sending notifications through Alertmanager
 <8> Resources for deploying and configuring Alertmanager

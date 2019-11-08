@@ -57,7 +57,7 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
         this.kafka = kafka;
     }
 
-    @Description("Configuration of the Zookeeper cluster")
+    @Description("Configuration of the ZooKeeper cluster")
     @JsonProperty(required = true)
     public ZookeeperClusterSpec getZookeeper() {
         return zookeeper;

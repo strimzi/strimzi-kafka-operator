@@ -9,7 +9,7 @@ Whether and how the Cluster Operator will perform a downgrade depends on the dif
 
 * The interbroker protocol version of the two Kafka versions
 * The log message format version of the two Kafka versions
-* The version of Zookeeper used by the two Kafka versions
+* The version of ZooKeeper used by the two Kafka versions
 
 If the downgraded version of Kafka has the same log message format version then downgrading is always possible.
 In this case the Cluster Operator will be able to downgrade by performing a single rolling restart of the brokers.

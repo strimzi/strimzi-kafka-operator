@@ -8,9 +8,9 @@
 [options="header"]
 |====
 |Property       |Description
-|spec    1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
+|spec    1.2+<.<|The specification of the Kafka and ZooKeeper clusters, and Topic Operator.
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
-|status  1.2+<.<|The status of the Kafka and Zookeeper clusters, and Topic Operator.
+|status  1.2+<.<|The status of the Kafka and ZooKeeper clusters, and Topic Operator.
 |xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |====
 
@@ -25,7 +25,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |Property                       |Description
 |kafka                   1.2+<.<|Configuration of the Kafka cluster.
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-|zookeeper               1.2+<.<|Configuration of the Zookeeper cluster.
+|zookeeper               1.2+<.<|Configuration of the ZooKeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |topicOperator           1.2+<.<|*The property `topicOperator` has been deprecated. This feature should now be configured at path `spec.entityOerator.topicOperator`.* Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
@@ -926,7 +926,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |storage         1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
-|config          1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme.
+|config          1.2+<.<|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme.
 |map
 |affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
@@ -946,11 +946,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging         1.2+<.<|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
-|template        1.2+<.<|Template for Zookeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
+|template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 |====
 
@@ -963,19 +963,19 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 [options="header"]
 |====
 |Property                      |Description
-|statefulset            1.2+<.<|Template for Zookeeper `StatefulSet`.
+|statefulset            1.2+<.<|Template for ZooKeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                    1.2+<.<|Template for Zookeeper `Pods`.
+|pod                    1.2+<.<|Template for ZooKeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|clientService          1.2+<.<|Template for Zookeeper client `Service`.
+|clientService          1.2+<.<|Template for ZooKeeper client `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|nodesService           1.2+<.<|Template for Zookeeper nodes `Service`.
+|nodesService           1.2+<.<|Template for ZooKeeper nodes `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|persistentVolumeClaim  1.2+<.<|Template for all Zookeeper `PersistentVolumeClaims`.
+|persistentVolumeClaim  1.2+<.<|Template for all ZooKeeper `PersistentVolumeClaims`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|podDisruptionBudget    1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
+|podDisruptionBudget    1.2+<.<|Template for ZooKeeper `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|zookeeperContainer     1.2+<.<|Template for the Zookeeper container.
+|zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |tlsSidecarContainer    1.2+<.<|Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -996,7 +996,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
 |affinity                        1.2+<.<|Pod affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
 
@@ -1073,7 +1073,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |string
 |reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
 |livenessProbe                   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
@@ -1104,7 +1104,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |string
 |reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
 |livenessProbe                   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]

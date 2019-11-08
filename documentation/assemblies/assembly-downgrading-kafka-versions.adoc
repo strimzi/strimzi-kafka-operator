@@ -13,7 +13,7 @@ Whether and how the Cluster Operator performs a downgrade depends on the differe
 
 * Interbroker protocol
 * Log message format
-* Zookeeper
+* ZooKeeper
 
 include::../modules/con-target-downgrade-version.adoc[leveloffset=+1]
 

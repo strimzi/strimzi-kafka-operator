@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of a Strimzi-managed Zookeeper "cluster".
+ * Representation of a Strimzi-managed ZooKeeper "cluster".
  */
 @Buildable(
         editableEnabled = false,
@@ -67,7 +67,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private ZookeeperClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
@@ -87,7 +87,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.storage = storage;
     }
 
-    @Description("Logging configuration for Zookeeper")
+    @Description("Logging configuration for ZooKeeper")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Logging getLogging() {
         return logging;
@@ -205,7 +205,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.tolerations = tolerations;
     }
 
-    @Description("Template for Zookeeper cluster resources. " +
+    @Description("Template for ZooKeeper cluster resources. " +
             "The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ZookeeperClusterTemplate getTemplate() {

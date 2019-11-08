@@ -17,7 +17,7 @@
 The following components of {ProductName} run inside a Virtual Machine (VM):
 
 * Apache Kafka
-* Apache Zookeeper
+* Apache ZooKeeper
 * Apache Kafka Connect
 * Apache Kafka Mirror Maker
 * {ProductName} Kafka Bridge

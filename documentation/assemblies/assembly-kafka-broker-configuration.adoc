@@ -18,7 +18,7 @@ You can specify and configure most of the options listed in the "Broker Configs"
 * Broker ID configuration
 * Configuration of log data directories
 * Inter-broker communication
-* Zookeeper connectivity
+* ZooKeeper connectivity
 
 These options are automatically configured by {ProductName}.
 

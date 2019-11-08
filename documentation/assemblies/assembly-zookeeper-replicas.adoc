@@ -8,25 +8,25 @@
 
 [id='assembly-zookeeper-replicas-{context}']
 
-= Zookeeper replicas
+= ZooKeeper replicas
 
-Zookeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven.
+ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven.
 
-The majority of nodes must be available in order to maintain an effective quorum. If the Zookeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working. Having a stable and highly available Zookeeper cluster is crucial for {ProductName}.
+The majority of nodes must be available in order to maintain an effective quorum. If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working. Having a stable and highly available ZooKeeper cluster is crucial for {ProductName}.
 
 Three-node cluster::
-A three-node Zookeeper cluster requires at least two nodes to be up and running in order to maintain the quorum.
+A three-node ZooKeeper cluster requires at least two nodes to be up and running in order to maintain the quorum.
 It can tolerate only one node being unavailable.
 
 Five-node cluster::
-A five-node Zookeeper cluster requires at least three nodes to be up and running in order to maintain the quorum.
+A five-node ZooKeeper cluster requires at least three nodes to be up and running in order to maintain the quorum.
 It can tolerate two nodes being unavailable.
 
 Seven-node cluster::
-A seven-node Zookeeper cluster requires at least four nodes to be up and running in order to maintain the quorum.
+A seven-node ZooKeeper cluster requires at least four nodes to be up and running in order to maintain the quorum.
 It can tolerate three nodes being unavailable.
 
-NOTE: For development purposes, it is also possible to run Zookeeper with a single node.
+NOTE: For development purposes, it is also possible to run ZooKeeper with a single node.
 
 Having more nodes does not necessarily mean better performance, as the costs to maintain the quorum will rise with the number of nodes in the cluster.
 Depending on your availability requirements, you can decide for the number of nodes to use.

@@ -83,7 +83,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
 
-    @Description("Timeout for the Zookeeper session")
+    @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
     public int getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;

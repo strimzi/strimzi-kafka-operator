@@ -64,7 +64,7 @@ In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap
 Its total memory usage will be approximately 8GiB.
 
 Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
-For Kafka and Zookeeper pods such allocation could cause unwanted latency.
+For Kafka and ZooKeeper pods such allocation could cause unwanted latency.
 For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
 
 .-server

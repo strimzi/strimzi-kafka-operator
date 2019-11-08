@@ -126,7 +126,7 @@ When persistent storage is used, it creates Persistent Volume Claims with the fo
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.
 
 `data-_cluster-name_-zookeeper-_idx_`::
-Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `_idx_`.
+Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`.
 
 == Log directories
 

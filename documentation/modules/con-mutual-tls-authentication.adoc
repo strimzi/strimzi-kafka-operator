@@ -6,7 +6,7 @@
 [id='con-mutual-tls-authentication-{context}']
 = Mutual TLS authentication
 
-Mutual TLS authentication is always used for the communication between Kafka brokers and Zookeeper pods.
+Mutual TLS authentication is always used for the communication between Kafka brokers and ZooKeeper pods.
 
 Mutual authentication or two-way authentication is when both the server and the client present certificates. {ProductName} can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication. When you configure mutual authentication, the broker authenticates the client and the client authenticates the broker.
 

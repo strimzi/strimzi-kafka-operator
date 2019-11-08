@@ -44,7 +44,7 @@ image::grafana_prometheus_data_source.png[Add Prometheus data source]
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
-After importing the dashboards, the Grafana dashboard homepage presents Kafka and Zookeeper dashboards.
+After importing the dashboards, the Grafana dashboard homepage presents Kafka and ZooKeeper dashboards.
 
 When the Prometheus server has been collecting metrics for a {ProductName} cluster for some time, the dashboards are populated.
 
@@ -52,6 +52,6 @@ When the Prometheus server has been collecting metrics for a {ProductName} clust
 [caption="Kafka dashboard"]
 image::grafana_kafka_dashboard.png[Kafka dashboard]
 
-.Zookeeper dashboard
-[caption="Zookeeper dashboard"]
-image::grafana_zookeeper_dashboard.png[Zookeeper dashboard]
+.ZooKeeper dashboard
+[caption="ZooKeeper dashboard"]
+image::grafana_zookeeper_dashboard.png[ZooKeeper dashboard]
