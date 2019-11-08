@@ -7,7 +7,6 @@ RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 
 release:
 	mkdir -p $(RELEASE_PATH)
-	$(CP) -r ./templates $(RELEASE_PATH)/
 	$(CP) -r ./kafka $(RELEASE_PATH)/
 	$(CP) -r ./kafka-connect $(RELEASE_PATH)/
 	$(CP) -r ./kafka-mirror-maker $(RELEASE_PATH)/

@@ -94,39 +94,6 @@ class KafkaST extends MessagingBaseST {
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
-    @OpenShiftOnly
-    void testDeployKafkaClusterViaTemplate() {
-        createCustomResources("../examples/templates/cluster-operator");
-        String appName = "strimzi-ephemeral";
-        Oc oc = (Oc) cmdKubeClient();
-        String clusterName = "openshift-my-cluster";
-        oc.newApp(appName, map("CLUSTER_NAME", clusterName));
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-
-        //Testing docker images
-        testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
-
-        //Testing labels
-        verifyLabelsForKafkaCluster(clusterName, appName);
-
-        LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
-        oc.deleteByName("Kafka", clusterName);
-
-        //Wait for kafka deletion
-        oc.waitForResourceDeletion("Kafka", clusterName);
-        kubeClient().listPods().stream()
-            .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-            .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
-
-        StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
-        StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
-        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
-        deleteCustomResources("../examples/templates/cluster-operator");
-    }
-
-    @Test
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
