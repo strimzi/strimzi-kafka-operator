@@ -233,6 +233,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         context.verify(() -> assertThat(vi.getMajor(), is("1")));
         context.verify(() -> assertThat(vi.getMinor(), is("16")));
+        context.completeNow();
     }
 
     public HttpServer startMockApi(VertxTestContext context, String version, List<String> apis) throws InterruptedException {
