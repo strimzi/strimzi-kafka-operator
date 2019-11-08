@@ -30,10 +30,10 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
     }
 
     @Test
@@ -85,10 +85,10 @@ public class ClusterOperatorConfigTest {
 
     private Map<String, String> envWithImages() {
         Map<String, String> envVars = new HashMap<>(2);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.1.0=foo 2.1.1=foo 2.2.0=foo 2.2.1=foo 2.3.0=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
         return envVars;
     }
 

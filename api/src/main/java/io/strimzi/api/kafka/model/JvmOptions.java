@@ -32,7 +32,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xmx;
     private String xms;
     private Boolean server;
-    private boolean gcLoggingEnabled = false;
+    private boolean gcLoggingEnabled = true;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

@@ -56,7 +56,7 @@ public class KafkaExporterTest {
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
     private final String exporterOperatorLogging = "debug";
-    private final String version = "2.3.0";
+    private final String version = "2.3.1";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     {

@@ -1532,7 +1532,7 @@ public class KafkaClusterTest {
                         .editOrNewTlsSidecar()
                             .withImage(null)
                         .endTlsSidecar()
-                        .withVersion("2.3.0")
+                        .withVersion("2.3.1")
                         .withImage(null)
                     .endKafka()
                 .endSpec()

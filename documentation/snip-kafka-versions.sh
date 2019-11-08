@@ -25,7 +25,7 @@ cat <<EOF
 EOF
 for i in "${!versions[@]}"
 do 
-    echo "| ${versions[$i]} | ${protocols[$i]} | ${formats[$i]} | 3.4.13"
+    echo "| ${versions[$i]} | ${protocols[$i]} | ${formats[$i]} | 3.4.14"
 done
 cat <<EOF
 |=================
