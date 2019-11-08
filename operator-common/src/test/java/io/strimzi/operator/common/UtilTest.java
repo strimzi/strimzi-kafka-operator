@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilTest {
     @Test
@@ -18,15 +20,15 @@ public class UtilTest {
                 "key2=value2";
 
         Map<String, String> m = parseMap(stringMap);
-        assertEquals(2, m.size());
-        assertEquals("value1", m.get("key1"));
-        assertEquals("value2", m.get("key2"));
+        assertThat(m.size(), is(2));
+        assertThat(m.get("key1"), is("value1"));
+        assertThat(m.get("key2"), is("value2"));
     }
 
     @Test
     public void testParseMapNull() {
         Map<String, String> m = parseMap(null);
-        assertEquals(0, m.size());
+        assertThat(m.size(), is(0));
     }
 
     @Test
@@ -34,7 +36,7 @@ public class UtilTest {
         String stringMap = "";
 
         Map<String, String> m = parseMap(null);
-        assertEquals(0, m.size());
+        assertThat(m.size(), is(0));
     }
 
     @Test
@@ -43,20 +45,22 @@ public class UtilTest {
                 "key2=";
 
         Map<String, String> m = parseMap(stringMap);
-        assertEquals(2, m.size());
-        assertEquals("value1", m.get("key1"));
-        assertEquals("", m.get("key2"));
+        assertThat(m.size(), is(2));
+        assertThat(m.get("key1"), is("value1"));
+        assertThat(m.get("key2"), is(""));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testParseMapInvalid() {
-        String stringMap = "key1=value1\n" +
-                "key2";
+        assertThrows(RuntimeException.class, () -> {
+            String stringMap = "key1=value1\n" +
+                    "key2";
 
-        Map<String, String> m = parseMap(stringMap);
-        assertEquals(2, m.size());
-        assertEquals("value1", m.get("key1"));
-        assertEquals("", m.get("key2"));
+            Map<String, String> m = parseMap(stringMap);
+            assertThat(m.size(), is(2));
+            assertThat(m.get("key1"), is("value1"));
+            assertThat(m.get("key2"), is(""));
+        });
     }
 
     @Test
@@ -65,8 +69,8 @@ public class UtilTest {
                 "key2=value2=value3";
 
         Map<String, String> m = parseMap(stringMap);
-        assertEquals(2, m.size());
-        assertEquals("value1", m.get("key1"));
-        assertEquals("value2=value3", m.get("key2"));
+        assertThat(m.size(), is(2));
+        assertThat(m.get("key1"), is("value1"));
+        assertThat(m.get("key2"), is("value2=value3"));
     }
 }
