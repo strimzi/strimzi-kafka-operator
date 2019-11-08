@@ -1,6 +1,6 @@
 FROM strimzi/base:latest
 
-ARG KAFKA_SHA512
+ARG KAFKA_DIST_DIR
 ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
 ARG strimzi_version
@@ -17,16 +17,8 @@ RUN useradd -r -m -u 1001 -g 0 kafka
 ENV KAFKA_HOME=/opt/kafka
 ENV KAFKA_VERSION=${KAFKA_VERSION}
 ENV STRIMZI_VERSION=${strimzi_version}
-ENV SCALA_VERSION=2.12
-ENV KAFKA_CHECKSUM="${KAFKA_SHA512}  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
 
-RUN curl -O https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
-    && echo $KAFKA_CHECKSUM > kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
-    && sha512sum --check kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
-    && mkdir $KAFKA_HOME \
-    && tar xvfz kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C $KAFKA_HOME --strip-components=1 \
-    && rm -f kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz*
-
+COPY $KAFKA_DIST_DIR $KAFKA_HOME
 COPY ./scripts/ $KAFKA_HOME
 
 #####

@@ -8,14 +8,12 @@
 
 # Format of this file:
 #   <version> is the kafka version number
-#   <default> when `true` this is the version to be used by the CO by default when a `Kafka` resource lacks an explicit version. 
-#             Only one Kafka version can be marked as default.
+#   <default> when `true` this is the version to be used by the CO by default when a `Kafka` resource lacks an explicit version. Only one Kafka version can be marked as default.
 #   <protocol> is the default `inter.broker.protocol.version` used by this Kafka version
 #   <format> is the default `log.message.format.version` used by this Kafka version
-#   <checksum> is the SHA512 checksum of the Kafka binary downloaded from apache.org
+#   <url> is the remote (using prefix 'http://' or 'https://') or local (using prefix 'file://') address of the Kafka binary tar archive for this version of Kafka. When using a local file path the absolute path to the binary archive should be used. It is assumed in both cases that the name of the file forms the last section of the path.
+#   <checksum> is the SHA512 checksum of the Kafka binary which is specified in the 'url' field.
 #   <third-party-libs> is the version string for the third party libraries
-
-# NOTICE: If you change the default here, you should also change it in documentation/book/common/attributes.adoc
 
 #- version: 1.0.2
   #format: 1.0     
@@ -32,12 +30,14 @@
 - version: 2.2.1 
   format: 2.2     
   protocol: 2.2   
+  url: https://archive.apache.org/dist/kafka/2.2.1/kafka_2.12-2.2.1.tgz
   checksum: B8D828F06DFE59E34C4CFA20C57C8C8B43374F1E7C09F12DFA5433534A380BFE09A6DE90FB86A4403939A87AB9C665E2369143C138C71391B01BBB9B384E7AC5  
   third-party-libs: 2.2.x
   default: false
 - version: 2.3.0
   format: 2.3     
   protocol: 2.3   
+  url: https://archive.apache.org/dist/kafka/2.3.0/kafka_2.12-2.3.0.tgz
   checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E   
   third-party-libs: 2.3.x
   default: true
