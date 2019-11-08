@@ -73,8 +73,8 @@ public class KafkaAvailabilityTest {
                         if (!IntStream.of(this.replicaOn).anyMatch(x -> x == this.leader)) {
                             throw new RuntimeException("Leader must be one of the replicas");
                         }
-                        if (IntStream.of(this.isr).anyMatch(x -> x == this.leader)) {
-                            throw new RuntimeException("ISR must not include the leader");
+                        if (!IntStream.of(this.isr).anyMatch(x -> x == this.leader)) {
+                            throw new RuntimeException("ISR must include the leader");
                         }
                     }
                     if (!IntStream.of(this.isr).allMatch(x -> IntStream.of(this.replicaOn).anyMatch(y -> x == y))) {
@@ -204,7 +204,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                     .replicaOn(0, 1)
                     .leader(0)
-                    .isr(1)
+                    .isr(0, 1)
                 .endPartition()
 
                 .endTopic()
@@ -213,7 +213,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                     .replicaOn(0, 1)
                     .leader(1)
-                    .isr()
+                    .isr(1)
                 .endPartition()
                 .endTopic()
 
@@ -244,25 +244,25 @@ public class KafkaAvailabilityTest {
     @Test
     public void atMinIsr(TestContext context) {
         KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .partition(0)
-                .replicaOn(0, 1)
-                .leader(0)
-                .isr(1)
+                    .replicaOn(0, 1)
+                    .leader(0)
+                    .isr(0, 1)
                 .endPartition()
 
-                .endTopic()
-                .topic("B", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+            .endTopic()
+            .topic("B", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .partition(0)
-                .replicaOn(0, 1)
-                .leader(1)
-                .isr(0)
+                    .replicaOn(0, 1)
+                    .leader(1)
+                    .isr(0, 1)
                 .endPartition()
 
-                .endTopic()
+            .endTopic()
 
-                .addBroker(2);
+        .addBroker(2);
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
 
@@ -277,8 +277,8 @@ public class KafkaAvailabilityTest {
                         context.assertTrue(ar.result(),
                                 "broker " + brokerId + " should be rollable, having no partitions");
                     } else {
-                        context.assertFalse(ar.result(),
-                                "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
+                        context.assertTrue(ar.result(),
+                                "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
                     }
                 }
                 async.complete();
@@ -293,7 +293,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                     .replicaOn(0, 1, 2)
                     .leader(0)
-                    .isr(1, 2)
+                    .isr(0, 1, 2)
                 .endPartition()
 
                 .endTopic()
@@ -302,7 +302,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                     .replicaOn(0, 1, 2)
                     .leader(1)
-                    .isr(0, 2)
+                    .isr(0, 1, 2)
                 .endPartition()
                 .endTopic()
 
@@ -319,6 +319,37 @@ public class KafkaAvailabilityTest {
                 } else {
                     context.assertTrue(ar.result(),
                             "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
+                }
+                async.complete();
+            });
+        }
+    }
+
+    @Test
+    public void minIsrEqualsReplicas(TestContext context) {
+        KSB ksb = new KSB().topic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(0)
+                .isr(0, 1, 2)
+                .endPartition()
+
+                .endTopic()
+
+                .addBroker(3);
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            Async async = context.async();
+
+            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
+                if (ar.failed()) {
+                    context.fail(ar.cause());
+                } else {
+                    context.assertTrue(ar.result(),
+                            "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
                 }
                 async.complete();
             });
@@ -371,7 +402,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                 .replicaOn(0, 1, 2)
                 .leader(0)
-                .isr(1, 2)
+                .isr(0, 1, 2)
                 .endPartition()
 
                 .endTopic()
@@ -380,7 +411,7 @@ public class KafkaAvailabilityTest {
                 .partition(0)
                 .replicaOn(0, 1, 2)
                 .leader(1)
-                .isr(0, 2)
+                .isr(1, 0, 2)
                 .endPartition()
                 .endTopic()
 

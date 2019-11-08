@@ -1675,8 +1675,12 @@ public class KafkaCluster extends AbstractModel {
     /**
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy() {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
+
+        if (namespaceAndPodSelectorNetworkPolicySupported) {
+
+        }
 
         // Restrict access to 9091 / replication port
         rules.add(new NetworkPolicyIngressRuleBuilder()
@@ -1685,6 +1689,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewPodSelector() // cluster operator
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                     .endPodSelector()
+                    .withNewNamespaceSelector().endNamespaceSelector()
                 .endFrom()
                 .addNewFrom()
                     .withNewPodSelector() // kafka cluster

@@ -102,17 +102,25 @@ class KafkaAvailability {
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
-                if (isr.size() < minIsr && contains(pi.replicas(), broker)) {
+                if (isr.size() < minIsr
+                        && contains(pi.replicas(), broker)) {
                     logIsrReplicas(td, pi, isr);
                     log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
                                     "so should not be restarted right now (it might be first to catch up).",
                             td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     return true;
-                } else if (isr.size() == minIsr && contains(isr, broker)) {
-                    logIsrReplicas(td, pi, isr);
-                    log.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
-                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
-                    return true;
+                } else if (isr.size() == minIsr
+                        && contains(isr, broker)) {
+                    if (minIsr < pi.replicas().size()) {
+                        logIsrReplicas(td, pi, isr);
+                        log.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
+                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                        return true;
+                    } else {
+                        log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} relicas.",
+                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                                pi.replicas().size());
+                    }
                 }
             }
         }
