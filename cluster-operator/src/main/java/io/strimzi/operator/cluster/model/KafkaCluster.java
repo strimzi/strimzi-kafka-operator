@@ -1678,35 +1678,34 @@ public class KafkaCluster extends AbstractModel {
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
+        // Restrict access to 9091 / replication port
         if (namespaceAndPodSelectorNetworkPolicySupported) {
-
+            rules.add(new NetworkPolicyIngressRuleBuilder()
+                    .addNewPort().withNewPort(REPLICATION_PORT).endPort()
+                    .addNewFrom()
+                        .withNewPodSelector() // cluster operator
+                            .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                        .endPodSelector()
+                        .withNewNamespaceSelector().endNamespaceSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // kafka cluster
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                        .endPodSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // entity operator
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                        .endPodSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // cluster operator
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                        .endPodSelector()
+                    .endFrom().build());
         }
 
-        // Restrict access to 9091 / replication port
-        rules.add(new NetworkPolicyIngressRuleBuilder()
-                .addNewPort().withNewPort(REPLICATION_PORT).endPort()
-                .addNewFrom()
-                    .withNewPodSelector() // cluster operator
-                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                    .endPodSelector()
-                    .withNewNamespaceSelector().endNamespaceSelector()
-                .endFrom()
-                .addNewFrom()
-                    .withNewPodSelector() // kafka cluster
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
-                    .endPodSelector()
-                .endFrom()
-                .addNewFrom()
-                    .withNewPodSelector() // entity operator
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
-                    .endPodSelector()
-                .endFrom()
-                .addNewFrom()
-                    .withNewPodSelector() // cluster operator
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
-                    .endPodSelector()
-                .endFrom()
-                .build());
+
 
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {

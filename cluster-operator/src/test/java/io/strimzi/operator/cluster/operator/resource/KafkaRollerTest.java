@@ -16,18 +16,18 @@ import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,6 +47,9 @@ import static io.vertx.core.Future.succeededFuture;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -53,18 +57,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
 
     private static Vertx vertx;
     private List<String> restarted;
 
-    @BeforeClass
+    @BeforeAll
     public static void startVertx() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stopVertx() {
         vertx.close();
     }
@@ -86,7 +90,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void controllerless(TestContext testContext) {
+    public void controllerless(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, -1);
@@ -96,7 +100,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void pod2IsController(TestContext testContext) {
+    public void pod2IsController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
@@ -106,7 +110,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void controllerChangesDuringRoll(TestContext testContext) {
+    public void controllerChangesDuringRoll(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet ss = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 0, 1);
@@ -116,7 +120,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void pod0NotReadyAfterRolling(TestContext testContext) {
+    public void pod0NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
             podId == 0 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
         );
@@ -131,7 +135,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void pod1NotReadyAfterRolling(TestContext testContext) {
+    public void pod1NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 1 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
         );
@@ -152,7 +156,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void pod3NotReadyAfterRolling(TestContext testContext) {
+    public void pod3NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 3 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
         );
@@ -173,7 +177,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void controllerNotReadyAfterRolling(TestContext testContext) {
+    public void controllerNotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 2 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
         );
@@ -194,7 +198,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void errorWhenOpeningAdminClient(TestContext testContext) {
+    public void errorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
@@ -210,7 +214,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void errorWhenGettingController(TestContext testContext) {
+    public void errorWhenGettingController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
@@ -226,7 +230,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void errorWhenClosingAdminClient(TestContext testContext) {
+    public void errorWhenClosingAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
@@ -242,7 +246,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void nonControllerNotInitiallyRollable(TestContext testContext) {
+    public void nonControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(3);
@@ -260,7 +264,7 @@ public class KafkaRollerTest {
     private static final Logger log = LogManager.getLogger(KafkaRollerTest.class);
 
     @Test
-    public void controllerNotInitiallyRollable(TestContext testContext) {
+    public void controllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(2);
@@ -282,7 +286,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void nonControllerNeverRollable(TestContext testContext) {
+    public void nonControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
@@ -310,7 +314,7 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void controllerNeverRollable(TestContext testContext) {
+    public void controllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null,
@@ -345,59 +349,60 @@ public class KafkaRollerTest {
             controllers);
     }
 
-    private void doSuccessfulRollingRestart(TestContext testContext, TestingKafkaRoller kafkaRoller,
+    private void doSuccessfulRollingRestart(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                     Collection<Integer> podsToRestart,
                                     List<Integer> expected) {
-        Async async = testContext.async();
+        Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName()))).setHandler(ar -> {
             if (ar.failed()) {
-                testContext.fail(new RuntimeException("Rolling failed", ar.cause()));
+                testContext.failNow(new RuntimeException("Rolling failed", ar.cause()));
             }
-            testContext.assertEquals(expected, restarted());
+            testContext.verify(() -> assertEquals(expected, restarted()));
             assertNoUnclosedAdminClient(testContext, kafkaRoller);
-            async.complete();
+            async.flag();
         });
     }
 
-    private void assertNoUnclosedAdminClient(TestContext testContext, TestingKafkaRoller kafkaRoller) {
+    private void assertNoUnclosedAdminClient(VertxTestContext testContext, TestingKafkaRoller kafkaRoller) {
         if (!kafkaRoller.unclosedAdminClients.isEmpty()) {
             Throwable alloc = kafkaRoller.unclosedAdminClients.values().iterator().next();
             alloc.printStackTrace(System.out);
-            testContext.fail(kafkaRoller.unclosedAdminClients.size() + " unclosed AdminClient instances");
+            testContext.verify(fail(kafkaRoller.unclosedAdminClients.size() + " unclosed AdminClient instances"));
         }
     }
 
-    private void doFailingRollingRestart(TestContext testContext, TestingKafkaRoller kafkaRoller,
+    private void doFailingRollingRestart(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                  Collection<Integer> podsToRestart,
                                  Class<? extends Throwable> exception, String message,
-                                 List<Integer> expectedRestart) {
-        Async async = testContext.async();
+                                 List<Integer> expectedRestart) throws InterruptedException {
+        CountDownLatch async = new CountDownLatch(1);
         AtomicReference<AsyncResult<Void>> arReference = new AtomicReference<>();
         kafkaRoller.rollingRestart(pod -> podsToRestart.contains(podName2Number(pod.getMetadata().getName())))
             .setHandler(ar -> {
                     arReference.set(ar);
-                    async.complete();
+                    async.countDown();
                 }
             );
         async.await();
         AsyncResult<Void> ar = arReference.get();
         if (ar.succeeded()) {
-            testContext.fail(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
+            testContext.failNow(new RuntimeException("Rolling succeeded. It should have failed", ar.cause()));
         }
-        testContext.assertTrue(exception.isAssignableFrom(ar.cause().getClass()),
+        assertTrue(exception.isAssignableFrom(ar.cause().getClass()),
                 ar.cause().getClass().getName() + " is not a subclass of " + exception.getName());
-        testContext.assertEquals(message, ar.cause().getMessage(),
+        assertEquals(message, ar.cause().getMessage(),
                 "The exception message was not as expected");
-        testContext.assertEquals(expectedRestart, restarted(),
+        assertEquals(expectedRestart, restarted(),
                 "The restarted pods were not as expected");
         assertNoUnclosedAdminClient(testContext, kafkaRoller);
+        testContext.completeNow();
     }
 
     public List<Integer> restarted() {
         return restarted.stream().map(KafkaRollerTest::podName2Number).collect(Collectors.toList());
     }
 
-    @Before
+    @BeforeEach
     public void clearRestarted() {
         restarted = new ArrayList<>();
     }
