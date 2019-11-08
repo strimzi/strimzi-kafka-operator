@@ -22,11 +22,11 @@ Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML fil
 
 {ProductName} includes several examples for deploying a Kafka cluster.
 
-* `kafka-persistent.yaml` deploys a persistent cluster with 3 Zookeeper and 3 Kafka nodes.
-* `kafka-jbod.yaml` deploys a persistent cluster with 3 Zookeeper and 3 Kafka nodes (each using multiple persistent volumes).
-* `kafka-persistent-single.yaml` deploys a persistent cluster with 1 Zookeeper and 1 Kafka nodes.
-* `kafka-ephemeral.yaml` deploys an ephemeral cluster with 3 Zookeeper and 3 Kafka nodes.
-* `kafka-ephemeral-single.yaml` deploys an ephemeral cluster with 3 Zookeeper and 1 Kafka nodes.
+* `kafka-persistent.yaml` deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
+* `kafka-jbod.yaml` deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
+* `kafka-persistent-single.yaml` deploys a persistent cluster with a single ZooKeeper node and a single Kafka node.
+* `kafka-ephemeral.yaml` deploys an ephemeral cluster with three ZooKeeper and three Kafka nodes.
+* `kafka-ephemeral-single.yaml` deploys an ephemeral cluster with three ZooKeeper nodes and a single Kafka node.
 
 The example clusters are named `my-cluster` by default.
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed. To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the resource in the relevant YAML file.
