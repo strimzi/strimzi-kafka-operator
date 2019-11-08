@@ -20,7 +20,7 @@ public class KafkaVersionTestUtils {
     public static final String KAFKA_CONNECT_S2I_IMAGE_STR = "strimzi/kafka-connect-s2i:latest-kafka-";
     public static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
 
-    public static final String LATEST_KAFKA_VERSION = "2.3.0";
+    public static final String LATEST_KAFKA_VERSION = "2.3.1";
     public static final String LATEST_FORMAT_VERSION = "2.3";
     public static final String LATEST_PROTOCOL_VERSION = "2.3";
     public static final String LATEST_CHECKSUM = "ABCD1234";
@@ -30,12 +30,11 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;
 
-
-    public static final String PREVIOUS_KAFKA_VERSION = "2.2.1";
-    public static final String PREVIOUS_FORMAT_VERSION = "2.2";
-    public static final String PREVIOUS_PROTOCOL_VERSION = "2.2";
+    public static final String PREVIOUS_KAFKA_VERSION = "2.3.0";
+    public static final String PREVIOUS_FORMAT_VERSION = "2.3";
+    public static final String PREVIOUS_PROTOCOL_VERSION = "2.3";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
-    public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.2.x";
+    public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.3.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
