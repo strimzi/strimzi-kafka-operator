@@ -41,6 +41,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -83,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorMockTest {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorMockTest.class);
@@ -255,7 +257,7 @@ public class KafkaAssemblyOperatorMockTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         ResourceOperatorSupplier supplier = supplierWithMocks();
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), supplier, config);
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
         CompletableFuture<Boolean> createAsync = new CompletableFuture<>();

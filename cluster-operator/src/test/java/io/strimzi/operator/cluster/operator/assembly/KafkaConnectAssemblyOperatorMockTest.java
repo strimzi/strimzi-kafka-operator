@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -91,6 +92,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
+                new PasswordGenerator(10, "a", "a"),
                 supplier,
                 config);
 

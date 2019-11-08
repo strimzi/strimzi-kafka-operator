@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
@@ -179,7 +180,7 @@ public class ResourceUtils {
     }
 
     public static ClusterCa createInitialClusterCa(String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
-        return new ClusterCa(new MockCertManager(), clusterName, initialClusterCaCert, initialClusterCaKey);
+        return new ClusterCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
     }
 
     public static ClientsCa createInitialClientsCa(String clusterNamespace, String clusterName) {
@@ -191,7 +192,7 @@ public class ResourceUtils {
     }
 
     public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
-        return new ClientsCa(new MockCertManager(),
+        return new ClientsCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 KafkaCluster.clientsCaCertSecretName(clusterName),
                 initialClientsCaCert,
                 KafkaCluster.clientsCaKeySecretName(clusterName),

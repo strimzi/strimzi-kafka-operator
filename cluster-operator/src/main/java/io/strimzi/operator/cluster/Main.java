@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperato
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -82,23 +83,29 @@ public class Main {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
+        PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+                "abcdefghijklmnopqrstuvwxyz" +
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                "abcdefghijklmnopqrstuvwxyz" +
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                        "0123456789");
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                certManager, resourceOperatorSupplier, config);
+                certManager, passwordGenerator, resourceOperatorSupplier, config);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
-                certManager, resourceOperatorSupplier, config);
+                certManager, passwordGenerator, resourceOperatorSupplier, config);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
-            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
+            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
         } else {
             log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
+                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
-                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
+                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {

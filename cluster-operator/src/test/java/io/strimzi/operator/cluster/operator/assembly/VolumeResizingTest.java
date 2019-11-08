@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.when;
 public class VolumeResizingTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_11;
     private final MockCertManager certManager = new MockCertManager();
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "testns";
@@ -125,6 +127,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -172,6 +175,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -228,6 +232,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -284,6 +289,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -343,6 +349,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -402,6 +409,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -463,6 +471,7 @@ public class VolumeResizingTest {
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config);
 
@@ -477,8 +486,8 @@ public class VolumeResizingTest {
 
     // This allows to test the resizing on its own without any other methods being called and mocked
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, supplier, config);
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
         }
 
         public Future<ReconciliationState> resizeVolumes(Reconciliation reconciliation, Kafka kafkaAssembly, List<PersistentVolumeClaim> pvcs, KafkaCluster kafkaCluster) {

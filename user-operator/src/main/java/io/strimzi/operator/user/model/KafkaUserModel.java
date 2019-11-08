@@ -107,7 +107,7 @@ public class KafkaUserModel {
                 throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
             }
 
-            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret,
+            result.maybeGenerateCertificates(certManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret,
                     UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
             result.maybeGeneratePassword(passwordGenerator, userSecret);
@@ -147,13 +147,14 @@ public class KafkaUserModel {
      * Manage certificates generation based on those already present in the Secrets
      *
      * @param certManager CertManager instance for handling certificates creation
+     * @param passwordGenerator PasswordGenerator instance for generating passwords
      * @param clientsCaCertSecret The clients CA certificate Secret.
      * @param clientsCaKeySecret The clients CA key Secret.
      * @param userSecret Secret with the user certificate
      * @param validityDays The number of days the certificate should be valid for.
      * @param renewalDays The renewal days.
      */
-    public void maybeGenerateCertificates(CertManager certManager,
+    public void maybeGenerateCertificates(CertManager certManager, PasswordGenerator passwordGenerator,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret,
                                           Secret userSecret, int validityDays, int renewalDays) {
         if (clientsCaCertSecret == null) {
@@ -161,7 +162,7 @@ public class KafkaUserModel {
         } else if (clientsCaKeySecret == null) {
             throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
         } else {
-            ClientsCa clientsCa = new ClientsCa(certManager,
+            ClientsCa clientsCa = new ClientsCa(certManager, passwordGenerator,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaCertSecret,
                     clientsCaCertSecret.getMetadata().getName(),

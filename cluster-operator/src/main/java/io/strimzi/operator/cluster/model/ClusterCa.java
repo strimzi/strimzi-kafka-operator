@@ -11,6 +11,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.common.PasswordGenerator;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,11 +34,12 @@ public class ClusterCa extends Ca {
 
     private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
-    public ClusterCa(CertManager certManager, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(certManager, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
+    public ClusterCa(CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
+        this(certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
     }
 
     public ClusterCa(CertManager certManager,
+                     PasswordGenerator passwordGenerator,
                      String clusterName,
                      Secret clusterCaCert,
                      Secret clusterCaKey,
@@ -45,7 +47,7 @@ public class ClusterCa extends Ca {
                      int renewalDays,
                      boolean generateCa,
                      CertificateExpirationPolicy policy) {
-        super(certManager, "cluster-ca",
+        super(certManager, passwordGenerator, "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
                 AbstractModel.clusterCaKeySecretName(clusterName),

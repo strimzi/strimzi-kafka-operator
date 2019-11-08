@@ -54,6 +54,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -146,6 +147,7 @@ public class KafkaAssemblyOperatorTest {
     private static TopicOperatorSpec toConfig;
     private static EntityOperatorSpec eoConfig;
     private static MockCertManager certManager = new MockCertManager();
+    private static PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 
     public static class Params {
         private final boolean openShift;
@@ -348,7 +350,7 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private void createCluster(VertxTestContext context, Kafka clusterCm, List<Secret> secrets) {
-        ClusterCa clusterCa = new ClusterCa(new MockCertManager(), clusterCm.getMetadata().getName(),
+        ClusterCa clusterCa = new ClusterCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterCm.getMetadata().getName(),
                 findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
                 findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm, VERSIONS);
@@ -518,6 +520,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config) {
             @Override
@@ -1031,6 +1034,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config) {
             @Override
@@ -1152,6 +1156,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config) {
             @Override
@@ -1236,6 +1241,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
+                passwordGenerator,
                 supplier,
                 config) {
             @Override

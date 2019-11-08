@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -57,18 +58,19 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     private final KafkaVersion.Lookup versions;
 
     /**
-     * @param vertx                     The Vertx instance
-     * @param pfa                       Platform features availability properties
-     * @param certManager               Certificate manager
-     * @param supplier                  Supplies the operators for different resources
-     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param vertx The Vertx instance
+     * @param pfa Platform features availability properties
+     * @param certManager Certificate manager
+     * @param passwordGenerator Password generator
+     * @param supplier Supplies the operators for different resources
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                           CertManager certManager,
+                                           CertManager certManager, PasswordGenerator passwordGenerator,
                                            ResourceOperatorSupplier supplier,
                                            ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, certManager, supplier.connectS2IOperator, supplier, config);
+        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, certManager, passwordGenerator, supplier.connectS2IOperator, supplier, config);
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;

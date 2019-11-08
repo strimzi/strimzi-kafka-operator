@@ -22,6 +22,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -85,6 +86,12 @@ public class CertificateRenewalTest {
     private String clusterCaStorePassword = "123456";
     private Vertx vertx = Vertx.vertx();
     private OpenSslCertManager certManager = new OpenSslCertManager();
+    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+            "abcdefghijklmnopqrstuvwxyz" +
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "abcdefghijklmnopqrstuvwxyz" +
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                    "0123456789");
     private List<Secret> secrets = new ArrayList();
 
     @BeforeEach
@@ -124,7 +131,7 @@ public class CertificateRenewalTest {
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager, passwordGenerator,
                 new ResourceOperatorSupplier(null, null, null,
                         null, null, secretOps, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null),
