@@ -35,8 +35,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,11 +45,11 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaBridgeClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -77,9 +76,6 @@ public class KafkaBridgeClusterTest {
             .build();
     private final KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
-    @Rule
-    public ResourceTester<KafkaBridge, KafkaBridgeCluster> resourceTester = new ResourceTester<>(KafkaBridge.class, VERSIONS, KafkaBridgeCluster::fromCrd);
-
     @Test
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kbc.generateMetricsAndLogConfigMap(null);
@@ -87,7 +83,7 @@ public class KafkaBridgeClusterTest {
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
+        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
     }
 
     private Map<String, String> expectedLabels(String name)    {
@@ -128,41 +124,41 @@ public class KafkaBridgeClusterTest {
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridgeCluster(namespace, cluster), VERSIONS);
 
-        assertEquals("strimzi/kafka-bridge:latest", kbc.image);
-        assertEquals(KafkaBridgeCluster.DEFAULT_REPLICAS, kbc.replicas);
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.readinessProbeOptions.getInitialDelaySeconds());
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.readinessProbeOptions.getTimeoutSeconds());
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.livenessProbeOptions.getInitialDelaySeconds());
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.livenessProbeOptions.getTimeoutSeconds());
+        assertThat(kbc.image, is("strimzi/kafka-bridge:latest"));
+        assertThat(kbc.replicas, is(KafkaBridgeCluster.DEFAULT_REPLICAS));
+        assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
     }
 
     @Test
     public void testFromCrd() {
-        assertEquals(replicas, kbc.replicas);
-        assertEquals(image, kbc.image);
-        assertEquals(healthDelay, kbc.readinessProbeOptions.getInitialDelaySeconds());
-        assertEquals(healthTimeout, kbc.readinessProbeOptions.getTimeoutSeconds());
-        assertEquals(healthDelay, kbc.livenessProbeOptions.getInitialDelaySeconds());
-        assertEquals(healthTimeout, kbc.livenessProbeOptions.getTimeoutSeconds());
+        assertThat(kbc.replicas, is(replicas));
+        assertThat(kbc.image, is(image));
+        assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
+        assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
+        assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
+        assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
     }
 
     @Test
     public void testEnvVars()   {
-        assertEquals(getExpectedEnvVars(), kbc.getEnvVars());
+        assertThat(kbc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @Test
     public void testGenerateService()   {
         Service svc = kbc.generateService();
 
-        assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(expectedLabels(kbc.getServiceName()), svc.getMetadata().getLabels());
-        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
-        assertEquals(2, svc.getSpec().getPorts().size());
-        assertEquals(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
-        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
-        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
-        assertEquals(emptyMap(), svc.getMetadata().getAnnotations());
+        assertThat(svc.getSpec().getType(), is("ClusterIP"));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kbc.getServiceName())));
+        assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(svc.getSpec().getPorts().size(), is(2));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getMetadata().getAnnotations(), is(emptyMap()));
         checkOwnerReference(kbc.createOwnerReference(), svc);
     }
 
@@ -170,29 +166,29 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = kbc.generateDeployment(new HashMap<String, String>(), true, null, null);
 
-        assertEquals(KafkaBridgeResources.deploymentName(cluster), dep.getMetadata().getName());
-        assertEquals(namespace, dep.getMetadata().getNamespace());
+        assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getNamespace(), is(namespace));
         Map<String, String> expectedLabels = expectedLabels();
-        assertEquals(expectedLabels, dep.getMetadata().getLabels());
-        assertEquals(expectedSelectorLabels(), dep.getSpec().getSelector().getMatchLabels());
-        assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
-        assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
-        assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(KafkaBridgeResources.deploymentName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
-        assertEquals(kbc.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
-        assertEquals(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
-        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
-        assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
-        assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
-        assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
-        assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
-        assertNull(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS));
+        assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
+        assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
+        assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaBridgeResources.deploymentName(cluster)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(kbc.image));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort(), is(new Integer(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal(), is(new Integer(1)));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal(), is(new Integer(0)));
+        assertThat(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS), is(nullValue()));
         checkOwnerReference(kbc.createOwnerReference(), dep);
     }
 
@@ -210,20 +206,16 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
-        assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-another-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret",
-                containers.get(0).getVolumeMounts().get(1).getMountPath());
-        assertEquals(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret",
-                containers.get(0).getVolumeMounts().get(2).getMountPath());
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
 
-        assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS));
-        assertEquals("true",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS), is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS), is("true"));
     }
 
     @Test
@@ -246,19 +238,15 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret",
-                containers.get(0).getVolumeMounts().get(2).getMountPath());
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
 
-        assertEquals("user-secret/user.crt",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_CERT));
-        assertEquals("user-secret/user.key",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_KEY));
-        assertEquals("true",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_CERT), is("user-secret/user.crt"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS_AUTH_KEY), is("user-secret/user.key"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS), is("true"));
     }
 
     @Test
@@ -282,8 +270,8 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
-        assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("my-secret"));
     }
 
     @Test
@@ -302,19 +290,15 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("user1-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret",
-                containers.get(0).getVolumeMounts().get(1).getMountPath());
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret"));
 
-        assertEquals("user1-secret/password",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE));
-        assertEquals("user1",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME));
-        assertEquals("scram-sha-512", 
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE), is("user1-secret/password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME), is("user1"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM), is("scram-sha-512"));
     }
 
     @Test
@@ -333,19 +317,15 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is("user1-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret",
-                containers.get(0).getVolumeMounts().get(1).getMountPath());
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret"));
 
-        assertEquals("user1-secret/password",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE));
-        assertEquals("user1",
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME));
-        assertEquals("plain", 
-                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE), is("user1-secret/password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME), is("user1"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM), is("plain"));
     }
 
     @Test
@@ -398,29 +378,29 @@ public class KafkaBridgeClusterTest {
 
         // Check Deployment
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
-        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
-        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
-        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
 
         // Check Service
         Service svc = kbc.generateService();
-        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
-        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
-        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
-        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
-        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
     @Test
@@ -437,7 +417,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
     }
 
     @Test
@@ -446,7 +426,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
     }
 
     @Test
@@ -466,9 +446,9 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -483,9 +463,9 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(this.resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, secrets);
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -505,9 +485,9 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
-        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -516,7 +496,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
     }
 
     @Test
@@ -533,10 +513,10 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
-        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
-        assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
-        assertEquals(Long.valueOf(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
     @Test
@@ -545,7 +525,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-        assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
     @Test
@@ -562,7 +542,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
-        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
     @Test
@@ -571,7 +551,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
-        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
+        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @Test
@@ -579,10 +559,10 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS, null);
-        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
         dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT, null);
-        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @Test
@@ -604,8 +584,8 @@ public class KafkaBridgeClusterTest {
 
         Deployment dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertEquals(limits, cont.getResources().getLimits());
-        assertEquals(requests, cont.getResources().getRequests());
+        assertThat(cont.getResources().getLimits(), is(limits));
+        assertThat(cont.getResources().getRequests(), is(requests));
     }
 
     @Test
@@ -639,12 +619,12 @@ public class KafkaBridgeClusterTest {
 
         List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
 
-        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
     }
 
     @Test
@@ -677,12 +657,12 @@ public class KafkaBridgeClusterTest {
 
         List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
 
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
     }
 
     @Test
@@ -703,10 +683,10 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue());
-        assertEquals("my-token-secret", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
-        assertEquals("my-token-key", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
-        assertTrue(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().isEmpty());
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-token-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-token-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().isEmpty(), is(true));
     }
 
     @Test
@@ -729,10 +709,11 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue());
-        assertEquals("my-token-secret", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
-        assertEquals("my-token-key", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
-        assertEquals(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server"), cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim());
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-token-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-token-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
     }
 
     @Test
@@ -755,44 +736,50 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue());
-        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
-        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
-        assertEquals(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server"), cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim());
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
     }
 
-    @Test(expected = InvalidResourceException.class)
+    @Test
     public void testGenerateDeploymentWithOAuthWithMissingClientSecret() {
-        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .build())
-                .endSpec()
-                .build();
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                    .editSpec()
+                        .withAuthentication(
+                                new KafkaClientAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withTokenEndpointUri("http://my-oauth-server")
+                                        .build())
+                    .endSpec()
+                    .build();
 
-        KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+            KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        });
     }
 
-    @Test(expected = InvalidResourceException.class)
+    @Test
     public void testGenerateDeploymentWithOAuthWithMissingUri() {
-        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .build())
-                .endSpec()
-                .build();
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                    .editSpec()
+                    .withAuthentication(
+                            new KafkaClientAuthenticationOAuthBuilder()
+                                    .withClientId("my-client-id")
+                                    .withNewClientSecret()
+                                        .withSecretName("my-secret-secret")
+                                        .withKey("my-secret-key")
+                                    .endClientSecret()
+                                    .build())
+                    .endSpec()
+                    .build();
 
-        KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+            KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        });
     }
+
 
     @Test
     public void testGenerateDeploymentWithOAuthWithTls() {
@@ -831,24 +818,25 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("oauth", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue());
-        assertEquals("my-secret-secret", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName());
-        assertEquals("my-secret-key", cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey());
-        assertEquals(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""), cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim());
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "")));
 
         // Volume mounts
-        assertEquals(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath());
-        assertEquals(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath());
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "first-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "second-certificate".equals(mount.getName())).findFirst().orElse(null).getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT));
 
         // Volumes
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
-        assertEquals("ca.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
-        assertEquals("first-certificate/ca.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
-        assertEquals("ca2.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getKey());
-        assertEquals("first-certificate/ca2.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getPath());
-        assertEquals(1, dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size());
-        assertEquals("tls.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey());
-        assertEquals("second-certificate/tls.crt", dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath());
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("ca.crt"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("first-certificate/ca.crt"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getKey(), is("ca2.crt"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "first-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(1).getPath(), is("first-certificate/ca2.crt"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("second-certificate/tls.crt"));
     }
 
     @Test
@@ -865,22 +853,22 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME), cont.getLivenessProbe().getHttpGet().getPort());
-        assertEquals(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME), cont.getReadinessProbe().getHttpGet().getPort());
-        assertEquals(new Integer(1874), cont.getPorts().get(0).getContainerPort());
-        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
-        assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
+        assertThat(cont.getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME)));
+        assertThat(cont.getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME)));
+        assertThat(cont.getPorts().get(0).getContainerPort(), is(new Integer(1874)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol(), is("TCP"));
 
         // Check ports on Service
         Service svc = kb.generateService();
 
-        assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(expectedLabels(kb.getServiceName()), svc.getMetadata().getLabels());
-        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
-        assertEquals(new Integer(1874), svc.getSpec().getPorts().get(0).getPort());
-        assertEquals(KafkaBridgeCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
-        assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
-        assertEquals(emptyMap(), svc.getMetadata().getAnnotations());
+        assertThat(svc.getSpec().getType(), is("ClusterIP"));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kb.getServiceName())));
+        assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(1874)));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getMetadata().getAnnotations(), is(emptyMap()));
         checkOwnerReference(kbc.createOwnerReference(), svc);
     }
 
@@ -905,12 +893,12 @@ public class KafkaBridgeClusterTest {
         Deployment dep = kb.generateDeployment(new HashMap<String, String>(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals(new Integer(20), cont.getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(21), cont.getLivenessProbe().getPeriodSeconds());
-        assertEquals(new Integer(22), cont.getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(30), cont.getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(31), cont.getReadinessProbe().getPeriodSeconds());
-        assertEquals(new Integer(32), cont.getReadinessProbe().getTimeoutSeconds());
+        assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(20)));
+        assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(new Integer(21)));
+        assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(new Integer(22)));
+        assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(30)));
+        assertThat(cont.getReadinessProbe().getPeriodSeconds(), is(new Integer(31)));
+        assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(new Integer(32)));
     }
 
     @Test
@@ -925,6 +913,6 @@ public class KafkaBridgeClusterTest {
         Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertEquals("jaeger", AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING));
+        assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is("jaeger"));
     }
 }

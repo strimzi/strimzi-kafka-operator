@@ -10,7 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -47,7 +48,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.bootstrapServers in body is required"));
+            assertThat(e.getMessage().contains("spec.bootstrapServers in body is required"), is(true));
         }
     }
 
@@ -56,7 +57,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-replicas.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.replicas in body must be of type integer: \"string\""));
+            assertThat(e.getMessage().contains("spec.replicas in body must be of type integer: \"string\""), is(true));
         }
     }
 
@@ -75,8 +76,8 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"));
-            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"));
+            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"), is(true));
         }
     }
 
@@ -100,7 +101,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.externalConfiguration.env.valueFrom in body is required"));
+            assertThat(e.getMessage().contains("spec.externalConfiguration.env.valueFrom in body is required"), is(true));
         }
     }
 

@@ -21,10 +21,8 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.mockkube.MockKube;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -35,23 +33,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static io.strimzi.test.TestUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(Parameterized.class)
 public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource & KubernetesResourceList,
         DT extends Doneable<RT>> {
 
-    private final Class<RT> cls;
-    private final Supplier<RT> factory;
-    private final Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp;
-    private final Consumer<MockKube> init;
     KubernetesClient client;
 
-    @Parameterized.Parameters(name = "{index}: {0}")
     @SuppressWarnings("unchecked")
     public static Iterable<Object[]> parameters() {
         return Arrays.<Object[]>asList(
@@ -87,18 +78,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
                 );
     }
 
-    public MockKubeTest(Class<RT> cls,
-                        Consumer<MockKube> init,
-                        Supplier<RT> factory,
-                        Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) {
-        this.cls = cls;
-        this.factory = factory;
-        this.mixedOp = mixedOp;
-        this.init = init;
-    }
-
-    @Before
-    public void createClient() throws MalformedURLException {
+    public void createClient(Consumer<MockKube> init) throws MalformedURLException {
         MockKube mockKube = new MockKube();
         init.accept(mockKube);
         client = mockKube.build();
@@ -142,126 +122,133 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         }
     }
 
-    private RT pod() {
-        return factory.get();
-    }
-
     private String expectedResourceExistsMessage(RT resource) {
         return resource.getKind() + " " + resource.getMetadata().getName() + " already exists";
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void podCreateDeleteUnscoped() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("parameters")
+    public void podCreateDeleteUnscoped(Class<RT> cls,
+                                        Consumer<MockKube> init,
+                                        Supplier<RT> factory,
+                                        Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+        createClient(init);
         MyWatcher w = new MyWatcher();
-        mixedOp().watch(w);
-        RT pod = pod();
+        mixedOp.apply(client).watch(w);
+        RT pod = factory.get();
 
         // Create
-        mixedOp().create(pod);
-        assertEquals(w.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(w.lastEvent().resource, pod);
+        mixedOp.apply(client).create(pod);
+        assertThat(w.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(w.lastEvent().resource, is(pod));
         try {
-            mixedOp().create(pod);
+            mixedOp.apply(client).create(pod);
             fail();
         } catch (KubernetesClientException e) {
-            assertEquals(expectedResourceExistsMessage(pod), e.getMessage());
+            assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
         }
 
         // Delete
-        assertTrue(mixedOp().delete(pod));
-        assertEquals(w.lastEvent().action, Watcher.Action.DELETED);
-        assertEquals(w.lastEvent().resource, pod);
-        assertFalse(mixedOp().delete(pod));
+        assertThat(mixedOp.apply(client).delete(pod), is(true));
+        assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
+        assertThat(w.lastEvent().resource, is(pod));
+        assertThat(mixedOp.apply(client).delete(pod), is(false));
 
         // TODO createOrReplace(), createOrReplaceWithName()
         // TODO delete(List)
     }
 
-    MixedOperation<RT, LT, DT, Resource<RT, DT>> mixedOp() {
-        return mixedOp.apply(client);
-    }
-
-    @Test
     @SuppressWarnings("unchecked")
-    public void podNameScopedCreateListGetDelete() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("parameters")
+    public void podNameScopedCreateListGetDelete(Class<RT> cls,
+                                                 Consumer<MockKube> init,
+                                                 Supplier<RT> factory,
+                                                 Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+        createClient(init);
         MyWatcher w = new MyWatcher();
-        mixedOp().watch(w);
-        RT pod = pod();
+        mixedOp.apply(client).watch(w);
+        RT pod = factory.get();
 
-        assertEquals(0, mixedOp().list().getItems().size());
+        assertThat(mixedOp.apply(client).list().getItems().size(), is(0));
 
         // Create
-        mixedOp().withName(pod.getMetadata().getName()).create(pod);
-        assertEquals(w.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(w.lastEvent().resource, pod);
+        mixedOp.apply(client).withName(pod.getMetadata().getName()).create(pod);
+        assertThat(w.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(w.lastEvent().resource, is(pod));
         try {
-            mixedOp().create(pod);
+            mixedOp.apply(client).create(pod);
             fail();
         } catch (KubernetesClientException e) {
-            assertEquals(expectedResourceExistsMessage(pod), e.getMessage());
+            assertThat(e.getMessage(), is(expectedResourceExistsMessage(pod)));
         }
 
         // List
-        List<RT> items = mixedOp().list().getItems();
-        assertEquals(1, items.size());
-        assertEquals(pod, items.get(0));
+        List<RT> items = mixedOp.apply(client).list().getItems();
+        assertThat(items.size(), is(1));
+        assertThat(items.get(0), is(pod));
 
         // List with namespace
-        items = mixedOp().inNamespace("other").list().getItems();
+        items = mixedOp.apply(client).inNamespace("other").list().getItems();
         // TODO assertEquals(0, items.size());
 
         // List with labels
-        items = mixedOp().withLabel("my-label").list().getItems();
-        assertEquals(1, items.size());
-        assertEquals(pod, items.get(0));
+        items = mixedOp.apply(client).withLabel("my-label").list().getItems();
+        assertThat(items.size(), is(1));
+        assertThat(items.get(0), is(pod));
 
-        items = mixedOp().withLabel("other-label").list().getItems();
-        assertEquals(0, items.size());
+        items = mixedOp.apply(client).withLabel("other-label").list().getItems();
+        assertThat(items.size(), is(0));
 
-        items = mixedOp().withLabel("my-label", "foo").list().getItems();
-        assertEquals(1, items.size());
-        assertEquals(pod, items.get(0));
+        items = mixedOp.apply(client).withLabel("my-label", "foo").list().getItems();
+        assertThat(items.size(), is(1));
+        assertThat(items.get(0), is(pod));
 
-        items = mixedOp().withLabel("my-label", "bar").list().getItems();
-        assertEquals(0, items.size());
+        items = mixedOp.apply(client).withLabel("my-label", "bar").list().getItems();
+        assertThat(items.size(), is(0));
 
-        items = mixedOp().withLabels(map("my-label", "foo", "my-other-label", "bar")).list().getItems();
-        assertEquals(1, items.size());
-        assertEquals(pod, items.get(0));
+        items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "bar")).list().getItems();
+        assertThat(items.size(), is(1));
+        assertThat(items.get(0), is(pod));
 
-        items = mixedOp().withLabels(map("my-label", "foo", "my-other-label", "gee")).list().getItems();
-        assertEquals(0, items.size());
+        items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "gee")).list().getItems();
+        assertThat(items.size(), is(0));
 
         // Get
-        RT gotResource = mixedOp().withName(pod.getMetadata().getName()).get();
-        assertEquals(pod, gotResource);
+        RT gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
+        assertThat(gotResource, is(pod));
 
         // Get with namespace
-        gotResource = mixedOp().inNamespace("other").withName(pod.getMetadata().getName()).get();
+        gotResource = mixedOp.apply(client).inNamespace("other").withName(pod.getMetadata().getName()).get();
         // TODO assertNull(gotResource);
 
         // Delete
-        assertTrue(mixedOp().withName(pod.getMetadata().getName()).delete());
-        assertEquals(w.lastEvent().action, Watcher.Action.DELETED);
-        assertEquals(w.lastEvent().resource, pod);
+        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).delete(), is(true));
+        assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
+        assertThat(w.lastEvent().resource, is(pod));
 
-        items = mixedOp().list().getItems();
-        assertEquals(0, items.size());
+        items = mixedOp.apply(client).list().getItems();
+        assertThat(items.size(), is(0));
 
-        gotResource = mixedOp().withName(pod.getMetadata().getName()).get();
-        assertNull(gotResource);
+        gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
+        assertThat(gotResource, is(nullValue()));
 
-        assertFalse(mixedOp().withName(pod.getMetadata().getName()).delete());
+        assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).delete(), is(false));
 
         // TODO Delete off a withLabels query, delete off a inNamespace
         // TODO inAnyNamespace()
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void watches() {
-        RT pod = pod();
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("parameters")
+    public void watches(Class<RT> cls,
+                        Consumer<MockKube> init,
+                        Supplier<RT> factory,
+                        Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+        createClient(init);
+        RT pod = factory.get();
 
         MyWatcher all = new MyWatcher();
         MyWatcher namedMyPod = new MyWatcher();
@@ -272,33 +259,32 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         MyWatcher hasMyLabelBar = new MyWatcher();
         MyWatcher hasBothMyLabels = new MyWatcher();
         MyWatcher hasOnlyOneOfMyLabels = new MyWatcher();
-        mixedOp().watch(all);
-        mixedOp().withName(pod.getMetadata().getName()).watch(namedMyPod);
-        mixedOp().withName("your-pod").watch(namedYourPod);
-        mixedOp().withLabel("my-label").watch(hasMyLabel);
-        mixedOp().withLabel("your-label").watch(hasYourLabel);
-        mixedOp().withLabel("my-label", "foo").watch(hasMyLabelFoo);
-        mixedOp().withLabel("my-label", "bar").watch(hasMyLabelBar);
-        mixedOp().withLabels(map("my-label", "foo", "my-other-label", "bar")).watch(hasBothMyLabels);
-        mixedOp().withLabels(map("my-label", "foo", "your-label", "bar")).watch(hasOnlyOneOfMyLabels);
+        mixedOp.apply(client).watch(all);
+        mixedOp.apply(client).withName(pod.getMetadata().getName()).watch(namedMyPod);
+        mixedOp.apply(client).withName("your-pod").watch(namedYourPod);
+        mixedOp.apply(client).withLabel("my-label").watch(hasMyLabel);
+        mixedOp.apply(client).withLabel("your-label").watch(hasYourLabel);
+        mixedOp.apply(client).withLabel("my-label", "foo").watch(hasMyLabelFoo);
+        mixedOp.apply(client).withLabel("my-label", "bar").watch(hasMyLabelBar);
+        mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "bar")).watch(hasBothMyLabels);
+        mixedOp.apply(client).withLabels(map("my-label", "foo", "your-label", "bar")).watch(hasOnlyOneOfMyLabels);
 
-        mixedOp().withName(pod.getMetadata().getName()).create(pod);
+        mixedOp.apply(client).withName(pod.getMetadata().getName()).create(pod);
 
-        assertEquals(all.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(all.lastEvent().resource, pod);
-        assertEquals(namedMyPod.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(namedMyPod.lastEvent().resource, pod);
-        assertTrue(namedYourPod.events.isEmpty());
-        assertEquals(hasMyLabel.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(hasMyLabel.lastEvent().resource, pod);
-        assertTrue(hasYourLabel.events.isEmpty());
-        assertEquals(hasMyLabelFoo.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(hasMyLabelFoo.lastEvent().resource, pod);
-        assertTrue(hasMyLabelBar.events.isEmpty());
-        assertEquals(hasBothMyLabels.lastEvent().action, Watcher.Action.ADDED);
-        assertEquals(hasBothMyLabels.lastEvent().resource, pod);
-        assertTrue(hasOnlyOneOfMyLabels.events.isEmpty());
-
+        assertThat(all.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(all.lastEvent().resource, is(pod));
+        assertThat(namedMyPod.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(namedMyPod.lastEvent().resource, is(pod));
+        assertThat(namedYourPod.events.isEmpty(), is(true));
+        assertThat(hasMyLabel.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(hasMyLabel.lastEvent().resource, is(pod));
+        assertThat(hasYourLabel.events.isEmpty(), is(true));
+        assertThat(hasMyLabelFoo.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(hasMyLabelFoo.lastEvent().resource, is(pod));
+        assertThat(hasMyLabelBar.events.isEmpty(), is(true));
+        assertThat(hasBothMyLabels.lastEvent().action, is(Watcher.Action.ADDED));
+        assertThat(hasBothMyLabels.lastEvent().resource, is(pod));
+        assertThat(hasOnlyOneOfMyLabels.events.isEmpty(), is(true));
     }
 
     // TODO Test Deployment/StatefulSet creation causes ReplicaSet and Pod creation
@@ -306,7 +292,4 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     // TODO Test Pod with VCT causes PVC creation
 
     // TODO Test other resource types
-
-
-
 }

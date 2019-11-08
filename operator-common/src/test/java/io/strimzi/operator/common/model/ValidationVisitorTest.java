@@ -12,16 +12,18 @@ import io.strimzi.test.logging.TestLogger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ValidationVisitorTest {
 
     @Test
     public void testValidationErrorsAreLogged() {
         Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
-        assertNotNull(k);
+        assertThat(k, is(notNullValue()));
         TestLogger logger = new TestLogger((Logger) LogManager.getLogger(ValidationVisitorTest.class));
         HasMetadata resource = new KafkaBuilder()
                 .withNewMetadata()
@@ -47,7 +49,7 @@ public class ValidationVisitorTest {
     @Test
     public void testV1Beta1Deprecations() {
         Kafka k = TestUtils.fromYaml("/v1beta1Deprecations.yaml", Kafka.class, true);
-        assertNotNull(k);
+        assertThat(k, is(notNullValue()));
         TestLogger logger = new TestLogger((Logger) LogManager.getLogger(ValidationVisitorTest.class));
         HasMetadata resource = new KafkaBuilder()
                 .withNewMetadata()

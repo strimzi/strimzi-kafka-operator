@@ -27,17 +27,17 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 import java.util.List;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -51,12 +51,12 @@ public class VolumeResizingTest {
     private final String clusterName = "testkafka";
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
@@ -130,9 +130,9 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
-                    assertEquals(3, pvcCaptor.getAllValues().size());
-                    assertEquals(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), pvcCaptor.getAllValues());
+                    assertThat(res.succeeded(), is(true));
+                    assertThat(pvcCaptor.getAllValues().size(), is(3));
+                    assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
                 });
     }
 
@@ -177,9 +177,9 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
-                    assertEquals(3, pvcCaptor.getAllValues().size());
-                    assertEquals(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), pvcCaptor.getAllValues());
+                    assertThat(res.succeeded(), is(true));
+                    assertThat(pvcCaptor.getAllValues().size(), is(3));
+                    assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
                 });
     }
 
@@ -233,9 +233,9 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
-                    assertEquals(3, pvcCaptor.getAllValues().size());
-                    assertEquals(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), pvcCaptor.getAllValues());
+                    assertThat(res.succeeded(), is(true));
+                    assertThat(pvcCaptor.getAllValues().size(), is(3));
+                    assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
                 });
     }
 
@@ -289,9 +289,9 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
+                    assertThat(res.succeeded(), is(true));
                     // Resizing is not supported, we do not reconcile
-                    assertEquals(0, pvcCaptor.getAllValues().size());
+                    assertThat(pvcCaptor.getAllValues().size(), is(0));
                 });
     }
 
@@ -348,9 +348,9 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
+                    assertThat(res.succeeded(), is(true));
                     // The volumes are resizing => no reconciliation
-                    assertEquals(0, pvcCaptor.getAllValues().size());
+                    assertThat(pvcCaptor.getAllValues().size(), is(0));
                 });
     }
 
@@ -407,13 +407,13 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
+                    assertThat(res.succeeded(), is(true));
 
                     // The volumes are waiting for pod restart => no reconciliation
-                    assertEquals(0, pvcCaptor.getAllValues().size());
+                    assertThat(pvcCaptor.getAllValues().size(), is(0));
 
                     for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
-                        assertTrue(res.result().fsResizingRestartRequest.contains(kafkaCluster.getPodName(i)));
+                        assertThat(res.result().fsResizingRestartRequest.contains(kafkaCluster.getPodName(i)), is(true));
                     }
 
                 });
@@ -468,10 +468,10 @@ public class VolumeResizingTest {
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
                 kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
-                    assertTrue(res.succeeded());
+                    assertThat(res.succeeded(), is(true));
 
-                    assertEquals(3, pvcCaptor.getAllValues().size());
-                    assertEquals(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), pvcCaptor.getAllValues());
+                    assertThat(pvcCaptor.getAllValues().size(), is(3));
+                    assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
                 });
     }
 

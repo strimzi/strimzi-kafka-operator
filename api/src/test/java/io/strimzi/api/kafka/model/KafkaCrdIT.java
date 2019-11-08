@@ -11,7 +11,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -49,8 +50,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.zookeeper in body is required"));
-            assertTrue(e.getMessage().contains("spec.kafka in body is required"));
+            assertThat(e.getMessage().contains("spec.zookeeper in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.kafka in body is required"), is(true));
         }
     }
 
@@ -59,7 +60,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
+            assertThat(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"), is(true));
         }
     }
 
@@ -78,7 +79,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-null-maintenance.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.maintenanceTimeWindows in body must be of type string: \"null\""));
+            assertThat(e.getMessage().contains("spec.maintenanceTimeWindows in body must be of type string: \"null\""), is(true));
         }
     }
 
@@ -97,7 +98,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-tls-sidecar-invalid-loglevel.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"));
+            assertThat(e.getMessage().contains("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"), is(true));
         }
     }
 
@@ -111,7 +112,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-jbod-storage-on-zookeeper.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"));
+            assertThat(e.getMessage().contains("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"), is(true));
         }
     }
 
@@ -120,7 +121,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(Kafka.class, "Kafka-with-invalid-storage.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"));
+            assertThat(e.getMessage().contains("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"), is(true));
         }
     }
 

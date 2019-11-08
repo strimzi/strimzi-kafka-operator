@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Base for test classes where HTTP Bridge is used.
@@ -103,11 +104,11 @@ public class HttpBridgeBaseST extends MessagingBaseST {
 
     protected void checkSendResponse(JsonObject response, int messageCount) {
         JsonArray offsets = response.getJsonArray("offsets");
-        assertEquals(messageCount, offsets.size());
+        assertThat(offsets.size(), is(messageCount));
         for (int i = 0; i < messageCount; i++) {
             JsonObject metadata = offsets.getJsonObject(i);
-            assertEquals(0, metadata.getInteger("partition"));
-            assertEquals(i, metadata.getLong("offset"));
+            assertThat(metadata.getInteger("partition"), is(0));
+            assertThat(metadata.getLong("offset"), is(i));
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
     }

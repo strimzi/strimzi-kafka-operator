@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -20,16 +18,26 @@ import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static io.strimzi.test.BaseITST.cmdKubeClient;
+import static io.strimzi.test.BaseITST.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -37,7 +45,7 @@ import org.junit.runner.RunWith;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaCrdOperatorIT {
     protected static final Logger log = LogManager.getLogger(KafkaCrdOperatorIT.class);
 
@@ -45,46 +53,45 @@ public class KafkaCrdOperatorIT {
     protected static Vertx vertx;
     protected static KubernetesClient client;
     protected static CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
-    protected static String namespace;
-    protected static String defaultNamespace = "my-test-namespace";
+    protected static String namespace = "kafka-crd-it-namespace";
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
-            Assume.assumeTrue(e.getMessage(), false);
+            assumeTrue(false, e.getMessage());
         }
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
         kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
 
         log.info("Preparing namespace");
-        namespace = client.getNamespace();
-        if (namespace == null) {
-            Namespace ns = client.namespaces().withName(defaultNamespace).get();
-
-            if (ns == null) {
-                client.namespaces().create(new NamespaceBuilder()
-                        .withNewMetadata()
-                        .withName(defaultNamespace)
-                        .endMetadata()
-                        .build());
-            }
-
-            namespace = defaultNamespace;
+        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+            log.warn("Namespace {} is already created, going to delete it", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
+
+        log.info("Creating namespace: {}", namespace);
+        kubeClient().createNamespace(namespace);
+        cmdKubeClient().waitForResourceCreation("Namespace", namespace);
 
         log.info("Creating CRD");
         client.customResourceDefinitions().create(Crds.kafka());
         log.info("Created CRD");
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         if (client != null) {
             log.info("Deleting CRD");
             client.customResourceDefinitions().delete(Crds.kafka());
+        }
+        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+            log.warn("Deleting namespace {} after tests run", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
 
         if (vertx != null) {
@@ -132,35 +139,35 @@ public class KafkaCrdOperatorIT {
     }
 
     @Test
-    public void testUpdateStatus(TestContext context)    {
+    public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        Async versionAsync = context.async();
+        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
-                PlatformFeaturesAvailability pfa = pfaRes.result();
-                context.put("pfa", pfa);
-                versionAsync.complete();
+                pfa.set(pfaRes.result());
+                versionAsync.complete(true);
             } else {
-                context.fail(pfaRes.cause());
+                context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.awaitSuccess();
+        versionAsync.get(60, TimeUnit.SECONDS);
 
-        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
             return;
         }
 
         log.info("Creating resource");
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete();
+                createAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        createAsync.awaitSuccess();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -172,37 +179,38 @@ public class KafkaCrdOperatorIT {
                 .build();
 
         log.info("Updating resource status");
-        Async updateStatusAsync = context.async();
+        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
             if (res.succeeded())    {
                 kafkaOperator.getAsync(namespace, RESOURCE_NAME).setHandler(res2 -> {
                     if (res2.succeeded())    {
                         Kafka updated = res2.result();
 
-                        context.assertEquals("Ready", updated.getStatus().getConditions().get(0).getType());
-                        context.assertEquals("True", updated.getStatus().getConditions().get(0).getStatus());
+                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getType(), is("Ready")));
+                        context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getStatus(), is("True")));
 
-                        updateStatusAsync.complete();
+                        updateStatusAsync.complete(true);
                     } else {
-                        context.fail(res.cause());
+                        context.failNow(res.cause());
                     }
                 });
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        updateStatusAsync.awaitSuccess();
+        updateStatusAsync.get(60, TimeUnit.SECONDS);
 
         log.info("Deleting resource");
-        Async deleteAsync = context.async();
+        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete();
+                deleteAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        deleteAsync.awaitSuccess();
+        deleteAsync.get(60, TimeUnit.SECONDS);
+        context.completeNow();
     }
 
     /**
@@ -211,35 +219,35 @@ public class KafkaCrdOperatorIT {
      * @param context
      */
     @Test
-    public void testUpdateStatusWhileResourceDeleted(TestContext context)    {
+    public void testUpdateStatusWhileResourceDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        Async versionAsync = context.async();
+        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
-                PlatformFeaturesAvailability pfa = pfaRes.result();
-                context.put("pfa", pfa);
-                versionAsync.complete();
+                pfa.set(pfaRes.result());
+                versionAsync.complete(true);
             } else {
-                context.fail(pfaRes.cause());
+                context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.awaitSuccess();
+        versionAsync.get(60, TimeUnit.SECONDS);
 
-        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
             return;
         }
 
         log.info("Creating resource");
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete();
+                createAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        createAsync.awaitSuccess();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -251,23 +259,25 @@ public class KafkaCrdOperatorIT {
                 .build();
 
         log.info("Deleting resource");
-        Async deleteAsync = context.async();
+        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete();
+                deleteAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        deleteAsync.awaitSuccess();
+        deleteAsync.get(60, TimeUnit.SECONDS);
 
-        log.info("Updating resource status");
-        Async updateStatusAsync = context.async();
+        log.info("Updating deleted resource status");
+        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.assertFalse(res.succeeded());
-            updateStatusAsync.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(false)));
+            updateStatusAsync.complete(false);
         });
-        updateStatusAsync.awaitSuccess();
+        updateStatusAsync.get(60, TimeUnit.SECONDS);
+
+        context.completeNow();
     }
 
     /**
@@ -276,35 +286,35 @@ public class KafkaCrdOperatorIT {
      * @param context
      */
     @Test
-    public void testUpdateStatusWhileResourceUpdated(TestContext context)    {
+    public void testUpdateStatusWhileResourceUpdated(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        Async versionAsync = context.async();
+        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
-                PlatformFeaturesAvailability pfa = pfaRes.result();
-                context.put("pfa", pfa);
-                versionAsync.complete();
+                pfa.set(pfaRes.result());
+                versionAsync.complete(true);
             } else {
-                context.fail(pfaRes.cause());
+                context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.awaitSuccess();
+        versionAsync.get(60, TimeUnit.SECONDS);
 
-        if (((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
-            log.info("Kubernetes {} is too old", ((PlatformFeaturesAvailability) context.get("pfa")).getKubernetesVersion());
+        if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
+            log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
             return;
         }
 
         log.info("Creating resource");
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete();
+                createAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        createAsync.awaitSuccess();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -336,23 +346,24 @@ public class KafkaCrdOperatorIT {
         updateAsync.awaitSuccess();*/
 
         log.info("Updating resource status");
-        Async updateStatusAsync = context.async();
+        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
-            context.assertFalse(res.succeeded());
-            updateStatusAsync.complete();
+            context.verify(() -> assertThat(res.succeeded(), is(false)));
+            updateStatusAsync.complete(true);
         });
-        updateStatusAsync.awaitSuccess();
+        updateStatusAsync.get(60, TimeUnit.SECONDS);
 
         log.info("Deleting resource");
-        Async deleteAsync = context.async();
+        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete();
+                deleteAsync.complete(true);
             } else {
-                context.fail(res.cause());
+                context.failNow(res.cause());
             }
         });
-        deleteAsync.awaitSuccess();
+        deleteAsync.get(60, TimeUnit.SECONDS);
+        context.completeNow();
     }
 }
 

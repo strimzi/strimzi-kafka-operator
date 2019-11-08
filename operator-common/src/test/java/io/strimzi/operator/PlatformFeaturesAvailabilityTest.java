@@ -12,32 +12,34 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+
+@ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
     protected Vertx vertx;
 
-    @Before
+    @BeforeEach
     public void before() {
         vertx = Vertx.vertx();
     }
 
-    @After
+    @AfterEach
     public void after() {
         vertx.close();
     }
@@ -45,17 +47,17 @@ public class PlatformFeaturesAvailabilityTest {
     @Test
     public void networkPoliciesWithFancyCombinationTest() {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_8);
-        assertFalse(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(false));
         pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
-        assertFalse(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(false));
         pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_11);
-        assertTrue(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
         pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_12);
-        assertTrue(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
     }
 
     @Test
-    public void testVersionDetectionOpenShift39(TestContext context)  {
+    public void testVersionDetectionOpenShift39(VertxTestContext context) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
                 "  \"minor\": \"9\",\n" +
@@ -73,24 +75,24 @@ public class PlatformFeaturesAvailabilityTest {
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
 
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
-                context.assertEquals(KubernetesVersion.V1_9, res.result().getKubernetesVersion(), "Versions are not equal");
-                async.complete();
+                context.verify(() -> assertThat("Versions are not equal", res.result().getKubernetesVersion(), is(KubernetesVersion.V1_9)));
+                async.flag();
             } else {
-                context.fail("Failed to create PlatformFeaturesAvailability object");
-                async.complete();
+                context.failNow(new Throwable("Failed to create PlatformFeaturesAvailability object"));
+                async.flag();
             }
         });
 
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         stopMockApi(context, mockHttp);
     }
 
     @Test
-    public void testVersionDetectionMinikube114(TestContext context)  {
+    public void testVersionDetectionMinikube114(VertxTestContext context) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
                 "  \"minor\": \"14\",\n" +
@@ -108,24 +110,24 @@ public class PlatformFeaturesAvailabilityTest {
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
 
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
-                context.assertEquals(KubernetesVersion.V1_14, res.result().getKubernetesVersion(), "Versions are not equal");
-                async.complete();
+                context.verify(() -> assertThat("Versions are not equal", res.result().getKubernetesVersion(), is(KubernetesVersion.V1_14)));
+                async.flag();
             } else {
-                context.fail("Failed to create PlatformFeaturesAvailability object");
-                async.complete();
+                context.failNow(new Throwable("Failed to create PlatformFeaturesAvailability object"));
+                async.flag();
             }
         });
 
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         stopMockApi(context, mockHttp);
     }
 
     @Test
-    public void testApiDetectionOce(TestContext context)  {
+    public void testApiDetectionOce(VertxTestContext context) throws InterruptedException {
         List<String> apis = new ArrayList<>();
         apis.add("/apis/route.openshift.io/v1");
         apis.add("/apis/build.openshift.io/v1");
@@ -135,28 +137,28 @@ public class PlatformFeaturesAvailabilityTest {
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
 
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertTrue(pfa.hasRoutes());
-                context.assertTrue(pfa.hasBuilds());
-                context.assertFalse(pfa.hasImages());
-                context.assertFalse(pfa.hasApps());
-                async.complete();
+                context.verify(() -> assertThat(pfa.hasRoutes(), is(true)));
+                context.verify(() -> assertThat(pfa.hasBuilds(), is(true)));
+                context.verify(() -> assertThat(pfa.hasImages(), is(false)));
+                context.verify(() -> assertThat(pfa.hasApps(), is(false)));
+                async.flag();
             } else {
-                context.fail("Failed to create PlatformFeaturesAvailability object");
-                async.complete();
+                context.failNow(new Throwable("Failed to create PlatformFeaturesAvailability object"));
+                async.flag();
             }
         });
 
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         stopMockApi(context, mockHttp);
     }
 
     @Test
-    public void testApiDetectionOpenshift(TestContext context)  {
+    public void testApiDetectionOpenshift(VertxTestContext context) throws InterruptedException {
         List<String> apis = new ArrayList<>();
         apis.add("/apis/route.openshift.io/v1");
         apis.add("/apis/build.openshift.io/v1");
@@ -168,55 +170,55 @@ public class PlatformFeaturesAvailabilityTest {
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
 
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertTrue(pfa.hasRoutes());
-                context.assertTrue(pfa.hasBuilds());
-                context.assertTrue(pfa.hasImages());
-                context.assertTrue(pfa.hasApps());
-                async.complete();
+                context.verify(() -> assertThat(pfa.hasRoutes(), is(true)));
+                context.verify(() -> assertThat(pfa.hasBuilds(), is(true)));
+                context.verify(() -> assertThat(pfa.hasImages(), is(true)));
+                context.verify(() -> assertThat(pfa.hasApps(), is(true)));
+                async.flag();
             } else {
-                context.fail("Failed to create PlatformFeaturesAvailability object");
-                async.complete();
+                context.failNow(new Throwable("Failed to create PlatformFeaturesAvailability object"));
+                async.flag();
             }
         });
 
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         stopMockApi(context, mockHttp);
     }
 
     @Test
-    public void testApiDetectionKubernetes(TestContext context)  {
+    public void testApiDetectionKubernetes(VertxTestContext context) throws InterruptedException {
         HttpServer mockHttp = startMockApi(context, Collections.EMPTY_LIST);
 
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
 
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertFalse(pfa.hasRoutes());
-                context.assertFalse(pfa.hasBuilds());
-                context.assertFalse(pfa.hasImages());
-                context.assertFalse(pfa.hasApps());
-                async.complete();
+                context.verify(() -> assertThat(pfa.hasRoutes(), is(false)));
+                context.verify(() -> assertThat(pfa.hasBuilds(), is(false)));
+                context.verify(() -> assertThat(pfa.hasImages(), is(false)));
+                context.verify(() -> assertThat(pfa.hasApps(), is(false)));
+                async.flag();
             } else {
-                context.fail("Failed to create PlatformFeaturesAvailability object");
-                async.complete();
+                context.failNow(new Throwable("Failed to create PlatformFeaturesAvailability object"));
+                async.flag();
             }
         });
 
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         stopMockApi(context, mockHttp);
     }
 
     @Test
-    public void versionInfoFromMap(TestContext context) throws ParseException {
+    public void versionInfoFromMap(VertxTestContext context) throws ParseException {
         String version =  "major=1\n" +
                 "minor=16\n" +
                 "gitVersion=v1.16.2\n" +
@@ -229,12 +231,13 @@ public class PlatformFeaturesAvailabilityTest {
 
         VersionInfo vi = new VersionInfo(Util.parseMap(version));
 
-        context.assertEquals("1", vi.getMajor());
-        context.assertEquals("16", vi.getMinor());
+        context.verify(() -> assertThat(vi.getMajor(), is("1")));
+        context.verify(() -> assertThat(vi.getMinor(), is("16")));
+        context.completeNow();
     }
 
-    public HttpServer startMockApi(TestContext context, String version, List<String> apis)   {
-        Async start = context.async();
+    public HttpServer startMockApi(VertxTestContext context, String version, List<String> apis) throws InterruptedException {
+        Checkpoint start = context.checkpoint();
 
         HttpServer server = vertx.createHttpServer().requestHandler(request -> {
             if (HttpMethod.GET.equals(request.method()) && apis.contains(request.uri()))   {
@@ -246,18 +249,18 @@ public class PlatformFeaturesAvailabilityTest {
             }
         }).listen(0, res -> {
             if (res.succeeded())    {
-                start.complete();
+                start.flag();
             } else {
                 throw new RuntimeException(res.cause());
             }
         });
 
-        start.await();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
 
         return server;
     }
 
-    public HttpServer startMockApi(TestContext context, List<String> apis)    {
+    public HttpServer startMockApi(VertxTestContext context, List<String> apis) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
                 "  \"minor\": \"9\",\n" +
@@ -273,17 +276,17 @@ public class PlatformFeaturesAvailabilityTest {
         return startMockApi(context, version, apis);
     }
 
-    public void stopMockApi(TestContext context, HttpServer server) {
-        Async stop = context.async();
+    public void stopMockApi(VertxTestContext context, HttpServer server) throws InterruptedException {
+        Checkpoint stop = context.checkpoint();
 
         server.close(res -> {
             if (res.succeeded())    {
-                stop.complete();
+                stop.flag();
             } else {
                 throw new RuntimeException("Failed to stop Mock HTTP server");
             }
         });
 
-        stop.await();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
     }
 }

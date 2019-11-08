@@ -56,7 +56,8 @@ import java.util.zip.ZipInputStream;
 
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.BaseITST.kubeClient;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StUtils {
 
@@ -962,7 +963,7 @@ public class StUtils {
     public static void checkCOlogForUsedVariable(String varName) {
         LOGGER.info("Check if ClusterOperator logs already defined variable occurrence");
         String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
-        assertTrue(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"));
+        assertThat(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"), is(true));
         LOGGER.info("ClusterOperator logs contains proper warning");
     }
 

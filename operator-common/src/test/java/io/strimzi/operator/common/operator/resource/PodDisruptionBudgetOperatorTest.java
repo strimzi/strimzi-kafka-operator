@@ -17,11 +17,12 @@ import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxTestContext;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.matches;
@@ -69,7 +70,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
     }
 
     @Override
-    public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
+    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -90,20 +91,20 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
 
         AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<ReconcileResult<PodDisruptionBudget>> fut = op.createOrUpdate(resource());
         fut.setHandler(ar -> {
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockResource).get();
             verify(mockDeletable).delete();
             verify(mockResource).create(any());
             verify(mockResource, never()).patch(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());
-            async.complete();
+            async.flag();
         });
     }
 }

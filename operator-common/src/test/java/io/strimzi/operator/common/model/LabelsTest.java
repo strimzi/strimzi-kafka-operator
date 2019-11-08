@@ -4,15 +4,17 @@
  */
 package io.strimzi.operator.common.model;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class LabelsTest {
     @Test
@@ -24,50 +26,56 @@ public class LabelsTest {
         sourceMap.put("key2", "value2");
         Labels expected = Labels.fromMap(sourceMap);
 
-        Assert.assertEquals(expected, Labels.fromString(validLabels));
+        assertThat(Labels.fromString(validLabels), is(expected));
     }
 
     @Test
     public void testParseNullLabels()   {
         String validLabels = null;
-        assertEquals(Labels.EMPTY, Labels.fromString(validLabels));
+        assertThat(Labels.fromString(validLabels), is(Labels.EMPTY));
     }
 
     @Test
     public void testParseNullLabelsInFromMap()   {
-        assertEquals(Labels.EMPTY, Labels.fromMap(null));
+        assertThat(Labels.fromMap(null), is(Labels.EMPTY));
     }
 
     @Test
     public void testParseNullLabelsInUserLabels()   {
-        assertEquals(Labels.EMPTY, Labels.userLabels(null));
+        assertThat(Labels.userLabels(null), is(Labels.EMPTY));
     }
 
     @Test
     public void testParseEmptyLabels()   {
         String validLabels = "";
-        assertEquals(Labels.EMPTY, Labels.fromString(validLabels));
+        assertThat(Labels.fromString(validLabels), is(Labels.EMPTY));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testParseInvalidLabels1()   {
-        String invalidLabels = ",key1=value1,key2=value2";
+        assertThrows(IllegalArgumentException.class, () -> {
+            String invalidLabels = ",key1=value1,key2=value2";
 
-        Labels.fromString(invalidLabels);
+            Labels.fromString(invalidLabels);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testParseInvalidLabels2()   {
-        String invalidLabels = "key1=value1,key2=";
+        assertThrows(IllegalArgumentException.class, () -> {
+            String invalidLabels = "key1=value1,key2=";
 
-        Labels.fromString(invalidLabels);
+            Labels.fromString(invalidLabels);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testParseInvalidLabels3()   {
-        String invalidLabels = "key2";
+        assertThrows(IllegalArgumentException.class, () -> {
+            String invalidLabels = "key2";
 
-        Labels.fromString(invalidLabels);
+            Labels.fromString(invalidLabels);
+        });
     }
 
     @Test
@@ -85,7 +93,7 @@ public class LabelsTest {
         expected.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         expected.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
 
-        assertEquals(expected, labels.strimziLabels().toMap());
+        assertThat(labels.strimziLabels().toMap(), is(expected));
     }
 
     @Test
@@ -94,7 +102,7 @@ public class LabelsTest {
 
         // null user labels
         Labels nullLabels = start.withUserLabels(null);
-        assertEquals(start.toMap(), nullLabels.toMap());
+        assertThat(nullLabels.toMap(), is(start.toMap()));
 
         // Non-null values
         Map userLabels = new HashMap<String, String>(2);
@@ -106,7 +114,7 @@ public class LabelsTest {
         expected.putAll(userLabels);
 
         Labels nonNullLabels = start.withUserLabels(userLabels);
-        assertEquals(expected, nonNullLabels.toMap());
+        assertThat(nonNullLabels.toMap(), is(expected));
     }
 
     @Test
@@ -122,7 +130,7 @@ public class LabelsTest {
         String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
         userLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
 
-        
+
         // user labels should appear as if Kubernetes Domain labels are not present
         Map expectedUserLabels = new HashMap<String, String>(2);
         expectedUserLabels.put("key1", "value1");
@@ -135,17 +143,19 @@ public class LabelsTest {
         expected.putAll(expectedUserLabels);
 
         Labels labels = start.withUserLabels(userLabels);
-        assertEquals(expected, labels.toMap());
+        assertThat(labels.toMap(), is(expected));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWithInvalidUserLabels()   {
-        Map userLabelsWithStrimzi = new HashMap<String, String>(2);
-        userLabelsWithStrimzi.put("key1", "value1");
-        userLabelsWithStrimzi.put("key2", "value2");
-        userLabelsWithStrimzi.put("strimzi.io/something", "value3");
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map userLabelsWithStrimzi = new HashMap<String, String>(2);
+            userLabelsWithStrimzi.put("key1", "value1");
+            userLabelsWithStrimzi.put("key2", "value2");
+            userLabelsWithStrimzi.put("strimzi.io/something", "value3");
 
-        Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
+            Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
+        });
     }
 
     @Test
@@ -169,7 +179,7 @@ public class LabelsTest {
                 .build();
 
         Labels l = Labels.fromResource(kafka);
-        assertEquals(Labels.EMPTY, l);
+        assertThat(l, is(Labels.EMPTY));
     }
 
     @Test
@@ -205,6 +215,6 @@ public class LabelsTest {
         expectedLabels.put("key2", "value2");
 
         Labels l = Labels.fromResource(kafka);
-        assertEquals(expectedLabels, l.toMap());
+        assertThat(l.toMap(), is(expectedLabels));
     }
 }

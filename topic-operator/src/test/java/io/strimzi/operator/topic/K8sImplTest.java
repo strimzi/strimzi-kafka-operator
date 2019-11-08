@@ -13,11 +13,14 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,14 +29,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class K8sImplTest {
 
     private Vertx vertx = Vertx.vertx();
 
     @Test
-    public void testList(TestContext context) {
-        Async async = context.async();
+    public void testList(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockResources = mock(MixedOperation.class);
@@ -57,8 +60,8 @@ public class K8sImplTest {
                 ar.cause().printStackTrace();
             }
             List<KafkaTopic> list = ar.result();
-            context.assertFalse(list.isEmpty());
-            async.complete();
+            context.verify(() -> assertThat(list.isEmpty(), is(false)));
+            async.flag();
         });
     }
 }

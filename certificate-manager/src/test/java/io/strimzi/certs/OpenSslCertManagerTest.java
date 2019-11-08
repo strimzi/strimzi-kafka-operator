@@ -4,9 +4,8 @@
  */
 package io.strimzi.certs;
 
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,19 +22,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class OpenSslCertManagerTest {
 
     private static CertificateFactory certFactory;
     private static CertManager ssl;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() throws CertificateException {
-        Assume.assumeTrue(System.getProperty("os.name").contains("nux"));
+        assertThat(System.getProperty("os.name").contains("nux"), is(true));
         certFactory = CertificateFactory.getInstance("X.509");
         ssl = new OpenSslCertManager();
     }
@@ -105,14 +104,14 @@ public class OpenSslCertManagerTest {
                 X509Certificate x509Certificate = (X509Certificate) c;
                 Principal p = x509Certificate.getSubjectDN();
 
-                assertEquals(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), p.getName());
+                assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
                 if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
                     final Collection<List<?>> sans = x509Certificate.getSubjectAlternativeNames();
-                    assertNotNull(sans);
-                    assertEquals(sbj.subjectAltNames().size(), sans.size());
+                    assertThat(sans, is(notNullValue()));
+                    assertThat(sbj.subjectAltNames().size(), is(sans.size()));
                     for (final List<?> sanItem : sans) {
-                        assertTrue(sbj.subjectAltNames().containsValue(sanItem.get(1)));
+                        assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
                     }
                 }
             } else {
@@ -157,7 +156,7 @@ public class OpenSslCertManagerTest {
         csr.delete();
         cert.delete();
 
-        assertEquals(Files.list(path).count(), fileCount);
+        assertThat(Files.list(path).count(), is(fileCount));
     }
 
     @Test
@@ -209,13 +208,13 @@ public class OpenSslCertManagerTest {
             X509Certificate x509Certificate = (X509Certificate) c;
             Principal p = x509Certificate.getSubjectDN();
 
-            assertEquals(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), p.getName());
+            assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
             if (sbj != null && sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
                 final Collection<List<?>> snas = x509Certificate.getSubjectAlternativeNames();
                 if (snas != null) {
                     for (final List<?> sanItem : snas) {
-                        assertTrue(sbj.subjectAltNames().containsValue(sanItem.get(1)));
+                        assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
                     }
                 } else {
                     fail();

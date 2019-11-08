@@ -78,9 +78,9 @@
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.0</okhttp.version>
         <vertx.version>3.7.1</vertx.version>
+        <vertx-juni5.version>3.8.1</vertx-juni5.version>
         <log4j.version>2.11.1</log4j.version>
-        <junit.version>4.12</junit.version>
-        <hamcrest.version>1.3</hamcrest.version>
+        <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson-core.version>2.9.10</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.9.10.1</fasterxml.jackson-databind.version>
@@ -351,12 +351,6 @@
                 <type>test-jar</type>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
@@ -366,12 +360,6 @@
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-unit</artifactId>
                 <version>${vertx.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
-                <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -388,7 +376,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-library</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -602,9 +590,9 @@
                         <version>${jupiter.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>org.junit.vintage</groupId>
-                        <artifactId>junit-vintage-engine</artifactId>
-                        <version>${jupiter.version}</version>
+                        <groupId>io.vertx</groupId>
+                        <artifactId>vertx-junit5</artifactId>
+                        <version>${vertx-juni5.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -687,9 +675,8 @@
                                 <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
-                                <ignoredDependency>org.junit.vintage</ignoredDependency>
+                                <ignoredDependency>org.junit.platform</ignoredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

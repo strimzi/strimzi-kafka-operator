@@ -8,23 +8,25 @@ import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@Ignore
-@RunWith(VertxUnitRunner.class)
+@Disabled
+@ExtendWith(VertxExtension.class)
 public class ZkTopicStoreTest {
 
     private EmbeddedZooKeeper zkServer;
@@ -34,7 +36,7 @@ public class ZkTopicStoreTest {
     private ZkTopicStore store;
     private Zk zk;
 
-    @Before
+    @BeforeEach
     public void setup()
             throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
@@ -42,11 +44,10 @@ public class ZkTopicStoreTest {
         this.store = new ZkTopicStore(zk);
     }
 
-    @After
-    public void teardown(TestContext context) {
-        Async async = context.async();
-        zk.disconnect(ar -> async.complete());
-        async.await();
+    @AfterEach
+    public void teardown(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+        zk.disconnect(ar -> async.flag());
         if (this.zkServer != null) {
             this.zkServer.close();
         }
@@ -54,101 +55,91 @@ public class ZkTopicStoreTest {
     }
 
     @Test
-    public void testCrud(TestContext context) throws ExecutionException, InterruptedException {
+    public void testCrud(VertxTestContext context) throws ExecutionException, InterruptedException {
         Topic topic = new Topic.Builder("my_topic", 2,
                 (short) 3, Collections.singletonMap("foo", "bar")).build();
 
-
-
         // Create the topic
-        Async async0 = context.async();
+        Checkpoint async0 = context.checkpoint();
         store.create(topic).setHandler(ar -> {
-            async0.complete();
+            async0.flag();
         });
-        async0.await();
 
         // Read the topic
-        Async async1 = context.async();
+        Checkpoint async1 = context.checkpoint();
         Future<Topic> topicFuture = Future.future();
         store.read(new TopicName("my_topic")).setHandler(ar -> {
             topicFuture.complete(ar.result());
-            async1.complete();
-
+            async1.flag();
         });
-        async1.await();
         Topic readTopic = topicFuture.result();
 
         // assert topics equal
-        assertEquals(topic.getTopicName(), readTopic.getTopicName());
-        assertEquals(topic.getNumPartitions(), readTopic.getNumPartitions());
-        assertEquals(topic.getNumReplicas(), readTopic.getNumReplicas());
-        assertEquals(topic.getConfig(), readTopic.getConfig());
+        assertThat(readTopic.getTopicName(), is(topic.getTopicName()));
+        assertThat(readTopic.getNumPartitions(), is(topic.getNumPartitions()));
+        assertThat(readTopic.getNumReplicas(), is(topic.getNumReplicas()));
+        assertThat(readTopic.getConfig(), is(topic.getConfig()));
 
         // try to create it again: assert an error
         store.create(topic).setHandler(ar -> {
             if (ar.succeeded()) {
-                context.fail("Should throw");
+                context.failNow(new Throwable("Should throw"));
             } else {
                 if (!(ar.cause() instanceof TopicStore.EntityExistsException)) {
-                    context.fail(ar.cause().toString());
+                    context.failNow(ar.cause());
                 }
             }
         });
 
         // update my_topic
-        Async async2 = context.async();
+        Checkpoint async2 = context.checkpoint();
         Topic updated = new Topic.Builder(topic)
                 .withNumPartitions(3)
                 .withConfigEntry("fruit", "apple").build();
-        store.update(updated).setHandler(ar -> async2.complete());
-        async2.await();
+        store.update(updated).setHandler(ar -> async2.flag());
 
         // re-read it and assert equal
-        Async async3 = context.async();
+        Checkpoint async3 = context.checkpoint();
         Future<Topic> fut = Future.future();
         store.read(new TopicName("my_topic")).setHandler(ar -> {
             fut.complete(ar.result());
-            async3.complete();
+            async3.flag();
         });
-        async3.await();
         Topic rereadTopic = fut.result();
 
         // assert topics equal
-        assertEquals(updated.getTopicName(), rereadTopic.getTopicName());
-        assertEquals(updated.getNumPartitions(), rereadTopic.getNumPartitions());
-        assertEquals(updated.getNumReplicas(), rereadTopic.getNumReplicas());
-        assertEquals(updated.getConfig(), rereadTopic.getConfig());
+        assertThat(rereadTopic.getTopicName(), is(updated.getTopicName()));
+        assertThat(rereadTopic.getNumPartitions(), is(updated.getNumPartitions()));
+        assertThat(rereadTopic.getNumReplicas(), is(updated.getNumReplicas()));
+        assertThat(rereadTopic.getConfig(), is(updated.getConfig()));
 
         // delete it
-        Async async4 = context.async();
-        store.delete(updated.getTopicName()).setHandler(ar -> async4.complete());
-        async4.await();
+        Checkpoint async4 = context.checkpoint();
+        store.delete(updated.getTopicName()).setHandler(ar -> async4.flag());
 
         // assert we can't read it again
-        Async async5 = context.async();
+        Checkpoint async5 = context.checkpoint();
         store.read(new TopicName("my_topic")).setHandler(ar -> {
-            async5.complete();
+            async5.flag();
             if (ar.succeeded()) {
-                context.assertNull(ar.result());
+                context.verify(() -> assertThat(ar.result(), is(nullValue())));
             } else {
-                context.fail("read() on a non-existent topic should return null");
+                context.failNow(new Throwable("read() on a non-existent topic should return null"));
             }
         });
-        async5.await();
 
         // delete it again: assert an error
-        Async async6 = context.async();
+        Checkpoint async6 = context.checkpoint();
         store.delete(updated.getTopicName()).setHandler(ar -> {
-            async6.complete();
+            async6.flag();
             if (ar.succeeded()) {
-                context.fail("Should throw");
+                context.failNow(new Throwable("Should throw"));
             } else {
                 if (!(ar.cause() instanceof TopicStore.NoSuchEntityExistsException)) {
-                    context.fail("Unexpected exception " + ar.cause());
+                    context.failNow(new Throwable("Unexpected exception " + ar.cause()));
                 }
             }
         });
-        async6.await();
     }
 
 }

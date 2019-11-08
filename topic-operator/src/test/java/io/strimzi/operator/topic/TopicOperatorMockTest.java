@@ -15,33 +15,36 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMockTest.class);
@@ -58,7 +61,7 @@ public class TopicOperatorMockTest {
 
     // TODO this is all in common with TOIT, so factor out a common base class
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId);
@@ -71,10 +74,9 @@ public class TopicOperatorMockTest {
         }
     }
 
-    @Before
-    public void createMockKube(TestContext context) throws Exception {
-        Assume.assumeTrue("This test is flaky on Travis, for unknown reasons",
-                System.getenv("TRAVIS") == null);
+    @BeforeEach
+    public void createMockKube(VertxTestContext context) throws Exception {
+        assumeTrue(System.getenv("TRAVIS") == null, "This test is flaky on Travis, for unknown reasons");
         vertx = Vertx.vertx();
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.topic(),
@@ -100,20 +102,20 @@ public class TopicOperatorMockTest {
         m.put(io.strimzi.operator.topic.Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000");
         session = new Session(kubeClient, new io.strimzi.operator.topic.Config(m));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
                 topicsConfigWatcher = session.topicConfigsWatcher;
                 topicWatcher = session.topicWatcher;
                 topicsWatcher = session.topicsWatcher;
-                async.complete();
+                async.flag();
             } else {
                 ar.cause().printStackTrace();
-                context.fail("Failed to deploy session");
+                context.failNow(new Throwable("Failed to deploy session"));
             }
         });
-        async.awaitSuccess();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
 
         int timeout = 30_000;
 
@@ -149,7 +151,7 @@ public class TopicOperatorMockTest {
     }
 
     @Test
-    public void testCreatedWithoutTopicNameInKube(TestContext context) {
+    public void testCreatedWithoutTopicNameInKube(VertxTestContext context) throws InterruptedException {
         LOGGER.info("Test started");
 
         int retention = 100_000_000;
@@ -168,7 +170,7 @@ public class TopicOperatorMockTest {
         testCreatedInKube(context, kt);
     }
 
-    void testCreatedInKube(TestContext context, KafkaTopic kt) {
+    void testCreatedInKube(VertxTestContext context, KafkaTopic kt) throws InterruptedException {
         String kubeName = kt.getMetadata().getName();
         String kafkaName = kt.getSpec().getTopicName() != null ? kt.getSpec().getTopicName() : kubeName;
         int retention = (Integer) kt.getSpec().getConfig().get("retention.bytes");
@@ -179,13 +181,12 @@ public class TopicOperatorMockTest {
         waitUntilTopicExistsInKafka(kafkaName);
         LOGGER.info("Topic has been created");
         Topic fromKafka = getFromKafka(context, kafkaName);
-        context.assertEquals(kafkaName, fromKafka.getTopicName().toString());
+        context.verify(() -> assertThat(fromKafka.getTopicName().toString(), is(kafkaName)));
         //context.assertEquals(kubeName, fromKafka.getResourceName().toString());
         // Reconcile after no changes
         reconcile(context);
         // Check things still the same
-        Topic fromKafka2 = getFromKafka(context, kafkaName);
-        context.assertEquals(fromKafka, fromKafka2);
+        context.verify(() -> assertThat(fromKafka, is(getFromKafka(context, kafkaName))));
 
         // Config change + reconcile
         updateInKube(new KafkaTopicBuilder(kt).editSpec().addToConfig("retention.bytes", retention + 1).endSpec().build());
@@ -194,11 +195,9 @@ public class TopicOperatorMockTest {
         reconcile(context);
 
         // Check things still the same
-        fromKafka2 = getFromKafka(context, kafkaName);
-        context.assertEquals(new Topic.Builder(fromKafka)
-                            .withConfigEntry("retention.bytes", Integer.toString(retention + 1))
-                        .build(),
-                fromKafka2);
+        context.verify(() -> assertThat(getFromKafka(context, kafkaName), is(new Topic.Builder(fromKafka)
+                .withConfigEntry("retention.bytes", Integer.toString(retention + 1))
+                .build())));
 
         // Reconcile after change #partitions change
         // Check things still the same
@@ -212,19 +211,19 @@ public class TopicOperatorMockTest {
         // Check things still the same
     }
 
-    Topic getFromKafka(TestContext context, String topicName) {
+    Topic getFromKafka(VertxTestContext context, String topicName) throws InterruptedException {
         AtomicReference<Topic> ref = new AtomicReference<>();
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(new TopicName(topicName));
         kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).setHandler(fromKafka -> {
             if (fromKafka.succeeded()) {
                 ref.set(fromKafka.result());
             } else {
-                context.fail(fromKafka.cause());
+                context.failNow(fromKafka.cause());
             }
-            async.complete();
+            async.flag();
         });
-        async.await();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
         return ref.get();
     }
 
@@ -251,20 +250,20 @@ public class TopicOperatorMockTest {
         return ref.get();
     }
 
-    void reconcile(TestContext context) {
-        Async async = context.async();
+    void reconcile(VertxTestContext context) throws InterruptedException {
+        Checkpoint async = context.checkpoint();
         session.topicOperator.reconcileAllTopics("test").setHandler(ar -> {
             if (!ar.succeeded()) {
-                context.fail(ar.cause());
+                context.failNow(ar.cause());
             }
-            async.complete();
+            async.flag();
         });
-        async.await();
+        context.awaitCompletion(60, TimeUnit.SECONDS);
     }
 
 
     @Test
-    public void testCreatedWithSameTopicNameInKube(TestContext context) {
+    public void testCreatedWithSameTopicNameInKube(VertxTestContext context) throws InterruptedException {
 
         int retention = 100_000_000;
         KafkaTopic kt = new KafkaTopicBuilder()
@@ -283,7 +282,7 @@ public class TopicOperatorMockTest {
     }
 
     @Test
-    public void testCreatedWithDifferentTopicNameInKube(TestContext context) {
+    public void testCreatedWithDifferentTopicNameInKube(VertxTestContext context) throws InterruptedException {
         int retention = 100_000_000;
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()

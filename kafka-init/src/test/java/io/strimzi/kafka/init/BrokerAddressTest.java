@@ -4,9 +4,12 @@
  */
 package io.strimzi.kafka.init;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 public class BrokerAddressTest {
     @Test
@@ -15,8 +18,8 @@ public class BrokerAddressTest {
 
         BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
-        assertEquals(brokerAddress.getAdvertisedHost(), "test0");
-        assertEquals(brokerAddress.getAdvertisedPort(), new Integer(0));
+        assertThat(brokerAddress.getAdvertisedHost(), is("test0"));
+        assertThat(brokerAddress.getAdvertisedPort(), is(new Integer(0)));
     }
 
     @Test
@@ -25,8 +28,8 @@ public class BrokerAddressTest {
 
         BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
-        assertEquals(brokerAddress.getAdvertisedHost(), null);
-        assertEquals(brokerAddress.getAdvertisedPort(), new Integer(0));
+        assertThat(brokerAddress.getAdvertisedHost(), is(nullValue()));
+        assertThat(brokerAddress.getAdvertisedPort(), is(new Integer(0)));
     }
 
     @Test
@@ -35,8 +38,8 @@ public class BrokerAddressTest {
 
         BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
-        assertEquals(brokerAddress.getAdvertisedHost(), "test0");
-        assertEquals(brokerAddress.getAdvertisedPort(), null);
+        assertThat(brokerAddress.getAdvertisedHost(), is("test0"));
+        assertThat(brokerAddress.getAdvertisedPort(), is(nullValue()));
     }
 
     @Test
@@ -45,7 +48,7 @@ public class BrokerAddressTest {
 
         BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
-        assertEquals(brokerAddress.getAdvertisedHost(), null);
-        assertEquals(brokerAddress.getAdvertisedPort(), null);
+        assertThat(brokerAddress.getAdvertisedHost(), is(nullValue()));
+        assertThat(brokerAddress.getAdvertisedPort(), is(nullValue()));
     }
 }

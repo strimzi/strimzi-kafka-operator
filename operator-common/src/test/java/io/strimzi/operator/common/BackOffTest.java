@@ -4,62 +4,61 @@
  */
 package io.strimzi.operator.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class BackOffTest {
 
     @Test
     public void testDefaultBackoff() {
         BackOff b = new BackOff();
-        assertEquals(6200L, b.totalDelayMs());
-        assertFalse(b.done());
-        assertEquals(0L, b.delayMs());
-        assertEquals(0L, b.cumulativeDelayMs());
-        assertFalse(b.done());
-        assertEquals(200L, b.delayMs());
-        assertEquals(200L, b.cumulativeDelayMs());
-        assertFalse(b.done());
-        assertEquals(400L, b.delayMs());
-        assertEquals(600L, b.cumulativeDelayMs());
-        assertFalse(b.done());
-        assertEquals(800L, b.delayMs());
-        assertEquals(1400L, b.cumulativeDelayMs());
-        assertFalse(b.done());
-        assertEquals(1600L, b.delayMs());
-        assertEquals(3000L, b.cumulativeDelayMs());
-        assertFalse(b.done());
-        assertEquals(3200L, b.delayMs());
-        assertEquals(6200L, b.cumulativeDelayMs());
-        assertTrue(b.done());
+        assertThat(b.totalDelayMs(), is(6200L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(0L));
+        assertThat(b.cumulativeDelayMs(), is(0L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(200L));
+        assertThat(b.cumulativeDelayMs(), is(200L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(400L));
+        assertThat(b.cumulativeDelayMs(), is(600L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(800L));
+        assertThat(b.cumulativeDelayMs(), is(1400L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(1600L));
+        assertThat(b.cumulativeDelayMs(), is(3000L));
+        assertThat(b.done(), is(false));
+        assertThat(b.delayMs(), is(3200L));
+        assertThat(b.cumulativeDelayMs(), is(6200L));
+        assertThat(b.done(), is(true));
         try {
             b.delayMs();
             fail("Should throw");
         } catch (MaxAttemptsExceededException e) {
 
         }
-        assertTrue(b.done());
-        assertEquals(6200L, b.totalDelayMs());
+        assertThat(b.done(), is(true));
+        assertThat(b.totalDelayMs(), is(6200L));
     }
 
     @Test
     public void testAnotherBackoff() {
         BackOff b = new BackOff(1, 10, 5);
-        assertEquals(1111L, b.totalDelayMs());
+        assertThat(b.totalDelayMs(), is(1111L));
         //attempt
-        assertEquals(0L, b.delayMs());
+        assertThat(b.delayMs(), is(0L));
         //attempt
-        assertEquals(1L, b.delayMs());
+        assertThat(b.delayMs(), is(1L));
         //attempt
-        assertEquals(10L, b.delayMs());
+        assertThat(b.delayMs(), is(10L));
         //attempt
-        assertEquals(100L, b.delayMs());
+        assertThat(b.delayMs(), is(100L));
         //attempt
-        assertEquals(1000L, b.delayMs());
+        assertThat(b.delayMs(), is(1000L));
         try {
             b.delayMs();
             fail("Should throw");
@@ -67,21 +66,21 @@ public class BackOffTest {
 
         }
 
-        assertEquals(1111L, b.totalDelayMs());
+        assertThat(b.totalDelayMs(), is(1111L));
     }
 
     @Test
     public void testMaxAttemptsOnlyBackOff() {
         BackOff b = new BackOff(3);
-        assertEquals(0, b.delayMs());
-        assertEquals(200L, b.delayMs());
-        assertEquals(400L, b.delayMs());
+        assertThat(b.delayMs(), is(0L));
+        assertThat(b.delayMs(), is(200L));
+        assertThat(b.delayMs(), is(400L));
         try {
             b.delayMs();
             fail("Should throw");
         } catch (MaxAttemptsExceededException e) {
 
         }
-        assertEquals(600L, b.totalDelayMs());
+        assertThat(b.totalDelayMs(), is(600L));
     }
 }

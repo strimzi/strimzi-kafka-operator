@@ -37,13 +37,13 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
@@ -54,8 +54,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -65,7 +71,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaConnectS2IAssemblyOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -76,18 +82,18 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
 
     @Test
-    public void testCreateCluster(TestContext context) {
+    public void testCreateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -136,66 +142,66 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(1, capturedServices.size());
+            context.verify(() -> assertThat(capturedServices.size(), is(1)));
             Service service = capturedServices.get(0);
-            context.assertEquals(connect.getServiceName(), service.getMetadata().getName());
-            context.assertEquals(connect.generateService(), service, "Services are not equal");
+            context.verify(() -> assertThat(service.getMetadata().getName(), is(connect.getServiceName())));
+            context.verify(() -> assertThat("Services are not equal", service, is(connect.generateService())));
 
             // Verify Deployment Config
             List<DeploymentConfig> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(1, capturedDc.size());
+            context.verify(() -> assertThat(capturedDc.size(), is(1)));
             DeploymentConfig dc = capturedDc.get(0);
-            context.assertEquals(connect.getName(), dc.getMetadata().getName());
+            context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
             Map annotations = new HashMap();
             annotations.put("strimzi.io/logging", LOGGING_CONFIG);
-            context.assertEquals(connect.generateDeploymentConfig(annotations, true, null, null), dc, "Deployment Configs are not equal");
+            context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(connect.generateDeploymentConfig(annotations, true, null, null))));
 
             // Verify Build Config
             List<BuildConfig> capturedBc = bcCaptor.getAllValues();
-            context.assertEquals(1, capturedBc.size());
+            context.verify(() -> assertThat(capturedBc.size(), is(1)));
             BuildConfig bc = capturedBc.get(0);
-            context.assertEquals(connect.getName(), dc.getMetadata().getName());
-            context.assertEquals(connect.generateBuildConfig(), bc, "Build Configs are not equal");
+            context.verify(() -> assertThat(dc.getMetadata().getName(), is(connect.getName())));
+            context.verify(() -> assertThat("Build Configs are not equal", bc, is(connect.generateBuildConfig())));
 
             // Verify PodDisruptionBudget
             List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.assertEquals(1, capturedPdb.size());
+            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
             PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.assertEquals(connect.getName(), pdb.getMetadata().getName());
-            context.assertEquals(connect.generatePodDisruptionBudget(), pdb, "PodDisruptionBudgets are not equal");
+            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(connect.getName())));
+            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(connect.generatePodDisruptionBudget())));
 
             // Verify Image Streams
             List<ImageStream> capturedIs = isCaptor.getAllValues();
-            context.assertEquals(2, capturedIs.size());
+            context.verify(() -> assertThat(capturedIs.size(), is(2)));
             int sisIndex = (KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster())).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
             int tisIndex = (connect.getName()).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
 
             ImageStream sis = capturedIs.get(sisIndex);
-            context.assertEquals(KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), sis.getMetadata().getName());
-            context.assertEquals(connect.generateSourceImageStream(), sis, "Source Image Streams are not equal");
+            context.verify(() -> assertThat(sis.getMetadata().getName(), is(KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))));
+            context.verify(() -> assertThat("Source Image Streams are not equal", sis, is(connect.generateSourceImageStream())));
 
             ImageStream tis = capturedIs.get(tisIndex);
-            context.assertEquals(connect.getName(), tis.getMetadata().getName());
-            context.assertEquals(connect.generateTargetImageStream(), tis, "Target Image Streams are not equal");
+            context.verify(() -> assertThat(tis.getMetadata().getName(), is(connect.getName())));
+            context.verify(() -> assertThat("Target Image Streams are not equal", tis, is(connect.generateTargetImageStream())));
 
             // Verify status
             List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
-            context.assertEquals(capturedConnects.get(0).getStatus().getUrl(), "http://foo-connect-api.test.svc:8083");
-            context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), "True");
-            context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), "Ready");
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getUrl(), is("http://foo-connect-api.test.svc:8083")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("Ready")));
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testUpdateClusterNoDiff(TestContext context) {
+    public void testUpdateClusterNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -264,40 +270,40 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(1, capturedServices.size());
+            context.verify(() -> assertThat(capturedServices.size(), is(1)));
 
             // Verify Deployment Config
             List<DeploymentConfig> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(1, capturedDc.size());
+            context.verify(() -> assertThat(capturedDc.size(), is(1)));
 
             // Verify Build Config
             List<BuildConfig> capturedBc = bcCaptor.getAllValues();
-            context.assertEquals(1, capturedBc.size());
+            context.verify(() -> assertThat(capturedBc.size(), is(1)));
 
             // Verify PodDisruptionBudget
             List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.assertEquals(1, capturedPdb.size());
+            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
 
             // Verify Image Streams
             List<ImageStream> capturedIs = isCaptor.getAllValues();
-            context.assertEquals(2, capturedIs.size());
+            context.verify(() -> assertThat(capturedIs.size(), is(2)));
 
             // Verify scaleDown / scaleUp were not called
-            context.assertEquals(1, dcScaleDownNameCaptor.getAllValues().size());
-            context.assertEquals(1, dcScaleUpNameCaptor.getAllValues().size());
+            context.verify(() -> assertThat(dcScaleDownNameCaptor.getAllValues().size(), is(1)));
+            context.verify(() -> assertThat(dcScaleUpNameCaptor.getAllValues().size(), is(1)));
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testUpdateCluster(TestContext context) {
+    public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -384,62 +390,62 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
             // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(1, capturedServices.size());
+            context.verify(() -> assertThat(capturedServices.size(), is(1)));
             Service service = capturedServices.get(0);
-            context.assertEquals(compareTo.getServiceName(), service.getMetadata().getName());
-            context.assertEquals(compareTo.generateService(), service, "Services are not equal");
+            context.verify(() -> assertThat(service.getMetadata().getName(), is(compareTo.getServiceName())));
+            context.verify(() -> assertThat("Services are not equal", service, is(compareTo.generateService())));
 
             // Verify Deployment Config
             List<DeploymentConfig> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(1, capturedDc.size());
+            context.verify(() -> assertThat(capturedDc.size(), is(1)));
             DeploymentConfig dc = capturedDc.get(0);
-            context.assertEquals(compareTo.getName(), dc.getMetadata().getName());
+            context.verify(() -> assertThat(dc.getMetadata().getName(), is(compareTo.getName())));
             Map annotations = new HashMap();
             annotations.put("strimzi.io/logging", LOGGING_CONFIG);
-            context.assertEquals(compareTo.generateDeploymentConfig(annotations, true, null, null), dc, "Deployment Configs are not equal");
+            context.verify(() -> assertThat("Deployment Configs are not equal", dc, is(compareTo.generateDeploymentConfig(annotations, true, null, null))));
 
             // Verify Build Config
             List<BuildConfig> capturedBc = bcCaptor.getAllValues();
-            context.assertEquals(1, capturedBc.size());
+            context.verify(() -> assertThat(capturedBc.size(), is(1)));
             BuildConfig bc = capturedBc.get(0);
-            context.assertEquals(compareTo.getName(), bc.getMetadata().getName());
-            context.assertEquals(compareTo.generateBuildConfig(), bc, "Build Configs are not equal");
+            context.verify(() -> assertThat(bc.getMetadata().getName(), is(compareTo.getName())));
+            context.verify(() -> assertThat("Build Configs are not equal", bc, is(compareTo.generateBuildConfig())));
 
             // Verify PodDisruptionBudget
             List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-            context.assertEquals(1, capturedPdb.size());
+            context.verify(() -> assertThat(capturedPdb.size(), is(1)));
             PodDisruptionBudget pdb = capturedPdb.get(0);
-            context.assertEquals(compareTo.getName(), pdb.getMetadata().getName());
-            context.assertEquals(compareTo.generatePodDisruptionBudget(), pdb, "PodDisruptionBudgets are not equal");
+            context.verify(() -> assertThat(pdb.getMetadata().getName(), is(compareTo.getName())));
+            context.verify(() -> assertThat("PodDisruptionBudgets are not equal", pdb, is(compareTo.generatePodDisruptionBudget())));
 
             // Verify Image Streams
             List<ImageStream> capturedIs = isCaptor.getAllValues();
-            context.assertEquals(2, capturedIs.size());
+            context.verify(() -> assertThat(capturedIs.size(), is(2)));
             int sisIndex = (KafkaConnectS2IResources.sourceImageStreamName(compareTo.getCluster())).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
             int tisIndex = (compareTo.getName()).equals(capturedIs.get(0).getMetadata().getName()) ? 0 : 1;
 
             ImageStream sis = capturedIs.get(sisIndex);
-            context.assertEquals(KafkaConnectS2IResources.sourceImageStreamName(compareTo.getCluster()), sis.getMetadata().getName());
-            context.assertEquals(compareTo.generateSourceImageStream(), sis, "Source Image Streams are not equal");
+            context.verify(() -> assertThat(sis.getMetadata().getName(), is(KafkaConnectS2IResources.sourceImageStreamName(compareTo.getCluster()))));
+            context.verify(() -> assertThat("Source Image Streams are not equal", sis, is(compareTo.generateSourceImageStream())));
 
             ImageStream tis = capturedIs.get(tisIndex);
-            context.assertEquals(compareTo.getName(), tis.getMetadata().getName());
-            context.assertEquals(compareTo.generateTargetImageStream(), tis, "Target Image Streams are not equal");
+            context.verify(() -> assertThat(tis.getMetadata().getName(), is(compareTo.getName())));
+            context.verify(() -> assertThat("Target Image Streams are not equal", tis, is(compareTo.generateTargetImageStream())));
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testUpdateClusterFailure(TestContext context) {
+    public void testUpdateClusterFailure(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -509,16 +515,16 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertFalse(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testUpdateClusterScaleUp(TestContext context) {
+    public void testUpdateClusterScaleUp(VertxTestContext context) {
         int scaleTo = 4;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -570,18 +576,18 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testUpdateClusterScaleDown(TestContext context) {
+    public void testUpdateClusterScaleDown(VertxTestContext context) {
         int scaleTo = 2;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -634,19 +640,19 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
 
             // Verify ScaleDown
             verify(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testReconcile(TestContext context) {
+    public void testReconcile(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -686,7 +692,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(2);
+        CountDownLatch async = new CountDownLatch(2);
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
@@ -702,13 +708,13 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         // Now try to reconcile all the Kafka Connect S2I clusters
         ops.reconcileAll("test", clusterCmNamespace, ignored -> { });
 
-        async.await();
-
-        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
+        async.await(60, TimeUnit.SECONDS);
+        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
+        context.completeNow();
     }
 
     @Test
-    public void testCreateClusterStatusNotReady(TestContext context) {
+    public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectS2IOperator;
         DeploymentConfigOperator mockDcOps = supplier.deploymentConfigOperations;
@@ -744,18 +750,18 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
-            context.assertFalse(createResult.succeeded());
+            context.verify(() -> assertThat(createResult.succeeded(), is(false)));
 
             // Verify status
             List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
-            context.assertEquals(capturedConnects.get(0).getStatus().getUrl(), "http://foo-connect-api.test.svc:8083");
-            context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), "True");
-            context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), "NotReady");
-            context.assertEquals(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), failureMessage);
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getUrl(), is("http://foo-connect-api.test.svc:8083")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getStatus(), is("True")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getType(), is("NotReady")));
+            context.verify(() -> assertThat(capturedConnects.get(0).getStatus().getConditions().get(0).getMessage(), is(failureMessage)));
 
-            async.complete();
+            async.flag();
         });
     }
 

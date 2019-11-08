@@ -14,13 +14,15 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
         Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
@@ -82,17 +84,17 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected void assertResources(TestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual)   {
-        context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
-        context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
-        context.assertEquals(expected.getSubjects().size(), actual.getSubjects().size());
-        context.assertEquals(expected.getSubjects().get(0).getKind(), actual.getSubjects().get(0).getKind());
-        context.assertEquals(expected.getSubjects().get(0).getNamespace(), actual.getSubjects().get(0).getNamespace());
-        context.assertEquals(expected.getSubjects().get(0).getName(), actual.getSubjects().get(0).getName());
+    protected void assertResources(VertxTestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual)   {
+        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
+        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
+        context.verify(() -> assertThat(actual.getSubjects().size(), is(expected.getSubjects().size())));
+        context.verify(() -> assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind())));
+        context.verify(() -> assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace())));
+        context.verify(() -> assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName())));
 
-        context.assertEquals(expected.getRoleRef().getKind(), actual.getRoleRef().getKind());
-        context.assertEquals(expected.getRoleRef().getApiGroup(), actual.getRoleRef().getApiGroup());
-        context.assertEquals(expected.getRoleRef().getName(), actual.getRoleRef().getName());
+        context.verify(() -> assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind())));
+        context.verify(() -> assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup())));
+        context.verify(() -> assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName())));
 
     }
 }

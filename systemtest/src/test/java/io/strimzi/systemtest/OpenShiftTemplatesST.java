@@ -34,9 +34,10 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Basic tests for the OpenShift templates.
@@ -74,12 +75,12 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "KAFKA_NODE_COUNT", "1"));
 
         Kafka kafka = getKafka(clusterName);
-        assertNotNull(kafka);
+        assertThat(kafka, is(notNullValue()));
 
-        assertEquals(1, kafka.getSpec().getKafka().getReplicas());
-        assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
-        assertEquals("ephemeral", kafka.getSpec().getKafka().getStorage().getType());
-        assertEquals("ephemeral", kafka.getSpec().getZookeeper().getStorage().getType());
+        assertThat(kafka.getSpec().getKafka().getReplicas(), is(1));
+        assertThat(kafka.getSpec().getZookeeper().getReplicas(), is(1));
+        assertThat(kafka.getSpec().getKafka().getStorage().getType(), is("ephemeral"));
+        assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("ephemeral"));
     }
 
     @Test
@@ -90,11 +91,11 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "KAFKA_NODE_COUNT", "1"));
 
         Kafka kafka = getKafka(clusterName);
-        assertNotNull(kafka);
-        assertEquals(1, kafka.getSpec().getKafka().getReplicas());
-        assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
-        assertEquals("jbod", kafka.getSpec().getKafka().getStorage().getType());
-        assertEquals("persistent-claim", kafka.getSpec().getZookeeper().getStorage().getType());
+        assertThat(kafka, is(notNullValue()));
+        assertThat(kafka.getSpec().getKafka().getReplicas(), is(1));
+        assertThat(kafka.getSpec().getZookeeper().getReplicas(), is(1));
+        assertThat(kafka.getSpec().getKafka().getStorage().getType(), is("jbod"));
+        assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("persistent-claim"));
     }
 
     @Test
@@ -111,19 +112,19 @@ public class OpenShiftTemplatesST extends AbstractST {
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
         Kafka kafka = getKafka(clusterName);
-        assertNotNull(kafka);
+        assertThat(kafka, is(notNullValue()));
 
-        assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(30, kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(10, kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
-        assertEquals(10, kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
-        assertEquals(30, kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(30, kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(10, kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
-        assertEquals(10, kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
-        assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
-        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
-        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
+        assertThat(kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("default.replication.factor"), is("2"));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"), is("5"));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"), is("5"));
     }
 
     @Test
@@ -142,21 +143,21 @@ public class OpenShiftTemplatesST extends AbstractST {
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
         Kafka kafka = getKafka(clusterName);
-        assertNotNull(kafka);
+        assertThat(kafka, is(notNullValue()));
 
-        assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(30, kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(10, kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
-        assertEquals(10, kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
-        assertEquals(30, kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(30, kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(10, kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
-        assertEquals(10, kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
-        assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
-        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
-        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
-        assertEquals("2Gi", ((PersistentClaimStorage) ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes().get(0)).getSize());
-        assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize());
+        assertThat(kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds(), is(30));
+        assertThat(kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds(), is(10));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("default.replication.factor"), is("2"));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"), is("5"));
+        assertThat(kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"), is("5"));
+        assertThat(((PersistentClaimStorage) ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes().get(0)).getSize(), is("2Gi"));
+        assertThat(((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize(), is("2Gi"));
     }
 
     @Test
@@ -166,8 +167,8 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "INSTANCES", "1"));
 
         KafkaConnect connect = getKafkaConnect(clusterName);
-        assertNotNull(connect);
-        assertEquals(1, connect.getSpec().getReplicas());
+        assertThat(connect, is(notNullValue()));
+        assertThat(connect.getSpec().getReplicas(), is(1));
     }
 
     @Test
@@ -177,8 +178,8 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "INSTANCES", "1"));
 
         KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
-        assertNotNull(cm);
-        assertEquals(1, cm.getSpec().getReplicas());
+        assertThat(cm, is(notNullValue()));
+        assertThat(cm.getSpec().getReplicas(), is(1));
     }
 
     @Test
@@ -190,11 +191,11 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "TOPIC_REPLICAS", "2"));
 
         KafkaTopic topic = kubeClient().getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
-        assertNotNull(topic);
-        assertNotNull(topic.getSpec());
-        assertNull(topic.getSpec().getTopicName());
-        assertEquals(Integer.valueOf(10), topic.getSpec().getPartitions());
-        assertEquals(Integer.valueOf(2), topic.getSpec().getReplicas());
+        assertThat(topic, is(notNullValue()));
+        assertThat(topic.getSpec(), is(notNullValue()));
+        assertThat(topic.getSpec().getTopicName(), is(nullValue()));
+        assertThat(topic.getSpec().getPartitions(), is(Integer.valueOf(10)));
+        assertThat(topic.getSpec().getReplicas(), is(Integer.valueOf(2)));
     }
 
     @BeforeAll

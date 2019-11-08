@@ -10,14 +10,14 @@ import java.util.Map;
 
 import io.strimzi.operator.common.InvalidConfigParameterException;
 import io.vertx.core.json.JsonObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Arrays.asList;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AbstractConfigurationTest {
 
@@ -38,51 +38,51 @@ public class AbstractConfigurationTest {
     @Test
     public void testConfigurationStringDefaults()  {
         AbstractConfiguration config = new TestConfiguration("");
-        assertEquals(defaultConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(defaultConfiguration));
     }
 
     @Test
     public void testConfigurationStringOverridingDefaults()  {
         AbstractConfiguration config = new TestConfiguration("default.option=world");
-        assertEquals(createProperties("default.option", "world"), config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world")));
     }
 
     @Test
     public void testConfigurationStringOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration("default.option=world" + LINE_SEPARATOR + "var1=aaa" + LINE_SEPARATOR);
-        assertEquals(createProperties("default.option", "world", "var1", "aaa"), config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world", "var1", "aaa")));
     }
 
     @Test
     public void testDefaultsFromJson()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject());
-        assertEquals(defaultConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(defaultConfiguration));
     }
 
     @Test
     public void testJsonOverridingDefaults()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world"));
-        assertEquals(createProperties("default.option", "world"), config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world")));
     }
 
     @Test
     public void testJsonOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world").put("var1", "aaa"));
-        assertEquals(createProperties("default.option", "world", "var1", "aaa"), config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world", "var1", "aaa")));
     }
 
     @Test
     public void testEmptyConfigurationString() {
         String configuration = "";
         AbstractConfiguration config = new TestConfigurationWithoutDefaults(configuration);
-        assertTrue(config.getConfiguration().isEmpty());
+        assertThat(config.getConfiguration().isEmpty(), is(true));
     }
 
     @Test
     public void testEmptyJson() {
         JsonObject configuration = new JsonObject();
         AbstractConfiguration config = new TestConfigurationWithoutDefaults(configuration);
-        assertTrue(config.getConfiguration().isEmpty());
+        assertThat(config.getConfiguration().isEmpty(), is(true));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -152,7 +152,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -166,7 +166,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -180,7 +180,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class AbstractConfigurationTest {
                 "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -207,7 +207,7 @@ public class AbstractConfigurationTest {
             new TestConfiguration(configuration);
             fail("Expected it to throw an exception");
         } catch (InvalidConfigParameterException e) {
-            assertEquals("var3", e.getKey());
+            assertThat(e.getKey(), is("var3"));
         }
     }
 
@@ -217,7 +217,7 @@ public class AbstractConfigurationTest {
         OrderedProperties expectedConfiguration = createWithDefaults("option.with.port", "my-server:9092");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.asOrderedProperties());
+        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
     @Test
@@ -231,11 +231,11 @@ public class AbstractConfigurationTest {
 
         KafkaConfiguration kc = new KafkaConfiguration(conf.entrySet());
 
-        assertEquals("validValue", kc.asOrderedProperties().asMap().get("valid"));
-        assertNull(kc.asOrderedProperties().asMap().get("zookeeper.connection.whatever"));
-        assertNull(kc.asOrderedProperties().asMap().get("security.invalid1"));
-        assertEquals("42", kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout.ms"));
-        assertNull(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout"));
+        assertThat(kc.asOrderedProperties().asMap().get("valid"), is("validValue"));
+        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.whatever"), is(nullValue()));
+        assertThat(kc.asOrderedProperties().asMap().get("security.invalid1"), is(nullValue()));
+        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout.ms"), is("42"));
+        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout"), is(nullValue()));
     }
 
     @Test
@@ -247,9 +247,9 @@ public class AbstractConfigurationTest {
 
         KafkaConnectConfiguration configuration = new KafkaConnectConfiguration(conf.entrySet());
 
-        assertEquals("my.package.Converter", configuration.asOrderedProperties().asMap().get("key.converter"));
-        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
-        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+        assertThat(configuration.asOrderedProperties().asMap().get("key.converter"), is("my.package.Converter"));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
     }
 
     @Test
@@ -261,9 +261,9 @@ public class AbstractConfigurationTest {
 
         KafkaMirrorMakerConsumerConfiguration configuration = new KafkaMirrorMakerConsumerConfiguration(conf.entrySet());
 
-        assertEquals("zstd", configuration.asOrderedProperties().asMap().get("compression.type"));
-        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
-        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+        assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
     }
 
     @Test
@@ -275,9 +275,9 @@ public class AbstractConfigurationTest {
 
         KafkaMirrorMakerProducerConfiguration configuration = new KafkaMirrorMakerProducerConfiguration(conf.entrySet());
 
-        assertEquals("zstd", configuration.asOrderedProperties().asMap().get("compression.type"));
-        assertNull(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"));
-        assertEquals("", configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"));
+        assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
+        assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
     }
 }
 

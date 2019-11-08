@@ -10,20 +10,21 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.test.mockkube.MockKube;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MockKubeRegressionTest {
 
     private KubernetesClient client;
 
-    @Before
+    @BeforeEach
     public void before() {
         client = new MockKube().build();
     }
@@ -45,7 +46,7 @@ public class MockKubeRegressionTest {
             .done();
 
         List<Pod> ns = client.pods().inNamespace("ns").list().getItems();
-        assertEquals(3, ns.size());
+        assertThat(ns.size(), is(3));
 
         AtomicBoolean deleted = new AtomicBoolean(false);
         AtomicBoolean recreated = new AtomicBoolean(false);
@@ -54,14 +55,14 @@ public class MockKubeRegressionTest {
             public void eventReceived(Action action, Pod resource) {
                 if (action == Action.DELETED) {
                     if (deleted.getAndSet(true)) {
-                        Assert.fail("Deleted twice");
+                        fail("Deleted twice");
                     }
                 } else if (action == Action.ADDED) {
                     if (!deleted.get()) {
-                        Assert.fail("Created before deleted");
+                        fail("Created before deleted");
                     }
                     if (recreated.getAndSet(true)) {
-                        Assert.fail("Recreated twice");
+                        fail("Recreated twice");
                     }
                 }
             }
@@ -73,12 +74,12 @@ public class MockKubeRegressionTest {
         });
         client.pods().inNamespace("ns").withName(ns.get(0).getMetadata().getName()).delete();
 
-        Assert.assertTrue(deleted.get());
-        Assert.assertTrue(recreated.get());
+        assertThat(deleted.get(), is(true));
+        assertThat(recreated.get(), is(true));
         watch.close();
 
         ns = client.pods().inNamespace("ns").list().getItems();
-        assertEquals(3, ns.size());
+        assertThat(ns.size(), is(3));
 
         client.apps().statefulSets().inNamespace("ns").withName("foo").delete();
 

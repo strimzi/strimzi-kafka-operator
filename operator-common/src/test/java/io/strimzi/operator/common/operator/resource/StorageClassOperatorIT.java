@@ -10,13 +10,15 @@ import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.fabric8.kubernetes.api.model.storage.StorageClassList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         StorageClass, StorageClassList, DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> {
 
@@ -55,11 +57,11 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
     }
 
     @Override
-    protected void assertResources(TestContext context, StorageClass expected, StorageClass actual)   {
-        context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
-        context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
-        context.assertEquals(expected.getReclaimPolicy(), actual.getReclaimPolicy());
-        context.assertEquals(expected.getProvisioner(), actual.getProvisioner());
-        context.assertEquals(expected.getParameters(), actual.getParameters());
+    protected void assertResources(VertxTestContext context, StorageClass expected, StorageClass actual)   {
+        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
+        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
+        context.verify(() -> assertThat(actual.getReclaimPolicy(), is(expected.getReclaimPolicy())));
+        context.verify(() -> assertThat(actual.getProvisioner(), is(expected.getProvisioner())));
+        context.verify(() -> assertThat(actual.getParameters(), is(expected.getParameters())));
     }
 }

@@ -25,19 +25,27 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-@RunWith(VertxUnitRunner.class)
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorMockTest {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectAssemblyOperatorMockTest.class);
@@ -54,7 +62,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private Vertx vertx;
     private KafkaConnect cluster;
 
-    @Before
+    @BeforeEach
     public void before() {
         this.vertx = Vertx.vertx();
 
@@ -72,12 +80,12 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
-    @After
+    @AfterEach
     public void after() {
         this.vertx.close();
     }
 
-    private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
+    private KafkaConnectAssemblyOperator createConnectCluster(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
@@ -87,31 +95,30 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 config);
 
         LOGGER.info("Reconciling initially -> create");
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
-            context.assertNotNull(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get());
-            createAsync.complete();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            context.verify(() -> assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue())));
+            context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue())));
+            context.verify(() -> assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue())));
+            context.verify(() -> assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue())));
+            createAsync.complete(true);
         });
-        createAsync.await();
+        createAsync.get(60, TimeUnit.SECONDS);
         return kco;
     }
 
     /** Create a cluster from a Kafka Cluster CM */
     @Test
-    public void testCreateUpdate(TestContext context) {
+    public void testCreateUpdate(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         KafkaConnectAssemblyOperator kco = createConnectCluster(context);
         LOGGER.info("Reconciling again -> update");
-        Async updateAsync = context.async();
+        Checkpoint updateAsync = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
-            updateAsync.complete();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            updateAsync.flag();
         });
-        updateAsync.await();
     }
 }

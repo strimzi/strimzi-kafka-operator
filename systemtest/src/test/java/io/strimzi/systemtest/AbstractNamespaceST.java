@@ -15,7 +15,8 @@ import org.junit.jupiter.api.AfterAll;
 import java.io.File;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class AbstractNamespaceST extends AbstractST {
 
@@ -44,7 +45,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
-        assertEquals("Ready", kafkaCondition.getType());
+        assertThat(kafkaCondition.getType(), is("Ready"));
         setNamespace(previousNamespace);
     }
 

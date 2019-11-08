@@ -35,8 +35,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(SPECIFIC)
 public class SpecificST extends MessagingBaseST {
@@ -62,10 +60,10 @@ public class SpecificST extends MessagingBaseST {
             .endSpec().done();
 
         String rackId = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
-        assertEquals("zone", rackId.trim());
+        assertThat(rackId.trim(), is("zone"));
 
         String brokerRack = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
-        assertTrue(brokerRack.contains("broker.rack=zone"));
+        assertThat(brokerRack.contains("broker.rack=zone"), is(true));
 
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         List<Event> events = kubeClient().listEvents(uid);

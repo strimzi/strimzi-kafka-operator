@@ -14,11 +14,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -82,9 +83,9 @@ public class PvcOperatorTest extends AbstractResourceOperatorTest<KubernetesClie
         PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
         op.revertImmutableChanges(current, desired);
 
-        assertEquals(current.getSpec().getStorageClassName(), desired.getSpec().getStorageClassName());
-        assertEquals(current.getSpec().getAccessModes(), desired.getSpec().getAccessModes());
-        assertEquals(current.getSpec().getSelector(), desired.getSpec().getSelector());
-        assertEquals(current.getSpec().getVolumeName(), desired.getSpec().getVolumeName());
+        assertThat(current.getSpec().getStorageClassName(), is(desired.getSpec().getStorageClassName()));
+        assertThat(current.getSpec().getAccessModes(), is(desired.getSpec().getAccessModes()));
+        assertThat(current.getSpec().getSelector(), is(desired.getSpec().getSelector()));
+        assertThat(current.getSpec().getVolumeName(), is(desired.getSpec().getVolumeName()));
     }
 }

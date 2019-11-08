@@ -4,13 +4,14 @@
  */
 package io.strimzi.operator.topic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class LabelsTest {
 
@@ -82,6 +83,6 @@ public class LabelsTest {
         Map<String, String> m = new HashMap<>(2);
         m.put("foo", "1");
         m.put("bar", "2");
-        assertEquals(m, p.labels());
+        assertThat(p.labels(), is(m));
     }
 }

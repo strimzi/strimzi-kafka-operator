@@ -4,11 +4,11 @@
  */
 package io.strimzi.crdgenerator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static io.strimzi.crdgenerator.Property.properties;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class PropertyTest {
 
@@ -19,67 +19,67 @@ public class PropertyTest {
     @Test
     public void testIsArray() {
 
-        assertTrue(propertyType(ExampleCrd.class, "arrayProperty").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "arrayProperty2").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfInts").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfInts2").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfObjects").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfPolymorphic").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "rawList").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfRawList").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "arrayOfList").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "arrayOfRawList").isArray());
-        assertTrue(propertyType(ExampleCrd.class, "listOfArray").isArray());
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty2").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts2").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfObjects").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfPolymorphic").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "rawList").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfRawList").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfList").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfRawList").isArray(), is(true));
+        assertThat(propertyType(ExampleCrd.class, "listOfArray").isArray(), is(true));
     }
 
     @Test
     public void testArrayDimension() {
-        assertEquals(1, propertyType(ExampleCrd.class, "arrayProperty").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "arrayProperty2").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfInts").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "listOfInts2").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfObjects").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfPolymorphic").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "rawList").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "listOfRawList").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "arrayOfList").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "arrayOfRawList").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "listOfArray").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "arrayOfTypeVar").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfTypeVar").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "arrayOfBoundTypeVar").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfBoundTypeVar").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "arrayOfBoundTypeVar2").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfBoundTypeVar2").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfWildcardTypeVar1").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayDimension());
-        assertEquals(1, propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayDimension());
-        assertEquals(2, propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayDimension());
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty2").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts2").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "listOfObjects").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfPolymorphic").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "rawList").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfRawList").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfList").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfRawList").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "listOfArray").arrayDimension(), is(2));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfTypeVar").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfTypeVar").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfBoundTypeVar").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfBoundTypeVar").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfBoundTypeVar2").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfBoundTypeVar2").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar1").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayDimension(), is(1));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayDimension(), is(2));
     }
 
     @Test
     public void testArrayComponentType() {
-        assertEquals(String.class, propertyType(ExampleCrd.class, "arrayProperty").arrayBase());
-        assertEquals(String.class, propertyType(ExampleCrd.class, "arrayProperty2").arrayBase());
-        assertEquals(Integer.class, propertyType(ExampleCrd.class, "listOfInts").arrayBase());
-        assertEquals(Integer.class, propertyType(ExampleCrd.class, "listOfInts2").arrayBase());
-        assertEquals(ExampleCrd.ObjectProperty.class, propertyType(ExampleCrd.class, "listOfObjects").arrayBase());
-        assertEquals(ExampleCrd.PolymorphicTop.class, propertyType(ExampleCrd.class, "listOfPolymorphic").arrayBase());
-        assertEquals(Object.class, propertyType(ExampleCrd.class, "rawList").arrayBase());
-        assertEquals(Object.class, propertyType(ExampleCrd.class, "listOfRawList").arrayBase());
-        assertEquals(String.class, propertyType(ExampleCrd.class, "arrayOfList").arrayBase());
-        assertEquals(Object.class, propertyType(ExampleCrd.class, "arrayOfRawList").arrayBase());
-        assertEquals(String.class, propertyType(ExampleCrd.class, "listOfArray").arrayBase());
-        assertEquals(Object.class, propertyType(ExampleCrd.class, "arrayOfTypeVar").arrayBase());
-        assertEquals(Object.class, propertyType(ExampleCrd.class, "listOfTypeVar").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "arrayOfBoundTypeVar").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "listOfBoundTypeVar").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "arrayOfBoundTypeVar2").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "listOfBoundTypeVar2").arrayBase());
-        assertEquals(String.class, propertyType(ExampleCrd.class, "listOfWildcardTypeVar1").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayBase());
-        assertEquals(Number.class, propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayBase());
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty").arrayBase().getName(), is(String.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayProperty2").arrayBase().getName(), is(String.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts").arrayBase().getName(), is(Integer.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfInts2").arrayBase().getName(), is(Integer.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfObjects").arrayBase().getName(), is(ExampleCrd.ObjectProperty.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfPolymorphic").arrayBase().getName(), is(ExampleCrd.PolymorphicTop.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "rawList").arrayBase().getName(), is(Object.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfRawList").arrayBase().getName(), is(Object.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfList").arrayBase().getName(), is(String.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfRawList").arrayBase().getName(), is(Object.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfArray").arrayBase().getName(), is(String.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfTypeVar").arrayBase().getName(), is(Object.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfTypeVar").arrayBase().getName(), is(Object.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfBoundTypeVar").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfBoundTypeVar").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "arrayOfBoundTypeVar2").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfBoundTypeVar2").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar1").arrayBase().getName(), is(String.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar2").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar3").arrayBase().getName(), is(Number.class.getName()));
+        assertThat(propertyType(ExampleCrd.class, "listOfWildcardTypeVar4").arrayBase().getName(), is(Number.class.getName()));
     }
 
 }

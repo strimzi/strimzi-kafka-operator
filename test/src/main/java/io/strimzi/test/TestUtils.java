@@ -52,7 +52,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public final class TestUtils {
 
@@ -217,7 +218,7 @@ public final class TestUtils {
      */
     public static void assertResourceMatch(Class<?> cls, String resourceName, String actual) throws IOException {
         String r = readResource(cls, resourceName);
-        assertEquals(r, actual);
+        assertThat(actual, is(r));
     }
 
     @SafeVarargs

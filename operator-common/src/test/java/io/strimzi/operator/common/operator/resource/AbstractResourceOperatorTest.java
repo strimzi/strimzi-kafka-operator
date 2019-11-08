@@ -14,16 +14,16 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList, D, R extends Resource<T, D>> {
 
@@ -41,12 +41,12 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     public static final String NAMESPACE = "test";
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
@@ -81,11 +81,11 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     }
 
     @Test
-    public void createWhenExistsIsAPatch(TestContext context) {
+    public void createWhenExistsIsAPatch(VertxTestContext context) {
         createWhenExistsIsAPatch(context, true);
     }
 
-    public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
+    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -102,25 +102,25 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         Future<ReconcileResult<T>> fut = op.createOrUpdate(resource());
         fut.setHandler(ar -> {
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());
             verify(mockCms, never()).createOrReplace(any());
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void existenceCheckThrows(TestContext context) {
+    public void existenceCheckThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException();
 
@@ -138,16 +138,16 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
-            async.complete();
+            assertThat(ar.failed(), is(true));
+            assertThat(ar.cause(), is(ex));
+            async.flag();
         });
     }
 
     @Test
-    public void successfulCreation(TestContext context) {
+    public void successfulCreation(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
@@ -163,18 +163,18 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void creationThrows(TestContext context) {
+    public void creationThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
@@ -193,16 +193,16 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
-            async.complete();
+            assertThat(ar.failed(), is(true));
+            assertThat(ar.cause(), is(ex));
+            async.flag();
         });
     }
 
     @Test
-    public void deleteWhenResourceDoesNotExistIsANop(TestContext context) {
+    public void deleteWhenResourceDoesNotExistIsANop(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -217,17 +217,17 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockResource).get();
             verify(mockResource, never()).delete();
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void deleteWhenResourceExistsStillDeletes(TestContext context) {
+    public void deleteWhenResourceExistsStillDeletes(VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
 
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
@@ -249,16 +249,16 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockDeletable).delete();
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void successfulDeletion(TestContext context) {
+    public void successfulDeletion(VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
 
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
@@ -280,17 +280,17 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            assertTrue(ar.succeeded());
+            assertThat(ar.succeeded(), is(true));
             verify(mockDeletable).delete();
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void deletionThrows(TestContext context) {
+    public void deletionThrows(VertxTestContext context) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenThrow(ex);
@@ -314,14 +314,11 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
-            async.complete();
+            assertThat(ar.failed(), is(true));
+            assertThat(ar.cause(), is(ex));
+            async.flag();
         });
     }
-
-
 }
-

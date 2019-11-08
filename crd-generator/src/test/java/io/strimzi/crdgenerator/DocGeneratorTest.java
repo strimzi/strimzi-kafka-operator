@@ -4,7 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -12,18 +12,19 @@ import java.net.URISyntaxException;
 
 import static io.strimzi.crdgenerator.DocGenerator.classInherits;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DocGeneratorTest {
 
     @Test
     public void simpleTest() throws IOException, ClassNotFoundException, URISyntaxException {
-        assertTrue(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class) != null);
+        assertThat(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class), is(notNullValue()));
         StringWriter w = new StringWriter();
         DocGenerator crdGenerator = new DocGenerator(1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
         crdGenerator.generate(ExampleCrd.class);
         String s = w.toString();
-        assertEquals(CrdTestUtils.readResource("simpleTest.adoc"), s);
+        assertThat(CrdTestUtils.readResource("simpleTest.adoc"), is(s));
     }
 }

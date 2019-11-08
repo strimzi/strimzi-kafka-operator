@@ -24,8 +24,8 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class AllNamespaceST extends AbstractNamespaceST {
@@ -102,7 +102,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
 
-        assertEquals("Ready", kafkaCondition.getType());
+        assertThat(kafkaCondition.getType(), is("Ready"));
 
         List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
 

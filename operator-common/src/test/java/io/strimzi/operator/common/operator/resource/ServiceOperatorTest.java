@@ -14,10 +14,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.TestContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +49,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Test
-    public void testNodePortPatching(TestContext context)  {
+    public void testNodePortPatching()  {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -101,7 +101,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
         ServiceOperator op = new ServiceOperator(vertx, client);
         op.patchNodePorts(current, desired);
 
-        assertEquals(current.getSpec().getPorts().get(0).getNodePort(), desired.getSpec().getPorts().get(1).getNodePort());
-        assertEquals(current.getSpec().getPorts().get(1).getNodePort(), desired.getSpec().getPorts().get(0).getNodePort());
+        assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
+        assertThat(current.getSpec().getPorts().get(1).getNodePort(), is(desired.getSpec().getPorts().get(0).getNodePort()));
     }
 }

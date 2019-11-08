@@ -9,11 +9,10 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StorageDiffTest {
     @Test
@@ -29,14 +28,14 @@ public class StorageDiffTest {
                 .build();
 
         StorageDiff diff = new StorageDiff(jbod, jbod);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         diff = new StorageDiff(jbod, jbod2);
-        assertFalse(diff.changesType());
-        assertFalse(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(false));
+        assertThat(diff.shrinkSize(), is(false));
     }
 
     @Test
@@ -44,13 +43,13 @@ public class StorageDiffTest {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
 
-        assertFalse(new StorageDiff(persistent, persistent).changesType());
-        assertTrue(new StorageDiff(persistent, persistent).isEmpty());
-        assertFalse(new StorageDiff(persistent, persistent).shrinkSize());
+        assertThat(new StorageDiff(persistent, persistent).changesType(), is(false));
+        assertThat(new StorageDiff(persistent, persistent).isEmpty(), is(true));
+        assertThat(new StorageDiff(persistent, persistent).shrinkSize(), is(false));
 
-        assertFalse(new StorageDiff(persistent, persistent2).changesType());
-        assertFalse(new StorageDiff(persistent, persistent2).isEmpty());
-        assertFalse(new StorageDiff(persistent, persistent2).shrinkSize());
+        assertThat(new StorageDiff(persistent, persistent2).changesType(), is(false));
+        assertThat(new StorageDiff(persistent, persistent2).isEmpty(), is(false));
+        assertThat(new StorageDiff(persistent, persistent2).shrinkSize(), is(false));
     }
 
     @Test
@@ -82,17 +81,17 @@ public class StorageDiffTest {
                         .build())
                 .build();
 
-        assertFalse(new StorageDiff(persistent, persistent).changesType());
-        assertTrue(new StorageDiff(persistent, persistent).isEmpty());
-        assertFalse(new StorageDiff(persistent, persistent).shrinkSize());
+        assertThat(new StorageDiff(persistent, persistent).changesType(), is(false));
+        assertThat(new StorageDiff(persistent, persistent).isEmpty(), is(true));
+        assertThat(new StorageDiff(persistent, persistent).shrinkSize(), is(false));
 
-        assertFalse(new StorageDiff(persistent, persistent2).changesType());
-        assertFalse(new StorageDiff(persistent, persistent2).isEmpty());
-        assertFalse(new StorageDiff(persistent, persistent2).shrinkSize());
+        assertThat(new StorageDiff(persistent, persistent2).changesType(), is(false));
+        assertThat(new StorageDiff(persistent, persistent2).isEmpty(), is(false));
+        assertThat(new StorageDiff(persistent, persistent2).shrinkSize(), is(false));
 
-        assertFalse(new StorageDiff(persistent2, persistent3).changesType());
-        assertFalse(new StorageDiff(persistent2, persistent3).isEmpty());
-        assertFalse(new StorageDiff(persistent2, persistent3).shrinkSize());
+        assertThat(new StorageDiff(persistent2, persistent3).changesType(), is(false));
+        assertThat(new StorageDiff(persistent2, persistent3).isEmpty(), is(false));
+        assertThat(new StorageDiff(persistent2, persistent3).shrinkSize(), is(false));
     }
 
     @Test
@@ -101,18 +100,18 @@ public class StorageDiffTest {
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
         Storage persistent3 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("10Gi").build();
 
-        assertFalse(new StorageDiff(persistent, persistent).shrinkSize());
-        assertFalse(new StorageDiff(persistent, persistent2).shrinkSize());
-        assertTrue(new StorageDiff(persistent, persistent3).shrinkSize());
+        assertThat(new StorageDiff(persistent, persistent).shrinkSize(), is(false));
+        assertThat(new StorageDiff(persistent, persistent2).shrinkSize(), is(false));
+        assertThat(new StorageDiff(persistent, persistent3).shrinkSize(), is(true));
     }
 
     @Test
     public void testEphemeralDiff()    {
         Storage ephemeral = new EphemeralStorageBuilder().build();
 
-        assertFalse(new StorageDiff(ephemeral, ephemeral).changesType());
-        assertTrue(new StorageDiff(ephemeral, ephemeral).isEmpty());
-        assertFalse(new StorageDiff(ephemeral, ephemeral).shrinkSize());
+        assertThat(new StorageDiff(ephemeral, ephemeral).changesType(), is(false));
+        assertThat(new StorageDiff(ephemeral, ephemeral).isEmpty(), is(true));
+        assertThat(new StorageDiff(ephemeral, ephemeral).shrinkSize(), is(false));
     }
 
     @Test
@@ -130,13 +129,13 @@ public class StorageDiffTest {
         StorageDiff diffPersistentEphemeral = new StorageDiff(persistent, ephemeral);
         StorageDiff fiddJbodPersistent = new StorageDiff(jbod, persistent);
 
-        assertTrue(diffJbodEphemeral.changesType());
-        assertTrue(diffPersistentEphemeral.changesType());
-        assertTrue(fiddJbodPersistent.changesType());
+        assertThat(diffJbodEphemeral.changesType(), is(true));
+        assertThat(diffPersistentEphemeral.changesType(), is(true));
+        assertThat(fiddJbodPersistent.changesType(), is(true));
 
-        assertFalse(diffJbodEphemeral.isEmpty());
-        assertFalse(diffPersistentEphemeral.isEmpty());
-        assertFalse(fiddJbodPersistent.isEmpty());
+        assertThat(diffJbodEphemeral.isEmpty(), is(false));
+        assertThat(diffPersistentEphemeral.isEmpty(), is(false));
+        assertThat(fiddJbodPersistent.isEmpty(), is(false));
     }
 
     @Test
@@ -170,51 +169,51 @@ public class StorageDiffTest {
 
         // Volume added
         StorageDiff diff = new StorageDiff(jbod, jbod2);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume removed
         diff = new StorageDiff(jbod2, jbod);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume added with changes
         diff = new StorageDiff(jbod, jbod3);
-        assertFalse(diff.changesType());
-        assertFalse(diff.isEmpty());
-        assertTrue(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(false));
+        assertThat(diff.shrinkSize(), is(true));
 
         // Volume removed from the beginning
         diff = new StorageDiff(jbod3, jbod5);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume added to the beginning
         diff = new StorageDiff(jbod5, jbod3);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume replaced with another ID and another volume which is kept changed
         diff = new StorageDiff(jbod3, jbod6);
-        assertFalse(diff.changesType());
-        assertFalse(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(false));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume replaced with another ID in single volume broker
         diff = new StorageDiff(jbod, jbod4);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
 
         // Volume replaced with another ID without chenging the volumes which are kept
         diff = new StorageDiff(jbod2, jbod6);
-        assertFalse(diff.changesType());
-        assertTrue(diff.isEmpty());
-        assertFalse(diff.shrinkSize());
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
     }
 
     @Test
@@ -234,25 +233,25 @@ public class StorageDiffTest {
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("500Gi").build())
                 .build();
 
-        assertFalse(new StorageDiff(jbod, jbod).shrinkSize());
-        assertFalse(new StorageDiff(jbod, jbod2).shrinkSize());
-        assertTrue(new StorageDiff(jbod, jbod3).shrinkSize());
+        assertThat(new StorageDiff(jbod, jbod).shrinkSize(), is(false));
+        assertThat(new StorageDiff(jbod, jbod2).shrinkSize(), is(false));
+        assertThat(new StorageDiff(jbod, jbod3).shrinkSize(), is(true));
     }
 
     @Test
     public void testSizeConversion() {
-        assertEquals(100L * 1_024L * 1_024L * 1_024L, StorageDiff.parseMemory("100Gi"));
-        assertEquals(100L * 1_000L * 1_000L * 1_000L, StorageDiff.parseMemory("100G"));
-        assertEquals(100_000L * 1_024L * 1_024L, StorageDiff.parseMemory("100000Mi"));
-        assertEquals(100L * 1_000L * 1_000L * 1_000L, StorageDiff.parseMemory("100000M"));
-        assertEquals(100L * 1_024L * 1_024L * 1_024L * 1_024L, StorageDiff.parseMemory("100Ti"));
-        assertEquals(100L * 1_000L * 1_000L * 1_000L * 1_000L, StorageDiff.parseMemory("100T"));
-        assertEquals(100L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L, StorageDiff.parseMemory("100Pi"));
-        assertEquals(100L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L, StorageDiff.parseMemory("100P"));
+        assertThat(StorageDiff.parseMemory("100Gi"), is(100L * 1_024L * 1_024L * 1_024L));
+        assertThat(StorageDiff.parseMemory("100G"), is(100L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageDiff.parseMemory("100000Mi"), is(100_000L * 1_024L * 1_024L));
+        assertThat(StorageDiff.parseMemory("100000M"), is(100L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageDiff.parseMemory("100Ti"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L));
+        assertThat(StorageDiff.parseMemory("100T"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageDiff.parseMemory("100Pi"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L));
+        assertThat(StorageDiff.parseMemory("100P"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
 
-        assertTrue(StorageDiff.parseMemory("100Gi") == StorageDiff.parseMemory("100Gi"));
-        assertTrue(StorageDiff.parseMemory("1000Gi") > StorageDiff.parseMemory("100Gi"));
-        assertTrue(StorageDiff.parseMemory("1000000Mi") > StorageDiff.parseMemory("100Gi"));
-        assertTrue(StorageDiff.parseMemory("100Pi") > StorageDiff.parseMemory("100Gi"));
+        assertThat(StorageDiff.parseMemory("100Gi") == StorageDiff.parseMemory("100Gi"), is(true));
+        assertThat(StorageDiff.parseMemory("1000Gi") > StorageDiff.parseMemory("100Gi"), is(true));
+        assertThat(StorageDiff.parseMemory("1000000Mi") > StorageDiff.parseMemory("100Gi"), is(true));
+        assertThat(StorageDiff.parseMemory("100Pi") > StorageDiff.parseMemory("100Gi"), is(true));
     }
 }

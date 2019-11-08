@@ -38,6 +38,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,11 +83,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -153,7 +149,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
 
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertEquals(3, initialReplicas);
+        assertThat(initialReplicas, is(3));
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
@@ -186,7 +182,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertEquals(initialReplicas, finalReplicas);
+        assertThat(finalReplicas, is(initialReplicas));
 
         //Test that the new broker has event 'Killing'
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
@@ -234,7 +230,7 @@ class KafkaST extends MessagingBaseST {
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertEquals(3, initialZkReplicas);
+        assertThat(initialZkReplicas, is(3));
 
         final int scaleZkTo = initialZkReplicas + 4;
         final List<String> newZkPodNames = new ArrayList<String>() {{
@@ -795,7 +791,7 @@ class KafkaST extends MessagingBaseST {
         Optional<Pod> pod = kubeClient().listPods()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst();
-        assertTrue(pod.isPresent(), "EO pod does not exist");
+        assertThat("EO pod does not exist", pod.isPresent(), is(true));
 
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "topic-operator",
                 "1Gi", "500m", "512Mi", "250m");
@@ -806,9 +802,9 @@ class KafkaST extends MessagingBaseST {
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        assertFalse(StUtils.ssHasRolled(zkSsName, zkPods));
-        assertFalse(StUtils.ssHasRolled(kafkaSsName, kafkaPods));
-        assertFalse(StUtils.depHasRolled(eoDepName, eoPods));
+        assertThat(StUtils.ssHasRolled(zkSsName, zkPods), is(false));
+        assertThat(StUtils.ssHasRolled(kafkaSsName, kafkaPods), is(false));
+        assertThat(StUtils.depHasRolled(eoDepName, eoPods), is(false));
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
 
@@ -834,9 +830,9 @@ class KafkaST extends MessagingBaseST {
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
-        assertNotNull(testTopic);
-        assertNotNull(testTopic.getSpec());
-        assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
+        assertThat(testTopic, is(CoreMatchers.notNullValue()));
+        assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
+        assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
 
         //Updating second topic via KafkaTopic update
         replaceTopicResource("topic-from-cli", topic -> {
@@ -845,9 +841,9 @@ class KafkaST extends MessagingBaseST {
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
-        assertNotNull(testTopic);
-        assertNotNull(testTopic.getSpec());
-        assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
+        assertThat(testTopic, is(CoreMatchers.notNullValue()));
+        assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
+        assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
 
         //Deleting first topic by deletion of CM
         cmdKubeClient().deleteByName("kafkatopic", "topic-from-cli");
@@ -970,7 +966,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitForPodDeletion(eoPodName);
 
         //Checking that EO was removed
-        assertEquals(0, kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size());
+        assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
 
         replaceKafkaResource(CLUSTER_NAME, k -> {
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
@@ -1058,7 +1054,7 @@ class KafkaST extends MessagingBaseST {
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
 
         //Checking that EO was not deployed
-        assertEquals(0, kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), "EO should not be deployed");
+        assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
     }
 
     @Test
@@ -1118,7 +1114,7 @@ class KafkaST extends MessagingBaseST {
             assertThat("Kafka TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), is(imgFromPod));
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
-                assertEquals(imgFromDeplConf.get(KAFKA_INIT_IMAGE), initContainerImage);
+                assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
             }
         }
 
@@ -1126,11 +1122,11 @@ class KafkaST extends MessagingBaseST {
         String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
         String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
-        assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
+        assertThat(imgFromPod, is(imgFromDeplConf.get(TO_IMAGE)));
         imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "user-operator");
-        assertEquals(imgFromDeplConf.get(UO_IMAGE), imgFromPod);
+        assertThat(imgFromPod, is(imgFromDeplConf.get(UO_IMAGE)));
         imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
-        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE), imgFromPod);
+        assertThat(imgFromPod, is(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
 
         LOGGER.info("Docker images verified");
     }
@@ -1149,8 +1145,8 @@ class KafkaST extends MessagingBaseST {
                 .endMetadata().done();
 
         // check annotation to trigger rolling update
-        assertTrue(Boolean.parseBoolean(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))
+                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
@@ -1170,8 +1166,8 @@ class KafkaST extends MessagingBaseST {
                 .endMetadata().done();
 
         // check annotation to trigger rolling update
-        assertTrue(Boolean.parseBoolean(kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME))
+                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
@@ -1233,12 +1229,12 @@ class KafkaST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        assertEquals(clusterBootstrapNodePort, kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                .getSpec().getPorts().get(0).getNodePort());
+        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
         LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
                 KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
-        assertEquals(brokerNodePort, kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
-                .getSpec().getPorts().get(0).getNodePort());
+        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+                .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
@@ -1448,10 +1444,10 @@ class KafkaST extends MessagingBaseST {
                     String volumeName = volume.getMetadata().getName();
                     pvcs.add(volumeName);
                     LOGGER.info("Checking labels for volume:" + volumeName);
-                    assertEquals(CLUSTER_NAME, volume.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("Kafka", volume.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(CLUSTER_NAME.concat("-kafka"), volume.getMetadata().getLabels().get("strimzi.io/name"));
-                    assertEquals(diskSizeGi + "Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/cluster"), is(CLUSTER_NAME));
+                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/kind"), is("Kafka"));
+                    assertThat(volume.getMetadata().getLabels().get("strimzi.io/name"), is(CLUSTER_NAME.concat("-kafka")));
+                    assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
                 });
 
         LOGGER.info("Checking PVC names included in JBOD array");
@@ -1529,7 +1525,7 @@ class KafkaST extends MessagingBaseST {
             for (int j = 0; j < diskCount; j++) {
                 LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
                         volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
-                assertEquals(diskSizes[i], volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
+                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizes[i]));
                 k++;
             }
         }
@@ -1563,12 +1559,12 @@ class KafkaST extends MessagingBaseST {
         Secret secretsWithExt = kubeClient().getSecret(brokerSecret);
 
         LOGGER.info("Checking secrets");
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.crt"), secretsWithExt.getData().get("my-cluster-kafka-0.crt"));
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-0.key"), secretsWithExt.getData().get("my-cluster-kafka-0.key"));
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.crt"), secretsWithExt.getData().get("my-cluster-kafka-1.crt"));
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"), secretsWithExt.getData().get("my-cluster-kafka-1.key"));
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"), secretsWithExt.getData().get("my-cluster-kafka-2.crt"));
-        assertNotEquals(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"), secretsWithExt.getData().get("my-cluster-kafka-2.key"));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-0.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-0.crt"))));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-0.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-0.key"))));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-1.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-1.crt"))));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-1.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"))));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-2.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"))));
+        assertThat(secretsWithExt.getData().get("my-cluster-kafka-2.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"))));
     }
 
     @Test

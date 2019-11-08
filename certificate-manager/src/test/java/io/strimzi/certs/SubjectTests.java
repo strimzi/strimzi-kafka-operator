@@ -4,24 +4,25 @@
  */
 package io.strimzi.certs;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SubjectTests {
     @Test
     public void testSubjectToString()   {
         Subject sbj = new Subject();
         sbj.setCommonName("joe");
-        assertEquals("/CN=joe", sbj.toString());
+        assertThat(sbj.toString(), is("/CN=joe"));
 
         sbj = new Subject();
         sbj.setOrganizationName("MyOrg");
-        assertEquals("/O=MyOrg", sbj.toString());
+        assertThat(sbj.toString(), is("/O=MyOrg"));
 
         sbj = new Subject();
         sbj.setCommonName("joe");
         sbj.setOrganizationName("MyOrg");
-        assertEquals("/O=MyOrg/CN=joe", sbj.toString());
+        assertThat(sbj.toString(), is("/O=MyOrg/CN=joe"));
     }
 }

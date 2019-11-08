@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
@@ -85,7 +84,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertTrue(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client));
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
         // Send messages to Kafka
         sendMessagesExternal(NAMESPACE, topicName, messageCount);
         // Try to consume messages
@@ -96,7 +95,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(messageCount));
         // Delete consumer
-        assertTrue(deleteConsumer(bridgeHost, bridgePort, groupId, name));
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }
 
     @Test

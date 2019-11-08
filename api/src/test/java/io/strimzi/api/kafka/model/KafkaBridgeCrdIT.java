@@ -10,7 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -43,7 +44,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.bootstrapServers in body is required"));
+            assertThat(e.getMessage().contains("spec.bootstrapServers in body is required"), is(true));
         }
     }
 
@@ -62,8 +63,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"));
-            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"));
+            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"), is(true));
         }
     }
 
@@ -87,7 +88,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.tracing.type in body should be one of [jaeger]"));
+            assertThat(e.getMessage().contains("spec.tracing.type in body should be one of [jaeger]"), is(true));
         }
     }
 
@@ -96,7 +97,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.tracing.type in body is required"));
+            assertThat(e.getMessage().contains("spec.tracing.type in body is required"), is(true));
         }
     }
 

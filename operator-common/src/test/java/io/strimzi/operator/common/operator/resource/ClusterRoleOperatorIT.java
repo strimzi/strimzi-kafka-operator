@@ -12,13 +12,15 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         ClusterRole, ClusterRoleList, DoneableClusterRole,
         Resource<ClusterRole, DoneableClusterRole>> {
@@ -65,12 +67,12 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     }
 
     @Override
-    protected void assertResources(TestContext context, ClusterRole expected, ClusterRole actual)   {
-        context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
-        context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
-        context.assertEquals(expected.getRules().size(), actual.getRules().size());
-        context.assertEquals(expected.getRules().get(0).getApiGroups(), actual.getRules().get(0).getApiGroups());
-        context.assertEquals(expected.getRules().get(0).getResources(), actual.getRules().get(0).getResources());
-        context.assertEquals(expected.getRules().get(0).getVerbs(), actual.getRules().get(0).getVerbs());
+    protected void assertResources(VertxTestContext context, ClusterRole expected, ClusterRole actual)   {
+        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
+        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
+        context.verify(() -> assertThat(actual.getRules().size(), is(expected.getRules().size())));
+        context.verify(() -> assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups())));
+        context.verify(() -> assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources())));
+        context.verify(() -> assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs())));
     }
 }

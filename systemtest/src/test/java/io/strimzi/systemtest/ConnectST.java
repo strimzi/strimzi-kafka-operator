@@ -41,8 +41,8 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -72,7 +72,7 @@ class ConnectST extends AbstractST {
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))));
-        assertEquals(exceptedConfig, getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"));
+        assertThat(getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
         testDockerImagesForKafkaConnect();
 
         verifyLabelsOnPods(CLUSTER_NAME, "connect", null, "KafkaConnect");
@@ -93,7 +93,7 @@ class ConnectST extends AbstractST {
             connectVersion = Environment.ST_KAFKA_VERSION;
         }
 
-        assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
+        assertThat(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), is(connectImageName));
         LOGGER.info("Docker images verified");
     }
 
@@ -179,14 +179,14 @@ class ConnectST extends AbstractST {
         // kafka cluster Connect already deployed
         List<String> connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         int initialReplicas = connectPods.size();
-        assertEquals(1, initialReplicas);
+        assertThat(initialReplicas, is(1));
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
         StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
-        assertEquals(scaleTo, connectPods.size());
+        assertThat(connectPods.size(), is(scaleTo));
         for (String pod : connectPods) {
             StUtils.waitForPod(pod);
             String uid = kubeClient().getPodUid(pod);
@@ -201,7 +201,7 @@ class ConnectST extends AbstractST {
             LOGGER.info("Waiting for connect pod deletion");
         }
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
-        assertEquals(initialReplicas, connectPods.size());
+        assertThat(connectPods.size(), is(initialReplicas));
         for (String pod : connectPods) {
             String uid = kubeClient().getPodUid(pod);
             List<Event> events = kubeClient().listEvents(uid);

@@ -27,9 +27,8 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.test.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,11 +39,10 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EntityOperatorTest {
 
@@ -94,36 +92,35 @@ public class EntityOperatorTest {
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(entityOperator.entityOperatorName(cluster), dep.getMetadata().getName());
-        assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(new Integer(EntityOperatorSpec.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
-        assertEquals(1, dep.getMetadata().getOwnerReferences().size());
-        assertEquals(entityOperator.createOwnerReference(), dep.getMetadata().getOwnerReferences().get(0));
+        assertThat(dep.getMetadata().getName(), is(entityOperator.entityOperatorName(cluster)));
+        assertThat(dep.getMetadata().getNamespace(), is(namespace));
+        assertThat(dep.getSpec().getReplicas(), is(new Integer(EntityOperatorSpec.DEFAULT_REPLICAS)));
+        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
 
-        assertEquals(3, containers.size());
+        assertThat(containers.size(), is(3));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)
-        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME, containers.get(0).getName());
-        assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, containers.get(1).getName());
+        assertThat(containers.get(0).getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
+        assertThat(containers.get(1).getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(2);
-        assertEquals(image, tlsSidecarContainer.getImage());
-        assertEquals(EntityOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT));
-        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
-        assertEquals(map(
-                EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
-                EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
-                EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()));
-        assertEquals(new Integer(tlsHealthDelay), tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(tlsHealthDelay), tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds());
+        assertThat(tlsSidecarContainer.getImage(), is(image));
+        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(EntityOperator.defaultZookeeperConnect(cluster)));
+        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
+        assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
+                        EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
+                        EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
     }
 
     @Test
     public void testFromCrd() {
-        assertEquals(namespace, entityOperator.namespace);
-        assertEquals(cluster, entityOperator.cluster);
-        assertEquals(EntityOperator.defaultZookeeperConnect(cluster), entityOperator.getZookeeperConnect());
+        assertThat(entityOperator.namespace, is(namespace));
+        assertThat(entityOperator.cluster, is(cluster));
+        assertThat(entityOperator.getZookeeperConnect(), is(EntityOperator.defaultZookeeperConnect(cluster)));
     }
 
     @Test
@@ -137,20 +134,19 @@ public class EntityOperatorTest {
                         .build();
         EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
-        assertNull(entityOperator.getTopicOperator());
-        assertNull(entityOperator.getUserOperator());
+        assertThat(entityOperator.getTopicOperator(), is(nullValue()));
+        assertThat(entityOperator.getUserOperator(), is(nullValue()));
     }
-
-    @Rule
-    public ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd);
 
     @Test
     public void withOldAffinity() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withOldAffinity");
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withAffinity() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
@@ -191,14 +187,14 @@ public class EntityOperatorTest {
 
         // Check Deployment
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
-        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
-        assertEquals("top-priority", dep.getSpec().getTemplate().getSpec().getPriorityClassName());
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
-        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
-        assertEquals("my-scheduler", dep.getSpec().getTemplate().getSpec().getSchedulerName());
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
     }
 
     @Test
@@ -219,9 +215,9 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
 
     @Test
@@ -237,9 +233,9 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
 
     @Test
@@ -263,9 +259,9 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -288,9 +284,9 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, secrets);
-        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -314,9 +310,9 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, singletonList(secret1));
-        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
-        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
-        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -332,7 +328,7 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
     }
 
     @Test
@@ -353,10 +349,10 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
-        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
-        assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
-        assertEquals(Long.valueOf(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
     @Test
@@ -372,7 +368,7 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
     /**
@@ -395,7 +391,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertEquals("foo1", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertThat(EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo1"));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -409,7 +405,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertEquals("foo2", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertThat(EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo2"));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -424,7 +420,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertThat(EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -439,7 +435,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
             .build();
-        assertEquals(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE, EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+        assertThat(EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
     }
 
     @Test
@@ -455,17 +451,17 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, ImagePullPolicy.ALWAYS, null);
-        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
-        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
-        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
         dep = eo.generateDeployment(true, Collections.EMPTY_MAP, ImagePullPolicy.IFNOTPRESENT, null);
-        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
-        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
-        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy());
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
@@ -507,12 +503,12 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTopicOperator().getEnvVars();
 
-        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
 
 
     }
@@ -552,12 +548,12 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTopicOperator().getEnvVars();
 
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
 
     }
 
@@ -598,12 +594,12 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getUserOperator().getEnvVars();
 
-        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
 
     }
 
@@ -642,12 +638,12 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getUserOperator().getEnvVars();
 
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
     }
 
     @Test
@@ -687,12 +683,12 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTlsSidecarEnvVars();
 
-        assertTrue("Failed to correctly set container environment variable: " + testEnvOneKey,
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
-        assertTrue("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
 
     }
 
@@ -726,8 +722,8 @@ public class EntityOperatorTest {
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(resource, VERSIONS).getTlsSidecarEnvVars();
 
-        assertFalse("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue));
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
     }
 }

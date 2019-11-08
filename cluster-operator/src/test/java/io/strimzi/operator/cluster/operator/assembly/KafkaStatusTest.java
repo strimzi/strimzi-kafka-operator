@@ -24,9 +24,9 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.text.ParseException;
@@ -35,10 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -51,12 +50,12 @@ public class KafkaStatusTest {
     private final String clusterName = "testkafka";
     protected static Vertx vertx;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         vertx.close();
     }
@@ -114,25 +113,25 @@ public class KafkaStatusTest {
                 config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-            assertTrue(res.succeeded());
+            assertThat(res.succeeded(), is(true));
 
-            assertNotNull(kafkaCaptor.getValue());
-            assertNotNull(kafkaCaptor.getValue().getStatus());
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
             KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-            assertEquals(2, status.getListeners().size());
-            assertEquals("plain", status.getListeners().get(0).getType());
-            assertEquals("my-service.my-namespace.svc", status.getListeners().get(0).getAddresses().get(0).getHost());
-            assertEquals(new Integer(9092), status.getListeners().get(0).getAddresses().get(0).getPort());
-            assertEquals("external", status.getListeners().get(1).getType());
-            assertEquals("my-route-address.domain.tld", status.getListeners().get(1).getAddresses().get(0).getHost());
-            assertEquals(new Integer(443), status.getListeners().get(1).getAddresses().get(0).getPort());
+            assertThat(status.getListeners().size(), is(2));
+            assertThat(status.getListeners().get(0).getType(), is("plain"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
+            assertThat(status.getListeners().get(1).getType(), is("external"));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(),  is("my-route-address.domain.tld"));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(new Integer(443)));
 
-            assertEquals(1, status.getConditions().size());
-            assertEquals("Ready", status.getConditions().get(0).getType());
-            assertEquals("True", status.getConditions().get(0).getStatus());
+            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().get(0).getType(), is("Ready"));
+            assertThat(status.getConditions().get(0).getStatus(), is("True"));
 
-            assertEquals(2L, status.getObservedGeneration());
+            assertThat(status.getObservedGeneration(), is(2L));
         });
     }
 
@@ -178,9 +177,9 @@ public class KafkaStatusTest {
                 config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-            assertTrue(res.succeeded());
+            assertThat(res.succeeded(), is(true));
             // The status should not change => we test that updateStatusAsync was not called
-            assertEquals(0, kafkaCaptor.getAllValues().size());
+            assertThat(kafkaCaptor.getAllValues().size(), is(0));
         });
     }
 
@@ -214,24 +213,24 @@ public class KafkaStatusTest {
                 config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-            assertFalse(res.succeeded());
+            assertThat(res.succeeded(), is(false));
 
-            assertNotNull(kafkaCaptor.getValue());
-            assertNotNull(kafkaCaptor.getValue().getStatus());
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
             KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-            assertEquals(1, status.getListeners().size());
-            assertEquals("plain", status.getListeners().get(0).getType());
-            assertEquals("my-service.my-namespace.svc", status.getListeners().get(0).getAddresses().get(0).getHost());
-            assertEquals(new Integer(9092), status.getListeners().get(0).getAddresses().get(0).getPort());
+            assertThat(status.getListeners().size(), is(1));
+            assertThat(status.getListeners().get(0).getType(), is("plain"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
 
-            assertEquals(1, status.getConditions().size());
-            assertEquals("NotReady", status.getConditions().get(0).getType());
-            assertEquals("True", status.getConditions().get(0).getStatus());
-            assertEquals(exception.getClass().getSimpleName(), status.getConditions().get(0).getReason());
-            assertEquals(exception.getMessage(), status.getConditions().get(0).getMessage());
+            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().get(0).getType(), is("NotReady"));
+            assertThat(status.getConditions().get(0).getStatus(), is("True"));
+            assertThat(status.getConditions().get(0).getReason(), is(exception.getClass().getSimpleName()));
+            assertThat(status.getConditions().get(0).getMessage(), is(exception.getMessage()));
 
-            assertEquals(2L, status.getObservedGeneration());
+            assertThat(status.getObservedGeneration(), is(2L));
         });
     }
 
@@ -279,24 +278,24 @@ public class KafkaStatusTest {
                 config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
-            assertFalse(res.succeeded());
+            assertThat(res.succeeded(), is(false));
 
-            assertNotNull(kafkaCaptor.getValue());
-            assertNotNull(kafkaCaptor.getValue().getStatus());
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
             KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-            assertEquals(1, status.getListeners().size());
-            assertEquals("plain", status.getListeners().get(0).getType());
-            assertEquals("my-service.my-namespace.svc", status.getListeners().get(0).getAddresses().get(0).getHost());
-            assertEquals(new Integer(9092), status.getListeners().get(0).getAddresses().get(0).getPort());
+            assertThat(status.getListeners().size(), is(1));
+            assertThat(status.getListeners().get(0).getType(), is("plain"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
 
-            assertEquals(1, status.getConditions().size());
-            assertEquals("NotReady", status.getConditions().get(0).getType());
-            assertEquals("True", status.getConditions().get(0).getStatus());
-            assertEquals("RuntimeException", status.getConditions().get(0).getReason());
-            assertEquals("Something went wrong", status.getConditions().get(0).getMessage());
+            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().get(0).getType(), is("NotReady"));
+            assertThat(status.getConditions().get(0).getStatus(), is("True"));
+            assertThat(status.getConditions().get(0).getReason(), is("RuntimeException"));
+            assertThat(status.getConditions().get(0).getMessage(), is("Something went wrong"));
 
-            assertEquals(2L, status.getObservedGeneration());
+            assertThat(status.getObservedGeneration(), is(2L));
         });
     }
 

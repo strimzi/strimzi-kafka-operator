@@ -14,10 +14,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,17 +24,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 
 public class InitWriterTest {
 
-    @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    @TempDir
+    public File tempDir;
 
     private static Map<String, String> envVars = new HashMap<>(2);
     private static Map<String, String> labels = new HashMap<>(4);
@@ -62,9 +59,9 @@ public class InitWriterTest {
     public void testWriteRackId() throws IOException {
 
         // create and configure (env vars) the path to the rack-id file
-        File kafkaFolder = tmpFolder.newFolder("opt", "kafka");
+        File kafkaFolder = new File(tempDir.getPath() + "opt/kafka");
         String rackFolder = kafkaFolder.getAbsolutePath() + "/rack";
-        new File(rackFolder).mkdir();
+        new File(rackFolder).mkdirs();
 
         Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
         envVars.put(InitWriterConfig.INIT_FOLDER, rackFolder);
@@ -74,16 +71,16 @@ public class InitWriterTest {
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
 
         InitWriter writer = new InitWriter(client, config);
-        assertTrue(writer.writeRack());
+        assertThat(writer.writeRack(), is(true));
     }
 
     @Test
     public void testWriteExternalAddress() throws IOException {
 
         // create and configure (env vars) the path to the rack-id file
-        File kafkaFolder = tmpFolder.newFolder("opt", "kafka");
+        File kafkaFolder = new File(tempDir.getPath(), "/opt/kafka");
         String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
-        new File(addressFolder).mkdir();
+        new File(addressFolder).mkdirs();
 
         Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
         envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
@@ -93,7 +90,7 @@ public class InitWriterTest {
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
 
         InitWriter writer = new InitWriter(client, config);
-        assertTrue(writer.writeExternalAddress());
+        assertThat(writer.writeExternalAddress(), is(true));
     }
 
     @Test
@@ -108,7 +105,7 @@ public class InitWriterTest {
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
 
         InitWriter writer = new InitWriter(client, config);
-        assertFalse(writer.writeRack());
+        assertThat(writer.writeRack(), is(false));
     }
 
     @Test
@@ -123,7 +120,7 @@ public class InitWriterTest {
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
 
         InitWriter writer = new InitWriter(client, config);
-        assertFalse(writer.writeRack());
+        assertThat(writer.writeRack(), is(false));
     }
 
     @Test
@@ -133,7 +130,7 @@ public class InitWriterTest {
         InitWriter writer = new InitWriter(client, config);
         String address = writer.findAddress(addresses);
 
-        assertEquals(address, "my.external.address");
+        assertThat(address, is("my.external.address"));
     }
 
     @Test
@@ -148,7 +145,7 @@ public class InitWriterTest {
         InitWriter writer = new InitWriter(client, config);
         String address = writer.findAddress(addresses);
 
-        assertNull(address);
+        assertThat(address, is(nullValue()));
     }
 
     @Test
@@ -160,16 +157,16 @@ public class InitWriterTest {
         InitWriter writer = new InitWriter(client, config);
         String address = writer.findAddress(addresses);
 
-        assertNull(address);
+        assertThat(address, is(nullValue()));
     }
 
     @Test
     public void testWriteExternalAdvertisedAddresses() throws IOException {
         // create and configure (env vars) the path to the rack-id file
-        File kafkaFolder = tmpFolder.newFolder("opt", "kafka");
+        File kafkaFolder = new File(tempDir.getPath() + "opt/kafka");
         String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
         String advertisedHost = "0://www.test0.com:1000 1://www.test1.com:1001";
-        new File(addressFolder).mkdir();
+        new File(addressFolder).mkdirs();
 
         Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
         envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
@@ -183,13 +180,13 @@ public class InitWriterTest {
         writer.writeExternalBrokerAddresses();
 
         String host0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.host")), "UTF-8");
-        assertEquals(host0, "www.test0.com");
+        assertThat(host0, is("www.test0.com"));
         String port0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.port")), "UTF-8");
-        assertEquals(port0, "1000");
+        assertThat(port0, is("1000"));
         String host1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.host")), "UTF-8");
-        assertEquals(host1, "www.test1.com");
+        assertThat(host1, is("www.test1.com"));
         String port1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.port")), "UTF-8");
-        assertEquals(port1, "1001");
+        assertThat(port1, is("1001"));
     }
 
     /**

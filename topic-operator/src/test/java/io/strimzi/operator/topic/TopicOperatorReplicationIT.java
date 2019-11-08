@@ -9,13 +9,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import kafka.admin.ReassignPartitionsCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -24,8 +25,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorReplicationIT.class);
@@ -48,8 +51,9 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
     }
 
     @Test
-    public void testKafkaTopicModifiedChangedReplication(TestContext context) throws Exception {
+    public void testKafkaTopicModifiedChangedReplication(VertxTestContext context) throws Exception {
         // create the topicResource
+        Checkpoint async = context.checkpoint();
         String topicName = "test-kafkatopic-modified-with-changed-replication";
         String resourceName = createTopic(context, topicName, asList(1));
 
@@ -99,14 +103,12 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
                     "--verify");
             LOGGER.info(output);
             if (output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 is still in progress")) {
-                context.assertFalse(System.currentTimeMillis() > deadline,
-                        "Timeout waiting for reassignment completion");
+                context.verify(() -> assertThat("Timeout waiting for reassignment completion", System.currentTimeMillis() > deadline, is(false)));
                 Thread.sleep(2_000);
                 continue;
             } else {
-                context.assertTrue(
-                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 completed successfully"),
-                        "Reassignment is no longer in progress, but wasn't successful: " + output);
+                context.verify(() -> assertThat("Reassignment is no longer in progress, but wasn't successful: " + output,
+                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 completed successfully"), is(true)));
                 break;
             }
         }
@@ -120,6 +122,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
         // And check that the status is ready
         assertStatusReady(context, topicName);
+        async.flag();
     }
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();

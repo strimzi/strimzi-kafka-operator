@@ -19,17 +19,18 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.model.Labels;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class ModelUtilsTest {
 
@@ -38,33 +39,33 @@ public class ModelUtilsTest {
         Map<String, String> m = parseMap(
                 KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "\n  " +
                         KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE + "\n ");
-        assertEquals(2, m.size());
-        assertEquals(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
-        assertEquals(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
+        assertThat(m.size(), is(2));
+        assertThat(m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
 
         m = parseMap(
                 KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "," +
                 KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
-        assertEquals(2, m.size());
-        assertEquals(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
-        assertEquals(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE, m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
+        assertThat(m.size(), is(2));
+        assertThat(m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
     }
 
     @Test
     public void testAnnotationsOrLabelsImageMap() {
         Map<String, String> m = parseMap(" discovery.3scale.net=true");
-        assertEquals(1, m.size());
-        assertEquals("true", m.get("discovery.3scale.net"));
+        assertThat(m.size(), is(1));
+        assertThat(m.get("discovery.3scale.net"), is("true"));
 
         m = parseMap(" discovery.3scale.net/scheme=http\n" +
                 "        discovery.3scale.net/port=8080\n" +
                 "        discovery.3scale.net/path=path/\n" +
                 "        discovery.3scale.net/description-path=oapi/");
-        assertEquals(4, m.size());
-        assertEquals("http", m.get("discovery.3scale.net/scheme"));
-        assertEquals("8080", m.get("discovery.3scale.net/port"));
-        assertEquals("path/", m.get("discovery.3scale.net/path"));
-        assertEquals("oapi/", m.get("discovery.3scale.net/description-path"));
+        assertThat(m.size(), is(4));
+        assertThat(m.get("discovery.3scale.net/scheme"), is("http"));
+        assertThat(m.get("discovery.3scale.net/port"), is("8080"));
+        assertThat(m.get("discovery.3scale.net/path"), is("path/"));
+        assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
     }
 
     @Test
@@ -80,9 +81,9 @@ public class ModelUtilsTest {
         Model model = new Model();
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
-        assertEquals(Collections.singletonMap("labelKey", "labelValue"), model.templatePodDisruptionBudgetLabels);
-        assertEquals(Collections.singletonMap("annoKey", "annoValue"), model.templatePodDisruptionBudgetAnnotations);
-        assertEquals(2, model.templatePodDisruptionBudgetMaxUnavailable);
+        assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
+        assertThat(model.templatePodDisruptionBudgetAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
+        assertThat(model.templatePodDisruptionBudgetMaxUnavailable, is(2));
     }
 
     @Test
@@ -90,9 +91,9 @@ public class ModelUtilsTest {
         Model model = new Model();
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
-        assertNull(model.templatePodDisruptionBudgetLabels);
-        assertNull(model.templatePodDisruptionBudgetAnnotations);
-        assertEquals(1, model.templatePodDisruptionBudgetMaxUnavailable);
+        assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
+        assertThat(model.templatePodDisruptionBudgetAnnotations, is(nullValue()));
+        assertThat(model.templatePodDisruptionBudgetMaxUnavailable, is(1));
     }
 
     @Test
@@ -113,16 +114,16 @@ public class ModelUtilsTest {
         Model model = new Model();
 
         ModelUtils.parsePodTemplate(model, template);
-        assertEquals(Collections.singletonMap("labelKey", "labelValue"), model.templatePodLabels);
-        assertEquals(Collections.singletonMap("annoKey", "annoValue"), model.templatePodAnnotations);
-        assertEquals(123, model.templateTerminationGracePeriodSeconds);
-        assertEquals(2, model.templateImagePullSecrets.size());
-        assertTrue(model.templateImagePullSecrets.contains(secret1));
-        assertTrue(model.templateImagePullSecrets.contains(secret2));
-        assertNotNull(model.templateSecurityContext);
-        assertEquals(Long.valueOf(123), model.templateSecurityContext.getFsGroup());
-        assertEquals(Long.valueOf(456), model.templateSecurityContext.getRunAsGroup());
-        assertEquals(Long.valueOf(789), model.templateSecurityContext.getRunAsUser());
+        assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
+        assertThat(model.templatePodAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
+        assertThat(model.templateTerminationGracePeriodSeconds, is(123));
+        assertThat(model.templateImagePullSecrets.size(), is(2));
+        assertThat(model.templateImagePullSecrets.contains(secret1), is(true));
+        assertThat(model.templateImagePullSecrets.contains(secret2), is(true));
+        assertThat(model.templateSecurityContext, is(notNullValue()));
+        assertThat(model.templateSecurityContext.getFsGroup(), is(Long.valueOf(123)));
+        assertThat(model.templateSecurityContext.getRunAsGroup(), is(Long.valueOf(456)));
+        assertThat(model.templateSecurityContext.getRunAsUser(), is(Long.valueOf(789)));
     }
 
     @Test
@@ -130,11 +131,11 @@ public class ModelUtilsTest {
         Model model = new Model();
 
         ModelUtils.parsePodTemplate(model, null);
-        assertNull(model.templatePodLabels);
-        assertNull(model.templatePodAnnotations);
-        assertNull(model.templateImagePullSecrets);
-        assertNull(model.templateSecurityContext);
-        assertEquals(30, model.templateTerminationGracePeriodSeconds);
+        assertThat(model.templatePodLabels, is(nullValue()));
+        assertThat(model.templatePodAnnotations, is(nullValue()));
+        assertThat(model.templateImagePullSecrets, is(nullValue()));
+        assertThat(model.templateSecurityContext, is(nullValue()));
+        assertThat(model.templateTerminationGracePeriodSeconds, is(30));
     }
 
     private class Model extends AbstractModel   {
@@ -164,16 +165,16 @@ public class ModelUtilsTest {
 
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
 
-        assertEquals(jbod, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(jbod)));
-        assertEquals(ephemeral, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(ephemeral)));
-        assertEquals(persistent, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)));
+        assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(jbod)), is(jbod));
+        assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(ephemeral)), is(ephemeral));
+        assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)), is(persistent));
     }
 
     @Test
     public void testCreateTcpSocketProbe()  {
         Probe probe = ModelUtils.createTcpSocketProbe(1234, new ProbeBuilder().withInitialDelaySeconds(10).withTimeoutSeconds(20).build());
-        assertEquals(new Integer(1234), probe.getTcpSocket().getPort().getIntVal());
-        assertEquals(new Integer(10), probe.getInitialDelaySeconds());
-        assertEquals(new Integer(20), probe.getTimeoutSeconds());
+        assertThat(probe.getTcpSocket().getPort().getIntVal(), is(new Integer(1234)));
+        assertThat(probe.getInitialDelaySeconds(), is(new Integer(10)));
+        assertThat(probe.getTimeoutSeconds(), is(new Integer(20)));
     }
 }

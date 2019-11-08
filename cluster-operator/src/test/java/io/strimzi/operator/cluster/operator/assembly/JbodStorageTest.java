@@ -31,22 +31,28 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class JbodStorageTest {
 
     private static final String NAMESPACE = "test-jbod-storage";
@@ -118,13 +124,13 @@ public class JbodStorageTest {
     }
 
     @Test
-    public void testCreatePersistentVolumeClaims(TestContext context) {
+    public void testCreatePersistentVolumeClaims(VertxTestContext context) {
 
         this.init();
 
-        Async async = context.async();
+        Checkpoint async = context.checkpoint();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
             List<PersistentVolumeClaim> pvcs = getPvcs(NAMESPACE, NAME);
 
@@ -132,7 +138,7 @@ public class JbodStorageTest {
                 int podId = i;
                 for (SingleVolumeStorage volume : this.volumes) {
                     if (volume instanceof PersistentClaimStorage) {
-                        context.assertTrue(pvcs.stream().anyMatch(pvc -> {
+                        context.verify(() -> assertThat(pvcs.stream().anyMatch(pvc -> {
                             String pvcName = ModelUtils.getVolumePrefix(volume.getId()) + "-"
                                     + KafkaCluster.kafkaPodName(NAME, podId);
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
@@ -140,26 +146,26 @@ public class JbodStorageTest {
                             boolean namesMatch = pvc.getMetadata().getName().equals(pvcName);
                             return namesMatch && Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM,
                                     false, AbstractModel.ANNO_CO_STRIMZI_IO_DELETE_CLAIM) == isDeleteClaim;
-                        }));
+                        }), is(true)));
                     }
                 }
             }
-            async.complete();
+            async.flag();
         });
     }
 
     @Test
-    public void testAddVolumeToJbod(TestContext context) {
+    public void testAddVolumeToJbod(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
 
         this.init();
 
         // first reconcile for cluster creation
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
-            createAsync.complete();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            createAsync.complete(true);
         });
-        createAsync.await();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         // trying to add a new volume to the JBOD storage
         volumes.add(new PersistentClaimStorageBuilder()
@@ -179,28 +185,28 @@ public class JbodStorageTest {
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
-        Async updateAsync = context.async();
+        Checkpoint updateAsync = context.checkpoint();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             List<PersistentVolumeClaim> pvcs = getPvcs(NAMESPACE, NAME);
             Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
-            context.assertEquals(expectedPvcs, pvcsNames);
-            updateAsync.complete();
+            context.verify(() -> assertThat(pvcsNames, is(expectedPvcs)));
+            updateAsync.flag();
         });
     }
 
     @Test
-    public void testRemoveVolumeFromJbod(TestContext context) {
+    public void testRemoveVolumeFromJbod(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
 
         this.init();
 
         // first reconcile for cluster creation
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
-            createAsync.complete();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            createAsync.complete(true);
         });
-        createAsync.await();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         // trying to remove a volume from the JBOD storage
         volumes.remove(0);
@@ -217,28 +223,28 @@ public class JbodStorageTest {
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
-        Async updateAsync = context.async();
+        Checkpoint updateAsync = context.checkpoint();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             Set<String> pvcsNames = getPvcs(NAMESPACE, NAME).stream()
                     .map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
-            context.assertEquals(expectedPvcs, pvcsNames);
-            updateAsync.complete();
+            context.verify(() -> assertThat(pvcsNames, is(expectedPvcs)));
+            updateAsync.flag();
         });
     }
 
     @Test
-    public void testUpdateVolumeIdJbod(TestContext context) {
+    public void testUpdateVolumeIdJbod(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
 
         this.init();
 
         // first reconcile for cluster creation
-        Async createAsync = context.async();
+        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
-            createAsync.complete();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            createAsync.complete(true);
         });
-        createAsync.await();
+        createAsync.get(60, TimeUnit.SECONDS);
 
         // trying to update id for a volume from in the JBOD storage
         volumes.get(0).setId(3);
@@ -255,13 +261,13 @@ public class JbodStorageTest {
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
-        Async updateAsync = context.async();
+        Checkpoint updateAsync = context.checkpoint();
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
-            context.assertTrue(ar.succeeded());
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
             Set<String> pvcsNames = getPvcs(NAMESPACE, NAME).stream()
                     .map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
-            context.assertEquals(expectedPvcs, pvcsNames);
-            updateAsync.complete();
+            context.verify(() -> assertThat(pvcsNames, is(expectedPvcs)));
+            updateAsync.flag();
         });
     }
 

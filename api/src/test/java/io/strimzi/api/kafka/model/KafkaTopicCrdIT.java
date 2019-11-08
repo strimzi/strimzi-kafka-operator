@@ -10,7 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -47,8 +48,8 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.partitions in body is required"));
-            assertTrue(e.getMessage().contains("spec.replicas in body is required"));
+            assertThat(e.getMessage().contains("spec.partitions in body is required"), is(true));
+            assertThat(e.getMessage().contains("spec.replicas in body is required"), is(true));
         }
     }
 
