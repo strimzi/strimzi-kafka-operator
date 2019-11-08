@@ -237,7 +237,7 @@ public class TopicOperator extends AbstractModel {
             result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds() * 1_000);
             result.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             result.setLogging(tcConfig.getLogging());
-            result.setGcLoggingEnabled(tcConfig.getJvmOptions() == null ? true : tcConfig.getJvmOptions().isGcLoggingEnabled());
+            result.setGcLoggingEnabled(tcConfig.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : tcConfig.getJvmOptions().isGcLoggingEnabled());
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
             result.setTlsSidecar(tcConfig.getTlsSidecar());

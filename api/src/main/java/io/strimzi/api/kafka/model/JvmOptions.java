@@ -32,7 +32,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private String xmx;
     private String xms;
     private Boolean server;
-    private boolean gcLoggingEnabled = true;
+    private boolean gcLoggingEnabled = false;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -68,7 +68,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.server = server;
     }
 
-    @Description("Specifies whether the Garbage Collection logging is enabled. The default is true.")
+    @Description("Specifies whether the Garbage Collection logging is enabled. The default is false.")
     public boolean isGcLoggingEnabled() {
         return gcLoggingEnabled;
     }

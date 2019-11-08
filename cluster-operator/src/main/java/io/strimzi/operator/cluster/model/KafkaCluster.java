@@ -385,7 +385,7 @@ public class KafkaCluster extends AbstractModel {
         Logging logging = kafkaClusterSpec.getLogging();
         result.setLogging(logging == null ? new InlineLogging() : logging);
 
-        result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? true : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 

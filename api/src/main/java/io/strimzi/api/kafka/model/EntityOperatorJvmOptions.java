@@ -27,11 +27,11 @@ public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Seri
 
     private static final long serialVersionUID = 1L;
 
-    private boolean gcLoggingEnabled = true;
+    private boolean gcLoggingEnabled = false;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Specifies whether the Garbage Collection logging is enabled. The default is true.")
+    @Description("Specifies whether the Garbage Collection logging is enabled. The default is false.")
     public boolean isGcLoggingEnabled() {
         return gcLoggingEnabled;
     }

@@ -158,7 +158,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         kafkaConnect.setResources(spec.getResources());
         kafkaConnect.setLogging(spec.getLogging());
-        kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
         kafkaConnect.setJvmOptions(spec.getJvmOptions());
         if (spec.getReadinessProbe() != null) {
             kafkaConnect.setReadinessProbe(spec.getReadinessProbe());

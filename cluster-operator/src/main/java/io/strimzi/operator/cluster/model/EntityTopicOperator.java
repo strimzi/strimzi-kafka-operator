@@ -217,7 +217,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
-                result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? true : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
