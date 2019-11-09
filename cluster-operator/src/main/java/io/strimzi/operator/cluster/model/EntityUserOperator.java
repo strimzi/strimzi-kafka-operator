@@ -203,7 +203,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
-                result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
                 if (userOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(userOperatorSpec.getReadinessProbe());

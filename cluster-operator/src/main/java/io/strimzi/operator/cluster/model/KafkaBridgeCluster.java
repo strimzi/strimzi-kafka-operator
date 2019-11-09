@@ -142,7 +142,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.tracing = spec.getTracing();
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
-        kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");

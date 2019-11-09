@@ -86,6 +86,7 @@ public abstract class AbstractModel {
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
     protected static final String DEFAULT_JVM_XMS = "128M";
+    protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
@@ -104,9 +105,6 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
-
-    protected static final String DEFAULT_KAFKA_GC_LOG_ENABLED = String.valueOf(true);
-    protected static final String DEFAULT_STRIMZI_GC_LOG_ENABED = String.valueOf(true);
 
     protected final String cluster;
     protected final String namespace;

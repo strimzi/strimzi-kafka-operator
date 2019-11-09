@@ -690,7 +690,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |string
 |-Xmx              1.2+<.<|-Xmx option to to the JVM.
 |string
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
+|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
 |====
 
@@ -1027,7 +1027,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [options="header"]
 |====
 |Property                 |Description
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
+|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
 |====
 
