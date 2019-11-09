@@ -231,6 +231,7 @@ public class MockCertManager implements CertManager {
     @Override
     public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
         // never called during the tests which use this MockCertManager
+        write(keyStoreFile, "key store");
     }
 
     @Override
