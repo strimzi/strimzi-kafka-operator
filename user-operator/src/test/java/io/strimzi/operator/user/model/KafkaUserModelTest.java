@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
