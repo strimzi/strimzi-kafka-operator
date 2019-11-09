@@ -1673,6 +1673,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
