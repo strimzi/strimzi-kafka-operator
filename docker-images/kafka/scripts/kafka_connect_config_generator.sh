@@ -17,6 +17,9 @@ producer.ssl.truststore.password=${CERTS_STORE_PASSWORD}
 
 consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 consumer.ssl.truststore.password=${CERTS_STORE_PASSWORD}
+
+admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
+admin.ssl.truststore.password=${CERTS_STORE_PASSWORD}
 EOF
 )
     fi
@@ -34,6 +37,10 @@ producer.ssl.keystore.type=PKCS12
 consumer.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 consumer.ssl.keystore.password=${CERTS_STORE_PASSWORD}
 consumer.ssl.keystore.type=PKCS12
+
+admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+admin.ssl.keystore.password=${CERTS_STORE_PASSWORD}
+admin.ssl.keystore.type=PKCS12
 EOF
 )
     fi
@@ -76,6 +83,7 @@ if [ -n "$KAFKA_CONNECT_SASL_MECHANISM" ]; then
         OAUTH_CALLBACK_CLASS="sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
         OAUTH_CALLBACK_CLASS_PRODUCER="producer.${OAUTH_CALLBACK_CLASS}"
         OAUTH_CALLBACK_CLASS_CONSUMER="consumer.${OAUTH_CALLBACK_CLASS}"
+        OAUTH_CALLBACK_CLASS_ADMIN="admin.${OAUTH_CALLBACK_CLASS}"
     fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
@@ -88,6 +96,9 @@ ${OAUTH_CALLBACK_CLASS_PRODUCER}
 consumer.sasl.mechanism=${SASL_MECHANISM}
 consumer.sasl.jaas.config=${JAAS_CONFIG}
 ${OAUTH_CALLBACK_CLASS_CONSUMER}
+admin.sasl.mechanism=${SASL_MECHANISM}
+admin.sasl.jaas.config=${JAAS_CONFIG}
+${OAUTH_CALLBACK_CLASS_ADMIN}
 
 EOF
 )
@@ -109,6 +120,7 @@ ${KAFKA_CONNECT_CONFIGURATION}
 security.protocol=${SECURITY_PROTOCOL}
 producer.security.protocol=${SECURITY_PROTOCOL}
 consumer.security.protocol=${SECURITY_PROTOCOL}
+admin.security.protocol=${SECURITY_PROTOCOL}
 ${TLS_CONFIGURATION}
 ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
