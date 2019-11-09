@@ -65,6 +65,7 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
@@ -1154,7 +1155,7 @@ public class KafkaClusterTest {
     }
 
     private Secret generateBrokerSecret(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
-        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
+        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
         kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses);

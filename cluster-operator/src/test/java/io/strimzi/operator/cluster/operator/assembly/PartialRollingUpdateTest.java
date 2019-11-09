@@ -27,6 +27,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
@@ -123,7 +124,7 @@ public class PartialRollingUpdateTest {
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         LOGGER.info("bootstrap reconciliation");
         CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
@@ -171,7 +172,7 @@ public class PartialRollingUpdateTest {
         ResourceOperatorSupplier supplier = supplier(mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 

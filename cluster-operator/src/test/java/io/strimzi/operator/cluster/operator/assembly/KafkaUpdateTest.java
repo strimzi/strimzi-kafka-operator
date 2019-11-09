@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -145,7 +146,7 @@ public class KafkaUpdateTest {
         });
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
-                new MockCertManager(),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null, null, null),

@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -122,7 +123,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm, VERSIONS);
@@ -213,7 +214,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -314,7 +315,7 @@ public class KafkaConnectAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -404,7 +405,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -455,7 +456,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -508,7 +509,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -557,7 +558,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         CountDownLatch async = new CountDownLatch(2);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {
@@ -605,7 +606,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();

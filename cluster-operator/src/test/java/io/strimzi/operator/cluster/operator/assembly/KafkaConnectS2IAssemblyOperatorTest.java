@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -138,7 +139,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<KafkaConnectS2I> connectCaptor = ArgumentCaptor.forClass(KafkaConnectS2I.class);
         when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
@@ -268,7 +269,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -388,7 +389,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -512,7 +513,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
 
         Checkpoint async = context.checkpoint();
@@ -574,7 +575,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -638,7 +639,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -695,7 +696,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         CountDownLatch async = new CountDownLatch(2);
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly) {
@@ -748,7 +749,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<KafkaConnectS2I> connectCaptor = ArgumentCaptor.forClass(KafkaConnectS2I.class);
         when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {

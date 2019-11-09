@@ -69,6 +69,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
@@ -148,14 +149,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
      * @param certManager Certificate manager
+     * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                 CertManager certManager,
+                                 CertManager certManager, PasswordGenerator passwordGenerator,
                                  ResourceOperatorSupplier supplier,
                                  ClusterOperatorConfig config) {
-        super(vertx, pfa, Kafka.RESOURCE_KIND, certManager,
+        super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.routeOperations = supplier.routeOperations;
@@ -486,7 +488,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
-                        this.clusterCa = new ClusterCa(certManager, name, clusterCaCertSecret, clusterCaKeySecret,
+                        this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
                                 clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(),
@@ -502,7 +504,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
 
-                        this.clientsCa = new ClientsCa(certManager,
+                        this.clientsCa = new ClientsCa(certManager, passwordGenerator,
                                 clientsCaCertName, clientsCaCertSecret,
                                 clientsCaKeyName, clientsCaKeySecret,
                                 ModelUtils.getCertificateValidity(clientsCaConfig),

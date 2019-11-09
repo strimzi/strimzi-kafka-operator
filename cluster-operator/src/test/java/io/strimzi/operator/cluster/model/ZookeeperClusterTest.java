@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
@@ -334,7 +335,7 @@ public class ZookeeperClusterTest {
 
     @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
-        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
+        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
         Secret secret = zc.generateNodesSecret(clusterCa, ka);

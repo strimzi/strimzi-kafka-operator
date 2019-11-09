@@ -96,12 +96,7 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
 
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                    "0123456789");
+    private PasswordGenerator passwordGenerator;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -205,7 +200,7 @@ public abstract class Ca {
     private boolean caCertsRemoved;
     private final CertificateExpirationPolicy policy;
 
-    public Ca(CertManager certManager, String commonName,
+    public Ca(CertManager certManager, PasswordGenerator passwordGenerator, String commonName,
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
@@ -215,6 +210,7 @@ public abstract class Ca {
         this.caKeySecret = caKeySecret;
         this.caKeySecretName = caKeySecretName;
         this.certManager = certManager;
+        this.passwordGenerator = passwordGenerator;
         this.validityDays = validityDays;
         this.renewalDays = renewalDays;
         this.generateCa = generateCa;

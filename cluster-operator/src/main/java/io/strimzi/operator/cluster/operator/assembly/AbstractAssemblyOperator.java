@@ -18,6 +18,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -54,6 +55,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
+    protected final PasswordGenerator passwordGenerator;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     protected final ServiceOperator serviceOperations;
@@ -70,18 +72,20 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param pfa Properties with features availability
      * @param kind The kind of watched resource
      * @param certManager Certificate manager
+     * @param passwordGenerator Password generator
      * @param resourceOperator For operating on the desired resource
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
-                                       CertManager certManager,
+                                       CertManager certManager, PasswordGenerator passwordGenerator,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator);
         this.pfa = pfa;
         this.certManager = certManager;
+        this.passwordGenerator = passwordGenerator;
         this.secretOperations = supplier.secretOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
