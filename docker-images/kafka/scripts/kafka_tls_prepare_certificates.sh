@@ -50,7 +50,8 @@ echo "Looking for the right CA"
 CA=$(find_ca /opt/kafka/cluster-ca-certs /opt/kafka/broker-certs/$HOSTNAME.crt)
 
 if [ ! -f "$CA" ]; then
-    echo "No CA found. This exiting."
+    echo "No CA found. Thus exiting."
+    exit 1
 fi
 echo "Found the right CA: $CA"
 
