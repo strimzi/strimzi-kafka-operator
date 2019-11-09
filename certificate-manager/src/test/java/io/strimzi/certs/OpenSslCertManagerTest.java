@@ -245,8 +245,7 @@ public class OpenSslCertManagerTest {
                     .append(Base64.getEncoder().encodeToString(storeKey.getEncoded()))
                     .append("-----END PRIVATE KEY-----");
 
-            assertTrue(sb.toString()
-                    .equals(new String(Files.readAllBytes(caKey.toPath())).replace("\n", "")));
+            assertThat(sb.toString(), is(new String(Files.readAllBytes(caKey.toPath())).replace("\n", "")));
 
             X509Certificate storeCert = (X509Certificate) store.getCertificate("ca");
             storeCert.verify(storeCert.getPublicKey());
