@@ -84,8 +84,8 @@ public abstract class Ca {
             .toFormatter().withChronology(IsoChronology.INSTANCE);
     public static final String CA_KEY = "ca.key";
     public static final String CA_CRT = "ca.crt";
-    public static final String CA_STORE = "truststore.p12";
-    public static final String CA_STORE_PASSWORD = "truststore.password";
+    public static final String CA_STORE = "ca.p12";
+    public static final String CA_STORE_PASSWORD = "ca.password";
     public static final String IO_STRIMZI = "io.strimzi";
 
     public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = Annotations.STRIMZI_DOMAIN + "/force-replace";
@@ -465,6 +465,10 @@ public abstract class Ca {
                 default:
                     keyData = caKeySecret.getData();
                     certData = caCertSecret.getData();
+                    // coming from an older version, the secret could not have the CA truststore
+                    if (!certData.containsKey(CA_STORE)) {
+                        generateCaTrustStore(nextCaSubject(caKeyGeneration), certData);
+                    }
             }
             this.caCertsRemoved = removeExpiredCerts(certData) > 0;
         }
@@ -772,6 +776,29 @@ public abstract class Ca {
             throw new RuntimeException("No security provider with support for X.509 certificates", e);
         }
         return factory;
+    }
+
+    private void generateCaTrustStore(Subject subject, Map<String, String> certData) {
+        try {
+            log.debug("Generating CA truststore for subject={}", subject);
+            File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
+            Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
+            try {
+                File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                try {
+                    String trustStorePassword = passwordGenerator.generate();
+                    certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
+                    certData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
+                    certData.put(CA_STORE_PASSWORD, Base64.getEncoder().encodeToString(trustStorePassword.getBytes(StandardCharsets.US_ASCII)));
+                } finally {
+                    delete(trustStoreFile);
+                }
+            } finally {
+                delete(certFile);
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
