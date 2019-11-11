@@ -20,11 +20,15 @@ acquired using a `PersistentVolumeClaim` to make it independent of the actual ty
 ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
-{ProductName} includes two templates for deploying a Kafka cluster:
+{ProductName} includes several examples for deploying a Kafka cluster.
 
-* `kafka-ephemeral.yaml` deploys an ephemeral cluster, named `my-cluster` by default.
-* `kafka-persistent.yaml` deploys a persistent cluster, named `my-cluster` by default.
+* `kafka-persistent.yaml` deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
+* `kafka-jbod.yaml` deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
+* `kafka-persistent-single.yaml` deploys a persistent cluster with a single ZooKeeper node and a single Kafka node.
+* `kafka-ephemeral.yaml` deploys an ephemeral cluster with three ZooKeeper and three Kafka nodes.
+* `kafka-ephemeral-single.yaml` deploys an ephemeral cluster with three ZooKeeper nodes and a single Kafka node.
 
+The example clusters are named `my-cluster` by default.
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed. To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the resource in the relevant YAML file.
 
 [source,yaml,subs="+quotes,attributes"]
