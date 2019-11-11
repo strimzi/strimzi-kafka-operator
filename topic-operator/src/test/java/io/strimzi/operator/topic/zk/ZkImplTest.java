@@ -87,7 +87,9 @@ public class ZkImplTest {
         zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             fooFuture.complete(true);
         });
-        fooFuture.get(60, TimeUnit.SECONDS);
+        if (!fooFuture.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // Now watch its children
         CompletableFuture<Boolean> barFuture = new CompletableFuture<>();
@@ -105,7 +107,9 @@ public class ZkImplTest {
             });
             return Future.succeededFuture();
         });
-        barFuture.get(60, TimeUnit.SECONDS);
+        if (!barFuture.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -117,7 +121,9 @@ public class ZkImplTest {
         zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             fooFuture.complete(true);
         });
-        fooFuture.get(60, TimeUnit.SECONDS);
+        if (!fooFuture.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         Checkpoint done = context.checkpoint();
         byte[] data2 = {2};

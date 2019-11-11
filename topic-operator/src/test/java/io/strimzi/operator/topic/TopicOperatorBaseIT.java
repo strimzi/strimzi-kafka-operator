@@ -250,7 +250,9 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
             }
         });
         try {
-            async.get(60, TimeUnit.SECONDS);
+            if (!async.get(60, TimeUnit.SECONDS)) {
+                context.failNow(new Throwable("Test timeout"));
+            }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             context.failNow(e);
@@ -296,7 +298,9 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
                 }
             });
         }
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         LOGGER.info("Stopped Topic Operator");
     }
 

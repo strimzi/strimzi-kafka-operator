@@ -166,7 +166,9 @@ public class JbodStorageTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to add a new volume to the JBOD storage
         volumes.add(new PersistentClaimStorageBuilder()
@@ -207,7 +209,9 @@ public class JbodStorageTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to remove a volume from the JBOD storage
         volumes.remove(0);
@@ -245,7 +249,9 @@ public class JbodStorageTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to update id for a volume from in the JBOD storage
         volumes.get(0).setId(3);

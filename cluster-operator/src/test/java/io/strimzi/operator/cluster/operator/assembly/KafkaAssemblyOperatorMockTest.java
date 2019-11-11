@@ -286,7 +286,9 @@ public class KafkaAssemblyOperatorMockTest {
             context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get(), is(notNullValue())));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         return kco;
     }
 
@@ -302,7 +304,9 @@ public class KafkaAssemblyOperatorMockTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             updateAsync.flag();
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 
     private void assertPvcs(VertxTestContext context, Set<String> expectedClaims) {

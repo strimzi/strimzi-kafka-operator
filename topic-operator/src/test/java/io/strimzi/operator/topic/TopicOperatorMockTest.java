@@ -115,7 +115,9 @@ public class TopicOperatorMockTest {
                 context.failNow(new Throwable("Failed to deploy session"));
             }
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         int timeout = 30_000;
 
@@ -223,7 +225,9 @@ public class TopicOperatorMockTest {
             }
             async.flag();
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         return ref.get();
     }
 
@@ -258,7 +262,9 @@ public class TopicOperatorMockTest {
             }
             async.flag();
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 
 

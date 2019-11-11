@@ -178,7 +178,9 @@ public class ZookeeperLeaderFinderTest {
                 }
             });
         }
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         return result;
     }
 

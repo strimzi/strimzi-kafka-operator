@@ -750,7 +750,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
             async.complete(true);
         });
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 }

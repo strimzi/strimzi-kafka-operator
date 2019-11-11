@@ -164,7 +164,9 @@ public class ClusterOperatorTest {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
             async.complete(true);
         });
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(namespaceList.size())));
 
@@ -174,7 +176,9 @@ public class ClusterOperatorTest {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
                 async2.complete(true);
             });
-            async2.get(60, TimeUnit.SECONDS);
+            if (!async2.get(60, TimeUnit.SECONDS)) {
+                context.failNow(new Throwable("Test timeout"));
+            }
         }
 
 
@@ -238,7 +242,9 @@ public class ClusterOperatorTest {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
             async.complete(true);
         });
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(1)));
 
@@ -248,7 +254,9 @@ public class ClusterOperatorTest {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
                 async2.complete(true);
             });
-            async2.get(60, TimeUnit.SECONDS);
+            if (!async2.get(60, TimeUnit.SECONDS)) {
+                context.failNow(new Throwable(""));
+            }
         }
 
         if (numWatchers.get() > (openShift ? 5 : 4)) { // we do not have connectS2I on k8s

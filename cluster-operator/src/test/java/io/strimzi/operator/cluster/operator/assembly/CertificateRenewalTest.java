@@ -144,7 +144,9 @@ public class CertificateRenewalTest {
             error.set(ar.cause());
             async.flag();
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (error.get() != null) {
             Throwable t = error.get();

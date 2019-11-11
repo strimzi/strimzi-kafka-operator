@@ -138,7 +138,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -154,7 +156,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -185,7 +189,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
         CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
@@ -196,7 +202,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -218,7 +226,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -234,7 +244,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -254,7 +266,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Updating resource status");
         CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
@@ -262,7 +276,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.complete(true);
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -284,7 +300,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -300,7 +318,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -327,7 +347,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.complete(true);
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
         CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
@@ -338,7 +360,9 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 }

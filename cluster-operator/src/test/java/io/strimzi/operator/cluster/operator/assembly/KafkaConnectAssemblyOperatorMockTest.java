@@ -107,7 +107,9 @@ public class KafkaConnectAssemblyOperatorMockTest {
             context.verify(() -> assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue())));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         return kco;
     }
 

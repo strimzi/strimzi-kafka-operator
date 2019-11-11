@@ -87,7 +87,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         stopMockApi(context, mockHttp);
     }
 
@@ -122,7 +124,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         stopMockApi(context, mockHttp);
     }
 
@@ -153,7 +157,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         stopMockApi(context, mockHttp);
     }
 
@@ -186,7 +192,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         stopMockApi(context, mockHttp);
     }
 
@@ -213,7 +221,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         stopMockApi(context, mockHttp);
     }
 
@@ -255,7 +265,9 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         return server;
     }
@@ -287,6 +299,8 @@ public class PlatformFeaturesAvailabilityTest {
             }
         });
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 }

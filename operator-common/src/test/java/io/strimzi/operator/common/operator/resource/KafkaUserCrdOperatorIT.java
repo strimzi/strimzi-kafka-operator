@@ -137,7 +137,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -153,7 +155,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaUser withStatus = new KafkaUserBuilder(kafkaUserOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -184,7 +188,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
         CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
@@ -195,7 +201,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -217,7 +225,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -233,7 +243,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaUser withStatus = new KafkaUserBuilder(kafkaUserOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -253,7 +265,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Updating resource status");
         CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
@@ -261,7 +275,9 @@ public class KafkaUserCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.complete(false);
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -283,7 +299,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -299,7 +317,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaUser withStatus = new KafkaUserBuilder(kafkaUserOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -326,7 +346,9 @@ public class KafkaUserCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.complete(false);
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
         CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
@@ -337,7 +359,9 @@ public class KafkaUserCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 }

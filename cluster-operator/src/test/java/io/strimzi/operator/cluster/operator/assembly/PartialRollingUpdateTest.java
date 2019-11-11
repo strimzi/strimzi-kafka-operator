@@ -132,7 +132,10 @@ public class PartialRollingUpdateTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.complete(true);
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
+        context.completeNow();
         LOGGER.info("bootstrap reconciliation complete");
 
         this.kafkaSs = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
