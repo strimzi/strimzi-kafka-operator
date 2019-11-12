@@ -7,10 +7,10 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -198,9 +198,7 @@ class KafkaST extends MessagingBaseST {
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
 
-        //Test that the new broker has event 'Killing'
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
-        //Test that stateful set has event 'SuccessfulDelete'
+        // Test that stateful set has event 'SuccessfulDelete'
         uid = kubeClient().getStatefulSetUid(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
