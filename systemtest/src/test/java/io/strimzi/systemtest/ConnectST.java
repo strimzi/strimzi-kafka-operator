@@ -100,6 +100,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(TRAVIS)
+    @Tag(NODEPORT_SUPPORTED)
     void testKafkaConnectWithFileSinkPlugin() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
