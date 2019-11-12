@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
-
-import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -19,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,16 +113,13 @@ public class TopicSerializationTest {
                 .withNumReplicas((short) 2)
                 .withMapName("gee")
                 .build();
-        Map<ConfigResource, Collection<AlterConfigOp>> config = TopicSerialization.toTopicConfig(topic);
+        Map<ConfigResource, Config> config = TopicSerialization.toTopicConfig(topic);
         assertThat(config.size(), is(1));
-        Map.Entry<ConfigResource, Collection<AlterConfigOp>> c = config.entrySet().iterator().next();
+        Map.Entry<ConfigResource, Config> c = config.entrySet().iterator().next();
         assertThat(c.getKey().type(), is(ConfigResource.Type.TOPIC));
+        assertThat(c.getValue().entries().size(), is(1));
         assertThat(c.getKey().name(), is("test-topic"));
-        assertThat(c.getValue().size(), is(1));
-        AlterConfigOp alterConfigOp = c.getValue().iterator().next();
-        assertThat(alterConfigOp.configEntry().name(), is("foo"));
-        assertThat(alterConfigOp.configEntry().value(), is("bar"));
-        assertThat(alterConfigOp.opType(), is(AlterConfigOp.OpType.SET));
+        assertThat(c.getValue().get("foo").value(), is("bar"));
     }
 
     @Test
