@@ -737,7 +737,7 @@ public class CertificateRenewalTest {
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
         assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-        String oldClientsCaCertKey = clusterCaCertData.keySet()
+        String oldClientsCaCertKey = clientsCaCertData.keySet()
                                                     .stream()
                                                     .filter(alias -> alias.startsWith("ca-"))
                                                     .findAny()
@@ -945,7 +945,7 @@ public class CertificateRenewalTest {
         assertThat(c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
         assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-        String oldClientsCaCertKey = clusterCaCertData.keySet()
+        String oldClientsCaCertKey = clientsCaCertData.keySet()
                                                     .stream()
                                                     .filter(alias -> alias.startsWith("ca-"))
                                                     .findAny()
