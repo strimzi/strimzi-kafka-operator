@@ -83,7 +83,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
 
     public static final String NAMESPACE = "topic-operator-it";
 
-    protected final Vertx vertx = Vertx.vertx();
+    protected Vertx vertx;
     protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
@@ -138,7 +138,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
 
     @BeforeEach
     public void setup(VertxTestContext context) throws Exception {
-        context.completeNow();
+        vertx = Vertx.vertx();
         LOGGER.info("Setting up test");
         kubeCluster().before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
@@ -178,6 +178,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
                 collect(Collectors.toSet());
 
         LOGGER.info("Finished setting up test");
+        context.completeNow();
     }
 
     /**
@@ -230,6 +231,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         Runtime.getRuntime().removeShutdownHook(kafkaHook);
         LOGGER.info("Finished tearing down test");
         context.completeNow();
+        vertx.close();
     }
 
     protected void startTopicOperator(VertxTestContext context) {

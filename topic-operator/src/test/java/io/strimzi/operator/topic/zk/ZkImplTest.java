@@ -51,6 +51,7 @@ public class ZkImplTest {
         if (this.zkServer != null) {
             this.zkServer.close();
         }
+        context.completeNow();
         vertx.close();
     }
 

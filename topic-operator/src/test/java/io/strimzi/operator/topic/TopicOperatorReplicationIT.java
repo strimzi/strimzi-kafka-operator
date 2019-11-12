@@ -123,6 +123,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
         // And check that the status is ready
         assertStatusReady(context, topicName);
         async.flag();
+        context.completeNow();
     }
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
