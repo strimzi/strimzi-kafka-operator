@@ -19,6 +19,9 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
+import org.apache.kafka.common.errors.TimeoutException;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -43,7 +46,11 @@ import static org.mockito.Mockito.when;
 public class KafkaAvailabilityTest {
 
 
-    class KSB {
+    static class KSB {
+        private Throwable listTopicsResult;
+        private Map<String, Throwable> describeTopicsResult = new HashMap<>(1);
+        private Map<ConfigResource, Throwable> describeConfigsResult = new HashMap<>(1);
+
         class TSB {
             class PSB {
                 private final Integer id;
@@ -139,30 +146,76 @@ public class KafkaAvailabilityTest {
             return this;
         }
 
-        ListTopicsResult ltr() {
+        static <T> KafkaFuture<T> failedFuture(Throwable t) {
+            KafkaFutureImpl kafkaFuture = new KafkaFutureImpl();
+            kafkaFuture.completeExceptionally(t);
+            return kafkaFuture;
+        }
+
+        ListTopicsResult mockListTopics() {
             ListTopicsResult ltr = mock(ListTopicsResult.class);
-            when(ltr.names()).thenReturn(KafkaFuture.completedFuture(new HashSet<>(topics.keySet())));
+            when(ltr.names()).thenAnswer(invocation -> {
+                return listTopicsResult != null ? failedFuture(listTopicsResult) : KafkaFuture.completedFuture(new HashSet<>(topics.keySet()));
+            });
+            when(ltr.listings()).thenThrow(notImplemented());
+            when(ltr.namesToListings()).thenThrow(notImplemented());
             return ltr;
         }
 
-        DescribeTopicsResult dtr() {
-            Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
-                e -> e.getKey(),
-                e -> {
-                    TSB tsb = e.getValue();
-                    return new TopicDescription(tsb.name, tsb.internal,
-                            tsb.partitions.entrySet().stream().map(e1 -> {
-                                TSB.PSB psb = e1.getValue();
-                                return new TopicPartitionInfo(psb.id,
-                                        psb.leader != null ? node(psb.leader) : Node.noNode(),
-                                        Arrays.stream(psb.replicaOn).boxed().map(broker -> node(broker)).collect(Collectors.toList()),
-                                        Arrays.stream(psb.isr).boxed().map(broker -> node(broker)).collect(Collectors.toList()));
-                            }).collect(Collectors.toList()));
+        KSB listTopicsResult(Throwable t) {
+            listTopicsResult = t;
+            return this;
+        }
+
+        KSB describeTopicsResult(String topic, Throwable t) {
+            describeTopicsResult.put(topic, t);
+            return this;
+        }
+
+        KSB describeConfigsResult(ConfigResource config, Throwable t) {
+            describeConfigsResult.put(config, t);
+            return this;
+        }
+
+        private Throwable notImplemented() {
+            UnsupportedOperationException unsupportedOperationException = new UnsupportedOperationException("Not implemented by " + KSB.class.getName());
+            //unsupportedOperationException.printStackTrace();
+            return unsupportedOperationException;
+        }
+
+        void mockDescribeTopics(AdminClient mockAc) {
+            when(mockAc.describeTopics(any())).thenAnswer(invocation -> {
+                DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
+                Collection<String> topicNames = invocation.getArgument(0);
+                Throwable throwable = null;
+                for (String topicName : topicNames) {
+                    throwable = describeTopicsResult.get(topicName);
+                    if (throwable != null) {
+                        break;
+                    }
                 }
-            ));
-            DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
-            when(dtr.all()).thenReturn(KafkaFuture.completedFuture(tds));
-            return dtr;
+                if (throwable != null) {
+                    when(dtr.all()).thenReturn(failedFuture(throwable));
+                } else {
+                    Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        e -> {
+                            TSB tsb = e.getValue();
+                            return new TopicDescription(tsb.name, tsb.internal,
+                                    tsb.partitions.entrySet().stream().map(e1 -> {
+                                        TSB.PSB psb = e1.getValue();
+                                        return new TopicPartitionInfo(psb.id,
+                                                psb.leader != null ? node(psb.leader) : Node.noNode(),
+                                                Arrays.stream(psb.replicaOn).boxed().map(broker -> node(broker)).collect(Collectors.toList()),
+                                                Arrays.stream(psb.isr).boxed().map(broker -> node(broker)).collect(Collectors.toList()));
+                                    }).collect(Collectors.toList()));
+                        }
+                    ));
+                    when(dtr.all()).thenReturn(KafkaFuture.completedFuture(tds));
+                    when(dtr.values()).thenThrow(notImplemented());
+                }
+                return dtr;
+            });
         }
 
         private Node node(int id) {
@@ -171,37 +224,52 @@ public class KafkaAvailabilityTest {
             });
         }
 
-        DescribeConfigsResult dcr(Collection<ConfigResource> argument) {
-            Map<ConfigResource, Config> result = new HashMap<>();
-            for (ConfigResource cr : argument) {
-                List<ConfigEntry> entries = new ArrayList<>();
-                for (Map.Entry<String, String> e : topics.get(cr.name()).configs.entrySet()) {
-                    ConfigEntry ce = new ConfigEntry(e.getKey(), e.getValue());
-                    entries.add(ce);
+        void mockDescribeConfigs(AdminClient mockAc) {
+            when(mockAc.describeConfigs(any())).thenAnswer(invocation -> {
+                Collection<ConfigResource> argument = invocation.getArgument(0);
+                DescribeConfigsResult dcr = mock(DescribeConfigsResult.class);
+                Throwable throwable = null;
+                for (ConfigResource configResource : argument) {
+                    throwable = describeConfigsResult.get(configResource);
+                    if (throwable != null) {
+                        break;
+                    }
                 }
-                result.put(cr, new Config(entries));
-            }
-            DescribeConfigsResult dcr = mock(DescribeConfigsResult.class);
-            when(dcr.all()).thenReturn(KafkaFuture.completedFuture(result));
-            return dcr;
+                when(dcr.values()).thenThrow(notImplemented());
+                if (throwable != null) {
+                    when(dcr.all()).thenReturn(failedFuture(throwable));
+                } else {
+                    Map<ConfigResource, Config> result = new HashMap<>();
+                    for (ConfigResource cr : argument) {
+                        List<ConfigEntry> entries = new ArrayList<>();
+                        for (Map.Entry<String, String> e : topics.get(cr.name()).configs.entrySet()) {
+                            ConfigEntry ce = new ConfigEntry(e.getKey(), e.getValue());
+                            entries.add(ce);
+                        }
+                        result.put(cr, new Config(entries));
+                    }
+                    when(dcr.all()).thenReturn(KafkaFuture.completedFuture(result));
+                }
+                return dcr;
+            });
         }
 
         AdminClient ac() {
             AdminClient ac = mock(AdminClient.class);
 
-            ListTopicsResult ltr = ltr();
+            ListTopicsResult ltr = mockListTopics();
             when(ac.listTopics(any())).thenReturn(ltr);
 
-            DescribeTopicsResult dtr = dtr();
-            when(ac.describeTopics(any())).thenReturn(dtr);
+            mockDescribeTopics(ac);
 
-            when(ac.describeConfigs(any())).thenAnswer(invocation -> dcr(invocation.getArgument(0)));
+            mockDescribeConfigs(ac);
+
             return ac;
         }
     }
 
     @Test
-    public void belowMinIsr(VertxTestContext context) throws InterruptedException {
+    public void belowMinIsr(VertxTestContext context) {
         KSB ksb = new KSB().topic("A", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .partition(0)
@@ -244,7 +312,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void atMinIsr(VertxTestContext context) throws InterruptedException {
+    public void atMinIsr(VertxTestContext context) {
         KSB ksb = new KSB().topic("A", false)
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .partition(0)
@@ -328,7 +396,7 @@ public class KafkaAvailabilityTest {
     @Test
     public void minIsrEqualsReplicas(VertxTestContext context) {
         KSB ksb = new KSB().topic("A", false)
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
                 .partition(0)
                 .replicaOn(0, 1, 2)
                 .leader(0)
@@ -355,44 +423,48 @@ public class KafkaAvailabilityTest {
         }
     }
 
-//    @Test
-//    public void noLeader(TestContext context) {
-//        KSB ksb = new KSB().topic("A", false)
-//                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-//                .partition(0)
-//                .replicaOn(0, 1, 2)
-//                //.leader(0)
-//                .isr(1, 2)
-//                .endPartition()
-//
-//                .endTopic()
-//                .topic("B", false)
-//                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-//                .partition(0)
-//                .replicaOn(0, 1, 2)
-//                //.leader(1)
-//                .isr(0, 2)
-//                .endPartition()
-//                .endTopic()
-//
-//                .addBroker(3);
-//
-//        KafkaSorted kafkaSorted = new KafkaSorted(ksb.ac());
-//
-//        for (Integer brokerId : ksb.brokers.keySet()) {
-//            Async async = context.async();
-//
-//            kafkaSorted.canRoll(brokerId).setHandler(ar -> {
-//                if (ar.failed()) {
-//                    context.fail(ar.cause());
-//                } else {
-//                    context.assertTrue(ar.result(),
-//                            "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-//                }
-//                async.complete();
-//            });
-//        }
-//    }
+    @Test
+    public void noLeader(VertxTestContext context) {
+        KSB ksb = new KSB().topic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                //.leader(0)
+                .isr(1, 2)
+                .endPartition()
+
+                .endTopic()
+                .topic("B", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                //.leader(1)
+                .isr(0)
+                .endPartition()
+                .endTopic()
+
+                .addBroker(3);
+
+        KafkaAvailability kafkaSorted = new KafkaAvailability(ksb.ac());
+
+        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaSorted.canRoll(brokerId).setHandler(ar -> {
+                if (ar.failed()) {
+                    context.failNow(ar.cause());
+                } else {
+                    if (brokerId == 0) {
+                        assertFalse(ar.result(),
+                                "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
+                    } else {
+                        assertTrue(ar.result(),
+                                "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
+                    }
+                }
+                checkpoint.flag();
+            });
+        }
+    }
 
     @Test
     public void noMinIsr(VertxTestContext context) {
@@ -432,7 +504,116 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    // TODO Test with no min.in.sync.replicas config
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
+    @Test
+    public void listThrows(VertxTestContext context) {
+        KSB ksb = new KSB().topic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(0)
+                .isr(0, 1, 2)
+                .endPartition()
 
+                .endTopic()
+                .topic("B", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(1)
+                .isr(0, 1, 2)
+                .endPartition()
+                .endTopic()
+
+                .addBroker(3)
+                .listTopicsResult(new TimeoutException());
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
+                if (ar.succeeded()) {
+                    fail();
+                } else {
+                    assertTrue(ar.cause() instanceof TimeoutException);
+                }
+                checkpoint.flag();
+            });
+        }
+    }
+
+    @Test
+    public void describeTopicsThrows(VertxTestContext context) {
+        KSB ksb = new KSB().topic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(0)
+                .isr(0, 1, 2)
+                .endPartition()
+
+                .endTopic()
+                .topic("B", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(1)
+                .isr(0, 1, 2)
+                .endPartition()
+                .endTopic()
+
+                .addBroker(3)
+                .describeTopicsResult("A", new UnknownTopicOrPartitionException());
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
+                assertTrue(ar.failed());
+                assertTrue(ar.cause() instanceof UnknownTopicOrPartitionException);
+                checkpoint.flag();
+            });
+        }
+    }
+
+    @Test
+    public void describeConfigsThrows(VertxTestContext context) {
+        KSB ksb = new KSB().topic("A", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(0)
+                .isr(0, 1, 2)
+                .endPartition()
+
+                .endTopic()
+                .topic("B", false)
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .partition(0)
+                .replicaOn(0, 1, 2)
+                .leader(1)
+                .isr(0, 1, 2)
+                .endPartition()
+                .endTopic()
+
+                .addBroker(3)
+                .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), new UnknownTopicOrPartitionException());
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+
+        Checkpoint checkpoint = context.checkpoint(ksb.brokers.size());
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).setHandler(ar -> {
+                if (brokerId <= 2) {
+                    assertFalse(ar.succeeded());
+                    assertTrue(ar.cause() instanceof UnknownTopicOrPartitionException);
+                } else {
+                    assertTrue(ar.succeeded());
+                }
+                checkpoint.flag();
+            });
+        }
+    }
 }

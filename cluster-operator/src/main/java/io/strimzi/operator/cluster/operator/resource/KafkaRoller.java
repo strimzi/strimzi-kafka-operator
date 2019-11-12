@@ -141,6 +141,8 @@ public class KafkaRoller {
         List<Future> futures = new ArrayList<>(numPods);
         List<Integer> podIds = new ArrayList<>(numPods);
         for (int podId = 0; podId < numPods; podId++) {
+            // Order the podIds unready first otherwise repeated reconciliations might each restart a pod
+            // only for it not to become ready and thus drive the cluster to a worse state.
             podIds.add(podOperations.isReady(namespace, podName(podId)) ? podIds.size() : 0, podId);
         }
         log.debug("Initial order for rolling restart {}", podIds);
@@ -389,7 +391,7 @@ public class KafkaRoller {
     protected AdminClient adminClient(Integer podId) throws ForceableProblem {
         try {
             String hostname = KafkaCluster.podDnsName(this.namespace, this.cluster, podName(podId)) + ":" + KafkaCluster.REPLICATION_PORT;
-            log.debug("Creating AC for {}", hostname);
+            log.debug("Creating AdminClient for {}", hostname);
             return adminClientProvider.createAdminClient(hostname, this.clusterCaCertSecret, this.coKeySecret);
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client for pod " + podName(podId), e);
