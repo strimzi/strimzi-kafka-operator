@@ -210,8 +210,8 @@ public class ResourceUtils {
                     .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
-                .addToData("truststore.p12", caStore)
-                .addToData("truststore.password", caStorePassword)
+                .addToData("ca.p12", caStore)
+                .addToData("ca.password", caStorePassword)
                 .build();
     }
 
