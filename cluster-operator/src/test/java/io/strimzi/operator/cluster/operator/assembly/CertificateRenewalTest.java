@@ -338,14 +338,14 @@ public class CertificateRenewalTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        // remove trustore and password to simulate Secrets coming from an older version
+        // remove truststore and password to simulate Secrets coming from an older version
         initialClusterCaCertSecret.getData().remove(CA_STORE);
         initialClusterCaCertSecret.getData().remove(CA_STORE_PASSWORD);
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        // remove trustore and password to simulate Secrets coming from an older version
+        // remove truststore and password to simulate Secrets coming from an older version
         initialClientsCaCertSecret.getData().remove(CA_STORE);
         initialClientsCaCertSecret.getData().remove(CA_STORE_PASSWORD);
 
@@ -708,6 +708,12 @@ public class CertificateRenewalTest {
         Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
         assertThat(clusterCaCertData.size(), is(4));
         X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+        String oldClusterCaCertKey = clusterCaCertData.keySet()
+                                                .stream()
+                                                .filter(alias -> alias.startsWith("ca-"))
+                                                .findAny()
+                                                .get();
+        X509Certificate oldX509ClusterCaCertStore = getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData);
         String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
         String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
         String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
@@ -717,6 +723,7 @@ public class CertificateRenewalTest {
         assertThat(newX509ClusterCaCertStore.equals(x509Certificate(newClusterCaCert)), is(true));
         Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
         assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+        assertThat(oldX509ClusterCaCertStore.equals(x509Certificate(oldClusterCaCert.getValue().toString())), is(true));
         assertThat(x509Certificate(newClusterCaCert).getSubjectDN().getName(), is("CN=cluster-ca v1, O=io.strimzi"));
 
         Secret clusterCaKeySecret = c.getAllValues().get(1);
@@ -730,6 +737,12 @@ public class CertificateRenewalTest {
         Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
         assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+        String oldClientsCaCertKey = clusterCaCertData.keySet()
+                                                    .stream()
+                                                    .filter(alias -> alias.startsWith("ca-"))
+                                                    .findAny()
+                                                    .get();
+        X509Certificate oldX509ClientsCaCertStore = getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData);
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
         String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
@@ -739,6 +752,7 @@ public class CertificateRenewalTest {
         assertThat(newX509ClientsCaCertStore.equals(x509Certificate(newClientsCaCert)), is(true));
         Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
         assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+        assertThat(oldX509ClientsCaCertStore.equals(x509Certificate(oldClientsCaCert.getValue().toString())), is(true));
         assertThat(x509Certificate(newClientsCaCert).getSubjectDN().getName(), is("CN=clients-ca v1, O=io.strimzi"));
 
         Secret clientsCaKeySecret = c.getAllValues().get(3);
@@ -901,6 +915,12 @@ public class CertificateRenewalTest {
         assertThat(c.getAllValues().get(0).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
         assertThat(clusterCaCertData.size(), is(4));
         X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+        String oldClusterCaCertKey = clusterCaCertData.keySet()
+                                                .stream()
+                                                .filter(alias -> alias.startsWith("ca-"))
+                                                .findAny()
+                                                .get();
+        X509Certificate oldX509ClusterCaCertStore = getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData);
         String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
         String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
         String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
@@ -910,6 +930,7 @@ public class CertificateRenewalTest {
         assertThat(newX509ClusterCaCertStore.equals(x509Certificate(newClusterCaCert)), is(true));
         Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
         assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+        assertThat(oldX509ClusterCaCertStore.equals(x509Certificate(oldClusterCaCert.getValue().toString())), is(true));
         assertThat(x509Certificate(newClusterCaCert).getSubjectDN().getName(), is("CN=cluster-ca v1, O=io.strimzi"));
 
         Secret clusterCaKeySecret = c.getAllValues().get(1);
@@ -924,6 +945,12 @@ public class CertificateRenewalTest {
         assertThat(c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
         assertThat(clientsCaCertData.size(), is(4));
         X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+        String oldClientsCaCertKey = clusterCaCertData.keySet()
+                                                    .stream()
+                                                    .filter(alias -> alias.startsWith("ca-"))
+                                                    .findAny()
+                                                    .get();
+        X509Certificate oldX509ClientsCaCertStore = getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData);
         String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
         String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
         String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
@@ -933,6 +960,7 @@ public class CertificateRenewalTest {
         assertThat(newX509ClientsCaCertStore.equals(x509Certificate(newClientsCaCert)), is(true));
         Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
         assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+        assertThat(oldX509ClientsCaCertStore.equals(x509Certificate(oldClientsCaCert.getValue().toString())), is(true));
         assertThat(x509Certificate(newClientsCaCert).getSubjectDN().getName(), is("CN=clients-ca v1, O=io.strimzi"));
 
         Secret clientsCaKeySecret = c.getAllValues().get(3);
