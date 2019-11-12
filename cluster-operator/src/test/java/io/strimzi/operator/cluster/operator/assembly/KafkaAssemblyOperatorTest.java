@@ -1257,7 +1257,9 @@ public class KafkaAssemblyOperatorTest {
             ignored -> { }
         );
 
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
     }

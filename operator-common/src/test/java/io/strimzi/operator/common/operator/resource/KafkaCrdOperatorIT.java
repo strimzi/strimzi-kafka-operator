@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -141,17 +141,19 @@ public class KafkaCrdOperatorIT {
     @Test
     public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -159,15 +161,17 @@ public class KafkaCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -179,7 +183,7 @@ public class KafkaCrdOperatorIT {
                 .build();
 
         log.info("Updating resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
             if (res.succeeded())    {
                 kafkaOperator.getAsync(namespace, RESOURCE_NAME).setHandler(res2 -> {
@@ -189,7 +193,7 @@ public class KafkaCrdOperatorIT {
                         context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getType(), is("Ready")));
                         context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getStatus(), is("True")));
 
-                        updateStatusAsync.complete(true);
+                        updateStatusAsync.countDown();
                     } else {
                         context.failNow(res.cause());
                     }
@@ -198,18 +202,22 @@ public class KafkaCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -221,17 +229,19 @@ public class KafkaCrdOperatorIT {
     @Test
     public void testUpdateStatusWhileResourceDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -239,15 +249,17 @@ public class KafkaCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -259,23 +271,27 @@ public class KafkaCrdOperatorIT {
                 .build();
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Updating deleted resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.complete(false);
+            updateStatusAsync.countDown();
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         context.completeNow();
     }
@@ -288,17 +304,19 @@ public class KafkaCrdOperatorIT {
     @Test
     public void testUpdateStatusWhileResourceUpdated(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -306,15 +324,17 @@ public class KafkaCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         Kafka withStatus = new KafkaBuilder(kafkaOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -346,23 +366,27 @@ public class KafkaCrdOperatorIT {
         updateAsync.awaitSuccess();*/
 
         log.info("Updating resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaOperator.updateStatusAsync(withStatus).setHandler(res -> {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.complete(true);
+            updateStatusAsync.countDown();
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 }

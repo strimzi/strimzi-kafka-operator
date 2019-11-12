@@ -54,7 +54,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -239,19 +238,22 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         LOGGER.info("Starting Topic Operator");
         session = new Session(kubeClient, new Config(topicOperatorConfig()));
 
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
-                async.complete(true);
+                async.countDown();
             } else {
+                async.countDown();
                 ar.cause().printStackTrace();
                 context.failNow(new Throwable("Failed to deploy session"));
             }
         });
         try {
-            async.get(60, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            if (!async.await(60, TimeUnit.SECONDS)) {
+                context.failNow(new Throwable("Test timeout"));
+            }
+        } catch (InterruptedException e) {
             e.printStackTrace();
             context.failNow(e);
         }
@@ -283,20 +285,22 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
 
     protected void stopTopicOperator(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Stopping Topic Operator");
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
                 deploymentId = null;
                 if (ar.failed()) {
                     LOGGER.error("Error undeploying session", ar.cause());
                     context.failNow(new Throwable("Error undeploying session"));
-                    async.complete(false);
+                    async.countDown();
                 } else {
-                    async.complete(true);
+                    async.countDown();
                 }
             });
         }
-        async.get(60, TimeUnit.SECONDS);
+        if (!async.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         LOGGER.info("Stopped Topic Operator");
     }
 

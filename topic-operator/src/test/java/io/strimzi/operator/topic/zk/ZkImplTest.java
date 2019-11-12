@@ -18,10 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -44,10 +42,12 @@ public class ZkImplTest {
     }
 
     @AfterEach
-    public void teardown(VertxTestContext context) {
-        Checkpoint async = context.checkpoint(2);
-        zk.disconnect(result -> async.flag());
-        async.flag();
+    public void teardown(VertxTestContext context) throws InterruptedException {
+        CountDownLatch async = new CountDownLatch(1);
+        zk.disconnect(result -> async.countDown());
+        if (!async.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Teardown timeout"));
+        }
         if (this.zkServer != null) {
             this.zkServer.close();
         }
@@ -60,12 +60,14 @@ public class ZkImplTest {
     public void testReconnectOnBounce(VertxTestContext context) throws IOException, InterruptedException {
         Zk zkImpl = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         zkServer.restart();
-        Checkpoint async = context.checkpoint(2);
+        CountDownLatch async = new CountDownLatch(1);
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            async.flag();
+            async.countDown();
         });
-        async.flag();
+        if (!async.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         zkServer.restart();
         // TODO Without the sleep this test fails, because there's a race between the creation of /bar
         // and the reconnection within ZkImpl. We probably need to fix ZkImpl to retry if things fail due to
@@ -81,21 +83,23 @@ public class ZkImplTest {
     }
 
     @Test
-    public void testWatchUnwatchChildren(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testWatchUnwatchChildren(VertxTestContext context) throws InterruptedException {
         // Create a node
-        CompletableFuture<Boolean> fooFuture = new CompletableFuture<>();
+        CountDownLatch fooFuture = new CountDownLatch(1);
         zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
-            fooFuture.complete(true);
+            fooFuture.countDown();
         });
-        fooFuture.get(60, TimeUnit.SECONDS);
+        if (!fooFuture.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // Now watch its children
-        CompletableFuture<Boolean> barFuture = new CompletableFuture<>();
+        CountDownLatch barFuture = new CountDownLatch(1);
         zk.watchChildren("/foo", watchResult -> {
             if (singletonList("bar").equals(watchResult.result())) {
                 zk.unwatchChildren("/foo");
                 zk.delete("/foo/bar", -1, deleteResult -> {
-                    barFuture.complete(true);
+                    barFuture.countDown();
                 });
             }
         }).<Void>compose(ignored -> {
@@ -105,19 +109,23 @@ public class ZkImplTest {
             });
             return Future.succeededFuture();
         });
-        barFuture.get(60, TimeUnit.SECONDS);
+        if (!barFuture.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
     @Test
-    public void testWatchUnwatchData(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+    public void testWatchUnwatchData(VertxTestContext context) throws InterruptedException {
         // Create a node
-        CompletableFuture<Boolean> fooFuture = new CompletableFuture<>();
+        CountDownLatch fooFuture = new CountDownLatch(1);
         byte[] data1 = new byte[]{1};
         zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
-            fooFuture.complete(true);
+            fooFuture.countDown();
         });
-        fooFuture.get(60, TimeUnit.SECONDS);
+        if (!fooFuture.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         Checkpoint done = context.checkpoint();
         byte[] data2 = {2};
@@ -133,6 +141,7 @@ public class ZkImplTest {
             });
             return Future.succeededFuture();
         });
+        context.completeNow();
     }
 
 }
