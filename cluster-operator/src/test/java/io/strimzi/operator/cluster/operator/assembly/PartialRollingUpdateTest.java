@@ -133,7 +133,6 @@ public class PartialRollingUpdateTest {
             createAsync.complete(true);
         });
         createAsync.get(60, TimeUnit.SECONDS);
-        context.completeNow();
         LOGGER.info("bootstrap reconciliation complete");
 
         this.kafkaSs = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
@@ -150,6 +149,7 @@ public class PartialRollingUpdateTest {
         this.clusterCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME)).get();
         this.clientsCaCert = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get();
         this.clientsCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get();
+        context.completeNow();
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
