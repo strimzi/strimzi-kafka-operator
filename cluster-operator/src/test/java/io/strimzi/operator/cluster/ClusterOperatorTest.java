@@ -33,7 +33,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -157,26 +157,26 @@ public class ClusterOperatorTest {
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
         }
 
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
 
         Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.complete(true);
+            async.countDown();
         });
-        if (!async.get(60, TimeUnit.SECONDS)) {
+        if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
         context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(namespaceList.size())));
 
         for (String deploymentId: vertx.deploymentIDs()) {
-            CompletableFuture<Boolean> async2 = new CompletableFuture<>();
+            CountDownLatch async2 = new CountDownLatch(1);
             vertx.undeploy(deploymentId, ar -> {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
-                async2.complete(true);
+                async2.countDown();
             });
-            if (!async2.get(60, TimeUnit.SECONDS)) {
+            if (!async2.await(60, TimeUnit.SECONDS)) {
                 context.failNow(new Throwable("Test timeout"));
             }
         }
@@ -235,26 +235,26 @@ public class ClusterOperatorTest {
         });
         when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
 
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
 
         Map<String, String> env = buildEnv(namespaces);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
-            async.complete(true);
+            async.countDown();
         });
-        if (!async.get(60, TimeUnit.SECONDS)) {
+        if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
         context.verify(() -> assertThat("A verticle per namespace", vertx.deploymentIDs().size(), is(1)));
 
         for (String deploymentId: vertx.deploymentIDs()) {
-            CompletableFuture<Boolean> async2 = new CompletableFuture<>();
+            CountDownLatch async2 = new CountDownLatch(1);
             vertx.undeploy(deploymentId, ar -> {
                 context.verify(() -> assertThat("Didn't expect error when undeploying verticle " + deploymentId, ar.cause(), is(nullValue())));
-                async2.complete(true);
+                async2.countDown();
             });
-            if (!async2.get(60, TimeUnit.SECONDS)) {
+            if (!async2.await(60, TimeUnit.SECONDS)) {
                 context.failNow(new Throwable(""));
             }
         }

@@ -33,7 +33,7 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -158,7 +158,7 @@ public class ZookeeperLeaderFinderTest {
 
     private int[] startMockZks(VertxTestContext context, int num, BiFunction<Integer, Integer, Boolean> fn) throws InterruptedException, ExecutionException, TimeoutException {
         int[] result = new int[num];
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
         for (int i = 0; i < num; i++) {
             final int id = i;
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
@@ -170,15 +170,15 @@ public class ZookeeperLeaderFinderTest {
                     log.debug("ZK {} listening on port {}", id, port);
                     result[id] = port;
                     if (finalI == num - 1) {
-                        async.complete(true);
+                        async.countDown();
                     }
                 } else {
+                    async.countDown();
                     context.failNow(ar.cause());
-                    async.complete(false);
                 }
             });
         }
-        if (!async.get(60, TimeUnit.SECONDS)) {
+        if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
         return result;

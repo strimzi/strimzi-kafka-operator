@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -127,12 +127,12 @@ public class PartialRollingUpdateTest {
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         LOGGER.info("bootstrap reconciliation");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
         context.completeNow();

@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -161,12 +161,12 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
@@ -204,12 +204,12 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
@@ -244,12 +244,12 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        if (!createAsync.get(60, TimeUnit.SECONDS)) {
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 

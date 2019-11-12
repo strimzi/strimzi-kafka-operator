@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -736,7 +735,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        CompletableFuture<Boolean> async = new CompletableFuture<>();
+        CountDownLatch async = new CountDownLatch(1);
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(false)));
 
@@ -748,9 +747,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True")));
             context.verify(() -> assertThat(mm.getStatus().getConditions().get(0).getMessage(), is(failureMsg)));
 
-            async.complete(true);
+            async.countDown();
         });
-        if (!async.get(60, TimeUnit.SECONDS)) {
+        if (!async.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
         context.completeNow();
