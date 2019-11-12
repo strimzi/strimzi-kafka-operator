@@ -140,6 +140,7 @@ public class TracingST extends AbstractST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
+                                .withTls(false)
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
                         .withConfig(configOfKafka)

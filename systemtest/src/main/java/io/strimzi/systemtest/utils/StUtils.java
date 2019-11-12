@@ -1019,4 +1019,28 @@ public class StUtils {
             });
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
+
+    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
+        LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
+        TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
+        );
+        LOGGER.info("Kafka user name:{} is created in CRDs", userName);
+    }
+
+    public static void waitUntilKafkaStatusConditionIsPresent(String clusterName) {
+        LOGGER.info("Waiting till kafka resource status is present");
+        TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () ->  Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0) != null
+        );
+        LOGGER.info("Kafka resource status is present");
+    }
+
+    public static void waitUntilPodIsInPendingStatus(String podName) {
+        LOGGER.info("Waiting till pod:" + podName + " is in pending status");
+        TestUtils.waitFor("Waiting till pod:" + podName + " is in pending status", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () ->  kubeClient().getPod(podName).getStatus().getPhase().equals("Pending")
+        );
+        LOGGER.info("Pod:" + podName + " is in pending status");
+    }
 }

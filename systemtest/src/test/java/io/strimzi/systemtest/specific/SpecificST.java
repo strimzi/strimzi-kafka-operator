@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -31,9 +31,7 @@ import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(SPECIFIC)
@@ -122,21 +120,16 @@ public class SpecificST extends MessagingBaseST {
         LOGGER.info("Wait until Zookeeper stateful set is ready");
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
 
-        LOGGER.info("Find warning about Kafka version in Cluster Operator log");
-        String expectedLog = "createOrUpdate failed. Version 6.6.6 is not supported. Supported versions are:";
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        StUtils.waitUntilMessageIsInLogs(coPodName, "strimzi-cluster-operator", expectedLog);
-        LOGGER.info("Warning is present in Cluster Operator log, going to teardown Created Kafka");
+        StUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
 
-        assertThat(kubeClient().logs(coPodName), not(containsString("NullPointer")));
-        assertKafkaStatus("NotReady", "Version 6.6.6 is not supported");
-    }
+        Condition condition = testMethodResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 
-    // This should be moved to StUtils in the futures
-    void assertKafkaStatus(String status, String message) {
-        KafkaStatus kafkaStatus = testMethodResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka Kafka cluster status should be " + status, kafkaStatus.getConditions().get(0).getType(), is(status));
-        assertThat("Kafka cluster status message should be different", kafkaStatus.getConditions().get(0).getMessage(), containsString(message));
+        verifyCRDStatusCondition(
+                condition,
+                "Version 6.6.6 is not supported. Supported versions are: 2.2.1, 2.3.0.",
+                "InvalidResourceException",
+                "True",
+                "NotReady");
     }
 
     @BeforeEach

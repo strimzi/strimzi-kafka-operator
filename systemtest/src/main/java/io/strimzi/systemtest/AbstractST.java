@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.utils.TestExecutionWatcher;
@@ -85,6 +86,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -1055,6 +1057,20 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    protected void verifyCRDStatusCondition(Condition condition, String status, String type) {
+        verifyCRDStatusCondition(condition, null, null, status, type);
+    }
+
+    protected void verifyCRDStatusCondition(Condition condition, String message, String reason, String status, String type) {
+        assertThat(condition.getStatus(), is(status));
+        assertThat(condition.getType(), is(type));
+
+        if (condition.getMessage() != null && condition.getReason() != null) {
+            assertThat(condition.getMessage(), containsString(message));
+            assertThat(condition.getReason(), is(reason));
         }
     }
 }
