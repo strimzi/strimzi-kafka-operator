@@ -237,7 +237,8 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     @AfterEach
-    public void closeVertxInstace() {
+    public void closeVertxInstace(VertxTestContext context) throws InterruptedException {
+        context.completeNow();
         vertx.close();
     }
 
@@ -325,7 +326,6 @@ public class KafkaAssemblyOperatorMockTest {
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
                 TopicOperator.secretName(CLUSTER_NAME),
                 ClusterOperator.secretName(CLUSTER_NAME));
-        context.completeNow();
     }
 
     private void updateClusterWithoutSecrets(Params params, VertxTestContext context, String... secrets) throws InterruptedException, ExecutionException, TimeoutException {
@@ -380,7 +380,6 @@ public class KafkaAssemblyOperatorMockTest {
         updateClusterWithoutServices(params, context,
                 ZookeeperCluster.serviceName(CLUSTER_NAME),
                 ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
-        context.completeNow();
     }
 
     @ParameterizedTest
@@ -389,7 +388,6 @@ public class KafkaAssemblyOperatorMockTest {
         updateClusterWithoutServices(params, context,
                 KafkaCluster.serviceName(CLUSTER_NAME),
                 KafkaCluster.headlessServiceName(CLUSTER_NAME));
-        context.completeNow();
     }
 
     @ParameterizedTest
@@ -397,7 +395,6 @@ public class KafkaAssemblyOperatorMockTest {
     public void testUpdateClusterWithoutZkStatefulSet(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String statefulSet = ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME);
         updateClusterWithoutStatefulSet(params, context, statefulSet);
-        context.completeNow();
     }
 
     @ParameterizedTest
@@ -405,7 +402,6 @@ public class KafkaAssemblyOperatorMockTest {
     public void testUpdateClusterWithoutKafkaStatefulSet(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String statefulSet = KafkaCluster.kafkaClusterName(CLUSTER_NAME);
         updateClusterWithoutStatefulSet(params, context, statefulSet);
-        context.completeNow();
     }
 
     private void updateClusterWithoutStatefulSet(Params params, VertxTestContext context, String statefulSet) throws InterruptedException, ExecutionException, TimeoutException {
