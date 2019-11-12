@@ -297,15 +297,16 @@ public class KafkaAssemblyOperatorMockTest {
     public void testCreateUpdate(Params params, VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
         KafkaAssemblyOperator kco = createCluster(params, context);
         LOGGER.info("Reconciling again -> update");
-        Checkpoint updateAsync = context.checkpoint();
+        CountDownLatch updateAsync = new CountDownLatch(1);
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            updateAsync.flag();
+            updateAsync.countDown();
         });
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+        if (!updateAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
+        context.completeNow();
     }
 
     private void assertPvcs(VertxTestContext context, Set<String> expectedClaims) {
@@ -324,6 +325,7 @@ public class KafkaAssemblyOperatorMockTest {
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
                 TopicOperator.secretName(CLUSTER_NAME),
                 ClusterOperator.secretName(CLUSTER_NAME));
+        context.completeNow();
     }
 
     private void updateClusterWithoutSecrets(Params params, VertxTestContext context, String... secrets) throws InterruptedException, ExecutionException, TimeoutException {
@@ -378,6 +380,7 @@ public class KafkaAssemblyOperatorMockTest {
         updateClusterWithoutServices(params, context,
                 ZookeeperCluster.serviceName(CLUSTER_NAME),
                 ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
+        context.completeNow();
     }
 
     @ParameterizedTest
@@ -386,6 +389,7 @@ public class KafkaAssemblyOperatorMockTest {
         updateClusterWithoutServices(params, context,
                 KafkaCluster.serviceName(CLUSTER_NAME),
                 KafkaCluster.headlessServiceName(CLUSTER_NAME));
+        context.completeNow();
     }
 
     @ParameterizedTest
@@ -393,6 +397,7 @@ public class KafkaAssemblyOperatorMockTest {
     public void testUpdateClusterWithoutZkStatefulSet(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String statefulSet = ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME);
         updateClusterWithoutStatefulSet(params, context, statefulSet);
+        context.completeNow();
     }
 
     @ParameterizedTest
@@ -400,6 +405,7 @@ public class KafkaAssemblyOperatorMockTest {
     public void testUpdateClusterWithoutKafkaStatefulSet(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         String statefulSet = KafkaCluster.kafkaClusterName(CLUSTER_NAME);
         updateClusterWithoutStatefulSet(params, context, statefulSet);
+        context.completeNow();
     }
 
     private void updateClusterWithoutStatefulSet(Params params, VertxTestContext context, String statefulSet) throws InterruptedException, ExecutionException, TimeoutException {
