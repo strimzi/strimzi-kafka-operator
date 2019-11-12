@@ -239,6 +239,7 @@ public class KafkaImpl implements Kafka {
         );
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public Future<Void> updateTopicConfig(Topic topic) {
         Future<Void> handler = Future.future();
