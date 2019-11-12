@@ -147,6 +147,29 @@ public class KafkaUserModelTest {
     }
 
     @Test
+    public void testGenerateKeyStoreWhenOldVersionSecretExists() {
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
+        Secret oldSecret = model.generateSecret();
+        // removing keystore and password to simulate a Secret from a previous version
+        oldSecret.getData().remove("user.p12");
+        oldSecret.getData().remove("user.password");
+
+        model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, oldSecret);
+        Secret generated = model.generateSecret();
+
+        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
+    }
+
+    @Test
     public void testGeneratePasswordWhenNoSecretExists()    {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();

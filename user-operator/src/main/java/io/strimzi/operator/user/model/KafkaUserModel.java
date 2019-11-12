@@ -188,17 +188,30 @@ public class KafkaUserModel {
                         && userCrt != null
                         && !userCrt.isEmpty()
                         && userKey != null
-                        && !userKey.isEmpty()
-                        && userKeyStore != null
-                        && !userKeyStore.isEmpty()
-                        && userKeyStorePassword != null
-                        && !userKeyStorePassword.isEmpty()) {
-                    this.userCertAndKey = new CertAndKey(
-                            decodeFromSecret(userSecret, "user.key"),
-                            decodeFromSecret(userSecret, "user.crt"),
-                            null,
-                            decodeFromSecret(userSecret, "user.p12"),
-                            new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII));
+                        && !userKey.isEmpty()) {
+
+                    if (userKeyStore != null
+                            && !userKeyStore.isEmpty()
+                            && userKeyStorePassword != null
+                            && !userKeyStorePassword.isEmpty()) {
+
+                        this.userCertAndKey = new CertAndKey(
+                                decodeFromSecret(userSecret, "user.key"),
+                                decodeFromSecret(userSecret, "user.crt"),
+                                null,
+                                decodeFromSecret(userSecret, "user.p12"),
+                                new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII));
+                    } else {
+
+                        // coming from an older operator version, the user secret exists but without keystore and password
+                        try {
+                            this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(name,
+                                    decodeFromSecret(userSecret, "user.key"),
+                                    decodeFromSecret(userSecret, "user.crt"));
+                        } catch (IOException e) {
+                            log.error("Error generating signed certificate for user {}", name, e);
+                        }
+                    }
                     return;
                 }
             }

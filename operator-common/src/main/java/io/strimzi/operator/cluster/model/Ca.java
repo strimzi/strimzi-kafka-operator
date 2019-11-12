@@ -258,6 +258,32 @@ public abstract class Ca {
         }
     }
 
+    public CertAndKey addKeyAndCertToKeyStore(String alias, byte[] key, byte[] cert) throws IOException {
+
+        File keyFile = File.createTempFile("tls", "key");
+        File certFile = File.createTempFile("tls", "cert");
+        File keyStoreFile = File.createTempFile("tls", "p12");
+
+        Files.write(keyFile.toPath(), key);
+        Files.write(certFile.toPath(), cert);
+
+        String keyStorePassword = passwordGenerator.generate();
+        certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+
+        CertAndKey result = new CertAndKey(
+                Files.readAllBytes(keyFile.toPath()),
+                Files.readAllBytes(certFile.toPath()),
+                null,
+                Files.readAllBytes(keyStoreFile.toPath()),
+                keyStorePassword);
+
+        delete(keyFile);
+        delete(certFile);
+        delete(keyStoreFile);
+
+        return result;
+    }
+
     private CertAndKey generateSignedCert(Subject subject,
                                             File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
         log.debug("Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
