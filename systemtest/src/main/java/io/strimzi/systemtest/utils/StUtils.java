@@ -1020,14 +1020,6 @@ public class StUtils {
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
 
-    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
-        LOGGER.info("Waiting till kafka user name:{} is created in CRs", userName);
-        TestUtils.waitFor("Waiting for " + userName + " to be created in CRs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
-        );
-        LOGGER.info("Kafka user name:{} is created in CRs", userName);
-    }
-
     public static void waitUntilKafkaStatusConditionIsPresent(String clusterName) {
         LOGGER.info("Waiting till kafka resource status is present");
         TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1053,6 +1045,14 @@ public class StUtils {
             );
             LOGGER.info("Kafka configMap label {} change to {}", labelKey, null);
         }
+    }
+
+    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
+        LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
+        TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
+        );
+        LOGGER.info("Kafka user name:{} is created in CRDs", userName);
     }
 
     public static void waitForKafkaStatefulSetLabelsDeletion(String statefulSet, String... labelKeys) {

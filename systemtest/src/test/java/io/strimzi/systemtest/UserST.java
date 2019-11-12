@@ -47,6 +47,8 @@ class UserST extends AbstractST {
         testMethodResources().tlsUser(CLUSTER_NAME, userWithCorrectName).done();
         StUtils.waitForSecretReady(userWithCorrectName);
 
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
+
         Condition condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
         assertThat(condition.getStatus(), is("True"));
@@ -55,9 +57,7 @@ class UserST extends AbstractST {
         // Create sasl user with long name
         testMethodResources().scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
 
-        TestUtils.waitFor("Waiting for " + userWithLongName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0) != null
-        );
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
 
@@ -68,10 +68,7 @@ class UserST extends AbstractST {
 
         testMethodResources().tlsUser(CLUSTER_NAME, userWithLongName).done();
 
-
-        TestUtils.waitFor("Waiting for " + userWithLongName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0) != null
-        );
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
