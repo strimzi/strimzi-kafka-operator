@@ -275,7 +275,7 @@ public class KafkaConnectCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.countDown();
         });
-        if (updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
         context.completeNow();
@@ -346,7 +346,7 @@ public class KafkaConnectCrdOperatorIT {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
             updateStatusAsync.countDown();
         });
-        if (updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
