@@ -1050,7 +1050,7 @@ public class StUtils {
     public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
         LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
         TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
+            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
         );
         LOGGER.info("Kafka user name:{} is created in CRDs", userName);
     }

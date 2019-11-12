@@ -24,7 +24,6 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -50,9 +49,11 @@ class UserST extends AbstractST {
         StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
         Condition condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
+        LOGGER.info(condition.getMessage() != null);
 
-        assertThat(condition.getStatus(), is("True"));
-        assertThat(condition.getType(), is("Ready"));
+        verifyCRDStatusCondition(condition,
+                "True",
+                "Ready");
 
         // Create sasl user with long name
         testMethodResources().scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
@@ -61,10 +62,11 @@ class UserST extends AbstractST {
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
 
-        assertThat(condition.getStatus(), is("True"));
-        assertThat(condition.getType(), is("NotReady"));
-        assertThat(condition.getMessage(), containsString("must be no more than 63 characters"));
-        assertThat(condition.getReason(), is("KubernetesClientException"));
+        verifyCRDStatusCondition(condition,
+                "must be no more than 63 characters",
+                "KubernetesClientException",
+                "True",
+                "NotReady");
 
         testMethodResources().tlsUser(CLUSTER_NAME, userWithLongName).done();
 
@@ -72,10 +74,11 @@ class UserST extends AbstractST {
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
-        assertThat(condition.getStatus(), is("True"));
-        assertThat(condition.getType(), is("NotReady"));
-        assertThat(condition.getMessage(), containsString("must be no more than 63 characters"));
-        assertThat(condition.getReason(), is("KubernetesClientException"));
+        verifyCRDStatusCondition(condition,
+                "must be no more than 63 characters",
+                "KubernetesClientException",
+                "True",
+                "NotReady");
     }
 
     @Test
