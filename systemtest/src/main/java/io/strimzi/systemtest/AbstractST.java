@@ -1060,11 +1060,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    protected void verifyCRDStatusCondition(Condition condition, String status, String type) {
-        verifyCRDStatusCondition(condition, null, null, status, type);
+    protected void verifyCRStatusCondition(Condition condition, String status, String type) {
+        verifyCRStatusCondition(condition, null, null, status, type);
     }
 
-    protected void verifyCRDStatusCondition(Condition condition, String message, String reason, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, String type) {
         assertThat(condition.getStatus(), is(status));
         assertThat(condition.getType(), is(type));
 
