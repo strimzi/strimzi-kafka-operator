@@ -36,6 +36,7 @@ import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource & KubernetesResourceList,
@@ -152,7 +153,10 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // Delete
         assertThat(mixedOp.apply(client).delete(pod), is(true));
         assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
-        assertThat(w.lastEvent().resource, is(pod));
+        // Compare ignoring resource version
+        RT resource = (RT) w.lastEvent().resource;
+        resource.getMetadata().setResourceVersion(null);
+        assertEquals(resource, pod);
         assertThat(mixedOp.apply(client).delete(pod), is(false));
 
         // TODO createOrReplace(), createOrReplaceWithName()
@@ -187,7 +191,9 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // List
         List<RT> items = mixedOp.apply(client).list().getItems();
         assertThat(items.size(), is(1));
-        assertThat(items.get(0), is(pod));
+        RT item = items.get(0);
+        item.getMetadata().setResourceVersion(null);
+        assertThat(item, is(pod));
 
         // List with namespace
         items = mixedOp.apply(client).inNamespace("other").list().getItems();
@@ -196,27 +202,34 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // List with labels
         items = mixedOp.apply(client).withLabel("my-label").list().getItems();
         assertThat(items.size(), is(1));
-        assertThat(items.get(0), is(pod));
+        RT actual = items.get(0);
+        actual.getMetadata().setResourceVersion(null);
+        assertThat(actual, is(pod));
 
         items = mixedOp.apply(client).withLabel("other-label").list().getItems();
         assertThat(items.size(), is(0));
 
         items = mixedOp.apply(client).withLabel("my-label", "foo").list().getItems();
         assertThat(items.size(), is(1));
-        assertThat(items.get(0), is(pod));
+        RT actual1 = items.get(0);
+        actual1.getMetadata().setResourceVersion(null);
+        assertThat(actual1, is(pod));
 
         items = mixedOp.apply(client).withLabel("my-label", "bar").list().getItems();
         assertThat(items.size(), is(0));
 
         items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "bar")).list().getItems();
         assertThat(items.size(), is(1));
-        assertThat(items.get(0), is(pod));
+        RT actual2 = items.get(0);
+        actual2.getMetadata().setResourceVersion(null);
+        assertThat(actual2, is(pod));
 
         items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "gee")).list().getItems();
         assertThat(items.size(), is(0));
 
         // Get
         RT gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
+        gotResource.getMetadata().setResourceVersion(null);
         assertThat(gotResource, is(pod));
 
         // Get with namespace
@@ -226,7 +239,9 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // Delete
         assertThat(mixedOp.apply(client).withName(pod.getMetadata().getName()).delete(), is(true));
         assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
-        assertThat(w.lastEvent().resource, is(pod));
+        RT resource = (RT) w.lastEvent().resource;
+        resource.getMetadata().setResourceVersion(null);
+        assertThat(resource, is(pod));
 
         items = mixedOp.apply(client).list().getItems();
         assertThat(items.size(), is(0));

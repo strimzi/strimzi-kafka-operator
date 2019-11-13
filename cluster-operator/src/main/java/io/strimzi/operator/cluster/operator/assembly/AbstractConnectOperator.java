@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -70,6 +71,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         extends AbstractOperator<T, CrdOperator<C, T, L, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
+    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = "strimzi.io/use-connector-resources";
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -144,6 +146,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 .compose(cf -> {
                                     KafkaConnect connect = cf.resultAt(0);
                                     KafkaConnectS2I connectS2i = cf.resultAt(1);
+                                    KafkaConnectApi apiClient = connectOperator.connectClientProvider.apply(connectOperator.vertx);
                                     if (connect == null && connectS2i == null) {
                                         updateStatus(noConnectCluster(namespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                         return Future.succeededFuture();
@@ -158,14 +161,20 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                     reconciliation, connectName, connect.getMetadata().getName());
                                         }
                                         return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                            () -> connectOperator.reconcileConnectors(reconciliation, connect));
+                                            () -> connectOperator.reconcileConnector(reconciliation,
+                                                    KafkaConnectResources.serviceName(connectName), apiClient,
+                                                    isUseResources(connect),
+                                                    kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector));
                                     } else {
                                         // grab the lock and call reconcileConnectors()
                                         // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                         Reconciliation r = new Reconciliation("connector-watch", connectS2IOperator.kind(),
                                                 kafkaConnector.getMetadata().getNamespace(), connectName);
                                         return connectS2IOperator.withLock(r, LOCK_TIMEOUT_MS,
-                                            () -> connectS2IOperator.reconcileConnectors(r, connectS2i));
+                                            () -> connectS2IOperator.reconcileConnector(r,
+                                                    KafkaConnectResources.serviceName(connectName), apiClient,
+                                                    isUseResources(connectS2i),
+                                                    kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector));
                                     }
                                 }
                             );
@@ -188,6 +197,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
     }
 
+    public static boolean isUseResources(HasMetadata connect) {
+        return Annotations.booleanAnnotation(connect, STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
+    }
+
     private static NoSuchResourceException noConnectCluster(String namespace, String connectName) {
         return new NoSuchResourceException(
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + namespace + ".");
@@ -204,39 +217,45 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String namespace = connect.getMetadata().getNamespace();
         String host = KafkaConnectResources.serviceName(connectName);
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        boolean useResources = Annotations.booleanAnnotation(connect, "strimzi.io/use-connector-resources", false);
+        boolean useResources = isUseResources(connect);
         return CompositeFuture.join(apiClient.list(host, KafkaConnectCluster.REST_API_PORT),
                 connectorOperator.listAsync(namespace,
                         Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
         ).compose(cf -> {
-            List<String> runningConnectors = cf.resultAt(0);
-            List<KafkaConnector> desired = cf.resultAt(1);
-            log.debug("{}: {}} cluster: required connectors: {}", reconciliation, kind(), desired);
-            Set<String> delete = new HashSet<>(runningConnectors);
-            delete.removeAll(desired.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-            log.debug("{}: {}} cluster: delete connectors: {}", reconciliation, kind(), delete);
-            Stream<Future<Void>> deletionFutures = delete.stream().map(connector -> {
-                log.debug("{}: {}} cluster: deleting connector: {}", reconciliation, kind(), connector);
-                return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connector);
-            });
-            Stream<Future<Void>> createUpdateFutures = desired.stream()
-                    .map(connector -> {
-                        log.debug("{}: {}} cluster: creating/updating connector: {}", reconciliation, kind(), connector);
-                        if (connector.getSpec() == null) {
-                            return maybeUpdateConnectorStatus(reconciliation, connector,
-                                    new InvalidResourceException("spec property is required"));
-                        }
-                        if (!useResources) {
-                            return maybeUpdateConnectorStatus(reconciliation, connector,
-                                    new NoSuchResourceException("Not configured for connector management"));
-                        } else {
-                            return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
-                                        connector.getMetadata().getName(), asJson(connector.getSpec()))
-                                    .compose(i -> maybeUpdateConnectorStatus(reconciliation, connector, null));
-                        }
-                    });
+            List<String> runningConnectorNames = cf.resultAt(0);
+            List<KafkaConnector> desiredConnectors = cf.resultAt(1);
+            log.debug("{}: {}} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
+            Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
+            deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
+            log.debug("{}: {}} cluster: delete connectors: {}", reconciliation, kind(), deleteConnectorNames);
+            Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
+                reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, null)
+            );
+            Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
+                    .map(connector -> reconcileConnector(reconciliation, host, apiClient, useResources, connector.getMetadata().getName(), connector));
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
+    }
+
+    private Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, boolean useResources, String connectorName, KafkaConnector connector) {
+        if (connector == null) {
+            log.debug("{}: {}} cluster: deleting connector: {}", reconciliation, kind(), connectorName);
+            return apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName);
+        } else {
+            log.debug("{}: {}} cluster: creating/updating connector: {}", reconciliation, kind(), connectorName);
+            if (connector.getSpec() == null) {
+                return maybeUpdateConnectorStatus(reconciliation, connector,
+                        new InvalidResourceException("spec property is required"));
+            }
+            if (!useResources) {
+                return maybeUpdateConnectorStatus(reconciliation, connector,
+                        new NoSuchResourceException("Not configured for connector management"));
+            } else {
+                return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
+                        connector.getMetadata().getName(), asJson(connector.getSpec()))
+                        .compose(i -> maybeUpdateConnectorStatus(reconciliation, connector, null));
+            }
+        }
     }
 
     public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?, ?> connectorOperations) {

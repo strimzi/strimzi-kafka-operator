@@ -32,19 +32,19 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -53,8 +53,9 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.emptySet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -65,7 +66,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class ConnectorMockTest {
 
     private static final Logger log = LogManager.getLogger(ConnectorMockTest.class);
@@ -78,8 +79,8 @@ public class ConnectorMockTest {
     private KafkaConnectS2IAssemblyOperator kafkaConnectS2iOperator;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
 
-    @Before
-    public void setup(TestContext testContext) {
+    @BeforeEach
+    public void setup(VertxTestContext testContext) throws InterruptedException {
         vertx = Vertx.vertx();
         client = new MockKube()
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class,
@@ -117,38 +118,38 @@ public class ConnectorMockTest {
             ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(Long.MAX_VALUE)));
         kafkaConnectOperator = new KafkaConnectAssemblyOperator(vertx,
             pfa,
-            certManager,
             ros,
             config,
             x -> api);
-        Async async2 = testContext.async();
-        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.fail(e)).setHandler(asyncResultHandler(testContext, async2));
-        async2.await();
+        CountDownLatch async2 = new CountDownLatch(1);
+        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e)).setHandler(asyncResultHandler(testContext, async2));
+        async2.await(30, TimeUnit.SECONDS);
         kafkaConnectS2iOperator = new KafkaConnectS2IAssemblyOperator(vertx,
             pfa,
-            certManager,
             ros,
             config,
             x -> api);
-        Async async1 = testContext.async();
-        kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.fail(e)).setHandler(asyncResultHandler(testContext, async1));
-        async1.await();
-        Async async = testContext.async();
+        CountDownLatch async1 = new CountDownLatch(1);
+        kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.failNow(e)).setHandler(asyncResultHandler(testContext, async1));
+        async1.await(30, TimeUnit.SECONDS);
+        CountDownLatch async = new CountDownLatch(1);
         AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE).setHandler(asyncResultHandler(testContext, async));
-        async.await();
+        async.await(30, TimeUnit.SECONDS);
+
+        testContext.completeNow();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         vertx.close();
     }
 
-    public <T> Handler<AsyncResult<T>> asyncResultHandler(TestContext testContext, Async async) {
+    public <T> Handler<AsyncResult<T>> asyncResultHandler(VertxTestContext testContext, CountDownLatch async) {
         return ar -> {
             if (ar.failed()) {
-                testContext.fail(ar.cause());
+                testContext.failNow(ar.cause());
             }
-            async.complete();
+            async.countDown();
         };
     }
 
@@ -176,7 +177,7 @@ public class ConnectorMockTest {
         };
     }
 
-    public void waitForConnectReady(TestContext testContext, String connectName) {
+    public void waitForConnectReady(String connectName) {
         Resource<KafkaConnect, DoneableKafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
@@ -189,11 +190,11 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                             String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectName + " never became ready: " + conditions);
+            fail(connectName + " never became ready: " + conditions);
         }
     }
 
-    public void waitForConnectUnready(TestContext testContext, String connectName, String reason, String message) {
+    public void waitForConnectUnready(String connectName, String reason, String message) {
         Resource<KafkaConnect, DoneableKafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
@@ -206,11 +207,11 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                             String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectName + " never became unready: " + conditions);
+            fail(connectName + " never became unready: " + conditions);
         }
     }
 
-    public void waitForConnectS2iReady(TestContext testContext, String connectName) {
+    public void waitForConnectS2iReady(VertxTestContext testContext, String connectName) {
         Resource<KafkaConnectS2I, DoneableKafkaConnectS2I> resource = Crds.kafkaConnectS2iOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
@@ -223,11 +224,11 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                             String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectName + " never became ready: " + conditions);
+            testContext.failNow(new AssertionError(connectName + " never became ready: " + conditions));
         }
     }
 
-    public void waitForConnectS2iUnready(TestContext testContext, String connectName, String reason, String message) {
+    public void waitForConnectS2iUnready(String connectName, String reason, String message) {
         Resource<KafkaConnectS2I, DoneableKafkaConnectS2I> resource = Crds.kafkaConnectS2iOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
@@ -240,11 +241,11 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                             String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectName + " never became unready: " + conditions);
+            fail(connectName + " never became unready: " + conditions);
         }
     }
 
-    public void waitForConnectorReady(TestContext testContext, String connectorName) {
+    public void waitForConnectorReady(String connectorName) {
         Resource<KafkaConnector, DoneableKafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
@@ -257,11 +258,11 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                     String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectorName + " never became ready: " + conditions);
+            fail(connectorName + " never became ready: " + conditions);
         }
     }
 
-    public void waitForConnectorUnready(TestContext testContext, String connectorName, String reason, String message) {
+    public void waitForConnectorUnready(String connectorName, String reason, String message) {
         Resource<KafkaConnector, DoneableKafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
@@ -274,7 +275,7 @@ public class ConnectorMockTest {
             String conditions =
                     resource.get().getStatus() == null ? "no status" :
                             String.valueOf(resource.get().getStatus().getConditions());
-            testContext.fail(connectorName + " never became unready: " + conditions);
+            fail(connectorName + " never became unready: " + conditions);
         }
     }
 
@@ -318,7 +319,7 @@ public class ConnectorMockTest {
     }
 
     @Test
-    public void testConnectWithoutSpec(TestContext testContext) {
+    public void testConnectWithoutSpec() {
         String connectName = "cluster";
 
         // Create KafkaConnect cluster and wait till it's ready
@@ -328,12 +329,12 @@ public class ConnectorMockTest {
                 .withName(connectName)
                 .endMetadata()
                 .done();
-        waitForConnectUnready(testContext, connectName, "InvalidResourceException", "spec property is required");
+        waitForConnectUnready(connectName, "InvalidResourceException", "spec property is required");
         return;
     }
 
     @Test
-    public void testConnectorWithoutLabel(TestContext testContext) {
+    public void testConnectorWithoutLabel() {
         String connectorName = "connector";
 
         // Create KafkaConnect cluster and wait till it's ready
@@ -345,13 +346,13 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(testContext, connectorName, "InvalidResourceException",
+        waitForConnectorUnready(connectorName, "InvalidResourceException",
                 "Resource lacks label 'strimzi.io/cluster': No connect cluster in which to create this connector.");
         return;
     }
 
     @Test
-    public void testConnectorButConnectDoesNotExist(TestContext testContext) {
+    public void testConnectorButConnectDoesNotExist() {
         String connectorName = "connector";
 
         // Create KafkaConnect cluster and wait till it's ready
@@ -362,13 +363,13 @@ public class ConnectorMockTest {
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "cluster")
                 .endMetadata()
                 .done();
-        waitForConnectorUnready(testContext, connectorName, "NoSuchResourceException",
+        waitForConnectorUnready(connectorName, "NoSuchResourceException",
                 "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
         return;
     }
 
     @Test
-    public void testConnectorWithoutSpec(TestContext testContext) {
+    public void testConnectorWithoutSpec() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -382,7 +383,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
@@ -392,12 +393,12 @@ public class ConnectorMockTest {
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .done();
-        waitForConnectorUnready(testContext, connectorName, "InvalidResourceException", "spec property is required");
+        waitForConnectorUnready(connectorName, "InvalidResourceException", "spec property is required");
         return;
     }
 
     @Test
-    public void testConnectorButConnectNotConfiguredForConnectors(TestContext testContext) {
+    public void testConnectorButConnectNotConfiguredForConnectors() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -411,7 +412,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
@@ -422,12 +423,12 @@ public class ConnectorMockTest {
                 .withNewSpec().endSpec()
                 .done();
         assertNotNull(Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).get());
-        waitForConnectorUnready(testContext, connectorName, "NoSuchResourceException", "Not configured for connector management");
+        waitForConnectorUnready(connectorName, "NoSuchResourceException", "Not configured for connector management");
     }
 
     /** Create connect, create connector, delete connector, delete connect */
     @Test
-    public void testConnectConnectorConnectorConnect(TestContext testContext) {
+    public void testConnectConnectorConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -441,7 +442,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
             .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
 
         // triggered twice (creation+status update)
         verify(api, atLeastOnce()).list(
@@ -459,7 +460,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
             .done();
-        waitForConnectorReady(testContext, connectorName);
+        waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -482,7 +483,7 @@ public class ConnectorMockTest {
 
     /** Create connector, create connect, delete connector, delete connect */
     @Test
-    public void testConnectorConnectConnectorConnect(TestContext testContext) {
+    public void testConnectorConnectConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -495,7 +496,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(testContext, connectorName, "NoSuchResourceException",
+        waitForConnectorUnready(connectorName, "NoSuchResourceException",
             "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
@@ -515,7 +516,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
         // (connect crt, connector status, connect status)
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -538,7 +539,7 @@ public class ConnectorMockTest {
 
     /** Create connect, create connector, delete connect, delete connector */
     @Test
-    public void testConnectConnectorConnectConnector(TestContext testContext) {
+    public void testConnectConnectorConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -552,7 +553,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
 
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -569,7 +570,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorReady(testContext, connectorName);
+        waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -579,7 +580,7 @@ public class ConnectorMockTest {
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
-        waitForConnectorUnready(testContext, connectorName,
+        waitForConnectorUnready(connectorName,
                 "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
@@ -590,7 +591,7 @@ public class ConnectorMockTest {
 
     /** Create connector, create connect, delete connect, delete connector */
     @Test
-    public void testConnectorConnectConnectConnector(TestContext testContext) {
+    public void testConnectorConnectConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -603,7 +604,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(testContext, connectorName, "NoSuchResourceException",
+        waitForConnectorUnready(connectorName, "NoSuchResourceException",
                 "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
@@ -623,7 +624,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connectName);
+        waitForConnectReady(connectName);
 
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.serviceName(connectName)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -633,7 +634,7 @@ public class ConnectorMockTest {
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
-        waitForConnectorUnready(testContext, connectorName,
+        waitForConnectorUnready(connectorName,
                 "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
@@ -644,7 +645,7 @@ public class ConnectorMockTest {
 
     /** Change the cluster label from one cluster to another; check the connector is deleted from the old cluster */
     @Test
-    public void testChangeLabel(TestContext testContext) {
+    public void testChangeLabel() throws InterruptedException {
         String connect1Name = "cluster1";
         String connect2Name = "cluster2";
         String connectorName = "connector";
@@ -659,7 +660,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connect1Name);
+        waitForConnectReady(connect1Name);
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
@@ -669,7 +670,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectReady(testContext, connect2Name);
+        waitForConnectReady(connect2Name);
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
@@ -680,7 +681,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorReady(testContext, connectorName);
+        waitForConnectorReady(connectorName);
 
         verify(api, atLeastOnce()).createOrUpdatePutRequest(
                 eq(KafkaConnectResources.serviceName(connect1Name)), eq(KafkaConnectCluster.REST_API_PORT),
@@ -696,7 +697,7 @@ public class ConnectorMockTest {
                 .endMetadata()
                 .withNewSpec()
                 .endSpec().build());
-        waitForConnectorReady(testContext, connectorName);
+        waitForConnectorReady(connectorName);
 
         // Note: The connector does not get deleted immediately from cluster 1, only on the next timed reconciliation
 
@@ -707,11 +708,11 @@ public class ConnectorMockTest {
                 eq(KafkaConnectResources.serviceName(connect2Name)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
 
-        Async async = testContext.async();
+        CountDownLatch async = new CountDownLatch(1);
         kafkaConnectOperator.reconcile(new Reconciliation("test", "KafkaConnect", NAMESPACE, connect1Name)).setHandler(ar -> {
-            async.complete();
+            async.countDown();
         });
-        async.await();
+        async.await(30, TimeUnit.SECONDS);
         verify(api, atLeastOnce()).delete(
                 eq(KafkaConnectResources.serviceName(connect1Name)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));

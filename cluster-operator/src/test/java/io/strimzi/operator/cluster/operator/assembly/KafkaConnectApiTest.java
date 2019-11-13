@@ -8,15 +8,14 @@ import io.debezium.kafka.KafkaCluster;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,12 +23,13 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
 
     private KafkaCluster cluster;
@@ -37,7 +37,7 @@ public class KafkaConnectApiTest {
     private Connect connect;
     private static final int PORT = 18083;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException, InterruptedException {
         vertx = Vertx.vertx();
         cluster = new KafkaCluster();
@@ -77,7 +77,7 @@ public class KafkaConnectApiTest {
         l.await();
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (connect != null) {
             connect.stop();
@@ -87,9 +87,9 @@ public class KafkaConnectApiTest {
     }
 
     @Test
-    public void test(TestContext context) throws InterruptedException {
+    public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
-        Async async = context.async();
+        CountDownLatch async = new CountDownLatch(1);
         client.list("localhost", PORT)
             .compose(connectorNames -> {
                 assertEquals(emptyList(), connectorNames);
@@ -161,13 +161,14 @@ public class KafkaConnectApiTest {
                         }
                     });
             }).compose(ignored -> {
-                async.complete();
+                async.countDown();
                 return Future.succeededFuture();
             }).recover(e -> {
-                context.fail(e);
-                async.complete();
+                context.failNow(e);
+                async.countDown();
                 return Future.succeededFuture();
             });
-        async.await();
+        async.await(30, TimeUnit.SECONDS);
+        context.completeNow();
     }
 }

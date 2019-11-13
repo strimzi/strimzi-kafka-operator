@@ -183,7 +183,7 @@ public abstract class AbstractOperator<
                     handler.fail(ex);
                 }
             } else {
-                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
+                log.warn("{}: Failed to acquire lock {} within {}ms.", reconciliation, lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
             }
         });
