@@ -2,8 +2,11 @@ apiVersion: kafka.strimzi.io/v1beta1
 kind: KafkaConnectS2I
 metadata:
   name: my-connect-cluster
-  annotations:
-    strimzi.io/use-connector-resources: true
+#    annotations:
+#      # use-connector-resources configures this KafkaConnect
+#      # to use KafkaConnector resources to avoid
+#      # needing to call the Connect REST API directly
+#      strimzi.io/use-connector-resources: true
 spec:
   version: 2.3.1
   replicas: 1
