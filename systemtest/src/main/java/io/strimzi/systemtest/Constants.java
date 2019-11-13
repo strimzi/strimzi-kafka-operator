@@ -47,7 +47,7 @@ public interface Constants {
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
     long GLOBAL_TRACING_TIMEOUT =  Duration.ofMinutes(7).toMillis();
 
-    long CO_OPERATION_TIMEOUT_DEFAULT = TIMEOUT_FOR_RESOURCE_READINESS;
+    long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT_SHORT + Duration.ofSeconds(80).toMillis();
     long CO_OPERATION_TIMEOUT_POLL = Duration.ofSeconds(2).toMillis();

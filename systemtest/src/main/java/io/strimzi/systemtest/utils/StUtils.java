@@ -1043,4 +1043,38 @@ public class StUtils {
         );
         LOGGER.info("Pod:" + podName + " is in pending status");
     }
+
+    public static void waitForKafkaConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
+        for (final String labelKey : labelKeys) {
+            LOGGER.info("Waiting for Kafka configMap label {} change to {}", labelKey, null);
+            TestUtils.waitFor("Waiting for Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                            kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(labelKey) == null
+            );
+            LOGGER.info("Kafka configMap label {} change to {}", labelKey, null);
+        }
+    }
+
+    public static void waitForKafkaStatefulSetLabelsDeletion(String statefulSet, String... labelKeys) {
+        for (final String labelKey : labelKeys) {
+            LOGGER.info("Waiting for Kafka statefulSet label {} change to {}", labelKey, null);
+            TestUtils.waitFor("Waiting for Kafka statefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                            kubeClient().getStatefulSet(statefulSet).getMetadata().getLabels().get(labelKey) == null
+            );
+            LOGGER.info("Kafka statefulSet label {} change to {}", labelKey, null);
+        }
+    }
+
+    public static void waitUntilKafkaPodLabelsDeletion(String podName, String... labelKeys) {
+        for (final String labelKey : labelKeys) {
+            LOGGER.info("Waiting for Kafka pod label {} change to {}", labelKey, null);
+            TestUtils.waitFor("Waiting for Kafka pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                            kubeClient().getPod(podName).getMetadata().getLabels().get(labelKey) == null
+            );
+            LOGGER.info("Kafka pod label {} change to {}", labelKey, null);
+        }
+    }
+
 }
