@@ -124,7 +124,7 @@ public class SpecificST extends MessagingBaseST {
 
         Condition condition = testMethodResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 
-        verifyCRDStatusCondition(
+        verifyCRStatusCondition(
                 condition,
                 "Version 6.6.6 is not supported. Supported versions are: 2.2.1, 2.3.0.",
                 "InvalidResourceException",
