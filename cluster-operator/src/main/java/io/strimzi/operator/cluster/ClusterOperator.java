@@ -6,16 +6,6 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaConnector;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
@@ -23,7 +13,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperato
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -61,9 +50,6 @@ public class ClusterOperator extends AbstractVerticle {
     private final long reconciliationInterval;
 
     private final Map<String, Watch> watchByKind = new ConcurrentHashMap<>();
-    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperations;
-    private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperations;
-    private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2iOperations;
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -79,10 +65,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator,
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
-                           KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
-                           CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperations,
-                           CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperations,
-                           CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2iOperations) {
+                           KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.reconciliationInterval = reconciliationInterval;
@@ -92,9 +75,6 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
-        this.connectorOperations = connectorOperations;
-        this.connectOperations = connectOperations;
-        this.connectS2iOperations = connectS2iOperations;
     }
 
     @Override

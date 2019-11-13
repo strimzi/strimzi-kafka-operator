@@ -24,7 +24,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"connectCluster", "class", "tasksMax", "config"})
+@JsonPropertyOrder({"class", "tasksMax", "config"})
 @EqualsAndHashCode
 public class KafkaConnectorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

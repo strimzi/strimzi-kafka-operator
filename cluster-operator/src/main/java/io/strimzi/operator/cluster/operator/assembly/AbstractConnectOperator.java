@@ -126,29 +126,32 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * </ul>
      * @param connectOperator The operator for {@code KafkaConnect}.
      * @param connectS2IOperator The operator for {@code KafkaConnectS2I}.
-     * @param namespace The namespace.
+     * @param watchNamespaceOrWildcard The namespace to watch.
      * @return A future which completes when the watch has been set up.
      */
     public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> connectOperator,
             AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> connectS2IOperator,
-            String namespace) {
-        // TODO Only create a single watch
+            String watchNamespaceOrWildcard) {
         return Util.async(connectOperator.vertx, () -> {
-            connectOperator.connectorOperator.watch(namespace, new Watcher<KafkaConnector>() {
+            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectName = kafkaConnector.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+                    String connectorNamespace = kafkaConnector.getMetadata().getNamespace();
+                    String connectNamespace = connectorNamespace;
                     Future<Void> f;
                     if (connectName != null) {
                         // Check whether a KafkaConnect/S2I exists
-                        CompositeFuture.join(connectOperator.resourceOperator.getAsync(namespace, connectName),
-                                             connectOperator.pfa.supportsS2I() ? connectS2IOperator.resourceOperator.getAsync(namespace, connectName) : Future.succeededFuture())
+                        CompositeFuture.join(connectOperator.resourceOperator.getAsync(connectNamespace, connectName),
+                                             connectOperator.pfa.supportsS2I() ?
+                                                     connectS2IOperator.resourceOperator.getAsync(connectNamespace, connectName) :
+                                                     Future.succeededFuture())
                                 .compose(cf -> {
                                     KafkaConnect connect = cf.resultAt(0);
                                     KafkaConnectS2I connectS2i = cf.resultAt(1);
                                     KafkaConnectApi apiClient = connectOperator.connectClientProvider.apply(connectOperator.vertx);
                                     if (connect == null && connectS2i == null) {
-                                        updateStatus(noConnectCluster(namespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                        updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                         return Future.succeededFuture();
                                     } else if (connect != null) {
                                         // grab the lock and call reconcileConnectors()
@@ -201,9 +204,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return Annotations.booleanAnnotation(connect, STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
 
-    private static NoSuchResourceException noConnectCluster(String namespace, String connectName) {
+    private static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
         return new NoSuchResourceException(
-                "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + namespace + ".");
+                "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
 
     /**

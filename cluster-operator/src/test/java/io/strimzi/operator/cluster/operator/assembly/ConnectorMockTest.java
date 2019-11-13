@@ -325,8 +325,8 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(connectName)
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
                 .endMetadata()
                 .done();
         waitForConnectUnready(connectName, "InvalidResourceException", "spec property is required");
@@ -405,9 +405,9 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(connectName)
-                //.addToAnnotations("strimzi.io/use-connector-resources", "true")
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    //.addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -490,8 +490,9 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -564,8 +565,9 @@ public class ConnectorMockTest {
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
                 .endSpec()
@@ -599,6 +601,7 @@ public class ConnectorMockTest {
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).createNew()
                 .withNewMetadata()
                     .withName(connectorName)
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .withNewSpec()
