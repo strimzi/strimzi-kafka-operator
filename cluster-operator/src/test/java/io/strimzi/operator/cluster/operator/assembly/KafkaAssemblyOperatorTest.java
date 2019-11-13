@@ -95,7 +95,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -109,6 +108,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -1081,7 +1081,6 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     public void testReconcile(Params params, VertxTestContext context) throws InterruptedException {
         setFields(params);
-        CountDownLatch async = new CountDownLatch(2);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -1151,8 +1150,8 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
-        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
-        Set<String> deleted = new CopyOnWriteArraySet<>();
+        CountDownLatch fooLatch = new CountDownLatch(1);
+        CountDownLatch barLatch = new CountDownLatch(1);
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1161,20 +1160,27 @@ public class KafkaAssemblyOperatorTest {
                 config) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-                createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
-                async.countDown();
+                String name = kafkaAssembly.getMetadata().getName();
+                if ("foo".equals(name)) {
+                    fooLatch.countDown();
+                } else if ("bar".equals(name)) {
+                    barLatch.countDown();
+                } else {
+                    context.failNow(new AssertionError("Unexpected name " + name));
+                }
                 return Future.succeededFuture();
             }
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", clusterCmNamespace,
-            ignored -> { }
-        );
+        ops.reconcileAll("test", clusterCmNamespace, context.succeeding());
 
-        async.await(60, TimeUnit.SECONDS);
-
-        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
+        if (!fooLatch.await(30, TimeUnit.SECONDS)) {
+            fail("foo not seen");
+        }
+        if (!barLatch.await(30, TimeUnit.SECONDS)) {
+            fail("bar not seen");
+        }
         context.completeNow();
     }
 
@@ -1182,7 +1188,6 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     public void testReconcileAllNamespaces(Params params, VertxTestContext context) throws InterruptedException {
         setFields(params);
-        Checkpoint async = context.checkpoint(2);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -1237,8 +1242,8 @@ public class KafkaAssemblyOperatorTest {
                     barClusterCa.caCertSecret()))
         );
 
-        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
-
+        CountDownLatch fooLatch = new CountDownLatch(1);
+        CountDownLatch barLatch = new CountDownLatch(1);
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
                 passwordGenerator,
@@ -1246,22 +1251,28 @@ public class KafkaAssemblyOperatorTest {
                 config) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-                createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
-                async.flag();
+                String name = kafkaAssembly.getMetadata().getName();
+                if ("foo".equals(name)) {
+                    fooLatch.countDown();
+                } else if ("bar".equals(name)) {
+                    barLatch.countDown();
+                } else {
+                    context.failNow(new AssertionError("Unexpected name " + name));
+                }
                 return Future.succeededFuture();
             }
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", "*",
-            ignored -> { }
-        );
+        ops.reconcileAll("test", "*", context.succeeding());
 
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
+        if (!fooLatch.await(30, TimeUnit.SECONDS)) {
+            fail("foo not seen");
         }
-
-        context.verify(() -> assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar")))));
+        if (!barLatch.await(30, TimeUnit.SECONDS)) {
+            fail("bar not seen");
+        }
+        context.completeNow();
     }
 
     @AfterAll
