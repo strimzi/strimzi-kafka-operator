@@ -353,7 +353,8 @@ public abstract class Ca {
            Function<Integer, Subject> subjectFn,
            Secret secret,
            Function<Integer, String> podNameFn) throws IOException {
-        int replicasInSecret = secret == null || this.certRenewed() ? 0 : secret.getData().size() / 4;
+        int replicasInSecret = secret == null || this.certRenewed() ? 0 :
+                (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
 
         File brokerCsrFile = File.createTempFile("tls", "broker-csr");
         File brokerKeyFile = File.createTempFile("tls", "broker-key");
