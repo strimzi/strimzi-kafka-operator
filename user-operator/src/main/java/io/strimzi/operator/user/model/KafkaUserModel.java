@@ -209,7 +209,7 @@ public class KafkaUserModel {
                                     decodeFromSecret(userSecret, "user.key"),
                                     decodeFromSecret(userSecret, "user.crt"));
                         } catch (IOException e) {
-                            log.error("Error generating signed certificate for user {}", name, e);
+                            log.error("Error generating the keystore for user {}", name, e);
                         }
                     }
                     return;

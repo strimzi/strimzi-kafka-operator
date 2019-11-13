@@ -367,22 +367,32 @@ public abstract class Ca {
         for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} already exists", podName);
-
             Subject subject = subjectFn.apply(i);
+
+            CertAndKey certAndKey;
+            if (secret.getData().get(podName + ".p12") != null &&
+                    !secret.getData().get(podName + ".p12").isEmpty() &&
+                    secret.getData().get(podName + ".password") != null &&
+                    !secret.getData().get(podName + ".password").isEmpty()) {
+
+                certAndKey = asCertAndKey(secret,
+                        podName + ".key", podName + ".crt",
+                        podName + ".p12", podName + ".password");
+            } else {
+                // coming from an older operator version, the secret exists but without keystore and password
+                certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
+                        Base64.getDecoder().decode(secret.getData().get(podName + ".key")),
+                        Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
+            }
+
             Collection<String> desiredSbjAltNames = subject.subjectAltNames().values();
             Collection<String> currentSbjAltNames =
-                    getSubjectAltNames(asCertAndKey(secret,
-                                                podName + ".key", podName + ".crt",
-                                                podName + ".p12", podName + ".password").cert());
+                    getSubjectAltNames(certAndKey.cert());
 
             if (currentSbjAltNames != null && desiredSbjAltNames.containsAll(currentSbjAltNames) && currentSbjAltNames.containsAll(desiredSbjAltNames))   {
                 log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
 
-                certs.put(
-                        podName,
-                        asCertAndKey(secret,
-                                podName + ".key", podName + ".crt",
-                                podName + ".p12", podName + ".password"));
+                certs.put(podName, certAndKey);
             } else {
                 if (log.isTraceEnabled()) {
                     if (currentSbjAltNames != null) {
