@@ -51,7 +51,7 @@ class UserST extends AbstractST {
         Condition condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
         LOGGER.info(condition.getMessage() != null);
 
-        verifyCRDStatusCondition(condition,
+        verifyCRStatusCondition(condition,
                 "True",
                 "Ready");
 
@@ -62,7 +62,7 @@ class UserST extends AbstractST {
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
 
-        verifyCRDStatusCondition(condition,
+        verifyCRStatusCondition(condition,
                 "must be no more than 63 characters",
                 "KubernetesClientException",
                 "True",
@@ -74,7 +74,7 @@ class UserST extends AbstractST {
 
         condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
-        verifyCRDStatusCondition(condition,
+        verifyCRStatusCondition(condition,
                 "must be no more than 63 characters",
                 "KubernetesClientException",
                 "True",
