@@ -75,6 +75,7 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
@@ -1673,7 +1674,7 @@ class KafkaST extends MessagingBaseST {
         labels.remove(labelKeys[1]);
         labels.remove(labelKeys[2]);
 
-        LOGGER.info("Waiting for kafka service labels deletion {}", labels);
+        LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
         StUtils.waitForKafkaServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
@@ -1682,26 +1683,31 @@ class KafkaST extends MessagingBaseST {
         verifyNullLabels(labelKeys, service);
 
         LOGGER.info("Verifying kafka labels via config maps");
+        StUtils.waitForKafkaConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
+
         configMap = kubeClient().getConfigMap(configMapName);
 
         verifyNullLabels(labelKeys, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        String statefulSetName = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getName();
+        StUtils.waitForKafkaStatefulSetLabelsDeletion(statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
+        LOGGER.info("Verifying kafka labels via stateful set");
         verifyNullLabels(labelKeys, statefulSet);
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        LOGGER.info("Verifying via kafka pods");
+        LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
+        StUtils.waitUntilKafkaPodLabelsDeletion(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
+
         labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
 
-        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[0]) == null);
-        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[1]) == null);
-        assertThat("Label doesn't exist in kafka pod", labels.get(labelKeys[2]) == null);
+        LOGGER.info("Verifying via kafka pods");
+        verifyNullLabels(labelKeys, labels);
 
         waitForClusterAvailability(NAMESPACE);
     }
@@ -1713,10 +1719,15 @@ class KafkaST extends MessagingBaseST {
         }
     }
 
+    void verifyNullLabels(String[] labelKeys, Map<String, String> labels) {
+        for (String labelKey : labelKeys) {
+            assertThat(labels.get(labelKey), nullValue());
+        }
+    }
+
     void verifyNullLabels(String[] labelKeys, HasMetadata resources) {
         for (String labelKey : labelKeys) {
-            assertThat("Label doesn't exist in HasMetadata(Services, CM, SS) resources",
-                    resources.getMetadata().getLabels().get(labelKey) == null);
+            assertThat(resources.getMetadata().getLabels().get(labelKey), nullValue());
         }
     }
 

@@ -705,7 +705,7 @@ public class TracingST extends AbstractST {
 
     @Test
     void testConnectS2IService() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 4, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -717,18 +717,21 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-
         testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
         testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
+
+        Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
+        configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
+        configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
 
         testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()
                 .editSpec()
+                    .withConfig(configOfKafkaConnectS2I)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
                     .withNewTemplate()
@@ -756,6 +759,7 @@ public class TracingST extends AbstractST {
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
+        LOGGER.info("Creating FileSink connect in Pod:{}", kafkaConnectS2IPodName);
         StUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
 
         waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
@@ -863,7 +867,7 @@ public class TracingST extends AbstractST {
     }
 
     @BeforeEach
-    void createTestResources()  {
+    void createTestResources() {
         createTestMethodResources();
 
         // deployment of the jaeger
