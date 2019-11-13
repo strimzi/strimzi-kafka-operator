@@ -31,7 +31,7 @@ include::assembly-kafka-bridge-configuration.adoc[leveloffset=+1]
 
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
-include::assembly-logging.adoc[leveloffset=+1]
+include::../modules/con-kafka-bridge-logging.adoc[leveloffset=+1]
 
 include::assembly-jvm-options.adoc[leveloffset=+1]
 

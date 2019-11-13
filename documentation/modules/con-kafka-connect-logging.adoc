@@ -1,37 +1,45 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-deployment-configuration-kafka-mirror-maker.adoc
+// assembly-deployment-configuration-kafka-connect.adoc
 
-[id='con-kafka-mirror-maker-logging-{context}']
-= Kafka Mirror Maker loggers
+[id='con-kafka-connect-logging-{context}']
+= Kafka Connect loggers
 
-Kafka Mirror Maker has its own configurable logger:
+Kafka Connect has its own configurable loggers:
 
-* `mirrormaker.root.logger`
+* `connect.root.logger.level`
+* `log4j.logger.org.apache.zookeeper`
+* `log4j.logger.org.I0Itec.zkclient`
+* `log4j.logger.org.reflections`
+
+Kafka Connect uses the Apache `log4j` logger implementation.
 
 Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, it must be placed under under the `log4j.properties` key.
 
-Here we see examples of `inline` and `external` logging:
+Here we see examples of `inline` and `external` logging.
 
+.Inline logging
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
-kind: KafkaMirrorMaker
+kind: KafkaConnect
 spec:
   # ...
   logging:
     type: inline
     loggers:
-      mirrormaker.root.logger: "INFO"
+      connect.root.logger: "INFO"
   # ...
 ----
 
+.External logging
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
-kind: KafkaMirrorMaker
+kind: KafkaConnect
 spec:
   # ...
   logging:

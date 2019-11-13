@@ -25,4 +25,13 @@ The operators are automatically configured to manage the topics and users of the
 
 include::../modules/ref-kafka-entity-operator.adoc[leveloffset=+1]
 
+//topic operator config
+include::../modules/con-configuring-topic-operator.adoc[leveloffset=+1]
+
+//user operator config
+include::../modules/con-configuring-user-operator.adoc[leveloffset=+1]
+
+//logging config for topic operator and user operator
+include::../modules/con-entity-operator-logging.adoc[leveloffset=+1]
+
 include::../modules/proc-configuring-kafka-entity-operator.adoc[leveloffset=+1]

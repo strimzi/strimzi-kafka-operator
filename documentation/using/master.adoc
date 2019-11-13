@@ -35,7 +35,6 @@ include::modules/proc-uninstalling.adoc[leveloffset=+1]
 
 include::modules/proc-accessing-resource-status.adoc[leveloffset=+1]
 
-include::modules/ref-kafka-logging.adoc[leveloffset=+1]
 [appendix]
 include::modules/faq.adoc[leveloffset=+1]
 
