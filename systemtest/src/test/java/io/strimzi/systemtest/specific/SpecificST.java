@@ -126,7 +126,7 @@ public class SpecificST extends MessagingBaseST {
 
         verifyCRStatusCondition(
                 condition,
-                "Version 6.6.6 is not supported. Supported versions are: 2.2.1, 2.3.0.",
+                "Version 6.6.6 is not supported.",
                 "InvalidResourceException",
                 "True",
                 "NotReady");
