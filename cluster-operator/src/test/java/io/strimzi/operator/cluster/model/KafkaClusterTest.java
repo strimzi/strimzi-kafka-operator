@@ -1374,6 +1374,38 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testZookeeperPortNetworkPolicy() {
+        NetworkPolicyPeer peer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)))
+                .endPodSelector()
+                .build();
+
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy();
+
+        List<NetworkPolicyPeer> rules = np
+                .getSpec()
+                .getEgress()
+                .stream()
+                .filter(egr -> egr
+                        .getPorts()
+                        .get(0)
+                        .getPort()
+                        .equals(new IntOrString("2181")))
+                .map(NetworkPolicyEgressRule::getTo)
+                .findFirst()
+                .orElse(null);
+
+        assertThat(rules.size(), is(1));
+        assertThat(rules.contains(peer), is(true));
+    }
+
+    @Test
     public void testNetworkPolicyPeers() {
         NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()

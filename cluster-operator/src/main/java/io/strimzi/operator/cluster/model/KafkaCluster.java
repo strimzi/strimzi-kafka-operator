@@ -1712,11 +1712,29 @@ public class KafkaCluster extends AbstractModel {
 
         List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(5);
 
+        // Restrict egress to 2181 / ZooKeeper port
+        NetworkPolicyPort zookeeperConnectPort = new NetworkPolicyPort();
+        zookeeperConnectPort.setPort(new IntOrString(zookeeperConnect
+                .replace(ZookeeperCluster.serviceName(cluster) + ":", "")));
+
+        NetworkPolicyPeer zookeeperPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector4 = new LabelSelector();
+        Map<String, String> expressions4 = new HashMap<>();
+        expressions4.put(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster));
+        labelSelector4.setMatchLabels(expressions4);
+        zookeeperPeer.setPodSelector(labelSelector4);
+
+        NetworkPolicyEgressRule zookeeperRule = new NetworkPolicyEgressRuleBuilder()
+                .withPorts(zookeeperConnectPort)
+                .withTo(zookeeperPeer)
+                .build();
+
         NetworkPolicyEgressRule replicationEgressRule = new NetworkPolicyEgressRuleBuilder()
                 .withPorts(replicationPort)
                 .withTo(kafkaClusterPeer)
                 .build();
 
+        egressRules.add(zookeeperRule);
         egressRules.add(replicationEgressRule);
 
         // Free access to 9092, 9093 and 9094 ports
