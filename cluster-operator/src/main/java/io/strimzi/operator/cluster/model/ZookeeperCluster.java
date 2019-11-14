@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
@@ -409,6 +411,16 @@ public class ZookeeperCluster extends AbstractModel {
             rules.add(metricsRule);
         }
 
+        List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(5);
+
+        // Restrict egress to 2888/3888 / quorum peers
+        NetworkPolicyEgressRule quorumEgressRule = new NetworkPolicyEgressRuleBuilder()
+                .withPorts(clusteringPort, leaderElectionPort)
+                .withTo(zookeeperClusterPeer)
+                .build();
+
+        egressRules.add(quorumEgressRule);
+
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
                     .withName(policyName(cluster))
@@ -419,6 +431,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withNewSpec()
                     .withPodSelector(labelSelector2)
                     .withIngress(rules)
+                    .withEgress(egressRules)
                 .endSpec()
                 .build();
 

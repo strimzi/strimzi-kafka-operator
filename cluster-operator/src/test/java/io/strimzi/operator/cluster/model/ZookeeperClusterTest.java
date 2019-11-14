@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
@@ -808,6 +809,15 @@ public class ZookeeperClusterTest {
         assertThat(metricsRule.getPorts().size(), is(1));
         assertThat(metricsRule.getPorts().get(0).getPort(), is(new IntOrString(9404)));
         assertThat(metricsRule.getFrom().size(), is(0));
+
+        // Egress
+        List<NetworkPolicyEgressRule> egressRules = np.getSpec().getEgress();
+        assertThat(egressRules.size(), is(1));
+
+        NetworkPolicyEgressRule zooEgressRule = egressRules.get(0);
+        assertThat(zooEgressRule.getPorts().size(), is(2));
+        assertThat(zooEgressRule.getPorts().get(0).getPort(), is(new IntOrString(2888)));
+        assertThat(zooEgressRule.getPorts().get(1).getPort(), is(new IntOrString(3888)));
     }
 
     @Test
