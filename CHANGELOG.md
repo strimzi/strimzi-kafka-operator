@@ -8,6 +8,7 @@
 * Add `schedulerName` to `podTemplate` (#2114)
 * Allow overriding the auto-detected Kubernetes version
 * Garbage Collection (GC) logging disabled by default
+* Add egress rules to Kafka and Zookeeper
 
 ## 0.14.0
 
