@@ -36,6 +36,8 @@ import io.fabric8.kubernetes.api.model.extensions.IngressTLS;
 import io.fabric8.kubernetes.api.model.extensions.IngressTLSBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
@@ -1708,6 +1710,15 @@ public class KafkaCluster extends AbstractModel {
 
         rules.add(replicationRule);
 
+        List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(5);
+
+        NetworkPolicyEgressRule replicationEgressRule = new NetworkPolicyEgressRuleBuilder()
+                .withPorts(replicationPort)
+                .withTo(kafkaClusterPeer)
+                .build();
+
+        egressRules.add(replicationEgressRule);
+
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {
             if (listeners.getPlain() != null) {
@@ -1769,6 +1780,7 @@ public class KafkaCluster extends AbstractModel {
                 .withNewSpec()
                     .withPodSelector(labelSelector)
                     .withIngress(rules)
+                    .withEgress(egressRules)
                 .endSpec()
                 .build();
 

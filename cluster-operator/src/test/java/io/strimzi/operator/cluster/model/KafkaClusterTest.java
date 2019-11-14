@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
@@ -1336,12 +1337,40 @@ public class KafkaClusterTest {
         // Check Network Policies
         NetworkPolicy np = k.generateNetworkPolicy();
 
-        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+        List<NetworkPolicyPeer> rules = np
+                .getSpec()
+                .getIngress()
+                .stream()
+                .filter(ing -> ing
+                        .getPorts()
+                        .get(0)
+                        .getPort()
+                        .equals(new IntOrString(KafkaCluster.REPLICATION_PORT)))
+                .map(NetworkPolicyIngressRule::getFrom)
+                .findFirst()
+                .orElse(null);
 
         assertThat(rules.size(), is(3));
         assertThat(rules.contains(peer1), is(true));
         assertThat(rules.contains(peer2), is(true));
         assertThat(rules.contains(peer3), is(true));
+
+        // Check egress replication rules
+        rules = np
+                .getSpec()
+                .getEgress()
+                .stream()
+                .filter(egr -> egr
+                        .getPorts()
+                        .get(0)
+                        .getPort()
+                        .equals(new IntOrString(KafkaCluster.REPLICATION_PORT)))
+                .map(NetworkPolicyEgressRule::getTo)
+                .findFirst()
+                .orElse(null);
+
+        assertThat(rules.size(), is(1));
+        assertThat(rules.contains(peer1), is(true));
     }
 
     @Test
