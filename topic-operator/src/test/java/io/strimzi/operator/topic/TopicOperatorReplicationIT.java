@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import kafka.admin.ReassignPartitionsCommand;
@@ -23,11 +24,13 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Timeout(value = 10, timeUnit = TimeUnit.MINUTES)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 

@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.Future;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
@@ -14,8 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+@Timeout(value = 10, timeUnit = TimeUnit.MINUTES)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 

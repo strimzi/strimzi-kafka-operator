@@ -22,6 +22,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -70,6 +71,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
+@Timeout(value = 10, timeUnit = TimeUnit.MINUTES)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT extends BaseITST {
 
@@ -535,7 +537,9 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
             async.countDown();
         });
         try {
-            async.await(600, TimeUnit.SECONDS);
+            if (!async.await(600, TimeUnit.SECONDS)) {
+                context.failNow(new TimeoutException());
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
             context.failNow(e);
