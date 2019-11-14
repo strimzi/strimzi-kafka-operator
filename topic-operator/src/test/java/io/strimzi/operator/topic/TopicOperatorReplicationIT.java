@@ -9,10 +9,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import kafka.admin.ReassignPartitionsCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +28,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Timeout(value = 10, timeUnit = TimeUnit.MINUTES)
+@Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
@@ -54,17 +52,16 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
     }
 
     @Test
-    public void testKafkaTopicModifiedChangedReplication(VertxTestContext context) throws Exception {
+    public void testKafkaTopicModifiedChangedReplication() throws Exception {
         // create the topicResource
-        Checkpoint async = context.checkpoint();
         String topicName = "test-kafkatopic-modified-with-changed-replication";
-        String resourceName = createTopic(context, topicName, asList(1));
+        String resourceName = createTopic(topicName, asList(1));
 
         // now change the topicResource
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
                 .editOrNewSpec().withReplicas(2).endSpec().build();
         operation().inNamespace(NAMESPACE).withName(resourceName).patch(changedTopic);
-        assertStatusNotReady(context, topicName,
+        assertStatusNotReady(topicName,
                 "Changing 'spec.replicas' is not supported. " +
                         "This KafkaTopic's 'spec.replicas' should be reverted to 1 and then " +
                         "the replication should be changed directly in Kafka.");
@@ -73,7 +70,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
         changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
                 .editOrNewSpec().withReplicas(1).endSpec().build();
         operation().inNamespace(NAMESPACE).withName(resourceName).patch(changedTopic);
-        assertStatusReady(context, topicName);
+        assertStatusReady(topicName);
 
         File file = File.createTempFile(getClass().getSimpleName(), ".json");
         ObjectMapper mapper = new ObjectMapper();
@@ -97,36 +94,32 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
                 "--execute");
 
         LOGGER.info("Waiting for reassignment completion");
-        long deadline = System.currentTimeMillis() + 60_000;
-        while (true) {
+        waitFor(() -> {
             String output = doReassignmentCommand(
                     //"--boostrap-server", kafkaCluster.brokerList(),
                     "--zookeeper", "localhost:" + kafkaCluster.zkPort(),
                     "--reassignment-json-file", file.getAbsolutePath(),
                     "--verify");
             LOGGER.info(output);
+
             if (output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 is still in progress")) {
-                context.verify(() -> assertThat("Timeout waiting for reassignment completion", System.currentTimeMillis() > deadline, is(false)));
-                Thread.sleep(2_000);
-                continue;
+                return false;
             } else {
-                context.verify(() -> assertThat("Reassignment is no longer in progress, but wasn't successful: " + output,
-                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 completed successfully"), is(true)));
-                break;
+                assertThat("Reassignment is no longer in progress, but wasn't successful: " + output,
+                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 completed successfully"), is(true));
+                return true;
             }
-        }
+        }, "reassignment completion");
 
         // wait for reconciliation and that now replicas=2.
-        waitFor(context, () -> {
+        waitFor(() -> {
             KafkaTopic kafkaTopic = Crds.topicOperation(kubeClient).inNamespace(NAMESPACE).withName(resourceName).get();
             LOGGER.info(kafkaTopic == null ? "Null topic" : kafkaTopic.toString());
             return kafkaTopic.getSpec().getReplicas() == 2;
-        }, 60_000, "KafkaTopic.spec.replicas=2");
+        }, "KafkaTopic.spec.replicas=2");
 
         // And check that the status is ready
-        assertStatusReady(context, topicName);
-        async.flag();
-        context.completeNow();
+        assertStatusReady(topicName);
     }
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();

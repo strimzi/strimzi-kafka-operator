@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@Timeout(value = 10, timeUnit = TimeUnit.MINUTES)
+@Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
@@ -39,12 +39,12 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
         // create the Topic Resource
         String topicName = "test-topic-deletion-disabled";
         // The creation method will wait for the topic to be ready in K8s
-        KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
+        KafkaTopic topicResource = createKafkaTopicResource(topicName);
         // Wait for the topic to be ready on the Kafka Broker
-        waitForTopicInKafka(context, topicName, true);
+        waitForTopicInKafka(topicName, true);
 
         // Delete the k8 KafkaTopic and wait for that to be deleted
-        deleteInKube(context, topicResource.getMetadata().getName());
+        deleteInKube(topicResource.getMetadata().getName());
 
         // trigger an immediate reconcile where, with with delete.topic.enable=false, the K8s KafkaTopic should be recreated
         Future<?> result = session.topicOperator.reconcileAllTopics("periodic");
@@ -55,7 +55,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
         } while (true);
 
         // Wait for the KafkaTopic to be recreated
-        waitForTopicInKube(context, topicName, true);
+        waitForTopicInKube(topicName, true);
         context.completeNow();
     }
 }
