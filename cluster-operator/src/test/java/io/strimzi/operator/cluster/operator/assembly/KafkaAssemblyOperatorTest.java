@@ -1176,7 +1176,11 @@ public class KafkaAssemblyOperatorTest {
         ops.reconcileAll("test", clusterCmNamespace, context.succeeding());
 
         if (!fooLatch.await(30, TimeUnit.SECONDS)) {
-            fail("foo not seen");
+            if (barLatch.getCount() > 0) {
+                fail("Neither foo nor bar seen");
+            } else {
+                fail("foo not seen");
+            }
         }
         if (!barLatch.await(30, TimeUnit.SECONDS)) {
             fail("bar not seen");
@@ -1267,7 +1271,11 @@ public class KafkaAssemblyOperatorTest {
         ops.reconcileAll("test", "*", context.succeeding());
 
         if (!fooLatch.await(30, TimeUnit.SECONDS)) {
-            fail("foo not seen");
+            if (barLatch.getCount() > 0) {
+                fail("Neither foo nor bar seen");
+            } else {
+                fail("foo not seen");
+            }
         }
         if (!barLatch.await(30, TimeUnit.SECONDS)) {
             fail("bar not seen");
