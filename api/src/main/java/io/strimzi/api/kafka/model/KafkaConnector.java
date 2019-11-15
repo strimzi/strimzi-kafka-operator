@@ -42,7 +42,10 @@ import static java.util.Collections.unmodifiableList;
                                 name = KafkaConnector.V1ALPHA1,
                                 served = true,
                                 storage = true)
-                }
+                },
+                subresources = @Crd.Spec.Subresources(
+                        status = @Crd.Spec.Subresources.Status()
+                )
         )
 )
 @Buildable(
@@ -52,7 +55,7 @@ import static java.util.Collections.unmodifiableList;
         inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @ToString
 public class KafkaConnector extends CustomResource implements UnknownPropertyPreserving {

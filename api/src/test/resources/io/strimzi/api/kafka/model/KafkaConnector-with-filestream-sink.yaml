@@ -9,4 +9,4 @@ spec:
   tasksMax: 1
   config:
     file: "/tmp/test.sink.txt"
-    topics: "connect-test"
+    topic: "connect-test"

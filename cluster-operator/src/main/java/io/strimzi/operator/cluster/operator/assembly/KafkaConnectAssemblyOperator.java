@@ -23,7 +23,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -85,7 +84,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             connect = KafkaConnectCluster.fromCrd(kafkaConnect, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
-            return this.maybeUpdateStatusCommon((CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect>) resourceOperator, kafkaConnect, reconciliation,
+            return this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation,
                     KafkaConnect::getStatus, kafkaConnectStatus,
                 (connect1, status) -> {
                     return new KafkaConnectBuilder(connect1).withStatus(status).build();

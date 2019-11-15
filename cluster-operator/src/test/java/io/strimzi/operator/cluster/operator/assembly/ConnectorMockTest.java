@@ -423,7 +423,8 @@ public class ConnectorMockTest {
                 .withNewSpec().endSpec()
                 .done();
         assertNotNull(Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).get());
-        waitForConnectorUnready(connectorName, "NoSuchResourceException", "Not configured for connector management");
+        waitForConnectorUnready(connectorName, "NoSuchResourceException",
+                "KafkaConnect cluster is not configured with annotation strimzi.io/use-connector-resources");
     }
 
     /** Create connect, create connector, delete connector, delete connect */

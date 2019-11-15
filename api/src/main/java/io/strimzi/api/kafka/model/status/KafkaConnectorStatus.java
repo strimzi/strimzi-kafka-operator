@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * Represents a status of the Kafka Bridge resource
+ * Represents a status of the KafkaConnector resource
  */
 @Buildable(
         editableEnabled = false,

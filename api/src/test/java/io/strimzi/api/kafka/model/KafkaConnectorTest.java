@@ -7,7 +7,7 @@ package io.strimzi.api.kafka.model;
 /**
  * The purpose of this test is to ensure:
  *
- * 1. we get a correct tree of POJOs when reading a JSON/YAML `Kafka` resource.
+ * 1. we get a correct tree of POJOs when reading a JSON/YAML `KafkaConnector` resource.
  */
 public class KafkaConnectorTest extends AbstractCrdTest<KafkaConnector> {
 

@@ -257,7 +257,7 @@ public abstract class AbstractOperator<
             Throwable cause = result.cause();
             if (cause instanceof InvalidConfigParameterException) {
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-            } else {
+            } else if (!(cause instanceof UnableToAcquireLockException)) {
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }

@@ -19,6 +19,8 @@ spec:
     plural: kafkaconnectors
     shortNames:
     - kctr
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:

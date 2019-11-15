@@ -252,7 +252,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
             if (!useResources) {
                 return maybeUpdateConnectorStatus(reconciliation, connector,
-                        new NoSuchResourceException("Not configured for connector management"));
+                        new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
                 return apiClient.createOrUpdatePutRequest(host, KafkaConnectCluster.REST_API_PORT,
                         connector.getMetadata().getName(), asJson(connector.getSpec()))
@@ -307,7 +307,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Updates the Status field of the KafkaConnect CR. It diffs the desired status against the current status and calls
      * the update only when there is any difference in non-timestamp fields.
      *
-     * @param kafkaConnectAssembly The CR of KafkaConnect
+     * @param resource The CR of KafkaConnect
      * @param reconciliation Reconciliation information
      * @param desiredStatus The KafkaConnectStatus which should be set
      *
@@ -315,28 +315,30 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected <T extends CustomResource, S extends Status, L extends CustomResourceList<T>, D extends Doneable<T>> Future<Void>
         maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L, D> resourceOperator,
-                                T kafkaConnectAssembly,
+                                T resource,
                                 Reconciliation reconciliation,
                                 Function<T, S> fn,
                                 S desiredStatus,
                                 BiFunction<T, S, T> copyWithStatus) {
         Future<Void> updateStatusFuture = Future.future();
 
-        resourceOperator.getAsync(kafkaConnectAssembly.getMetadata().getNamespace(), kafkaConnectAssembly.getMetadata().getName()).setHandler(getRes -> {
+        resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
-                T connect = getRes.result();
+                T fetchedResource = getRes.result();
 
-                if (connect != null) {
-                    if (StatusUtils.isResourceV1alpha1(connect)) {
-                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, connect.getApiVersion());
+                if (fetchedResource != null) {
+                    if ((!(fetchedResource instanceof KafkaConnector))
+                            && StatusUtils.isResourceV1alpha1(fetchedResource)) {
+                        log.warn("{}: {} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
+                                reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
                         updateStatusFuture.complete();
                     } else {
-                        S currentStatus = fn.apply(connect);
+                        S currentStatus = fn.apply(fetchedResource);
 
                         StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
 
                         if (!ksDiff.isEmpty()) {
-                            T resourceWithNewStatus = copyWithStatus.apply(connect, desiredStatus);
+                            T resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
 
                             resourceOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                                 if (updateRes.succeeded()) {
