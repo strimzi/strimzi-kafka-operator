@@ -602,7 +602,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
 
     protected void deleteInKube(String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         // can now delete the topicResource
-        operation().inNamespace(NAMESPACE).withName(resourceName).delete();
+        operation().inNamespace(NAMESPACE).withName(resourceName).cascading(true).delete();
         waitFor(() -> {
             return operation().inNamespace(NAMESPACE).withName(resourceName).get() == null;
         }, "verified deletion of KafkaTopic " + resourceName);
