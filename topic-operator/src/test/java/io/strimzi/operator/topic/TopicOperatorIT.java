@@ -12,22 +12,18 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.vertx.junit5.Timeout;
-import io.vertx.junit5.VertxExtension;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.emptyMap;
@@ -37,8 +33,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
-@ExtendWith(VertxExtension.class)
 public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
