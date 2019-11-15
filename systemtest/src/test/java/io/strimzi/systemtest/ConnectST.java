@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +25,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -40,6 +44,7 @@ import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -136,6 +141,65 @@ class ConnectST extends AbstractST {
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
         StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
+
+    @Test
+    //@Tag(ACCEPTANCE)
+    //@Tag(TRAVIS)
+    //@Tag(NODEPORT_SUPPORTED)
+    void testKafkaConnectAndConnectorFileSinkPlugin() throws Exception {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+                .editMetadata()
+                    .addToLabels("type", "kafka-connect")
+                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .editSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                .endSpec().done();
+        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+
+        String connectorName = "license-source";
+        String topicName = "my-topic";
+        testMethodResources().kafkaConnector(new KafkaConnectorBuilder()
+                .editOrNewMetadata()
+                    .withName(connectorName)
+                    .addToLabels("strimzi.io/cluster", CLUSTER_NAME)
+                .endMetadata()
+                .editOrNewSpec()
+                    .withClassName("org.apache.kafka.connect.file.FileStreamSourceConnector")
+                    .addToConfig("file", "/opt/kafka/LICENSE")
+                    .addToConfig("topic", topicName)
+                    .withTasksMax(2)
+                .endSpec()
+                .build()).done();
+
+        // consume from the topic (we don't really care about the contents)
+        try (KafkaClient testClient = new KafkaClient()) {
+            int messageCount = 10;
+            Future<Integer> consumer = testClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messageCount);
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), greaterThanOrEqualTo(messageCount));
+        }
+
+        LOGGER.info("Deleting connector {} CR", connectorName);
+        cmdKubeClient().deleteByName("kafkaconnector", connectorName);
+
+        LOGGER.info("Deleting topic {} from CR", topicName);
+        cmdKubeClient().deleteByName("kafkatopic", topicName);
+        StUtils.waitForKafkaTopicDeletion(topicName);
+    }
+
 
     @Test
     void testJvmAndResources() {

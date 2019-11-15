@@ -499,6 +499,13 @@ public class StUtils {
         LOGGER.info("Kafka Connect S2I {} is ready", name);
     }
 
+    public static void waitForConnectorReady(String name) {
+        LOGGER.info("Waiting for Kafka Connector {}", name);
+        TestUtils.waitFor("Test " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals("Ready"));
+        LOGGER.info("Kafka Connector {} is ready", name);
+    }
+
     /**
      * Wait until the given DeploymentConfig has been deleted.
      * @param name The name of the DeploymentConfig.

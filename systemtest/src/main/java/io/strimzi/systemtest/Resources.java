@@ -42,6 +42,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
@@ -53,6 +54,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
@@ -228,6 +230,10 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectS2I deleteLater(KafkaConnectS2I resource) {
         return deleteLater(kafkaConnectS2I(), resource);
+    }
+
+    private KafkaConnector deleteLater(KafkaConnector resource) {
+        return deleteLater(kafkaConnector(), resource);
     }
 
     private KafkaMirrorMaker deleteLater(KafkaMirrorMaker resource) {
@@ -529,6 +535,27 @@ public class Resources extends AbstractResources {
         });
     }
 
+    public DoneableKafkaConnector kafkaConnector(KafkaConnector connector) {
+        return new DoneableKafkaConnector(connector, x -> {
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+                () -> {
+                    try {
+                        kafkaConnector().inNamespace(client().getNamespace()).createOrReplace(x);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    x));
+        });
+    }
+
     public KafkaConnect kafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kafkaConnect);
         return kafkaConnect;
@@ -677,6 +704,13 @@ public class Resources extends AbstractResources {
         StUtils.waitForConnectS2IReady(kafkaConnectS2I.getMetadata().getName());
         LOGGER.info("Kafka Connect S2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
+    }
+
+    private KafkaConnector waitFor(KafkaConnector kafkaConnector) {
+        LOGGER.info("Waiting for Kafka Connector {}", kafkaConnector.getMetadata().getName());
+        StUtils.waitForConnectorReady(kafkaConnector.getMetadata().getName());
+        LOGGER.info("Kafka Connector {} is ready", kafkaConnector.getMetadata().getName());
+        return kafkaConnector;
     }
 
     private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
