@@ -188,44 +188,47 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
 
     @AfterEach
     public void teardown() throws InterruptedException, TimeoutException, ExecutionException {
-        LOGGER.info("Tearing down test");
+        try {
+            LOGGER.info("Tearing down test");
 
-        boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
-                KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "true"));
+            boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
+                    KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "true"));
 
-        if (deletionEnabled && kubeClient != null) {
-            List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
+            if (deletionEnabled && kubeClient != null) {
+                List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
 
-            // Wait for the operator to delete all the existing topics in Kafka
-            for (KafkaTopic item : items) {
-                LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
-                operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
-                LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
-                waitForTopicInKafka(new TopicName(item).toString(), false);
-                waitForTopicInKube(item.getMetadata().getName(), false);
+                // Wait for the operator to delete all the existing topics in Kafka
+                for (KafkaTopic item : items) {
+                    LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                    LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
+                    waitForTopicInKafka(new TopicName(item).toString(), false);
+                    waitForTopicInKube(item.getMetadata().getName(), false);
+                }
+                Thread.sleep(5_000);
             }
-            Thread.sleep(5_000);
-        }
 
-        stopTopicOperator();
+            stopTopicOperator();
 
-        if (!deletionEnabled && kubeClient != null) {
-            List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
+            if (!deletionEnabled && kubeClient != null) {
+                List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
 
-            // Wait for the operator to delete all the existing topics in Kafka
-            for (KafkaTopic item : items) {
-                operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
-                waitForTopicInKube(item.getMetadata().getName(), false);
+                // Wait for the operator to delete all the existing topics in Kafka
+                for (KafkaTopic item : items) {
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).delete();
+                    waitForTopicInKube(item.getMetadata().getName(), false);
+                }
             }
-        }
+        } finally {
 
-        adminClient.close();
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
+            adminClient.close();
+            if (kafkaCluster != null) {
+                kafkaCluster.shutdown();
+            }
+            Runtime.getRuntime().removeShutdownHook(kafkaHook);
+            LOGGER.info("Finished tearing down test");
+            vertx.close();
         }
-        Runtime.getRuntime().removeShutdownHook(kafkaHook);
-        LOGGER.info("Finished tearing down test");
-        vertx.close();
     }
 
     protected void startTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
@@ -394,11 +397,16 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     }
 
     protected void waitForTopicInKube(String resourceName, boolean exist) throws TimeoutException, InterruptedException {
-        waitFor(() -> {
-            KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
-            LOGGER.info("Polled topic {} waiting for " + (exist ? "existence" : "non-existence"), resourceName);
-            return topic != null == exist;
-        }, "Expected the KafkaTopic '" + resourceName + "' to " + (exist ? "exist" : "not exist") + " in Kubernetes by now");
+        try {
+            waitFor(() -> {
+                KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+                LOGGER.info("Polled topic {} waiting for " + (exist ? "existence" : "non-existence"), resourceName);
+                return topic != null == exist;
+            }, "Expected the KafkaTopic '" + resourceName + "' to " + (exist ? "exist" : "not exist") + " in Kubernetes by now");
+        } catch (Exception e) {
+            LOGGER.info("KafkaTopic = {" + operation().inNamespace(NAMESPACE).withName(resourceName).get() + "}");
+            throw e;
+        }
     }
 
     protected void alterTopicConfigInKafkaAndAwaitReconciliation(String topicName, String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
