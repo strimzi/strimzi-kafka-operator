@@ -143,9 +143,9 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    //@Tag(ACCEPTANCE)
-    //@Tag(TRAVIS)
-    //@Tag(NODEPORT_SUPPORTED)
+    @Tag(ACCEPTANCE)
+    @Tag(TRAVIS)
+    @Tag(NODEPORT_SUPPORTED)
     void testKafkaConnectAndConnectorFileSinkPlugin() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
