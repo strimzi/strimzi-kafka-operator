@@ -9,27 +9,21 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.vertx.junit5.Timeout;
-import io.vertx.junit5.VertxExtension;
 import kafka.admin.ReassignPartitionsCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
-@ExtendWith(VertxExtension.class)
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorReplicationIT.class);

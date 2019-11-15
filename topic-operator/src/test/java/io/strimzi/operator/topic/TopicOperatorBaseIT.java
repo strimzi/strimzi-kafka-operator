@@ -21,8 +21,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeCluster;
 import io.strimzi.test.k8s.NoClusterException;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Timeout;
-import io.vertx.junit5.VertxTestContext;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -70,7 +68,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT extends BaseITST {
 
@@ -136,7 +133,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     }
 
     @BeforeEach
-    public void setup(VertxTestContext context) throws Exception {
+    public void setup() throws Exception {
         vertx = Vertx.vertx();
         LOGGER.info("Setting up test");
         kubeCluster().before();
@@ -177,7 +174,6 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
                 collect(Collectors.toSet());
 
         LOGGER.info("Finished setting up test");
-        context.completeNow();
     }
 
     /**
