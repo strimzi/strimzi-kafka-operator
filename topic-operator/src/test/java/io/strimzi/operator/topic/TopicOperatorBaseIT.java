@@ -302,26 +302,31 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     }
 
     protected void assertStatusReady(String topicName) throws InterruptedException, ExecutionException, TimeoutException {
-        waitFor(() -> {
-            KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
-            if (kafkaTopic != null) {
-                if (kafkaTopic.getStatus() != null
-                        && kafkaTopic.getStatus().getConditions() != null) {
-                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
-                    assertThat(conditions.size() > 0, is(true));
-                    if (conditions.stream().anyMatch(condition ->
-                            "Ready".equals(condition.getType()) &&
-                                    "True".equals(condition.getStatus()))) {
-                        return true;
-                    } else {
-                        LOGGER.info(conditions);
+        try {
+            waitFor(() -> {
+                KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
+                if (kafkaTopic != null) {
+                    if (kafkaTopic.getStatus() != null
+                            && kafkaTopic.getStatus().getConditions() != null) {
+                        List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                        assertThat(conditions.size() > 0, is(true));
+                        if (conditions.stream().anyMatch(condition ->
+                                "Ready".equals(condition.getType()) &&
+                                        "True".equals(condition.getStatus()))) {
+                            return true;
+                        } else {
+                            LOGGER.info(conditions);
+                        }
                     }
+                } else {
+                    LOGGER.info("{} does not exist", topicName);
                 }
-            } else {
-                LOGGER.info("{} does not exist", topicName);
-            }
-            return false;
-        }, "status ready for topic " + topicName);
+                return false;
+            }, "status ready for topic " + topicName);
+        } catch (Exception e) {
+            LOGGER.info("KafkaTopic = {" + operation().inNamespace(NAMESPACE).withName(topicName).get() + "}");
+            throw e;
+        }
     }
 
     protected void assertStatusNotReady(String topicName, String message) throws InterruptedException, ExecutionException, TimeoutException {
