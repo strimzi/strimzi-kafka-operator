@@ -238,4 +238,9 @@ class RecoveryST extends AbstractST {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
+
+    @Override
+    void assertNoCoErrorsLogged(long sinceSeconds) {
+        LOGGER.info("No search in strimzi-cluster-operator log for errors");
+    }
 }
