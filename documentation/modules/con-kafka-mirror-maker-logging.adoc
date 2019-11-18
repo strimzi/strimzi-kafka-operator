@@ -42,5 +42,5 @@ spec:
 
 .Additional resources
 
-* Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-deployment-configuration-kafka[]
+* Garbage collector (GC) logging can also be enabled (or disabled). For more information about GC logging, see xref:ref-jvm-options-deployment-configuration-kafka[]
 * For more information about log levels, see {ApacheLoggers}.

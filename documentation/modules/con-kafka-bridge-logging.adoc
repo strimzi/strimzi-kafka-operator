@@ -1,20 +1,16 @@
-z// This assembly is included in the following assemblies:
+// This assembly is included in the following assemblies:
 //
 // assembly-deployment-configuration-kafka-bridge.adoc
 
 [id='con-kafka-bridge-logging-{context}']
 = Kafka Bridge loggers
 
-Kafka Bridge has a configurable logger for each OpenAPI operation, which are formatted as follows:
+Kafka Bridge has its own configurable loggers:
 
-[source,yaml,subs="+quotes,attributes"]
-----
-log4j.logger.http.openapi.operation.__<operation-id>__
-----
+* `log4j.logger.io.strimzi.kafka.bridge`
+* `log4j.logger.http.openapi.operation.__<operation-id>__`
 
-Where `_<operation-id>_` is the identifier of a specific operation.
-
-Kafka Bridge uses the Apache `log4j` logger implementation.
+The `log4j.logger.http.openapi.operation.__<operation-id>__` logger is for each OpenAPI operation, where `_<operation-id>_` is the identifier of a specific operation.
 
 Here are the operations defined by the OpenAPI specification:
 
@@ -34,10 +30,12 @@ Here are the operations defined by the OpenAPI specification:
 * `ready`
 * `openapi`
 
+Kafka Bridge uses the Apache `log4j` logger implementation.
+
 Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, it must be placed under under the `log4j.properties` key.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
 
 Here we see examples of `inline` and `external` logging.
 
@@ -70,5 +68,5 @@ spec:
 
 .Additional resources
 
-* Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-deployment-configuration-kafka[]
+* Garbage collector (GC) logging can also be enabled (or disabled). For more information about GC logging, see xref:ref-jvm-options-deployment-configuration-kafka[]
 * For more information about log levels, see {ApacheLoggers}.

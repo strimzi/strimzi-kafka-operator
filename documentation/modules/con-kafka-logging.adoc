@@ -20,13 +20,14 @@ Kafka has its own configurable loggers:
 * `log4j.logger.kafka.log.LogCleaner`
 * `log4j.logger.state.change.logger`
 * `log4j.logger.kafka.authorizer.logger`
+* `zookeeper.root.logger`
 
 Kafka and ZooKeeper use the Apache `log4j` logger implementation.
 
 Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, it must be placed under under the `log4j.properties` key according.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
 
 Here we see examples of `inline` and `external` logging.
 
@@ -80,7 +81,7 @@ spec:
   # ...
 ----
 
-Operators use the Apache `log4j2` logger implementation, so the ConfigMap must be placed under `log4j2.properties`.
+Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
 For more information, see xref:con-entity-operator-logging-{context}[].
 
 .Additional resources
