@@ -25,7 +25,7 @@ import java.util.List;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "authentication", "overrides"})
+@JsonPropertyOrder({"type", "authentication", "overrides", "configuration"})
 @EqualsAndHashCode
 public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
@@ -36,6 +36,7 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
     private LoadBalancerListenerOverride overrides;
+    private LoadBalancerListenerConfiguration configuration;
 
     @Description("Must be `" + TYPE_LOADBALANCER + "`")
     @Override
@@ -81,6 +82,15 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     @Override
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("External listener configuration")
+    public LoadBalancerListenerConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(LoadBalancerListenerConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     @Description("Overrides for external bootstrap and broker services and externally advertised addresses")

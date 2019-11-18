@@ -7,7 +7,15 @@ spec:
     version: 2.3.1
     replicas: 3
     listeners:
-      plain: {}
+      external:
+        type: loadbalancer
+        configuration:
+          serverKey:
+            secretName: my-cluster-kafka-brokers
+            certificate: my-cluster-kafka-0.crt
+            key: my-cluster-kafka-0.key
+        authentication:
+          type: tls
       tls: {}
     config:
       offsets.topic.replication.factor: 3
