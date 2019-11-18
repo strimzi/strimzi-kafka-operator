@@ -96,7 +96,7 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
 
-    private PasswordGenerator passwordGenerator;
+    private final PasswordGenerator passwordGenerator;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -722,7 +722,7 @@ public abstract class Ca {
         return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
     }
 
-    static X509Certificate cert(Secret secret, String key)  {
+    public static X509Certificate cert(Secret secret, String key)  {
         if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;
         }

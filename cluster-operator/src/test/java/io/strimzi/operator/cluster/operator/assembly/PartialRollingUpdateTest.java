@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -23,10 +24,8 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -50,7 +49,6 @@ import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -156,8 +154,10 @@ public class PartialRollingUpdateTest {
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
-        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient);
-        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 60_000L);
+        return new ResourceOperatorSupplier(vertx, bootstrapClient,
+                ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
+                ResourceUtils.adminClientProvider(),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 60_000L);
     }
 
     private void startKube() {

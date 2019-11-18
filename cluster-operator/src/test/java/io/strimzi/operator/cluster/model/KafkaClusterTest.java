@@ -92,7 +92,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
@@ -1311,22 +1313,29 @@ public class KafkaClusterTest {
 
     @Test
     public void testReplicationPortNetworkPolicy() {
-        NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)))
                 .endPodSelector()
                 .build();
 
-        NetworkPolicyPeer peer2 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer eoPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster)))
                 .endPodSelector()
                 .build();
 
-        NetworkPolicyPeer peer3 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster)))
                 .endPodSelector()
+                .build();
+
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
+                .endPodSelector()
+                .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
         Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -1334,14 +1343,15 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertThat(rules.size(), is(3));
-        assertThat(rules.contains(peer1), is(true));
-        assertThat(rules.contains(peer2), is(true));
-        assertThat(rules.contains(peer3), is(true));
+        assertEquals(4, rules.size());
+        assertTrue(rules.contains(kafkaBrokersPeer));
+        assertTrue(rules.contains(eoPeer));
+        assertTrue(rules.contains(kafkaExporterPeer));
+        assertTrue(rules.contains(clusterOperatorPeer));
     }
 
     @Test
@@ -1379,7 +1389,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
@@ -1416,7 +1426,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));

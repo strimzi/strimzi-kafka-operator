@@ -56,12 +56,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
     private final Optional<LabelSelector> selector;
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                    "0123456789");
+    private PasswordGenerator passwordGenerator = new PasswordGenerator(12);
 
     /**
      * @param vertx The Vertx instance.
