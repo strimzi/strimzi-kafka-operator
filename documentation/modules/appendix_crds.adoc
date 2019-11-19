@@ -297,7 +297,7 @@ Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenti
 [id='type-CertSecretSource-{context}']
 ### `CertSecretSource` schema reference
 
-Used in: xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
+Used in: xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaMirrorMaker2Tls-{context}[`KafkaMirrorMaker2Tls`], xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
 
 
 [options="header"]
@@ -740,7 +740,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -761,7 +761,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [id='type-JvmOptions-{context}']
 ### `JvmOptions` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -808,7 +808,7 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [id='type-ResourceRequirements-{context}']
 ### `ResourceRequirements` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-JmxTransSpec-{context}[`JmxTransSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-JmxTransSpec-{context}[`JmxTransSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -823,7 +823,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `InlineLogging` from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -840,7 +840,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 ### `ExternalLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `ExternalLogging` from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -1416,7 +1416,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1533,7 +1533,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-JaegerTracing-{context}']
 ### `JaegerTracing` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `JaegerTracing` from other subtypes which may be added in the future.
@@ -1548,7 +1548,7 @@ It must have the value `jaeger` for the type `JaegerTracing`.
 [id='type-KafkaConnectTemplate-{context}']
 ### `KafkaConnectTemplate` schema reference
 
-Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 [options="header"]
@@ -1569,7 +1569,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 [id='type-KafkaClientAuthenticationTls-{context}']
 ### `KafkaClientAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
 
@@ -1587,7 +1587,7 @@ It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
 [id='type-KafkaClientAuthenticationScramSha512-{context}']
 ### `KafkaClientAuthenticationScramSha512` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
 
@@ -1622,7 +1622,7 @@ Used in: xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenti
 [id='type-KafkaClientAuthenticationPlain-{context}']
 ### `KafkaClientAuthenticationPlain` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
 
@@ -1642,7 +1642,7 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [id='type-KafkaClientAuthenticationOAuth-{context}']
 ### `KafkaClientAuthenticationOAuth` schema reference
 
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
 
@@ -1676,7 +1676,7 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 [id='type-ExternalConfiguration-{context}']
 ### `ExternalConfiguration` schema reference
 
-Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 [options="header"]
@@ -1746,7 +1746,7 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 [id='type-KafkaConnectTls-{context}']
 ### `KafkaConnectTls` schema reference
 
-Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 [options="header"]
@@ -2449,7 +2449,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 [id='type-KafkaConnectorSpec-{context}']
 ### `KafkaConnectorSpec` schema reference
 
-Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
+Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`], xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`]
 
 
 [options="header"]
@@ -2480,5 +2480,151 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |integer
 |connectorStatus     1.2+<.<|The connector status, as reported by the Kafka Connect REST API.
 |map
+|====
+
+[id='type-KafkaMirrorMaker2-{context}']
+### `KafkaMirrorMaker2` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Mirror Maker 2 cluster.
+|xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+|status  1.2+<.<|The status of the Kafka Mirror Maker 2 cluster.
+|xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+|====
+
+[id='type-KafkaMirrorMaker2Spec-{context}']
+### `KafkaMirrorMaker2Spec` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
+
+
+[options="header"]
+|====
+|Property                      |Description
+|replicas               1.2+<.<|The number of pods in the Kafka Connect group.
+|integer
+|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
+|map
+|image                  1.2+<.<|The docker image for the pods.
+|string
+|livenessProbe          1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe         1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|jvmOptions             1.2+<.<|JVM Options for pods.
+|xref:type-JvmOptions-{context}[`JvmOptions`]
+|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[core/v1 affinity].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core[Affinity]
+|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[core/v1 toleration].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core[Toleration] array
+|logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
+|template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
+|xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
+|clusters               1.2+<.<|Kafka clusters for mirroring.
+|xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`] array
+|mirrors                1.2+<.<|Configuration of the Mirror Maker 2 connectors.
+|xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`] array
+|authentication         1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+|string
+|connectCluster         1.2+<.<|The cluster alias used for Kafka Connect.
+|string
+|externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
+|resources              1.2+<.<|CPU and memory resources to reserve.
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|tls                    1.2+<.<|TLS configuration.
+|xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
+|version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|====
+
+[id='type-KafkaMirrorMaker2ClusterSpec-{context}']
+### `KafkaMirrorMaker2ClusterSpec` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|alias             1.2+<.<|Alias used to reference the Kafka cluster.
+|string
+|bootstrapServers  1.2+<.<|A list of host:port pairs for establishing the connection to the Kafka cluster.
+|string
+|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|config            1.2+<.<|The Mirror Maker 2 cluster config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes.
+|map
+|tls               1.2+<.<|TLS configuration for connecting Mirror Maker 2 connectors to a cluster.
+|xref:type-KafkaMirrorMaker2Tls-{context}[`KafkaMirrorMaker2Tls`]
+|====
+
+[id='type-KafkaMirrorMaker2Tls-{context}']
+### `KafkaMirrorMaker2Tls` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|====
+
+[id='type-KafkaMirrorMaker2MirrorSpec-{context}']
+### `KafkaMirrorMaker2MirrorSpec` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+
+
+[options="header"]
+|====
+|Property                    |Description
+|sourceCluster        1.2+<.<|The source cluster used by the Kafka Mirror Maker 2 connectors.
+|string
+|targetCluster        1.2+<.<|The target cluster used by the Kafka Mirror Maker 2 connectors.
+|string
+|sourceConnector      1.2+<.<|The specification of the Kafka Mirror Maker 2 source connector.
+|xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
+|checkpointConnector  1.2+<.<|The specification of the Kafka Mirror Maker 2 checkpoint connector.
+|xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
+|heartbeatConnector   1.2+<.<|The specification of the Kafka Mirror Maker 2 heartbeat connector.
+|xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
+|topics               1.2+<.<|Regex of topics mirrored by the Kafka Mirror Maker 2 connectors.
+|string
+|groups               1.2+<.<|Regex of consumer groups mirrored by the Kafka Mirror Maker 2 connectors.
+|string
+|====
+
+[id='type-KafkaMirrorMaker2Status-{context}']
+### `KafkaMirrorMaker2Status` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring the Kafka Mirror Maker 2 connectors.
+|string
 |====
 

@@ -1,0 +1,38 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+spec:
+  version: 2.4.0
+  replicas: 1
+  bootstrapServers: destination-cluster-kafka-bootstrap:9092
+  config:
+    config.storage.replication.factor: 1
+    offset.storage.replication.factor: 1
+    status.storage.replication.factor: 1
+    key.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+    value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+  clusters:
+  - alias: "source"
+    bootstrapServers: source-cluster-kafka-bootstrap:9092
+  - alias: "destination"
+    bootstrapServers: destination-cluster-kafka-bootstrap:9092
+  mirrors:
+  - sourceCluster: "source"
+    targetCluster: "destination"
+    sourceConnector:
+      tasksMax: 1
+      config:
+        replication.factor: 1
+        offset-syncs.topic.replication.factor: 1
+        sync.topic.acls.enabled: "false"
+    heartbeatConnector:
+      tasksMax: 1
+      config:
+        heartbeats.topic.replication.factor: 1
+    checkpointConnector:
+      tasksMax: 1
+      config:
+        checkpoints.topic.replication.factor: 1
+    topics: ".*"
+    groups: ".*"

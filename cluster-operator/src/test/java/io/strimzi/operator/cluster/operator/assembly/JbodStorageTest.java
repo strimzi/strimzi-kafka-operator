@@ -63,6 +63,7 @@ public class JbodStorageTest {
             KafkaVersionTestUtils.getKafkaImageMap(),
             emptyMap(),
             emptyMap(),
+            emptyMap(), 
             emptyMap()) { };
 
     private Vertx vertx;

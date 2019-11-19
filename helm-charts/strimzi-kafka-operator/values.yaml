@@ -92,6 +92,11 @@ jmxTrans:
     repository: strimzi
     name: jmxtrans
     tag: latest
+kafkaMirrorMaker2:
+  image:
+    repository: strimzi
+    name: kafka
+    tagPrefix: latest
 resources:
   limits:
     memory: 256Mi

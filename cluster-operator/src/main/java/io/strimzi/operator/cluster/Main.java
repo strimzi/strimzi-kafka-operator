@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
@@ -25,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -116,6 +118,9 @@ public class Main {
             log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
+        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
+                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
@@ -133,6 +138,7 @@ public class Main {
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
+                    kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {

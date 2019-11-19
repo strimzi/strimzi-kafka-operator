@@ -15,9 +15,11 @@ mkdir -p /tmp/kafka
 ./kafka_connect_tls_prepare_certificates.sh
 
 # Generate and print the config file
-echo "Starting Kafka Connect with configuration:"
+echo "Starting Kafka Connect with configuration (MM2 changes):"
 ./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
+
+echo "Setting Kafka log options"
 
 # Disable Kafka's GC logging (which logs to a file)...
 export GC_LOG_ENABLED="false"
@@ -30,15 +32,21 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
+echo "Setting Kafka JMX options"
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
+echo "Setting Kafka options"
+
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
     export KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls $KAFKA_HOME/libs/tracing-agent*.jar)=jaeger"
 fi
+
+echo "Setting Kafka heap options"
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     . ./dynamic_resources.sh
@@ -51,7 +59,11 @@ if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     fi
 fi
 
+echo "Setting Kafka GC options"
+
 . ./set_kafka_gc_options.sh
+
+echo "Starting Kafka Connect"
 
 # starting Kafka server with final configuration
 exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/connect-distributed.sh /tmp/strimzi-connect.properties"

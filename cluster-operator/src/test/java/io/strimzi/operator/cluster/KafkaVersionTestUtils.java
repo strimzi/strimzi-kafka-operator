@@ -19,6 +19,7 @@ public class KafkaVersionTestUtils {
     public static final String KAFKA_CONNECT_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
     public static final String KAFKA_CONNECT_S2I_IMAGE_STR = "strimzi/kafka-connect-s2i:latest-kafka-";
     public static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
+    public static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
 
     public static final String LATEST_KAFKA_VERSION = "2.3.0";
     public static final String LATEST_FORMAT_VERSION = "2.3";
@@ -30,6 +31,7 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;
+    public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
 
 
     public static final String PREVIOUS_KAFKA_VERSION = "2.2.1";
@@ -42,6 +44,7 @@ public class KafkaVersionTestUtils {
     public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
+    public static final String PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
 
     public static final String PREVIOUS_MINOR_KAFKA_VERSION = "2.2.0";
     public static final String PREVIOUS_MINOR_FORMAT_VERSION = "2.2";
@@ -53,6 +56,7 @@ public class KafkaVersionTestUtils {
     public static final String PREVIOUS_MINOR_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
     public static final String PREVIOUS_MINOR_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
     public static final String PREVIOUS_MINOR_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
+    public static final String PREVIOUS_MINOR_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
 
     public static final String DEFAULT_KAFKA_VERSION = LATEST_KAFKA_VERSION;
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
@@ -162,6 +166,17 @@ public class KafkaVersionTestUtils {
                 LATEST_KAFKA_VERSION + "=" + LATEST_KAFKA_MIRROR_MAKER_IMAGE;
     }
 
+    public static Map<String, String> getKafkaMirrorMaker2ImageMap() {
+        return map(PREVIOUS_MINOR_KAFKA_VERSION, PREVIOUS_MINOR_KAFKA_MIRROR_MAKER_2_IMAGE,
+                PREVIOUS_KAFKA_VERSION, PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE,
+                LATEST_KAFKA_VERSION, LATEST_KAFKA_MIRROR_MAKER_2_IMAGE);
+    }
+
+    public static String getKafkaMirrorMaker2ImagesEnvVarString() {
+        return PREVIOUS_MINOR_KAFKA_VERSION + "=" + PREVIOUS_MINOR_KAFKA_MIRROR_MAKER_2_IMAGE + " " +
+                PREVIOUS_KAFKA_VERSION + "=" + PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE + " " +
+                LATEST_KAFKA_VERSION + "=" + LATEST_KAFKA_MIRROR_MAKER_2_IMAGE;
+    }
 
     public static KafkaVersion.Lookup getKafkaVersionLookup() {
         return new KafkaVersion.Lookup(
@@ -169,7 +184,8 @@ public class KafkaVersionTestUtils {
                 KafkaVersionTestUtils.getKafkaImageMap(),
                 KafkaVersionTestUtils.getKafkaConnectImageMap(),
                 KafkaVersionTestUtils.getKafkaConnectS2iImageMap(),
-                KafkaVersionTestUtils.getKafkaMirrorMakerImageMap()) {
+                KafkaVersionTestUtils.getKafkaMirrorMakerImageMap(),
+                KafkaVersionTestUtils.getKafkaMirrorMaker2ImageMap()) {
         };
     }
 }

@@ -142,6 +142,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -169,6 +170,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

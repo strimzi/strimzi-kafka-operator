@@ -79,22 +79,25 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         private final Map<String, String> kafkaConnectImages;
         private final Map<String, String> kafkaConnectS2iImages;
         private final Map<String, String> kafkaMirrorMakerImages;
+        private final Map<String, String> kafkaMirrorMaker2Images;
 
         public Lookup(Map<String, String> kafkaImages,
                       Map<String, String> kafkaConnectImages,
                       Map<String, String> kafkaConnectS2iImages,
-                      Map<String, String> kafkaMirrorMakerImages) {
+                      Map<String, String> kafkaMirrorMakerImages,
+                      Map<String, String> kafkaMirrorMaker2Images) {
             this(new InputStreamReader(
                     KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE),
                     StandardCharsets.UTF_8),
-                    kafkaImages, kafkaConnectImages, kafkaConnectS2iImages, kafkaMirrorMakerImages);
+                    kafkaImages, kafkaConnectImages, kafkaConnectS2iImages, kafkaMirrorMakerImages, kafkaMirrorMaker2Images);
         }
 
         protected Lookup(Reader reader,
                          Map<String, String> kafkaImages,
                          Map<String, String> kafkaConnectImages,
                          Map<String, String> kafkaConnectS2iImages,
-                         Map<String, String> kafkaMirrorMakerImages) {
+                         Map<String, String> kafkaMirrorMakerImages,
+                         Map<String, String> kafkaMirrorMaker2Images) {
             map = new HashMap<>(5);
             try {
                 defaultVersion = parseKafkaVersions(reader, map);
@@ -105,6 +108,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             this.kafkaConnectImages = kafkaConnectImages;
             this.kafkaConnectS2iImages = kafkaConnectS2iImages;
             this.kafkaMirrorMakerImages = kafkaMirrorMakerImages;
+            this.kafkaMirrorMaker2Images = kafkaMirrorMaker2Images;
         }
 
         public KafkaVersion defaultVersion() {
@@ -279,6 +283,36 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             }
         }
 
+       /**
+         * The Kafka Mirror Maker 2 image to use for a Kafka Mirror Maker 2 cluster.
+         * @param image The image given in the CR.
+         * @param version The version given in the CR.
+         * @return The image to use.
+         * @throws InvalidResourceException If no image was given in the CR and the version given
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES}.
+         */
+        public String kafkaMirrorMaker2Version(String image, String version) {
+            try {
+                return image(image,
+                        version,
+                        kafkaMirrorMaker2Images,
+                        ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES);
+            } catch (NoImageException e) {
+                throw asInvalidResourceException(version, e);
+            }
+        }
+
+        /**
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES}.
+         * @param versions The versions to validate.
+         * @throws NoImageException If one of the versions lacks an image.
+         */
+        public void validateKafkaMirrorMaker2Images(Iterable<String> versions) throws NoImageException {
+            for (String version : versions) {
+                image(null, version, kafkaMirrorMaker2Images, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES);
+            }
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder("versions{");
@@ -296,6 +330,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         .append(" connect-image: ").append(kafkaConnectImages.get(v))
                         .append(" connects2i-image: ").append(kafkaConnectS2iImages.get(v))
                         .append(" mirrormaker-image: ").append(kafkaMirrorMakerImages.get(v))
+                        .append(" mirrormaker2-image: ").append(kafkaMirrorMaker2Images.get(v))
                         .append("}");
 
             }

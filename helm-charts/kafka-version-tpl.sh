@@ -28,6 +28,8 @@ ${version}={{ default .Values.kafkaConnects2i.image.repository .Values.imageRepo
 ${version}={{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_exporter_versions="${kafka_exporter_versions}
 ${version}={{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
+${version}={{ default .Values.kafkaMirrorMaker2.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.kafkaMirrorMaker2.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
 done
 
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')
@@ -35,6 +37,7 @@ kafka_connect_versions=$(echo "$kafka_connect_versions" | sed 's/^/             
 kafka_connect_s2i_versions=$(echo "$kafka_connect_s2i_versions" | sed 's/^/                /g')
 kafka_mirror_maker_versions=$(echo "$kafka_mirror_maker_versions" | sed 's/^/                /g')
 kafka_exporter_versions=$(echo "$kafka_exporter_versions" | sed 's/^/                /g')
+kafka_mirror_maker_2_versions=$(echo "$kafka_mirror_maker_2_versions" | sed 's/^/                /g')
 
 cat >"$out" <<EOF
 {{/* vim: set filetype=mustache: */}}
@@ -60,6 +63,8 @@ cat >"$out" <<EOF
               value: | ${kafka_connect_s2i_versions}
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: | ${kafka_mirror_maker_versions}
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
+              value: | ${kafka_mirror_maker_2_versions}
 {{- end -}}
 EOF
 

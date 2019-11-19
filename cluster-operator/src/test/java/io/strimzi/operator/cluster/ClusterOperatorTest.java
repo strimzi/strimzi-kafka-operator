@@ -64,6 +64,7 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         return env;
     }
 
@@ -190,7 +191,7 @@ public class ClusterOperatorTest {
         }
 
 
-        if (numWatchers.get() > (openShift ? 7 : 5) * namespaceList.size()) { // we do not have connectS2I on k8s
+        if (numWatchers.get() > (openShift ? 8 : 6) * namespaceList.size()) { // we do not have connectS2I on k8s
             context.failNow(new Throwable("Looks like there were more watchers than namespaces"));
         }
         context.completeNow();
@@ -270,7 +271,7 @@ public class ClusterOperatorTest {
             }
         }
 
-        if (numWatchers.get() > (openShift ? 7 : 5)) { // we do not have connectS2I on k8s
+        if (numWatchers.get() > (openShift ? 8 : 6)) { // we do not have connectS2I on k8s
             context.failNow(new Throwable("Looks like there were more watchers than should be"));
         }
         context.completeNow();

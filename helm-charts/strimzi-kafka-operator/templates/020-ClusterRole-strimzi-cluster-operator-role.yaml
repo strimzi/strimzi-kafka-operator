@@ -63,6 +63,8 @@ rules:
     # The cluster operator runs the KafkaBridgeAssemblyOperator, which needs to access BridgeMaker resources
   - kafkabridges
   - kafkabridges/status
+  - kafkamirrormaker2s
+  - kafkamirrormaker2s/status
   verbs:
   - get
   - list

@@ -43,7 +43,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
     }
 
     ResourceTester(Class<R> cls, Function<R, M> fromK8sResource, String prefix) {
-        this.lookup = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        this.lookup = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
         this.cls = cls;
         this.fromK8sResource = (x, y) -> fromK8sResource.apply(x);
         this.prefix = prefix;
