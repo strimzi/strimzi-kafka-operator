@@ -102,5 +102,6 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
+        LOGGER.info(debugFormat, IMAGE_PULL_POLICY_ENV, IMAGE_PULL_POLICY);
     }
 }

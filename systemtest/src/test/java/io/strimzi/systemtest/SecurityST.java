@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
+import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -33,6 +34,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -875,6 +877,93 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker connect to the kafka broker...");
 
         testMethodResources().deleteMirrorMakerWithoutWait(kafkaMirrorMaker);
+    }
+
+    @Test
+    void testAclRuleWrite() throws Exception {
+        final String kafkaUserWrite = "kafka-user-write";
+        final String kafkaUserRead = "kafka-user-read";
+        final String topicName = "my-topic-name-1";
+        final int numberOfMessages = 500;
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME,  3, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-ephemeral")
+            .endMetadata()
+            .editSpec()
+                .editKafka()
+                .withNewKafkaAuthorizationSimple()
+                .endKafkaAuthorizationSimple()
+                .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                    .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+
+        testMethodResources().tlsUser(CLUSTER_NAME, kafkaUserWrite)
+                .editSpec()
+                    .withNewKafkaUserAuthorizationSimple()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withName(topicName)
+                            .endAclRuleTopicResource()
+                            .withOperation(AclOperation.WRITE)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withName(topicName)
+                            .endAclRuleTopicResource()
+                            .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                        .endAcl()
+                    .endKafkaUserAuthorizationSimple()
+                .endSpec()
+                .done();
+
+        StUtils.waitForSecretReady(kafkaUserWrite);
+
+        LOGGER.info("Checking kafka user:{} that is able to send messages to topic:{}", kafkaUserWrite, topicName);
+
+        sendMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
+
+        assertThrows(ExecutionException.class, () -> receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite));
+
+        testMethodResources().tlsUser(CLUSTER_NAME, kafkaUserRead)
+                .editSpec()
+                    .withNewKafkaUserAuthorizationSimple()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withName(topicName)
+                            .endAclRuleTopicResource()
+                            .withOperation(AclOperation.READ)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleGroupResource()
+                                .withName("*")
+                            .endAclRuleGroupResource()
+                            .withOperation(AclOperation.READ)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withName(topicName)
+                            .endAclRuleTopicResource()
+                            .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                        .endAcl()
+                    .endKafkaUserAuthorizationSimple()
+                .endSpec()
+                .done();
+
+        StUtils.waitForSecretReady(kafkaUserRead);
+
+        receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead);
+
+        LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
+        assertThrows(ExecutionException.class, () -> sendMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
     }
 
     @BeforeEach
