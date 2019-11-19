@@ -2466,6 +2466,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private boolean isPodUpToDate(StatefulSet ss, Pod pod) {
+            if (ss == null || pod == null) {
+                log.debug("{}: Statefulset or pod is null in isPodUpToDate() => pod is \"up to date\".", reconciliation);
+                return true;
+            }
             final int ssGeneration = StatefulSetOperator.getSsGeneration(ss);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
             log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
