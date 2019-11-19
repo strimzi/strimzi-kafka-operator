@@ -1077,6 +1077,8 @@ public class KafkaCluster extends AbstractModel {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", cert.certAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
         return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }

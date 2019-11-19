@@ -112,7 +112,9 @@ public class ZookeeperLeaderFinder {
      * and return the PemKeyCertOptions for using it for TLS authentication.
      */
     protected PemKeyCertOptions keyCertOptions(Secret coCertKeySecret) {
-        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret, "cluster-operator.key", "cluster-operator.crt");
+        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret,
+                                            "cluster-operator.key", "cluster-operator.crt",
+                                        "cluster-operator.p12", "cluster-operator.password");
         if (coCertKey == null) {
             throw StatefulSetOperator.missingSecretFuture(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
         }
