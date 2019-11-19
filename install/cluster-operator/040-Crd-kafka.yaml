@@ -785,6 +785,8 @@ spec:
                   properties:
                     -XX:
                       type: object
+                    -Xloggc:
+                      type: string
                     -Xms:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
@@ -1617,6 +1619,8 @@ spec:
                   properties:
                     -XX:
                       type: object
+                    -Xloggc:
+                      type: string
                     -Xms:
                       type: string
                       pattern: '[0-9]+[mMgG]?'

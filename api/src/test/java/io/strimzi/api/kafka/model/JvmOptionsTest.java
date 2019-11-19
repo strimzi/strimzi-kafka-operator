@@ -11,22 +11,25 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 public class JvmOptionsTest {
     @Test
-    public void testXmxXms() {
+    public void testXmxXmsXloggc() {
         JvmOptions opts = TestUtils.fromJson("{" +
                 "  \"-Xmx\": \"2g\"," +
-                "  \"-Xms\": \"1g\"" +
+                "  \"-Xms\": \"1g\"," +
+                " \"-Xloggc\": \"file.log\"" +
                 "}", JvmOptions.class);
 
         assertThat(opts.getXms(), is("1g"));
         assertThat(opts.getXmx(), is("2g"));
+        assertThat(opts.getXloggc(), is("file.log"));
     }
 
     @Test
-    public void testEmptyXmxXms() {
+    public void testEmptyXmxXmsXloggc() {
         JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
 
         assertThat(opts.getXms(), is(nullValue()));
         assertThat(opts.getXmx(), is(nullValue()));
+        assertThat(opts.getXloggc(), is(nullValue()));
     }
 
     @Test

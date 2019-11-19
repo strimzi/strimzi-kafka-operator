@@ -996,6 +996,12 @@ public abstract class AbstractModel {
             }
         }
 
+        // Define `Xloggc` and set the filepath to output gc logs
+        String xloggc = jvmOptions != null ? jvmOptions.getXloggc() : null;
+        if (xloggc != null) {
+            kafkaHeapOpts.append(' ').append("-Xloggc:").append(xloggc);
+        }
+
         String trim = kafkaHeapOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
