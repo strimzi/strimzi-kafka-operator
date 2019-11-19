@@ -27,6 +27,7 @@ spec:
     jvmOptions:
       "-Xmx": "8g"
       "-Xms": "8g"
+      "-Xloggc": "/tmp/gc.log"
     # ...
   zookeeper:
     # ...

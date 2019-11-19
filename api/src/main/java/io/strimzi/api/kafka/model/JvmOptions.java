@@ -31,6 +31,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     private String xmx;
     private String xms;
+    private String xloggc;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
     private Map<String, String> xx;
@@ -56,6 +57,16 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     public void setXms(String xms) {
         this.xms = xms;
+    }
+
+    @JsonProperty("-Xloggc")
+    @Description("-Xloggc option to to the JVM")
+    public String getXloggc() {
+        return xloggc;
+    }
+
+    public void setXloggc(String xloggc) {
+        this.xloggc = xloggc;
     }
 
     @JsonProperty("-server")

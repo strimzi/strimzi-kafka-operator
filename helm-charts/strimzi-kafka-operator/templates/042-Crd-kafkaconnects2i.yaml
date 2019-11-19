@@ -92,6 +92,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                -Xloggc:
+                  type: string
                 gcLoggingEnabled:
                   type: boolean
             affinity:
