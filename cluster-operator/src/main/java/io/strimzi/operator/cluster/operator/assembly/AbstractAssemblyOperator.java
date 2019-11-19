@@ -48,10 +48,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
     extends AbstractOperator<T, AbstractWatchableResourceOperator<C, T, L, D, R>> {
 
-    private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
-
-    protected static final int LOCK_TIMEOUT_MS = 10000;
-
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
