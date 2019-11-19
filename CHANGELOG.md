@@ -8,6 +8,8 @@
 * Add `schedulerName` to `podTemplate` (#2114)
 * Allow overriding the auto-detected Kubernetes version
 * Garbage Collection (GC) logging disabled by default
+* Providing PKCS12 truststore and password in the cluster and clients CA certificates Secrets
+* Providing PKCS12 keystore and password in the TLS based KafkaUser related Secret
 
 ## 0.14.0
 
