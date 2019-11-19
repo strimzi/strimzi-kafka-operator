@@ -76,6 +76,7 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -914,7 +915,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         // Mock NetworkPolicy get
-        when(mockPolicyOps.get(clusterNamespace, KafkaCluster.policyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy());
+        when(mockPolicyOps.get(clusterNamespace, KafkaCluster.policyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(true));
         when(mockPolicyOps.get(clusterNamespace, ZookeeperCluster.policyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(true));
 
         // Mock PodDisruptionBudget get
@@ -1079,6 +1080,7 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
     public void testReconcile(Params params, VertxTestContext context) throws InterruptedException {
         setFields(params);
 
@@ -1175,14 +1177,14 @@ public class KafkaAssemblyOperatorTest {
         // Now try to reconcile all the Kafka clusters
         ops.reconcileAll("test", clusterCmNamespace, context.succeeding());
 
-        if (!fooLatch.await(30, TimeUnit.SECONDS)) {
+        if (!fooLatch.await(2, TimeUnit.MINUTES)) {
             if (barLatch.getCount() > 0) {
                 fail("Neither foo nor bar seen");
             } else {
                 fail("foo not seen");
             }
         }
-        if (!barLatch.await(30, TimeUnit.SECONDS)) {
+        if (!barLatch.await(2, TimeUnit.MINUTES)) {
             fail("bar not seen");
         }
         context.completeNow();
@@ -1190,6 +1192,7 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
     public void testReconcileAllNamespaces(Params params, VertxTestContext context) throws InterruptedException {
         setFields(params);
 
@@ -1270,14 +1273,14 @@ public class KafkaAssemblyOperatorTest {
         // Now try to reconcile all the Kafka clusters
         ops.reconcileAll("test", "*", context.succeeding());
 
-        if (!fooLatch.await(30, TimeUnit.SECONDS)) {
+        if (!fooLatch.await(2, TimeUnit.MINUTES)) {
             if (barLatch.getCount() > 0) {
                 fail("Neither foo nor bar seen");
             } else {
                 fail("foo not seen");
             }
         }
-        if (!barLatch.await(30, TimeUnit.SECONDS)) {
+        if (!barLatch.await(2, TimeUnit.MINUTES)) {
             fail("bar not seen");
         }
         context.completeNow();

@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
@@ -55,7 +54,6 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         assertThat(model.authentication.getType(), is(KafkaUserTlsClientAuthentication.TYPE_TLS));
 
-        KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) tlsUser.getSpec().getAuthorization();
         assertThat(model.getSimpleAclRules().size(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser).size()));
         assertThat(model.getSimpleAclRules(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser)));
     }
@@ -65,7 +63,7 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
         Secret generated = model.generateSecret();
 
-        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key")));
+        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -88,6 +86,8 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
         assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
         assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -107,6 +107,8 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("different-clients-ca-crt"));
         assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
         assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -121,6 +123,8 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
         assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("expected-crt"));
         assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("expected-key"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("expected-p12"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("expected-password"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -135,6 +139,31 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
         assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
         assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
+    }
+
+    @Test
+    public void testGenerateKeyStoreWhenOldVersionSecretExists() {
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
+        Secret oldSecret = model.generateSecret();
+        // removing keystore and password to simulate a Secret from a previous version
+        oldSecret.getData().remove("user.p12");
+        oldSecret.getData().remove("user.password");
+
+        model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, oldSecret);
+        Secret generated = model.generateSecret();
+
+        assertThat(generated.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+
+        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);

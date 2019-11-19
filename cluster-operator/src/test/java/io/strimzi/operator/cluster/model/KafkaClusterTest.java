@@ -93,7 +93,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
@@ -1079,9 +1081,9 @@ public class KafkaClusterTest {
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateBrokerSecret(null, emptyMap());
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
@@ -1106,9 +1108,9 @@ public class KafkaClusterTest {
 
         Secret secret = generateBrokerSecret(Collections.singleton("123.10.125.140"), externalAddresses);
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
@@ -1134,9 +1136,9 @@ public class KafkaClusterTest {
 
         Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses);
         assertThat(secret.getData().keySet(), is(set(
-                "foo-kafka-0.crt",  "foo-kafka-0.key",
-                "foo-kafka-1.crt", "foo-kafka-1.key",
-                "foo-kafka-2.crt", "foo-kafka-2.key")));
+                "foo-kafka-0.crt",  "foo-kafka-0.key", "foo-kafka-0.p12", "foo-kafka-0.password",
+                "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
+                "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
@@ -1312,22 +1314,29 @@ public class KafkaClusterTest {
 
     @Test
     public void testReplicationPortNetworkPolicy() {
-        NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)))
                 .endPodSelector()
                 .build();
 
-        NetworkPolicyPeer peer2 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer eoPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster)))
                 .endPodSelector()
                 .build();
 
-        NetworkPolicyPeer peer3 = new NetworkPolicyPeerBuilder()
+        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster)))
                 .endPodSelector()
+                .build();
+
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
+                .endPodSelector()
+                .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
         Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -1335,7 +1344,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyPeer> rules = np
                 .getSpec()
@@ -1350,10 +1359,11 @@ public class KafkaClusterTest {
                 .findFirst()
                 .orElse(null);
 
-        assertThat(rules.size(), is(3));
-        assertThat(rules.contains(peer1), is(true));
-        assertThat(rules.contains(peer2), is(true));
-        assertThat(rules.contains(peer3), is(true));
+        assertEquals(4, rules.size());
+        assertTrue(rules.contains(kafkaBrokersPeer));
+        assertTrue(rules.contains(eoPeer));
+        assertTrue(rules.contains(kafkaExporterPeer));
+        assertTrue(rules.contains(clusterOperatorPeer));
 
         // Check egress replication rules
         rules = np
@@ -1370,7 +1380,7 @@ public class KafkaClusterTest {
                 .orElse(null);
 
         assertThat(rules.size(), is(1));
-        assertThat(rules.contains(peer1), is(true));
+        assertThat(rules.contains(kafkaBrokersPeer), is(true));
     }
 
     @Test
@@ -1379,6 +1389,7 @@ public class KafkaClusterTest {
                 .withNewPodSelector()
                 .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)))
                 .endPodSelector()
+                .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
         Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -1386,7 +1397,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyPeer> rules = np
                 .getSpec()
@@ -1440,7 +1451,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
@@ -1477,7 +1488,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy();
+        NetworkPolicy np = k.generateNetworkPolicy(true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));

@@ -72,7 +72,7 @@ public class Producer extends ClientHandlerBase<Integer> {
                     }
 
                 } else {
-                    LOGGER.warn("Producer cannot connect to topic {}, because of {}", topic, done.cause());
+                    LOGGER.warn("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
                     sendNext(producer, topic);
                 }
             });

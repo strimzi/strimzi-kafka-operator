@@ -40,7 +40,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -150,7 +149,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
 
-    protected static final int REPLICATION_PORT = 9091;
+    public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
     protected static final int CLIENT_TLS_PORT = 9093;
@@ -279,8 +278,12 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsName(String namespace, String cluster, int podId) {
+        return podDnsName(namespace, cluster, KafkaCluster.kafkaPodName(cluster, podId));
+    }
+
+    public static String podDnsName(String namespace, String cluster, String podName) {
         return String.format("%s.%s.%s.svc.%s",
-                KafkaCluster.kafkaPodName(cluster, podId),
+                podName,
                 KafkaCluster.headlessServiceName(cluster),
                 namespace,
                 ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
@@ -1077,6 +1080,8 @@ public class KafkaCluster extends AbstractModel {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", cert.certAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
         return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }
@@ -1673,69 +1678,58 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy() {
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
+        List<NetworkPolicyIngressRule> ingressRules = new ArrayList<>(5);
+        List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(2);
 
-        // Restrict access to 9091 / replication port
-        NetworkPolicyPort replicationPort = new NetworkPolicyPort();
-        replicationPort.setPort(new IntOrString(REPLICATION_PORT));
+        if (namespaceAndPodSelectorNetworkPolicySupported) {
+            // Restrict access to 9091 / replication port
+            ingressRules.add(new NetworkPolicyIngressRuleBuilder()
+                    .addNewPort().withNewPort(REPLICATION_PORT).endPort()
+                    .addNewFrom()
+                        .withNewPodSelector() // cluster operator
+                            .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                        .endPodSelector()
+                        .withNewNamespaceSelector().endNamespaceSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // kafka cluster
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                        .endPodSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // entity operator
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                        .endPodSelector()
+                    .endFrom()
+                    .addNewFrom()
+                        .withNewPodSelector() // cluster operator
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                        .endPodSelector()
+                    .endFrom().build());
 
-        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector = new LabelSelector();
-        Map<String, String> expressions = new HashMap<>();
-        expressions.put(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster));
-        labelSelector.setMatchLabels(expressions);
-        kafkaClusterPeer.setPodSelector(labelSelector);
+            // Restrict outbound connections to replication port and zookeeper client port
+            String zookeeperClientPort = zookeeperConnect.replace(ZookeeperCluster.serviceName(cluster) + ":", "");
+            egressRules.add(new NetworkPolicyEgressRuleBuilder()
+                    .addNewPort().withNewPort(zookeeperClientPort).endPort()
+                    .addNewTo()
+                        .withNewPodSelector()
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster))
+                        .endPodSelector()
+                        .withNewNamespaceSelector().endNamespaceSelector()
+                    .endTo().build());
 
-        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector2 = new LabelSelector();
-        Map<String, String> expressions2 = new HashMap<>();
-        expressions2.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
-        labelSelector2.setMatchLabels(expressions2);
-        entityOperatorPeer.setPodSelector(labelSelector2);
-
-        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector3 = new LabelSelector();
-        Map<String, String> expressions3 = new HashMap<>();
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster));
-        labelSelector3.setMatchLabels(expressions3);
-        kafkaExporterPeer.setPodSelector(labelSelector3);
-
-        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(replicationPort)
-                .withFrom(kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer)
-                .build();
-
-        rules.add(replicationRule);
-
-        List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(5);
-
-        // Restrict egress to 2181 / ZooKeeper port
-        NetworkPolicyPort zookeeperConnectPort = new NetworkPolicyPort();
-        zookeeperConnectPort.setPort(new IntOrString(zookeeperConnect
-                .replace(ZookeeperCluster.serviceName(cluster) + ":", "")));
-
-        NetworkPolicyPeer zookeeperPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector4 = new LabelSelector();
-        Map<String, String> expressions4 = new HashMap<>();
-        expressions4.put(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster));
-        labelSelector4.setMatchLabels(expressions4);
-        zookeeperPeer.setPodSelector(labelSelector4);
-
-        NetworkPolicyEgressRule zookeeperRule = new NetworkPolicyEgressRuleBuilder()
-                .withPorts(zookeeperConnectPort)
-                .withTo(zookeeperPeer)
-                .build();
-
-        NetworkPolicyEgressRule replicationEgressRule = new NetworkPolicyEgressRuleBuilder()
-                .withPorts(replicationPort)
-                .withTo(kafkaClusterPeer)
-                .build();
-
-        egressRules.add(zookeeperRule);
-        egressRules.add(replicationEgressRule);
+            egressRules.add(new NetworkPolicyEgressRuleBuilder()
+                    .addNewPort().withNewPort(REPLICATION_PORT).endPort()
+                    .addNewTo()
+                        .withNewPodSelector()
+                            .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                        .endPodSelector()
+                    .endTo().build());
+        }
 
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {
@@ -1748,7 +1742,7 @@ public class KafkaCluster extends AbstractModel {
                         .withFrom(listeners.getPlain().getNetworkPolicyPeers())
                         .build();
 
-                rules.add(plainRule);
+                ingressRules.add(plainRule);
             }
 
             if (listeners.getTls() != null) {
@@ -1760,7 +1754,7 @@ public class KafkaCluster extends AbstractModel {
                         .withFrom(listeners.getTls().getNetworkPolicyPeers())
                         .build();
 
-                rules.add(tlsRule);
+                ingressRules.add(tlsRule);
             }
 
             if (isExposed()) {
@@ -1772,7 +1766,7 @@ public class KafkaCluster extends AbstractModel {
                         .withFrom(listeners.getExternal().getNetworkPolicyPeers())
                         .build();
 
-                rules.add(externalRule);
+                ingressRules.add(externalRule);
             }
         }
 
@@ -1785,7 +1779,7 @@ public class KafkaCluster extends AbstractModel {
                     .withFrom()
                     .build();
 
-            rules.add(metricsRule);
+            ingressRules.add(metricsRule);
         }
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -1796,8 +1790,10 @@ public class KafkaCluster extends AbstractModel {
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodSelector(labelSelector)
-                    .withIngress(rules)
+                    .withNewPodSelector()
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                    .endPodSelector()
+                    .withIngress(ingressRules)
                     .withEgress(egressRules)
                 .endSpec()
                 .build();

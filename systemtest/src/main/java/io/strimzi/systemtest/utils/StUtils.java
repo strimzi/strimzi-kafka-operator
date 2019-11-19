@@ -220,7 +220,7 @@ public class StUtils {
      */
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
-                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> {
+                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT * 2, () -> {
                 try {
                     return ssHasRolled(name, snapshot);
                 } catch (Exception e) {

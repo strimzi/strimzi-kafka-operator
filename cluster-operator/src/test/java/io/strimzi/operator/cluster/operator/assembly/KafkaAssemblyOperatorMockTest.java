@@ -249,7 +249,9 @@ public class KafkaAssemblyOperatorMockTest {
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
-        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000);
+        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder,
+                ResourceUtils.adminClientProvider(),
+                new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000);
     }
 
     private KafkaAssemblyOperator createCluster(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
@@ -647,9 +649,9 @@ public class KafkaAssemblyOperatorMockTest {
                     mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
                     is(nullValue())));
 
-            // removing one pod, the related private and public keys should not be in the Secrets
+            // removing one pod, the related private and public keys, keystore and password should not be in the Secrets
             context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size(),
-                    is(brokersInternalCerts - 2)));
+                    is(brokersInternalCerts - 4)));
 
             // TODO assert no rolling update
             updateAsync.flag();
@@ -684,9 +686,9 @@ public class KafkaAssemblyOperatorMockTest {
                     mockClient.pods().inNamespace(NAMESPACE).withName(newPod).get(),
                     is(notNullValue())));
 
-            // adding one pod, the related private and public keys should be added to the Secrets
+            // adding one pod, the related private and public keys, keystore and password should be added to the Secrets
             context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size(),
-                    is(brokersInternalCerts + 2)));
+                    is(brokersInternalCerts + 4)));
 
             // TODO assert no rolling update
             updateAsync.flag();

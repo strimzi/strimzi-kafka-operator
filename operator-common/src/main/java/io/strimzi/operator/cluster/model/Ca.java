@@ -96,7 +96,7 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
 
-    private PasswordGenerator passwordGenerator;
+    private final PasswordGenerator passwordGenerator;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -232,9 +232,11 @@ public abstract class Ca {
      * @param secret The secret.
      * @param key The key.
      * @param cert The cert.
+     * @param keyStore The keyStore.
+     * @param keyStorePassword The store password.
      * @return The CertAndKey.
      */
-    public static CertAndKey asCertAndKey(Secret secret, String key, String cert) {
+    public static CertAndKey asCertAndKey(Secret secret, String key, String cert, String keyStore, String keyStorePassword) {
         Base64.Decoder decoder = Base64.getDecoder();
         if (secret == null || secret.getData() == null) {
             return null;
@@ -249,19 +251,56 @@ public abstract class Ca {
             }
             return new CertAndKey(
                     decoder.decode(keyData),
-                    decoder.decode(certData));
+                    decoder.decode(certData),
+                    null,
+                    decoder.decode(secret.getData().get(keyStore)),
+                    new String(decoder.decode(secret.getData().get(keyStorePassword)), StandardCharsets.US_ASCII));
         }
     }
 
+    public CertAndKey addKeyAndCertToKeyStore(String alias, byte[] key, byte[] cert) throws IOException {
+
+        File keyFile = File.createTempFile("tls", "key");
+        File certFile = File.createTempFile("tls", "cert");
+        File keyStoreFile = File.createTempFile("tls", "p12");
+
+        Files.write(keyFile.toPath(), key);
+        Files.write(certFile.toPath(), cert);
+
+        String keyStorePassword = passwordGenerator.generate();
+        certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+
+        CertAndKey result = new CertAndKey(
+                Files.readAllBytes(keyFile.toPath()),
+                Files.readAllBytes(certFile.toPath()),
+                null,
+                Files.readAllBytes(keyStoreFile.toPath()),
+                keyStorePassword);
+
+        delete(keyFile);
+        delete(certFile);
+        delete(keyStoreFile);
+
+        return result;
+    }
+
     private CertAndKey generateSignedCert(Subject subject,
-                                            File csrFile, File keyFile, File certFile) throws IOException {
+                                            File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
         log.debug("Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
 
         certManager.generateCsr(keyFile, csrFile, subject);
         certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
                 certFile, subject, validityDays);
 
-        return new CertAndKey(Files.readAllBytes(keyFile.toPath()), Files.readAllBytes(certFile.toPath()));
+        String keyStorePassword = passwordGenerator.generate();
+        certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
+
+        return new CertAndKey(
+                Files.readAllBytes(keyFile.toPath()),
+                Files.readAllBytes(certFile.toPath()),
+                null,
+                Files.readAllBytes(keyStoreFile.toPath()),
+                keyStorePassword);
     }
 
     /**
@@ -285,6 +324,7 @@ public abstract class Ca {
         File csrFile = File.createTempFile("tls", "csr");
         File keyFile = File.createTempFile("tls", "key");
         File certFile = File.createTempFile("tls", "cert");
+        File keyStoreFile = File.createTempFile("tls", "p12");
 
         Subject subject = new Subject();
 
@@ -295,11 +335,12 @@ public abstract class Ca {
         subject.setCommonName(commonName);
 
         CertAndKey result = generateSignedCert(subject,
-                csrFile, keyFile, certFile);
+                csrFile, keyFile, certFile, keyStoreFile);
 
         delete(csrFile);
         delete(keyFile);
         delete(certFile);
+        delete(keyStoreFile);
         return result;
     }
 
@@ -312,11 +353,13 @@ public abstract class Ca {
            Function<Integer, Subject> subjectFn,
            Secret secret,
            Function<Integer, String> podNameFn) throws IOException {
-        int replicasInSecret = secret == null || this.certRenewed() ? 0 : secret.getData().size() / 2;
+        int replicasInSecret = secret == null || this.certRenewed() ? 0 :
+                (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
 
         File brokerCsrFile = File.createTempFile("tls", "broker-csr");
         File brokerKeyFile = File.createTempFile("tls", "broker-key");
         File brokerCertFile = File.createTempFile("tls", "broker-cert");
+        File brokerKeyStoreFile = File.createTempFile("tls", "broker-p12");
 
         Map<String, CertAndKey> certs = new HashMap<>();
         // copying the minimum number of certificates already existing in the secret
@@ -325,17 +368,32 @@ public abstract class Ca {
         for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} already exists", podName);
-
             Subject subject = subjectFn.apply(i);
+
+            CertAndKey certAndKey;
+            if (secret.getData().get(podName + ".p12") != null &&
+                    !secret.getData().get(podName + ".p12").isEmpty() &&
+                    secret.getData().get(podName + ".password") != null &&
+                    !secret.getData().get(podName + ".password").isEmpty()) {
+
+                certAndKey = asCertAndKey(secret,
+                        podName + ".key", podName + ".crt",
+                        podName + ".p12", podName + ".password");
+            } else {
+                // coming from an older operator version, the secret exists but without keystore and password
+                certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
+                        Base64.getDecoder().decode(secret.getData().get(podName + ".key")),
+                        Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
+            }
+
             Collection<String> desiredSbjAltNames = subject.subjectAltNames().values();
-            Collection<String> currentSbjAltNames = getSubjectAltNames(asCertAndKey(secret, podName + ".key", podName + ".crt").cert());
+            Collection<String> currentSbjAltNames =
+                    getSubjectAltNames(certAndKey.cert());
 
             if (currentSbjAltNames != null && desiredSbjAltNames.containsAll(currentSbjAltNames) && currentSbjAltNames.containsAll(desiredSbjAltNames))   {
                 log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
 
-                certs.put(
-                        podName,
-                        asCertAndKey(secret, podName + ".key", podName + ".crt"));
+                certs.put(podName, certAndKey);
             } else {
                 if (log.isTraceEnabled()) {
                     if (currentSbjAltNames != null) {
@@ -349,7 +407,7 @@ public abstract class Ca {
                 log.debug("Alternate subjects do not match. Certificate needs to be refreshed for pod {}.", podName);
 
                 CertAndKey k = generateSignedCert(subject,
-                        brokerCsrFile, brokerKeyFile, brokerCertFile);
+                        brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, k);
                 this.renewalType = RenewalType.REGENERATED_CERT;
             }
@@ -362,12 +420,13 @@ public abstract class Ca {
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} to generate", podName);
             CertAndKey k = generateSignedCert(subjectFn.apply(i),
-                    brokerCsrFile, brokerKeyFile, brokerCertFile);
+                    brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
             certs.put(podName, k);
         }
         delete(brokerCsrFile);
         delete(brokerKeyFile);
         delete(brokerCertFile);
+        delete(brokerKeyStoreFile);
 
         return certs;
     }
@@ -722,7 +781,7 @@ public abstract class Ca {
         return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
     }
 
-    static X509Certificate cert(Secret secret, String key)  {
+    public static X509Certificate cert(Secret secret, String key)  {
         if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;
         }

@@ -5,18 +5,25 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -35,13 +42,13 @@ import java.util.function.Predicate;
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     private static final int NO_GENERATION = -1;
-    private static final String NO_UID = "NULL";
     private static final int INIT_GENERATION = 0;
 
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     protected final PodOperator podOperations;
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
+    private final SecretOperator secretOperations;
 
     /**
      * Constructor
@@ -53,8 +60,17 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
     }
 
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, PvcOperator pvcOperator) {
+    /**
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout.
+     * @param podOperator The pod operator.
+     * @param pvcOperator The PVC operator.
+     */
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs,
+                               PodOperator podOperator, PvcOperator pvcOperator) {
         super(vertx, client, "StatefulSet");
+        this.secretOperations = new SecretOperator(vertx, client);
         this.podOperations = podOperator;
         this.operationTimeoutMs = operationTimeoutMs;
         this.pvcOperations = pvcOperator;
@@ -72,39 +88,66 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      * @param ss The StatefulSet
-     * @param podRestart Function to test whether a given pod needs to be restarted.
+     * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart) {
+        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        final int replicas = ss.getSpec().getReplicas();
-        log.debug("Considering rolling update of {}/{}", namespace, name);
-        Future<Void> f = Future.succeededFuture();
-        for (int i = 0; i < replicas; i++) {
-            String podName = name + "-" + i;
-            f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
-        }
+        Future<Secret> clusterCaKeySecretFuture = secretOperations.getAsync(
+                namespace, KafkaResources.clusterCaCertificateSecretName(cluster));
+        Future<Secret> coKeySecretFuture = secretOperations.getAsync(
+                namespace, ClusterOperator.secretName(cluster));
+        return CompositeFuture.join(clusterCaKeySecretFuture, coKeySecretFuture).compose(compositeFuture -> {
+            Secret clusterCaKeySecret = compositeFuture.resultAt(0);
+            if (clusterCaKeySecret == null) {
+                return Future.failedFuture(missingSecretFuture(namespace, KafkaCluster.clusterCaKeySecretName(cluster)));
+            }
+            Secret coKeySecret = compositeFuture.resultAt(1);
+            if (coKeySecret == null) {
+                return Future.failedFuture(missingSecretFuture(namespace, ClusterOperator.secretName(cluster)));
+            }
+            return maybeRollingUpdate(ss, podNeedsRestart, clusterCaKeySecret, coKeySecret);
+        });
+    }
+
+    static RuntimeException missingSecretFuture(String namespace, String secretName) {
+        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
+    }
+
+    public abstract Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+
+    public Future<Void> deletePvc(StatefulSet ss, String pvcName) {
+        String namespace = ss.getMetadata().getNamespace();
+        Future<Void> f = Future.future();
+        Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
+        r.setHandler(h -> {
+            if (h.succeeded()) {
+                f.complete();
+            } else {
+                f.fail(h.cause());
+            }
+        });
         return f;
     }
 
     /**
-     * Asynchronously apply the given {@code podRestart}, if it returns true then restart the pod
+     * Asynchronously apply the given {@code podNeedsRestart}, if it returns true then restart the pod
      * given by {@code podName} by deleting it and letting it be recreated by K8s;
      * in any case return a Future which completes when the given (possibly recreated) pod is ready.
      * @param ss The StatefulSet.
      * @param podName The name of the Pod to possibly restart.
-     * @param podRestart The predicate for deciding whether to restart the pod.
+     * @param podNeedsRestart The predicate for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podRestart) {
+    Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         return podOperations.getAsync(ss.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
-            if (podRestart.test(pod)) {
+            if (podNeedsRestart.test(pod)) {
                 fut = restartPod(ss, pod);
             } else {
                 log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
@@ -125,40 +168,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @return a Future which completes when the Pod has been recreated
      */
     private Future<Void> restartPod(StatefulSet ss, Pod pod) {
-        long pollingIntervalMs = 1_000;
-        long timeoutMs = operationTimeoutMs;
-        String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        String podName = pod.getMetadata().getName();
-        Future<Void> deleteFinished = Future.future();
-        log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
-
-        // Determine generation of deleted pod
-        String deleted = getPodUid(pod);
-
-        // Delete the pod
-        log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
-        Future<Void> podReconcileFuture =
-            podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                    // predicate - changed generation means pod has been updated
-                    String newUid = getPodUid(podOperations.get(namespace, podName));
-                    boolean done = !deleted.equals(newUid);
-                    if (done) {
-                        log.debug("Rolling pod {} finished", podName);
-                    }
-                    return done;
-                });
-                return del;
-            });
-
-        podReconcileFuture.setHandler(deleteResult -> {
-            if (deleteResult.succeeded()) {
-                log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, name, podName);
-            }
-            deleteFinished.handle(deleteResult);
-        });
-        return deleteFinished;
+        return podOperations.restart("Rolling update of " + ss.getMetadata().getNamespace() + "/" + ss.getMetadata().getName(),
+                pod, operationTimeoutMs);
     }
 
     @Override
@@ -333,13 +344,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
-    }
-
-    private static String getPodUid(Pod resource) {
-        if (resource == null || resource.getMetadata() == null) {
-            return NO_UID;
-        }
-        return resource.getMetadata().getUid();
     }
 
     /**

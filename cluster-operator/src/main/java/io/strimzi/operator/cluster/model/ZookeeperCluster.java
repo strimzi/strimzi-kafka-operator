@@ -332,7 +332,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
+        List<NetworkPolicyIngressRule> ingressRules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
         clientsPort.setPort(new IntOrString(CLIENT_PORT));
@@ -356,9 +356,9 @@ public class ZookeeperCluster extends AbstractModel {
                 .withFrom(zookeeperClusterPeer)
                 .build();
 
-        rules.add(zookeeperClusteringIngressRule);
+        ingressRules.add(zookeeperClusteringIngressRule);
 
-        // Clients port - needs ot be access from outside the Zookeeper cluster as well
+        // Clients port - needs to be accessed from outside the Zookeeper cluster as well
         NetworkPolicyIngressRule clientsIngressRule = new NetworkPolicyIngressRuleBuilder()
                 .withPorts(clientsPort)
                 .withFrom()
@@ -397,7 +397,7 @@ public class ZookeeperCluster extends AbstractModel {
             clientsIngressRule.setFrom(clientsPortPeers);
         }
 
-        rules.add(clientsIngressRule);
+        ingressRules.add(clientsIngressRule);
 
         if (isMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
@@ -408,7 +408,7 @@ public class ZookeeperCluster extends AbstractModel {
                     .withFrom()
                     .build();
 
-            rules.add(metricsRule);
+            ingressRules.add(metricsRule);
         }
 
         List<NetworkPolicyEgressRule> egressRules = new ArrayList<>(5);
@@ -430,7 +430,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withPodSelector(labelSelector2)
-                    .withIngress(rules)
+                    .withIngress(ingressRules)
                     .withEgress(egressRules)
                 .endSpec()
                 .build();
@@ -479,6 +479,8 @@ public class ZookeeperCluster extends AbstractModel {
                 CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
                 data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
                 data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
+                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
             }
 
         } catch (IOException e) {

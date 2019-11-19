@@ -7,10 +7,10 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -36,6 +36,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -84,6 +85,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -147,10 +149,21 @@ class KafkaST extends MessagingBaseST {
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
+
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
 
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertThat(initialReplicas, is(3));
+
+        assertEquals(3, initialReplicas);
+
+        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
+        String firstTopicName = "test-topic";
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, 3, initialReplicas)
+                .editSpec()
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
+                .endSpec()
+            .done();
+
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
@@ -161,15 +174,14 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
-
-        String firstTopicName = "test-topic";
-        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
+        LOGGER.info("Scaled up to {}", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE, firstTopicName);
+        LOGGER.info("Could produce/consume with topic {}", firstTopicName);
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(getOperationID());
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, getOperationID()));
@@ -180,14 +192,13 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
+        LOGGER.info("Scaled down to {}", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertThat(finalReplicas, is(initialReplicas));
 
-        //Test that the new broker has event 'Killing'
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
-        //Test that stateful set has event 'SuccessfulDelete'
+        // Test that stateful set has event 'SuccessfulDelete'
         uid = kubeClient().getStatefulSetUid(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
@@ -197,6 +208,7 @@ class KafkaST extends MessagingBaseST {
         String secondTopicName = "test-topic-2";
         testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
         waitForClusterAvailability(NAMESPACE, secondTopicName);
+        LOGGER.info("Could produce/consume with topic {}", secondTopicName);
     }
 
     @Test

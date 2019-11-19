@@ -341,9 +341,9 @@ public class ZookeeperClusterTest {
 
         Secret secret = zc.generateNodesSecret(clusterCa, ka);
         assertThat(secret.getData().keySet(), is(set(
-                "foo-zookeeper-0.crt",  "foo-zookeeper-0.key",
-                "foo-zookeeper-1.crt", "foo-zookeeper-1.key",
-                "foo-zookeeper-2.crt", "foo-zookeeper-2.key")));
+                "foo-zookeeper-0.crt",  "foo-zookeeper-0.key", "foo-zookeeper-0.p12", "foo-zookeeper-0.password",
+                "foo-zookeeper-1.crt", "foo-zookeeper-1.key", "foo-zookeeper-1.p12", "foo-zookeeper-1.password",
+                "foo-zookeeper-2.crt", "foo-zookeeper-2.key", "foo-zookeeper-2.p12", "foo-zookeeper-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-zookeeper-0.crt");
         assertThat(cert.getSubjectDN().getName(), is("CN=foo-zookeeper, O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
