@@ -52,4 +52,4 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Zookeeper with final configuration
-exec $KAFKA_HOME/bin/zookeeper-server-start.sh /tmp/zookeeper.properties
+/usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties"

@@ -62,6 +62,13 @@ COPY ./stunnel-scripts/ $STUNNEL_HOME
 ENV S2I_HOME=/opt/kafka/s2i
 COPY ./s2i-scripts $S2I_HOME
 
+#####
+# Add Tini
+#####
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+RUN chmod +x /usr/bin/tini
+
 WORKDIR $KAFKA_HOME
 
 USER 1001
