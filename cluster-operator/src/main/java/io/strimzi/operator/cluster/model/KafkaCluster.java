@@ -1712,7 +1712,7 @@ public class KafkaCluster extends AbstractModel {
                     .endFrom().build());
 
             // Restrict outbound connections to replication port and zookeeper client port
-            String zookeeperClientPort = zookeeperConnect.replace(ZookeeperCluster.serviceName(cluster) + ":", "");
+            Integer zookeeperClientPort = Integer.parseInt(zookeeperConnect.replace(ZookeeperCluster.serviceName(cluster) + ":", ""));
             egressRules.add(new NetworkPolicyEgressRuleBuilder()
                     .addNewPort().withNewPort(zookeeperClientPort).endPort()
                     .addNewTo()

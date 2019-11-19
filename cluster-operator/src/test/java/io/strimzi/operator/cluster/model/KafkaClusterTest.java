@@ -1407,7 +1407,7 @@ public class KafkaClusterTest {
                         .getPorts()
                         .get(0)
                         .getPort()
-                        .equals(new IntOrString("2181")))
+                        .equals(new IntOrString(2181)))
                 .map(NetworkPolicyEgressRule::getTo)
                 .findFirst()
                 .orElse(null);
