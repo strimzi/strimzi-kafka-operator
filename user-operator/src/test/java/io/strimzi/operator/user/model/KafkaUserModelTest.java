@@ -64,18 +64,17 @@ public class KafkaUserModelTest {
     public void testQuotasFromCrd()   {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, quotasUser, clientsCaCert, clientsCaKey, null);
 
-        assertEquals(ResourceUtils.NAMESPACE, model.namespace);
-        assertEquals(ResourceUtils.NAME, model.name);
-        assertEquals(Labels.userLabels(ResourceUtils.LABELS)
+        assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
+        assertThat(model.name, is(ResourceUtils.NAME));
+        assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME),
-                model.labels);
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
-        assertEquals(quotas.getConsumerByteRate(), model.getQuotas().getConsumerByteRate());
-        assertEquals(quotas.getProducerByteRate(), model.getQuotas().getProducerByteRate());
-        assertEquals(quotas.getRequestPercentage(), model.getQuotas().getRequestPercentage());
+        assertThat(model.getQuotas().getConsumerByteRate(), is(quotas.getConsumerByteRate()));
+        assertThat(model.getQuotas().getProducerByteRate(), is(quotas.getProducerByteRate()));
+        assertThat(model.getQuotas().getRequestPercentage(), is(quotas.getRequestPercentage()));
     }
 
     @Test

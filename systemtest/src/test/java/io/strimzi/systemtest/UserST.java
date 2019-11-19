@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -158,14 +159,12 @@ class UserST extends AbstractST {
         testMethodResources().quotasUser(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
         StUtils.waitForSecretReady(userName);
 
-        String messageUserWasAdded = "KafkaUser " + userName + " in namespace " + NAMESPACE + " was ADDED";
-        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
+        String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
 
         // Checking UO logs
         String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOlogs, containsString(messageUserWasAdded));
-        assertThat(uOlogs, not(containsString(errorMessage)));
+        assertThat(uOlogs.contains(messageUserWasAdded), is(true));
 
         String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users --entity-name " + userName;
         LOGGER.debug("Command for kafka-configs.sh {}", command);

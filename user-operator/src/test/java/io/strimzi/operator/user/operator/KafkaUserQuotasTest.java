@@ -6,20 +6,19 @@ package io.strimzi.operator.user.operator;
 
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.json.JsonObject;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class KafkaUserQuotasTest {
 
@@ -30,17 +29,17 @@ public class KafkaUserQuotasTest {
     private JsonObject quotasJson;
 
 
-    @BeforeClass
+    @BeforeAll
     public static void startZk() throws IOException, InterruptedException {
         zkServer = new EmbeddedZooKeeper();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stopZk() {
         zkServer.close();
     }
 
-    @Before
+    @BeforeEach
     public void createKUQ() {
         quotasJson = new JsonObject();
         quotasJson.put("consumer_byte_rate", "1000");
@@ -86,12 +85,12 @@ public class KafkaUserQuotasTest {
     @Test
     public void userExists() {
         kuq.createOrUpdate("userExists", quotasJson);
-        assertTrue(kuq.exists("userExists"));
+        assertThat(kuq.exists("userExists"), is(true));
     }
 
     @Test
     public void userNotExists() {
-        assertFalse(kuq.exists("userNotExists"));
+        assertThat(kuq.exists("userNotExists"), is(false));
     }
 
 
@@ -122,40 +121,40 @@ public class KafkaUserQuotasTest {
     public void testDeletion()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", quotasJson);
         JsonObject updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
-        assertNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("producer_byte_rate", "1000").put("consumer_byte_rate", "2000"));
         updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
-        assertNull(updated.getJsonObject("config").getString("producer_byte_rate"));
-        assertNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
         updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
-        assertNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
-        assertNull(updated.getJsonObject("config").getString("producer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
         updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
-        assertNull(updated.getJsonObject("config").getString("producer_byte_rate"));
-        assertNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
     }
 
     @Test
     public void testUpdate()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
         JsonObject updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), new JsonObject().put("consumer_byte_rate", "2000")), Charset.defaultCharset()));
-        assertNotNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
-        assertEquals("2000", updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000").put("producer_byte_rate", "2000"));
         updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), new JsonObject().put("consumer_byte_rate", "3000").put("producer_byte_rate", "4000")), Charset.defaultCharset()));
-        assertNotNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
-        assertNotNull(updated.getJsonObject("config").getString("producer_byte_rate"));
-        assertEquals("4000", updated.getJsonObject("config").getString("producer_byte_rate"));
-        assertEquals("3000", updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
+        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("3000"));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
         updated = new JsonObject(new String(kuq.updateUserJson(original.encode().getBytes(Charset.defaultCharset()), new JsonObject().put("consumer_byte_rate", "1000")), Charset.defaultCharset()));
-        assertNotNull(updated.getJsonObject("config").getString("consumer_byte_rate"));
+        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
     }
 }
