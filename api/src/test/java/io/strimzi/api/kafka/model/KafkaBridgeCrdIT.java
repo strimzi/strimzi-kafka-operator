@@ -10,8 +10,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -41,11 +44,17 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithMissingRequired() {
-        try {
-            createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.bootstrapServers in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
+            });
+
+        String expectedString1 = "spec.bootstrapServers in body is required";
+        String expectedString2 = "spec.bootstrapServers: Required value";
+
+        assertThat(exception.getMessage(),
+                anyOf(containsStringIgnoringCase(expectedString1), containsStringIgnoringCase(expectedString2)));
     }
 
     @Test
@@ -60,12 +69,21 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithTlsAuthWithMissingRequired() {
-        try {
-            createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
+            });
+
+        String expectedMsg1a = "spec.authentication.certificateAndKey.certificate in body is required";
+        String expectedMsg1b = "spec.authentication.certificateAndKey.key in body is required";
+
+        String expectedMsg2a = "spec.authentication.certificateAndKey.certificate: Required value";
+        String expectedMsg2b = "spec.authentication.certificateAndKey.key: Required value";
+
+        assertThat(exception.getMessage(), anyOf(
+                allOf(containsStringIgnoringCase(expectedMsg1a), containsStringIgnoringCase(expectedMsg1b)),
+                allOf(containsStringIgnoringCase(expectedMsg2a), containsStringIgnoringCase(expectedMsg2b))));
     }
 
     @Test
@@ -85,20 +103,30 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithWrongTracingType() {
-        try {
-            createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.tracing.type in body should be one of [jaeger]"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml");
+            });
+
+        String expectedMsg1 = "spec.tracing.type in body should be one of [jaeger]";
+        String expectedMsg2 = "spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"";
+
+        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
     @Test
     void testKafkaBridgeWithMissingTracingType() {
-        try {
-            createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.tracing.type in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml");
+            });
+
+        String expectedMsg1 = "spec.tracing.type in body is required";
+        String expectedMsg2 = "spec.tracing.type: Required value";
+
+        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
     @BeforeAll

@@ -11,8 +11,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -47,21 +50,33 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaWithMissingRequired() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.zookeeper in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.kafka in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
+            });
+
+        String expectedMsg1a = "spec.zookeeper in body is required";
+        String expectedMsg1b = "spec.kafka in body is required";
+
+        String expectedMsg2a = "spec.kafka: Required value";
+        String expectedMsg2b = "spec.zookeeper: Required value";
+
+        assertThat(exception.getMessage(), anyOf(
+                allOf(containsStringIgnoringCase(expectedMsg1a), containsStringIgnoringCase(expectedMsg1b)),
+                allOf(containsStringIgnoringCase(expectedMsg2a), containsStringIgnoringCase(expectedMsg2b))));
     }
 
     @Test
     void testKafkaWithInvalidResourceMemory() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
+            });
+
+        assertThat(exception.getMessage(),
+                containsStringIgnoringCase("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
     }
 
     @Test
@@ -76,11 +91,15 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafkaWithNullMaintenance() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-null-maintenance.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.maintenanceTimeWindows in body must be of type string: \"null\""), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-null-maintenance.yaml");
+            });
+
+        String expectedMsg1 = "spec.maintenanceTimeWindows in body must be of type string: \"null\"";
+
+        assertThat(exception.getMessage(), containsStringIgnoringCase(expectedMsg1));
     }
 
     @Test
@@ -95,11 +114,16 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafkaWithTlsSidecarWithInvalidLogLevel() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-tls-sidecar-invalid-loglevel.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-tls-sidecar-invalid-loglevel.yaml");
+            });
+
+        String expectedMsg1 = "spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]";
+        String expectedMsg2 = "spec.kafka.tlsSidecar.logLevel: Unsupported value: \"invalid\": supported values: \"emerg\", \"alert\", \"crit\", \"err\", \"warning\", \"notice\", \"info\", \"debug\"";
+
+        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
     @Test
@@ -109,20 +133,35 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafkaWithJbodStorageOnZookeeper() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-jbod-storage-on-zookeeper.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-jbod-storage-on-zookeeper.yaml");
+            });
+
+        String expectedMsg1 = "spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]";
+        String expectedMsg2 = "spec.zookeeper.storage.type: Unsupported value: \"jbod\": supported values: \"ephemeral\", \"persistent-claim\"";
+
+        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+    }
+
+    @Override
+    protected void teardownEnvForOperator() {
+        super.teardownEnvForOperator();
     }
 
     @Test
     public void testKafkaWithInvalidStorage() {
-        try {
-            createDelete(Kafka.class, "Kafka-with-invalid-storage.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-invalid-storage.yaml");
+            });
+
+        String expectedMsg1 = "spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]";
+        String expectedMsg2 = "spec.kafka.storage.type: Unsupported value: \"foobar\": supported values: \"ephemeral\", \"persistent-claim\", \"jbod\"";
+
+        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
     @BeforeAll
