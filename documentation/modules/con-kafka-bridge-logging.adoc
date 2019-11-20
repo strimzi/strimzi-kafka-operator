@@ -10,9 +10,7 @@ Kafka Bridge has its own configurable loggers:
 * `log4j.logger.io.strimzi.kafka.bridge`
 * `log4j.logger.http.openapi.operation.__<operation-id>__`
 
-The `log4j.logger.http.openapi.operation.__<operation-id>__` logger is for each OpenAPI operation, where `_<operation-id>_` is the identifier of a specific operation.
-
-Here are the operations defined by the OpenAPI specification:
+You can replace `_<operation-id>_` in the `log4j.logger.http.openapi.operation.__<operation-id>__` logger to set log levels for specific operations:
 
 * `createConsumer`
 * `deleteConsumer`
@@ -30,7 +28,19 @@ Here are the operations defined by the OpenAPI specification:
 * `ready`
 * `openapi`
 
+Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
+You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
+
 Kafka Bridge uses the Apache `log4j` logger implementation.
+Loggers are defined in the `log4j.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
+
+```
+log4j.logger.http.openapi.operation.healthy=WARN, out
+log4j.additivity.http.openapi.operation.healthy=false
+log4j.logger.http.openapi.operation.ready=WARN, out
+log4j.additivity.http.openapi.operation.ready=false
+```
+The log level of all other operations is set to `INFO` by default.
 
 Use the `logging` property to configure loggers and logger levels.
 
