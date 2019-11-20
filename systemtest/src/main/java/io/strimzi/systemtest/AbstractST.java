@@ -846,6 +846,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param namespace cluster namespace
      * @param clusterName cluster name
      * @param topicName topic name
+     * @param consumerGroup consumer group
      * @throws Exception
      */
     public void waitForClusterAvailability(String namespace, String clusterName, String topicName, String consumerGroup) throws Exception {
