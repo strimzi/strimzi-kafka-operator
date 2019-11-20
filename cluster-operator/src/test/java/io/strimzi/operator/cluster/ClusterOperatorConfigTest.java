@@ -30,10 +30,10 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
     }
 
     @Test
@@ -43,7 +43,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
@@ -63,7 +63,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testEnvVars() {
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(30_000L));
@@ -76,7 +76,7 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = envWithImages();
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
@@ -85,10 +85,10 @@ public class ClusterOperatorConfigTest {
 
     private Map<String, String> envWithImages() {
         Map<String, String> envVars = new HashMap<>(2);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         return envVars;
     }
 
@@ -97,7 +97,7 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo,bar,baz");
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("foo", "bar", "baz"))));
     }
 
@@ -106,7 +106,7 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, " foo ,bar , baz ");
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("foo", "bar", "baz"))));
     }
 
@@ -115,13 +115,13 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.remove(ClusterOperatorConfig.STRIMZI_NAMESPACE);
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("*"))));
     }
 
     @Test
     public void testMinimalEnvVars() {
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envWithImages());
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envWithImages(), KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("*"))));
     }
 
@@ -130,7 +130,7 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "*");
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("*"))));
     }
 
@@ -139,7 +139,7 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, " * ");
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         assertThat(config.getNamespaces(), is(new HashSet<>(asList("*"))));
     }
 
@@ -149,39 +149,39 @@ public class ClusterOperatorConfigTest {
             Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
             envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo,*,bar,baz");
 
-            ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+            ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         });
     }
 
     @Test
     public void testImagePullPolicyNotDefined() {
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(nullValue()));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(nullValue()));
     }
 
     @Test
     public void testImagePullPolicyValidValues() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Always");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "IfNotPresent");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT));
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Never");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.NEVER));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.NEVER));
     }
 
     @Test
     public void testImagePullPolicyUpperLowerCase() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "ALWAYS");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "always");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Always");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS));
     }
 
     @Test
@@ -190,7 +190,7 @@ public class ClusterOperatorConfigTest {
             Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
             envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Sometimes");
 
-            ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+            ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         });
     }
 
@@ -198,10 +198,10 @@ public class ClusterOperatorConfigTest {
     public void testImagePullSecrets() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1,  secret2 ,  secret3    ");
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size(), is(3));
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret1").build()), is(true));
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret2").build()), is(true));
-        assertThat(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret3").build()), is(true));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().size(), is(3));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret1").build()), is(true));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret2").build()), is(true));
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret3").build()), is(true));
     }
 
     @Test
@@ -209,7 +209,7 @@ public class ClusterOperatorConfigTest {
         assertThrows(InvalidConfigurationException.class, () -> {
             Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
             envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1, secret2 , secret_3 ");
-            ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().size();
         });
     }
 
@@ -218,7 +218,7 @@ public class ClusterOperatorConfigTest {
         assertThrows(InvalidConfigurationException.class, () -> {
             Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
             envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "Secret");
-            ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getImagePullSecrets().size();
         });
     }
 }

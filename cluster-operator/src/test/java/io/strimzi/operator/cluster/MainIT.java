@@ -52,12 +52,12 @@ public class MainIT {
         }
         Map<String, String> envVars = new HashMap<>(1);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client, 100);
 

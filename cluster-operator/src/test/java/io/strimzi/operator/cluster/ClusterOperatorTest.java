@@ -58,10 +58,10 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, "2.2.1=foo 2.3.0=foo 2.3.1=foo");
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         return env;
     }
 
@@ -160,7 +160,8 @@ public class ClusterOperatorTest {
         CountDownLatch async = new CountDownLatch(1);
 
         Map<String, String> env = buildEnv(namespaces);
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
             async.countDown();
         });
@@ -211,7 +212,8 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition,
+                Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
         Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> mockResource = mock(Resource.class);
         if (openShift) {
             when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
@@ -238,7 +240,8 @@ public class ClusterOperatorTest {
         CountDownLatch async = new CountDownLatch(1);
 
         Map<String, String> env = buildEnv(namespaces);
-        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup())).setHandler(ar -> {
             context.verify(() -> assertThat("Expected all verticles to start OK", ar.cause(), is(nullValue())));
             async.countDown();
         });
