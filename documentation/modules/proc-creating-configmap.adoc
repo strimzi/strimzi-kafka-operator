@@ -9,8 +9,10 @@ To use a ConfigMap to define logging properties, you create the ConfigMap and th
 
 The ConfigMap must contain the appropriate logging configuration.
 
-* `log4j.properties` for Kafka components
+* `log4j.properties` for Kafka components and the Kafka Bridge
 * `log4j2.properties` for the Topic Operator and User Operator
+
+The configuration must be placed under these properties.
 
 Here we demonstrate how a ConfigMap defines a root logger for a Kafka resource.
 
@@ -31,7 +33,7 @@ metadata:
 data:
   log4j.properties:
   # logger settings for resource
-    kafka.root.logger: "INFO"
+    kafka.root.logger="INFO"
 ----
 +
 From the command line, using a properties file:
@@ -46,7 +48,7 @@ The properties file defines the logging configuration:
 [source,text]
 ----
 # Define the root logger
-kafka.root.logger: "INFO"
+kafka.root.logger="INFO"
 # ...
 ----
 
