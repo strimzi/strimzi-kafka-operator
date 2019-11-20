@@ -880,7 +880,7 @@ class SecurityST extends MessagingBaseST {
     }
 
     @Test
-    void testAclRuleWrite() throws Exception {
+    void testAclRuleReadAndWrite() throws Exception {
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final String topicName = "my-topic-name-1";
