@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -128,17 +128,19 @@ public class KafkaMirrorMakerCrdOperatorIT {
     @Test
     public void testUpdateStatus(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -146,15 +148,17 @@ public class KafkaMirrorMakerCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -166,7 +170,7 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 .build();
 
         log.info("Updating resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.updateStatusAsync(withStatus).setHandler(res -> {
             if (res.succeeded())    {
                 kafkaMirrorMakerOperator.getAsync(namespace, RESOURCE_NAME).setHandler(res2 -> {
@@ -176,7 +180,7 @@ public class KafkaMirrorMakerCrdOperatorIT {
                         context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getType(), is("Ready")));
                         context.verify(() -> assertThat(updated.getStatus().getConditions().get(0).getStatus(), is("True")));
 
-                        updateStatusAsync.complete(true);
+                        updateStatusAsync.countDown();
                     } else {
                         context.failNow(res.cause());
                     }
@@ -185,18 +189,22 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 context.failNow(res.cause());
             }
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -208,17 +216,19 @@ public class KafkaMirrorMakerCrdOperatorIT {
     @Test
     public void testUpdateStatusWhileResourceDeleted(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -226,15 +236,17 @@ public class KafkaMirrorMakerCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -246,23 +258,27 @@ public class KafkaMirrorMakerCrdOperatorIT {
                 .build();
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Updating resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.updateStatusAsync(withStatus).setHandler(res -> {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.complete(true);
+            updateStatusAsync.countDown();
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 
@@ -274,17 +290,19 @@ public class KafkaMirrorMakerCrdOperatorIT {
     @Test
     public void testUpdateStatusWhileResourceUpdated(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         log.info("Getting Kubernetes version");
-        CompletableFuture<Boolean> versionAsync = new CompletableFuture<>();
+        CountDownLatch versionAsync = new CountDownLatch(1);
         AtomicReference<PlatformFeaturesAvailability> pfa = new AtomicReference<>();
         PlatformFeaturesAvailability.create(vertx, client).setHandler(pfaRes -> {
             if (pfaRes.succeeded())    {
                 pfa.set(pfaRes.result());
-                versionAsync.complete(true);
+                versionAsync.countDown();
             } else {
                 context.failNow(pfaRes.cause());
             }
         });
-        versionAsync.get(60, TimeUnit.SECONDS);
+        if (!versionAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         if (pfa.get().getKubernetesVersion().compareTo(KubernetesVersion.V1_11) < 0) {
             log.info("Kubernetes {} is too old", pfa.get().getKubernetesVersion());
@@ -292,15 +310,17 @@ public class KafkaMirrorMakerCrdOperatorIT {
         }
 
         log.info("Creating resource");
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.reconcile(namespace, RESOURCE_NAME, getResource()).setHandler(res -> {
             if (res.succeeded())    {
-                createAsync.complete(true);
+                createAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         KafkaMirrorMaker withStatus = new KafkaMirrorMakerBuilder(kafkaMirrorMakerOperator.get(namespace, RESOURCE_NAME))
                 .withNewStatus()
@@ -322,23 +342,27 @@ public class KafkaMirrorMakerCrdOperatorIT {
         kafkaMirrorMakerOperator.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
 
         log.info("Updating resource status");
-        CompletableFuture<Boolean> updateStatusAsync = new CompletableFuture<>();
+        CountDownLatch updateStatusAsync = new CountDownLatch(1);
         kafkaMirrorMakerOperator.updateStatusAsync(withStatus).setHandler(res -> {
             context.verify(() -> assertThat(res.succeeded(), is(false)));
-            updateStatusAsync.complete(true);
+            updateStatusAsync.countDown();
         });
-        updateStatusAsync.get(60, TimeUnit.SECONDS);
+        if (!updateStatusAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         log.info("Deleting resource");
-        CompletableFuture<Boolean> deleteAsync = new CompletableFuture<>();
+        CountDownLatch deleteAsync = new CountDownLatch(1);
         deleteResource().setHandler(res -> {
             if (res.succeeded()) {
-                deleteAsync.complete(true);
+                deleteAsync.countDown();
             } else {
                 context.failNow(res.cause());
             }
         });
-        deleteAsync.get(60, TimeUnit.SECONDS);
+        if (!deleteAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
         context.completeNow();
     }
 }

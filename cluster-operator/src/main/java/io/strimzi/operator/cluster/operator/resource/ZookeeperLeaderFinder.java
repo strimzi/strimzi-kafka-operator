@@ -112,9 +112,11 @@ public class ZookeeperLeaderFinder {
      * and return the PemKeyCertOptions for using it for TLS authentication.
      */
     protected PemKeyCertOptions keyCertOptions(Secret coCertKeySecret) {
-        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret, "cluster-operator.key", "cluster-operator.crt");
+        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret,
+                                            "cluster-operator.key", "cluster-operator.crt",
+                                        "cluster-operator.p12", "cluster-operator.password");
         if (coCertKey == null) {
-            throw missingSecretFuture(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
+            throw StatefulSetOperator.missingSecretFuture(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
         }
         CertificateFactory x509 = x509Factory();
         try {
@@ -140,7 +142,7 @@ public class ZookeeperLeaderFinder {
         Future<Secret> clusterCaKeySecretFuture = secretOperator.getAsync(namespace, clusterCaSecretName);
         return clusterCaKeySecretFuture.compose(clusterCaCertificateSecret -> {
             if (clusterCaCertificateSecret  == null) {
-                return Future.failedFuture(missingSecretFuture(namespace, clusterCaSecretName));
+                return Future.failedFuture(StatefulSetOperator.missingSecretFuture(namespace, clusterCaSecretName));
             }
             try {
                 NetClientOptions netClientOptions = clientOptions(coKeySecret, clusterCaCertificateSecret);
@@ -151,11 +153,6 @@ public class ZookeeperLeaderFinder {
         });
 
     }
-
-    private RuntimeException missingSecretFuture(String namespace, String secretName) {
-        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
-    }
-
     private Future<Integer> zookeeperLeader(String cluster, String namespace, List<Pod> pods,
                                             NetClientOptions netClientOptions) {
         Future<Integer> result = Future.future();

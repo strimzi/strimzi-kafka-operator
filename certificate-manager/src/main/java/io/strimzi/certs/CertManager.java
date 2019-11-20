@@ -59,6 +59,18 @@ public interface CertManager {
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException;
 
     /**
+     * Add the provided key and certificate to the keystore which is created if it doesn't exist
+     *
+     * @param keyFile path to the file containing the existing private key
+     * @param certFile path to the file which will contain the new signed certificate
+     * @param alias key and certificate alias in the keystore
+     * @param keyStoreFile path to the file related to the keystore
+     * @param keyStorePassword password for protecting the keystore
+     * @throws IOException If an input or output file could not be read/written.
+     */
+    void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException;
+
+    /**
      * Remove entries with provided aliases from the truststore
      *
      * @param aliases aliases to remove

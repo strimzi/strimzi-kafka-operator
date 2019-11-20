@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.StUtils;
@@ -14,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -24,10 +24,8 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -37,6 +35,7 @@ class UserST extends AbstractST {
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
+    @Disabled
     @Test
     void testUserWithNameMoreThan64Chars() {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
@@ -47,29 +46,39 @@ class UserST extends AbstractST {
         testMethodResources().tlsUser(CLUSTER_NAME, userWithCorrectName).done();
         StUtils.waitForSecretReady(userWithCorrectName);
 
-        String messageUserWasAdded = "User " + userWithCorrectName + " in namespace " + NAMESPACE + " was ADDED";
-        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
-        // Checking UO logs
-        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        assertThat(uOlogs, containsString(messageUserWasAdded));
-        assertThat(uOlogs, not(containsString(errorMessage)));
+        Condition condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
+        LOGGER.info(condition.getMessage() != null);
+
+        verifyCRStatusCondition(condition,
+                "True",
+                "Ready");
 
         // Create sasl user with long name
         testMethodResources().scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
-        StUtils.waitForSecretReady(saslUserWithLongName);
 
-        // Checking UO logs
-        uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
-        messageUserWasAdded = "User " + saslUserWithLongName + " in namespace " + NAMESPACE + " was ADDED";
-        assertThat(uOlogs, containsString(messageUserWasAdded));
-        assertThat(uOlogs, not(containsString(errorMessage)));
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
 
-        // Create user with long name
+        condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
+
+        verifyCRStatusCondition(condition,
+                "must be no more than 63 characters",
+                "KubernetesClientException",
+                "True",
+                "NotReady");
+
         testMethodResources().tlsUser(CLUSTER_NAME, userWithLongName).done();
-        // Checking UO logs
-        StUtils.waitForKafkaUserCreationError(userWithLongName, entityOperatorPodName);
+
+        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
+
+        condition = testMethodResources().kafkaUser().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
+
+        verifyCRStatusCondition(condition,
+                "must be no more than 63 characters",
+                "KubernetesClientException",
+                "True",
+                "NotReady");
     }
 
     @Test

@@ -124,9 +124,9 @@ class KafkaClientProperties {
         try {
             Secret clusterCaCertSecret = kubeClient(namespace).getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
 
-            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("truststore.password")), StandardCharsets.US_ASCII);
+            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("ca.password")), StandardCharsets.US_ASCII);
             File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
-            String truststore = clusterCaCertSecret.getData().get("truststore.p12");
+            String truststore = clusterCaCertSecret.getData().get("ca.p12");
             Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
             tsFile.deleteOnExit();
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");

@@ -168,7 +168,9 @@ public class SimpleAclOperatorTest {
             }
             async.flag();
         });
-        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 
     @Test
@@ -222,7 +224,9 @@ public class SimpleAclOperatorTest {
             async.flag();
 
         });
-        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 
     @Test
@@ -260,6 +264,8 @@ public class SimpleAclOperatorTest {
 
             async.flag();
         });
-        assertThat(context.awaitCompletion(60, TimeUnit.SECONDS), is(true));
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
     }
 }

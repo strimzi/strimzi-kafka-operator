@@ -54,7 +54,7 @@ public class SecretCertProviderTest {
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
                 "ca.key", "ca.crt",
                 key, cert,
-                "truststore.p12", "truststore.password",
+                "ca.p12", "ca.password",
                 store, "123456",
                 emptyMap(), emptyMap(), ownerReference);
 
@@ -65,8 +65,8 @@ public class SecretCertProviderTest {
         assertThat(secret.getData().size(), is(4));
         assertThat(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("ca.key"))), is(true));
         assertThat(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("ca.crt"))), is(true));
-        assertThat(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("truststore.p12"))), is(true));
-        assertThat(new String(decoder.decode(secret.getData().get("truststore.password"))), is("123456"));
+        assertThat(Arrays.equals(Files.readAllBytes(store.toPath()), decoder.decode(secret.getData().get("ca.p12"))), is(true));
+        assertThat(new String(decoder.decode(secret.getData().get("ca.password"))), is("123456"));
 
         key.delete();
         cert.delete();

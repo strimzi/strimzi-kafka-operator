@@ -466,6 +466,8 @@ public class ZookeeperCluster extends AbstractModel {
                 CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
                 data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
                 data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
+                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
             }
 
         } catch (IOException e) {

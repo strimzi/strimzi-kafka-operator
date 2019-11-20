@@ -197,7 +197,9 @@ public class TopicOperatorTest {
             }
             async.flag();
         });
-        context.awaitCompletion(60, TimeUnit.SECONDS);
+        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         return topicOperator;
     }
