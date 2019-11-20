@@ -10,8 +10,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -45,11 +46,13 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserWithMissingRequired() {
-        try {
-            createDelete(KafkaUser.class, "KafkaUser-with-missing-required.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.authentication in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaUser.class, "KafkaUser-with-missing-required.yaml");
+            });
+
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.authentication in body is required"));
     }
 
     @BeforeAll
