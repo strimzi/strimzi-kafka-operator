@@ -885,6 +885,7 @@ class SecurityST extends MessagingBaseST {
         final String kafkaUserRead = "kafka-user-read";
         final String topicName = "my-topic-name-1";
         final int numberOfMessages = 500;
+        final String consumerGroupName = "consumer-group-name-1";
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME,  3, 1)
             .editMetadata()
@@ -931,7 +932,7 @@ class SecurityST extends MessagingBaseST {
 
         sendMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite);
 
-        assertThrows(ExecutionException.class, () -> receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite));
+        assertThrows(ExecutionException.class, () -> receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
 
         testMethodResources().tlsUser(CLUSTER_NAME, kafkaUserRead)
                 .editSpec()
@@ -944,7 +945,7 @@ class SecurityST extends MessagingBaseST {
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleGroupResource()
-                                .withName("*")
+                                .withName(consumerGroupName)
                             .endAclRuleGroupResource()
                             .withOperation(AclOperation.READ)
                         .endAcl()
@@ -960,7 +961,7 @@ class SecurityST extends MessagingBaseST {
 
         StUtils.waitForSecretReady(kafkaUserRead);
 
-        receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead);
+        receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead, consumerGroupName);
 
         LOGGER.info("Checking kafka user:{} that is not able to send messages to topic:{}", kafkaUserRead, topicName);
         assertThrows(ExecutionException.class, () -> sendMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead));

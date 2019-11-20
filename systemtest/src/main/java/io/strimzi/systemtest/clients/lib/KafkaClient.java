@@ -8,6 +8,7 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -98,13 +99,13 @@ public class KafkaClient implements AutoCloseable {
      * @param messageCount message count
      * @return future with received message count
      */
-    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) {
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount, String consumerGroup) {
         String clientName = "receiver-plain-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, consumerGroup), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -112,6 +113,18 @@ public class KafkaClient implements AutoCloseable {
             resultPromise.completeExceptionally(e);
         }
         return resultPromise;
+    }
+
+    /**
+     * Receive messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param messageCount message count
+     * @return future with received message count
+     */
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) {
+        return receiveMessages(topicName, namespace, clusterName, messageCount, "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
     }
 
     /**
@@ -124,12 +137,25 @@ public class KafkaClient implements AutoCloseable {
      * @return future with received message count
      */
     public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount, String securityProtocol) {
+        return receiveMessagesTls(topicName, namespace, clusterName, userName, messageCount, securityProtocol, "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+    }
+
+    /**
+     * Receive messages to external entrypoint of the cluster with SSL security protocol setting
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param messageCount message count
+     * @return future with received message count
+     */
+    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount, String securityProtocol, String consumerGroup) {
         String clientName = "receiver-ssl-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, securityProtocol, consumerGroup), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -153,7 +179,6 @@ public class KafkaClient implements AutoCloseable {
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, securityProtocol), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }

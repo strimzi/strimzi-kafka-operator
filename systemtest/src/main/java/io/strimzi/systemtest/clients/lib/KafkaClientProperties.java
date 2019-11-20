@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.Random;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.test.BaseITST.kubeClient;
@@ -79,8 +78,8 @@ class KafkaClientProperties {
      * @param clusterName kafka cluster name
      * @return consumer configuration
      */
-    static Properties createConsumerProperties(String namespace, String clusterName) {
-        return createConsumerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
+    static Properties createConsumerProperties(String namespace, String clusterName, String consumerGroup) {
+        return createConsumerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup);
     }
 
     /**
@@ -91,10 +90,9 @@ class KafkaClientProperties {
      * @param securityProtocol security protocol
      * @return consumer configuration
      */
-    static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol, String consumerGroup) {
         Properties consumerProperties = new Properties();
-        consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
-                "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+        consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
         consumerProperties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 getExternalBootstrapConnect(namespace, clusterName));
         consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
