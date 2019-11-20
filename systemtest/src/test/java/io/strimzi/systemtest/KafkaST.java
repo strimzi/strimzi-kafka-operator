@@ -579,6 +579,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
         StUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
         StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -840,6 +841,9 @@ class KafkaST extends MessagingBaseST {
 
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
+
+        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
@@ -851,6 +855,9 @@ class KafkaST extends MessagingBaseST {
         replaceTopicResource("topic-from-cli", topic -> {
             topic.getSpec().setPartitions(2);
         });
+
+        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
@@ -2041,6 +2048,7 @@ class KafkaST extends MessagingBaseST {
 
         StUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
         StUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
+        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         pvcs = kubeClient().listPersistentVolumeClaims();
 

@@ -1020,6 +1020,15 @@ public class StUtils {
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
 
+    public static void waitUntilKafkaCRIsReady(String clusterName) {
+        LOGGER.info("Waiting till Kafka CR will be ready");
+        TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () ->   Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals("Ready") &&
+                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getStatus().equals("True")
+        );
+        LOGGER.info("Kafka CR will be ready");
+    }
+
     public static void waitUntilKafkaStatusConditionIsPresent(String clusterName) {
         LOGGER.info("Waiting till kafka resource status is present");
         TestUtils.waitFor("Waiting for Kafka resource status is ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
