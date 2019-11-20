@@ -22,8 +22,8 @@ import java.util.List;
     generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-@EqualsAndHashCode
-public class IngressListenerConfiguration extends KafkaExternalListenerConfiguration {
+@EqualsAndHashCode(callSuper = true)
+public class IngressListenerConfiguration extends KafkaListenerExternalConfiguration {
     private static final long serialVersionUID = 1L;
 
     private IngressListenerBootstrapConfiguration bootstrap;

@@ -512,31 +512,33 @@ public class KafkaCluster extends AbstractModel {
                 validateOauth((KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth(), "TLS listener");
             }
 
-            if (listeners.getExternal() != null && result.isExposedWithIngress()) {
-                if (((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration() != null &&
-                        ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                    result.setSecretSource(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey());
+            if (listeners.getExternal() != null) {
+                if (result.isExposedWithIngress()) {
+                    if (((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration() != null &&
+                            ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey() != null) {
+                        result.setSecretSource(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey());
+                    }
                 }
-            }
 
-            if (listeners.getExternal() != null && result.isExposedWithNodePort()) {
-                if (((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration() != null &&
-                        ((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                    result.setSecretSource(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey());
+                if (result.isExposedWithNodePort()) {
+                    if (((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration() != null &&
+                            ((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey() != null) {
+                        result.setSecretSource(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey());
+                    }
                 }
-            }
 
-            if (listeners.getExternal() != null && result.isExposedWithLoadBalancer()) {
-                if (((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration() != null &&
-                        ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                    result.setSecretSource(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey());
+                if (result.isExposedWithLoadBalancer()) {
+                    if (((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration() != null &&
+                            ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey() != null) {
+                        result.setSecretSource(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey());
+                    }
                 }
-            }
 
-            if (listeners.getExternal() != null && result.isExposedWithRoute()) {
-                if (((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration() != null &&
-                        ((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                    result.setSecretSource(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey());
+                if (result.isExposedWithRoute()) {
+                    if (((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration() != null &&
+                            ((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey() != null) {
+                        result.setSecretSource(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey());
+                    }
                 }
             }
 
