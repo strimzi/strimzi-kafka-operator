@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.utils.TestExecutionWatcher;
@@ -81,6 +82,7 @@ import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -1055,6 +1057,20 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             });
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    protected void verifyCRStatusCondition(Condition condition, String status, String type) {
+        verifyCRStatusCondition(condition, null, null, status, type);
+    }
+
+    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, String type) {
+        assertThat(condition.getStatus(), is(status));
+        assertThat(condition.getType(), is(type));
+
+        if (condition.getMessage() != null && condition.getReason() != null) {
+            assertThat(condition.getMessage(), containsString(message));
+            assertThat(condition.getReason(), is(reason));
         }
     }
 }

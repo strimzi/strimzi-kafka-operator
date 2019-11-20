@@ -260,7 +260,9 @@ public class ZookeeperLeaderFinderTest {
                         .withNamespace(NAMESPACE)
                         .endMetadata()
                         .withData(map("cluster-operator.key", "notacert",
-                                "cluster-operator.crt", "notacert"))
+                                "cluster-operator.crt", "notacert",
+                                "cluster-operator.p12", "notatruststore",
+                                "cluster-operator.password", "notapassword"))
                         .build()).cause();
         assertThat(cause instanceof RuntimeException, is(true));
         assertThat(cause.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns"));

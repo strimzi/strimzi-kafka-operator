@@ -110,6 +110,8 @@ public class ResourceUtils {
                 .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
                 .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
+                .addToData("user.p12", Base64.getEncoder().encodeToString("expected-p12".getBytes()))
+                .addToData("user.password", Base64.getEncoder().encodeToString("expected-password".getBytes()))
                 .build();
     }
 

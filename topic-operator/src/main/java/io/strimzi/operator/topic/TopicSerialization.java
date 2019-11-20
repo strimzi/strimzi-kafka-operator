@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -20,14 +19,12 @@ import org.apache.kafka.common.config.ConfigResource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static java.lang.String.format;
 
@@ -207,18 +204,17 @@ class TopicSerialization {
      * to the {@link Config} of the given topic.
      * @return
      */
-    public static Map<ConfigResource, Collection<AlterConfigOp>> toTopicConfig(Topic topic) {
-        Set<AlterConfigOp> alterConfigOps = new HashSet<>();
+    public static Map<ConfigResource, Config> toTopicConfig(Topic topic) {
+        List<ConfigEntry> entries = new ArrayList<>(topic.getConfig().size());
 
         for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
             ConfigEntry configEntry = new ConfigEntry(entry.getKey(), entry.getValue());
-            AlterConfigOp alterConfigOp = new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET);
-            alterConfigOps.add(alterConfigOp);
+            entries.add(configEntry);
         }
 
         return Collections.singletonMap(
                 new ConfigResource(ConfigResource.Type.TOPIC, topic.getTopicName().toString()),
-                alterConfigOps);
+                new Config(entries));
     }
 
     /**

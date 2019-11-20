@@ -5,7 +5,7 @@
 [id='con-kafka-bridge-authentication-{context}']
 = Authentication support in Kafka Bridge
 
-Authentication is configured through the `authentication` property in `KafkaBridge.spec.kafka`.
+Authentication is configured through the `authentication` property in `KafkaBridge.spec`.
 The `authentication` property specifies the type of the authentication mechanisms which should be used and additional configuration details depending on the mechanism.
 The currently supported authentication types are:
 

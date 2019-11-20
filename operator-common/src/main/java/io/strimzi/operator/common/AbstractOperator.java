@@ -48,7 +48,7 @@ public abstract class AbstractOperator<
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
-    private static final int LOCK_TIMEOUT_MS = 10;
+    protected static final int LOCK_TIMEOUT_MS = 10000;
     protected final Vertx vertx;
     protected final S resourceOperator;
     private final String kind;

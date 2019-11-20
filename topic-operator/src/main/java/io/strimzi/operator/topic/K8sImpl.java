@@ -89,7 +89,7 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
-                if (!Boolean.TRUE.equals(operation().inNamespace(namespace).withName(resourceName.toString()).delete())) {
+                if (!Boolean.TRUE.equals(operation().inNamespace(namespace).withName(resourceName.toString()).cascading(true).delete())) {
                     LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
                     future.complete();
                 } else {

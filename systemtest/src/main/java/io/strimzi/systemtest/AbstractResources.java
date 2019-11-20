@@ -123,7 +123,7 @@ abstract class AbstractResources {
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
-    MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
+    public MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
         return client()
                 .customResources(Crds.kafkaUser(),
                         KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
