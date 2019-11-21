@@ -101,14 +101,18 @@ class Property implements AnnotatedElement {
                     && method.getParameterCount() == 0
                     && !returnType.equals(void.class);
             boolean isNotInherited = !hasMethod(CustomResource.class, method)
-                    && !hasMethod(HasMetadata.class, method);
+                    && !hasMethod(HasMetadata.class, method)
+                    && !method.isBridge();
             boolean isNotIgnored = !hasJsonIgnore(method)
                     && !hasAnyGetter(method);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {
                 Property property = new Property(method);
-                unordered.put(property.getName(), property);
+                Property existing = unordered.put(property.getName(), property);
+                if (existing != null) {
+                    throw new RuntimeException("Duplicate property " + method.getName());
+                }
             }
         }
         for (Field field : crdClass.getFields()) {
@@ -116,7 +120,10 @@ class Property implements AnnotatedElement {
             boolean isNotIgnored = !field.isAnnotationPresent(JsonIgnore.class);
             if (isProperty && isNotIgnored) {
                 Property property = new Property(field);
-                unordered.put(property.getName(), property);
+                Property existing = unordered.put(property.getName(), property);
+                if (existing != null) {
+                    throw new RuntimeException("Duplicate property " + field.getName());
+                }
             }
         }
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
