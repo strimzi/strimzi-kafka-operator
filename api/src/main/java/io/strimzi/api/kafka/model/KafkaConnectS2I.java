@@ -15,7 +15,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -78,7 +80,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPreserving {
+public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectS2Istatus> {
 
     private static final long serialVersionUID = 1L;
 
@@ -138,6 +140,7 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
         this.spec = spec;
     }
 
+    @Override
     @Description("The status of the Kafka Connect Source-to-Image (S2I) cluster.")
     public KafkaConnectS2Istatus getStatus() {
         return status;

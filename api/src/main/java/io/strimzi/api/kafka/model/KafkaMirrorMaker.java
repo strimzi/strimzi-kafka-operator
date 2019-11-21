@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -90,7 +91,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyPreserving {
+public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaMirrorMakerStatus> {
 
     private static final long serialVersionUID = 1L;
 
@@ -143,6 +144,7 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
         this.spec = spec;
     }
 
+    @Override
     @Description("The status of Kafka Mirror Maker.")
     public KafkaMirrorMakerStatus getStatus() {
         return status;

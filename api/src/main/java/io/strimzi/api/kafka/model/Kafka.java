@@ -14,6 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -75,7 +76,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class Kafka extends CustomResource implements UnknownPropertyPreserving {
+public class Kafka extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaStatus> {
 
     public static final String V1BETA1 = "v1beta1";
     public static final String V1ALPHA1 = "v1alpha1";
@@ -134,6 +135,7 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
         this.spec = spec;
     }
 
+    @Override
     @Description("The status of the Kafka and ZooKeeper clusters, and Topic Operator.")
     public KafkaStatus getStatus() {
         return status;
