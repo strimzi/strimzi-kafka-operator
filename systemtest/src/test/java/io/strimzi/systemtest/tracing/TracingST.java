@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.tracing;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -12,9 +13,15 @@ import io.restassured.response.Response;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.util.Arrays;
@@ -46,11 +54,12 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(REGRESSION)
 @Tag(TRACING)
-@Tag(REGRESSION)
+@ExtendWith(VertxExtension.class)
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
+
     private static final String JI_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-instance/";
     private static final String JO_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-operator/";
 
@@ -60,6 +69,12 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
     private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-target-connect";
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
+    private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
+    private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
+
+    private static final String JAEGER_AGENT_NAME = "my-jaeger-agent";
+    private static final String JAEGER_SAMPLER_TYPE = "const";
+    private static final String JAEGER_SAMPLER_PARAM = "1";
 
     private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
@@ -164,19 +179,19 @@ public class TracingST extends AbstractST {
                         .withNewConnectContainer()
                             .addNewEnv()
                                 .withName("JAEGER_SERVICE_NAME")
-                                .withValue("my-target-connect")
+                                .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue("my-jaeger-agent")
+                                .withValue(JAEGER_AGENT_NAME)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue("const")
+                                .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue("1")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endConnectContainer()
                     .endTemplate()
@@ -478,19 +493,19 @@ public class TracingST extends AbstractST {
                         .withNewMirrorMakerContainer()
                             .addNewEnv()
                                 .withNewName("JAEGER_SERVICE_NAME")
-                                .withValue("my-mirror-maker")
+                                .withValue(JAEGER_MIRROR_MAKER_SERVICE)
                             .endEnv()
                             .addNewEnv()
                                 .withNewName("JAEGER_AGENT_HOST")
-                                .withValue("my-jaeger-agent")
+                                .withValue(JAEGER_AGENT_NAME)
                             .endEnv()
                             .addNewEnv()
                                 .withNewName("JAEGER_SAMPLER_TYPE")
-                                .withValue("const")
+                                .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withNewName("AEGER_SAMPLER_PARAM")
-                                .withValue("1")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endMirrorMakerContainer()
                     .endTemplate()
@@ -584,15 +599,15 @@ public class TracingST extends AbstractST {
                             .endEnv()
                             .addNewEnv()
                                 .withNewName("JAEGER_AGENT_HOST")
-                                .withValue("my-jaeger-agent")
+                                .withValue(JAEGER_AGENT_NAME)
                             .endEnv()
                             .addNewEnv()
                                 .withNewName("JAEGER_SAMPLER_TYPE")
-                                .withValue("const")
+                                .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
-                                .withNewName("AEGER_SAMPLER_PARAM")
-                                .withValue("1")
+                                .withNewName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endMirrorMakerContainer()
                     .endTemplate()
@@ -636,19 +651,19 @@ public class TracingST extends AbstractST {
                         .withNewConnectContainer()
                             .addNewEnv()
                                 .withName("JAEGER_SERVICE_NAME")
-                                .withValue("my-target-connect")
+                                .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue("my-jaeger-agent")
+                                .withValue(JAEGER_AGENT_NAME)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue("const")
+                                .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue("1")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endConnectContainer()
                     .endTemplate()
@@ -729,15 +744,15 @@ public class TracingST extends AbstractST {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue("my-jaeger-agent")
+                                .withValue(JAEGER_AGENT_NAME)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue("const")
+                                .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue("1")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endConnectContainer()
                     .endTemplate()
@@ -765,6 +780,74 @@ public class TracingST extends AbstractST {
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
         StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+    }
+
+    @Test
+    void testKafkaBridgeService(Vertx vertx) throws Exception {
+        WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        .editSpec()
+            .editKafka()
+                .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                        .withTls(false)
+                    .endKafkaListenerExternalNodePort()
+                .endListeners()
+            .endKafka()
+        .endSpec()
+        .done();
+
+        // Deploy http bridge
+        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                        .withNewTemplate()
+                            .withNewBridgeContainer()
+                                .addNewEnv()
+                                    .withName("JAEGER_SERVICE_NAME")
+                                    .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("JAEGER_AGENT_HOST")
+                                    .withValue(JAEGER_AGENT_NAME)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("JAEGER_SAMPLER_TYPE")
+                                    .withValue(JAEGER_SAMPLER_TYPE)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("JAEGER_SAMPLER_PARAM")
+                                    .withValue(JAEGER_SAMPLER_PARAM)
+                                .endEnv()
+                            .endBridgeContainer()
+                        .endTemplate()
+                .endSpec()
+                .done();
+
+        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
+        testMethodResources().createServiceResource(service, NAMESPACE).done();
+        StUtils.waitForNodePortService(BRIDGE_EXTERNAL_SERVICE);
+
+        int bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
+        String bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+
+        int messageCount = 50;
+        String topicName = "topic-simple-send";
+
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
+        BridgeUtils.checkSendResponse(response, messageCount);
+        receiveMessagesExternal(NAMESPACE, topicName, messageCount);
+
+        HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
+        verifyServiceIsPresent(JAEGER_KAFKA_BRIDGE_SERVICE);
+
+        HttpUtils.waitUntilServiceHasSomeTraces(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);
+        verifyServicesHasSomeTraces(JAEGER_KAFKA_BRIDGE_SERVICE);
     }
 
     private void verifyServiceIsPresent(String serviceName) {

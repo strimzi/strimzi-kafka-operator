@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
@@ -53,7 +54,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        checkSendResponse(response, messageCount);
+        BridgeUtils.checkSendResponse(response, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
 
         // Checking labels for Kafka Bridge
@@ -211,13 +212,11 @@ class HttpBridgeST extends HttpBridgeBaseST {
         // Deploy http bridge
         testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
 
-        deployBridgeNodePortService();
+        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
+        testClassResources().createServiceResource(service, NAMESPACE).done();
+        StUtils.waitForNodePortService(bridgeExternalService);
+
         bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
-    }
-
-    @Override
-    public String getBridgeNamespace() {
-        return NAMESPACE;
     }
 }
