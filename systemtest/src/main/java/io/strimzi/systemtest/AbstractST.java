@@ -652,7 +652,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param operationTimeout timeout for CO operations
      */
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
-        testClassResources.deleteResources();
+        if (testClassResources != null) {
+            testClassResources.deleteResources();
+        }
 
         deleteClusterOperatorInstallFiles();
         deleteNamespaces();
@@ -968,7 +970,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     protected void tearDownEnvironmentAfterAll() {
-        testClassResources.deleteResources();
+        if (testClassResources != null) {
+            testClassResources.deleteResources();
+        }
     }
 
     @AfterEach

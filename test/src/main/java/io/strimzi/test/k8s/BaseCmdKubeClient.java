@@ -81,8 +81,10 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     private List<String> namespacedCommand(List<String> rest) {
         List<String> result = new ArrayList<>();
         result.add(cmd());
-        result.add("--namespace");
-        result.add(namespace);
+        if (namespace != null) {
+            result.add("--namespace");
+            result.add(namespace);
+        }
         result.addAll(rest);
         return result;
     }
