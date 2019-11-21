@@ -22,6 +22,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
 
@@ -311,10 +312,38 @@ public class CrdGenerator {
         }
 
         result.set("properties", buildSchemaProperties(crdClass));
+        ArrayNode oneOf = buildSchemaOneOf(crdClass);
+        if (oneOf != null) {
+            result.set("oneOf", oneOf);
+        }
         ArrayNode required = buildSchemaRequired(crdClass);
         if (required.size() > 0) {
             result.set("required", required);
         }
+    }
+
+    private ArrayNode buildSchemaOneOf(Class<?> crdClass) {
+        ArrayNode alternatives;
+        OneOf oneOf = crdClass.getAnnotation(OneOf.class);
+        if (oneOf != null && oneOf.value().length > 0) {
+            alternatives = nf.arrayNode();
+            for (OneOf.Alternative alt : oneOf.value()) {
+                ObjectNode alternative = alternatives.addObject();
+                ObjectNode properties = alternative.putObject("properties");
+                for (OneOf.Alternative.Property prop: alt.value()) {
+                    properties.putObject(prop.value());
+                }
+                ArrayNode required = alternative.putArray("required");
+                for (OneOf.Alternative.Property prop: alt.value()) {
+                    if (prop.required()) {
+                        required.add(prop.value());
+                    }
+                }
+            }
+        } else {
+            alternatives = null;
+        }
+        return alternatives;
     }
 
     private void checkClass(Class<?> crdClass) {
