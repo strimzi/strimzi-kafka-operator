@@ -21,5 +21,12 @@ Communication is always encrypted for communication between:
 You can also configure TLS between Kafka brokers and clients by applying mutual TLS encryption to the listeners of the Kafka broker.
 TLS is specified for external clients when configuring an external listener.
 
-The Cluster Operator sets up certificates to enable encryption and authentication using TLS.
+{ProductName} components and Kafka clients use private keys and public key certificates for encryption.
+The Cluster Operator sets up certificates to enable encryption within the Kafka cluster.
+
+An SSL Certificate Authority (CA) verifies the certificates.
+
+* {ProductName} component certificates are verified by the _cluster CA_ Certificate Authority (CA)
+* Kafka client certificates are verified by the _clients CA_ Certificate Authority (CA)
+
 As ZooKeeper does not have native support for TLS, a _TLS sidecar_ deployment with ZooKeeper allows the Cluster Operator to provide data encryption and authentication between ZooKeeper nodes in a cluster.
