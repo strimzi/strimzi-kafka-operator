@@ -95,15 +95,15 @@ public class AbstractModelTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    private ResourceRequirements getResourceLimit() {
+    private ResourceRequirements getResourceRequest() {
         return new ResourceRequirementsBuilder()
-                .addToLimits("memory", new Quantity("16000000000")).build();
+                .addToRequests("memory", new Quantity("16000000000")).build();
     }
 
     @Test
     public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
         Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L, getResourceLimit());
+                0.5, 5_000_000_000L, getResourceRequest());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.5"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
@@ -112,7 +112,7 @@ public class AbstractModelTest {
     @Test
     public void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = getStringStringMap(null, null,
-                0.7, 10_000_000_000L, getResourceLimit());
+                0.7, 10_000_000_000L, getResourceRequest());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.7"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
