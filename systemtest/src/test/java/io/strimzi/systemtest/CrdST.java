@@ -32,7 +32,8 @@ public class CrdST extends AbstractST {
     public void testNoNonstructualSchemas() {
         List<CustomResourceDefinition> crds = kubeClient().listCustomResourceDefinition();
         List<String> nonstructural = crds.stream().filter(crd -> {
-            return crd.getStatus().getConditions().stream().anyMatch(condition -> {
+            return crd.getSpec().getGroup().endsWith("strimzi.io")
+                && crd.getStatus().getConditions().stream().anyMatch(condition -> {
                 return "NonStructuralSchema".equals(condition.getType())
                         && "True".equals(condition.getStatus());
             });
