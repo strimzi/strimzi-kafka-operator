@@ -68,18 +68,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaWithInvalidResourceMemory() {
-        Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
-            () -> {
-                createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
-            });
-
-        assertThat(exception.getMessage(),
-                containsStringIgnoringCase("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
-    }
-
-    @Test
     public void testKafkaWithEntityOperator() {
         createDelete(Kafka.class, "Kafka-with-entity-operator.yaml");
     }
