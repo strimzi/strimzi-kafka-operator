@@ -288,27 +288,21 @@ public class CrdGenerator {
     private ObjectNode buildValidation(Class<? extends CustomResource> crdClass) {
         ObjectNode result = nf.objectNode();
         // OpenShift Origin 3.10-rc0 doesn't like the `type: object` in schema root
-        result.set("openAPIV3Schema", buildObjectSchema(crdClass, crdClass, false));
+        result.set("openAPIV3Schema", buildObjectSchema(crdClass, crdClass));
         return result;
     }
 
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass) {
-        return buildObjectSchema(annotatedElement, crdClass, true);
-    }
-
-    private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
 
         ObjectNode result = nf.objectNode();
 
-        buildObjectSchema(result, crdClass, printType);
+        buildObjectSchema(result, crdClass);
         return result;
     }
 
-    private void buildObjectSchema(ObjectNode result, Class<?> crdClass, boolean printType) {
+    private void buildObjectSchema(ObjectNode result, Class<?> crdClass) {
         checkClass(crdClass);
-        if (printType) {
-            result.put("type", "object");
-        }
+        result.put("type", "object");
 
         result.set("properties", buildSchemaProperties(crdClass));
         ArrayNode required = buildSchemaRequired(crdClass);
@@ -461,7 +455,7 @@ public class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else  {
-            buildObjectSchema(itemResult, elementType, true);
+            buildObjectSchema(itemResult, elementType);
         }
         return result;
     }
