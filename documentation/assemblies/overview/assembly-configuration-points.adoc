@@ -1,0 +1,35 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+// UserStory: How streams/strimzi  can be configured
+
+[id="configuration-points_{context}"]
+= {ProductName} configuration
+
+A deployment of {ProductName} to a Kubernetes cluster is highly configurable through the application of custom resources.
+Custom resources are created as instances of custom resource definitions (CRDs) to  extend Kubernetes resources.
+
+CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster, and are provided with {ProductName} for each component used in a deployment.
+CRDs and custom resources are defined as YAML files.
+Example YAML files are provided with the {ProductName} distribution.
+
+In this chapter we look at how components are configured through custom resources, some common configuration points, and important configuration options specific to components.
+
+//Intro to custom resources
+include::../../modules/overview/con-configuration-points-resources.adoc[leveloffset=+1]
+
+//Common component configuration points
+include::../../modules/overview/con-configuration-points-common.adoc[leveloffset=+1]
+
+//Kafka/broker configuration points
+include::../../modules/overview/con-configuration-points-broker.adoc[leveloffset=+1]
+
+//MirrorMaker configuration points
+include::../../modules/overview/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
+
+//Kafka Connect configuration points
+include::../../modules/overview/con-configuration-points-connect.adoc[leveloffset=+1]
+
+//Kafka Bridge configuration points
+include::../../modules/overview/con-configuration-points-bridge.adoc[leveloffset=+1]

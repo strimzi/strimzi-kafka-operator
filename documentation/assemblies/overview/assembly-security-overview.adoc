@@ -1,0 +1,24 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+// UserStory: Security options - authorization, authentication and encryption
+
+[id="security-overview_{context}"]
+= Securing Kafka
+//If the assembly covers a task, start the title with a verb in the gerund form, such as Creating or Configuring.
+
+A secure deployment of {ProductName} can encompass:
+
+* Encryption for data exchange
+* Authentication to prove identity
+* Authorization to verify the identity of users
+
+//key points on encryption
+include::../../modules/overview/con-security-configuration-encryption.adoc[leveloffset=+1]
+
+//key points on authentication
+include::../../modules/overview/con-security-configuration-authentication.adoc[leveloffset=+1]
+
+//key points on authorization
+include::../../modules/overview/con-security-configuration-authorization.adoc[leveloffset=+1]

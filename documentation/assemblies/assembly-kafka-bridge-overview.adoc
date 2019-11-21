@@ -10,36 +10,13 @@
 
 [id='assembly-kafka-bridge-overview-{context}']
 = Kafka Bridge overview
+You can use the Kafka Bridge as an interface to make specific types of request to the Kafka cluster.
 
 :context: kafka-bridge-overview
 
-The {ProductName} Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster running on Kubernetes. The API enables such clients to produce and consume messages without the requirement to use the native Kafka protocol.
+include::../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
 
-The API has two main resources -- `consumers` and `topics` -- that are exposed and made accessible through endpoints to interact with consumers and producers in your Kafka cluster. The resources relate only to the Kafka Bridge, not the consumers and producers connected directly to Kafka.
-
-You can:
-
-* Send messages to a topic.
-
-* Create and delete consumers.
-
-* Subscribe consumers to topics, so that they start receiving messages from those topics.
-
-* Unsubscribe consumers from topics.
-
-* Assign partitions to consumers.
-
-* Retrieve messages from topics.
-
-* Commit a list of consumer offsets.
-
-* Seek on a partition, so that a consumer starts receiving messages from the first or last offset position, or a given offset position.
-
-You deploy the Kafka Bridge into your Kubernetes cluster by using the Cluster Operator. For deployment instructions, see xref:deploying-kafka-bridge-str[].
-
-After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your Kubernetes cluster, each named `strimzi-kafka-bridge` by default.
-
-include::../modules/con-supported-clients-kafka-bridge.adoc[leveloffset=+1]
+include::../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+1]
 
 include::../modules/con-securing-kafka-bridge.adoc[leveloffset=+1]
 
@@ -48,5 +25,7 @@ include::../modules/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
 include::../modules/con-requests-kafka-bridge.adoc[leveloffset=+1]
 
 include::../modules/ref-api-resources-kafka-bridge.adoc[leveloffset=+1]
+
+include::../modules/con-deployment-kafka-bridge.adoc[leveloffset=+1]
 
 :context: {parent-context-kafka-bridge-overview}

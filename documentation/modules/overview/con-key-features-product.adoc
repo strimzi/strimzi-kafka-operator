@@ -1,0 +1,20 @@
+// This module is included in:
+//
+// overview/assembly-key-features.adoc
+
+// UserStory: Explain the key features of products
+
+[id="key-features-product_{context}"]
+= How {ProductName} supports Kafka
+//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
+//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+
+{ProductName} provides container images and operators for running Kafka on Kubernetes.
+
+{ProductName} operators simplify the process of:
+
+* Deploying and running Kafka clusters
+* Managing brokers and topics
+* Configuring access to Kafka
+* Securing access to Kafka
+* Upgrading Kafka

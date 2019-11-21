@@ -1,0 +1,37 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+// UserStory: kafka connect configuration
+
+[id="configuration-points-connect_{context}"]
+= Kafka Connect configuration
+//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
+//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+
+A basic Kafka Connect configuration requires a bootstrap address to connect to a kafka cluster and authentication details.
+
+Connectors configuration describes the source input data and target output data to feed into and out of Kafka Connect.
+The external source data must reference specific topics that will store the messages.
+
+Connectors:: Kafka provides two built-in connectors:
++
+--
+* `FileStreamSourceConnector` streams data from an external system to Kafka, reading lines from an input source and sending each line to a Kafka topic.
+* `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
+--
++
+You can create other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain type of external system.
++
+You create a custom Kafka Connect image that uses new Kafka Connect plugins.
+
+Topics:: Each Kafka Connect instance is configured by default with the same:
++
+--
+* Group ID for the Kafka Connect cluster
+* Kafka topic to store the connector offsets
+* Kafka topic to store connector and task status configurations
+* Kafka topic to store connector and task status updates
+--
++
+If separate Kafka Connect instances are used, these settings must reflect each instance.

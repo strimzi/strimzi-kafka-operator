@@ -1,0 +1,19 @@
+<productname>{ProductLongName}</productname>
+<productnumber>{ProductVersion}</productnumber>
+<subtitle>For Use with {ProductName} {ProductVersion}</subtitle>
+<abstract>
+    <para>This Overview provides a brief introduction to the features, components, and functions of {ProductName} {ProductVersion}</para>
+</abstract>
+<authorgroup>
+<!--
+  <org>
+    <orgname>{ProductName} Documentation Team</orgname>
+    <email>{productdocsemail}</email>
+  </org>
+  <org>
+    <orgname>{ProductName} Support Team</orgname>
+    <uri>http://access.redhat.com/support</uri>
+  </org>
+-->
+</authorgroup>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

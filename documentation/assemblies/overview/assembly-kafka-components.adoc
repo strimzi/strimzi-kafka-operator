@@ -1,0 +1,21 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+// UserStory: Describe Kafka components
+
+[id="kafka-components_{context}"]
+= Kafka components
+
+Kafka's supporting components are provided for deployment to Kubernetes with the {ProductName} distribution.
+The Kafka components are generally run as clusters for availability.
+
+A typical deployment incorporating Kafka and its supporting components might include:
+
+* *Kafka* cluster of broker nodes
+* *ZooKeeper* cluster of replicated ZooKeeper instances
+* *Kafka Connect* cluster for external data connections
+* *Kafka MirrorMaker* cluster to mirror the Kafka cluster in a secondary cluster
+* *Kafka Exporter* to extract Kafka metrics data for monitoring.
+
+include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]

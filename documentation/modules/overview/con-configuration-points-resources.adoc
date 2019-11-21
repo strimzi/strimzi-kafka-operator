@@ -1,0 +1,32 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+// UserStory: Common configuration options
+
+[id="configuration-points-resources_{context}"]
+= Custom resources
+
+After a CRD has been created in your cluster, you can create custom resources based on its specification.
+
+The custom resources for {ProductName} components have common configuration properties, which are defined under `spec`.
+
+In this fragment from a Kafka topic custom resource, the `apiVersion` and `kind` properties identify the associated CRD.
+The `spec` property shows configuration that defines the number of partitions and replicas for the topic.
+
+.Kafka topic custom resource
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  / ...
+----
+
+There are many additional configuration options that can be incorporated into a YAML definition, some common and some specific to a particular component.

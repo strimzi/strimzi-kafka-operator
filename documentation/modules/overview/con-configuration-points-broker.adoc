@@ -1,0 +1,33 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+// UserStory: Cluster broker configuration
+
+[id="configuration-points-broker_{context}"]
+= Kafka cluster configuration
+
+A Kafka cluster configuration describes how data is stored and accessed.
+
+Storage::
+Kafka and ZooKeeper store data on disks.
++
+{ProductName} requires block storage and is designed to work optimally with cloud-based block storage solutions.
+Three types of data storage are supported:
++
+* Ephemeral (Recommended for development only)
+* Persistent
+* JBOD (Just a Bunch of Disks, suitable for Kafka only)
++
+The persistent storage capacity used by an existing Kafka cluster can be increased.
+
+Listeners:: The following types of listener are supported:
+Listeners configure how clients connect to a Kafka cluster.
++
+* *Plain listener* that does not use encryption
+* *TLS listener* that uses encryption
+* *External listener* for access outside of Kubernetes
+
+Rack awareness:: You can configure a Kafka cluster to run with multiple broker nodes across _racks_.
++
+Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.

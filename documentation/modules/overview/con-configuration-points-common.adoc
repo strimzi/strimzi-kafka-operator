@@ -1,0 +1,22 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+// UserStory: Common configuration options
+
+[id="configuration-points-common_{context}"]
+= Common configuration
+
+We highlight some of the common configuration options for a resource here.
+xref:security-overview_{context}[Security] and xref:metrics-overview_{context}[metrics collection] might also be adopted where applicable.
+
+Bootstrap servers:: Bootstrap servers are used for host/port connection to a Kafka cluster for:
++
+* Kafka Connect
+* Kafka Bridge
+* Kafka MirrorMaker producers and consumers
+CPU and memory resources:: You request CPU and memory resources for components.
+Logging:: You define the logging level for the component. Logging can be defined directly (inline) or externally using a config map.
+Healthchecks:: Healthcheck configuration introduces liveness and readiness probes to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+JVM options:: JVM options provide maximum and minimum memory allocation to optimize the performance of the component according to the platform it is running on.
+Pod scheduling:: Pod schedules use _affinity/anti-affinity_ rules to determine under what circumstances a pod is scheduled onto a node.

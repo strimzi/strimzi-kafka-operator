@@ -1,0 +1,14 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-security-overview.adoc
+
+// UserStory: Securing Kafka -- authorization
+
+[id="security-configuration-authorization_{context}"]
+= Authorization
+You can apply simple authorization to a Kafka cluster.
+If applied to a Kafka cluster, simple authorization is enabled for all listeners used for client connection.
+
+Simple authorization uses Access Control Lists (ACLs) to define which users have access to which resources.
+
+_Super users_ provide user access to all resources in a Kafka cluster or to a specific broker.

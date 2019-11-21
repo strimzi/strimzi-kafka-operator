@@ -1,0 +1,15 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+// UserStory: kafka connect configuration
+
+[id="configuration-points-bridge_{context}"]
+= Kafka Bridge configuration
+//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
+//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+
+A Kafka Bridge configuration requires a bootstrap server specification for the Kafka cluster it works with, as well as any encryption and authentication options required.
+Kafka Bridge consumer and producer configuration is common for any type of consumer and producer configuration.
+
+HTTP-related configuration options set the port connection which the server listens on.

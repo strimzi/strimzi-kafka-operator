@@ -1,0 +1,18 @@
+// This assembly is included in:
+//
+// overview/master.adoc
+
+// UserStory: Describe key Kafka concepts
+
+[id="kafka-concepts_{context}"]
+= About Kafka
+A {ProductName} distribution provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
+
+Apache Kafka is an open-source distributed publish-subscribe messaging system for fault-tolerant storage and orchestration of real-time data feeds.
+
+.Additional resources
+
+* For more information about Apache Kafka, see the http://kafka.apache.org[Apache Kafka website^].
+
+include::../../modules/overview/con-kafka-concepts-key.adoc[leveloffset=+1]
+include::../../modules/overview/con-kafka-concepts-producers-consumers.adoc[leveloffset=+1]

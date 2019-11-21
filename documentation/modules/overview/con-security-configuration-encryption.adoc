@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-security-overview.adoc
+
+// UserStory: Securing Kafka -- encryption
+
+[id="security-configuration-encryption_{context}"]
+= Encryption
+//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
+//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+
+{ProductName} supports Transport Layer Security (TLS), a protocol for encrypted communication.
+
+Communication is always encrypted for communication between:
+
+* Kafka brokers
+* ZooKeeper nodes
+* Operators and Kafka brokers
+* Operators and ZooKeeper nodes
+
+You can also configure TLS between Kafka brokers and clients by applying mutual TLS encryption to the listeners of the Kafka broker.
+TLS is specified for external clients when configuring an external listener.
+
+The Cluster Operator sets up certificates to enable encryption and authentication using TLS.
+As ZooKeeper does not have native support for TLS, a _TLS sidecar_ deployment with ZooKeeper allows the Cluster Operator to provide data encryption and authentication between ZooKeeper nodes in a cluster.
