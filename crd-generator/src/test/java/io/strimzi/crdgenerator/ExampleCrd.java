@@ -15,6 +15,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.Map;
         )
     }
     ))
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;
@@ -106,6 +108,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     public List<? extends U> listOfWildcardTypeVar3;
 
     public List<? extends List<? extends U>> listOfWildcardTypeVar4;
+
+    private String either;
+    private String or;
 
 
     @Description("Example of complex type.")

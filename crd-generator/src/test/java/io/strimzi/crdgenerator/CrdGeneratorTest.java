@@ -14,8 +14,7 @@ import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CrdGeneratorTest {
     @Test
@@ -24,7 +23,7 @@ public class CrdGeneratorTest {
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
-        assertThat(CrdTestUtils.readResource("simpleTest.yaml"), is(s));
+        assertEquals(CrdTestUtils.readResource("simpleTest.yaml"), s);
     }
 
     @Test
@@ -39,6 +38,6 @@ public class CrdGeneratorTest {
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
-        assertThat(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), is(s));
+        assertEquals(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), s);
     }
 }
