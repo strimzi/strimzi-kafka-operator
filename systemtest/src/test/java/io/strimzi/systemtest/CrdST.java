@@ -34,9 +34,9 @@ public class CrdST extends AbstractST {
         List<String> nonstructural = crds.stream().filter(crd -> {
             return crd.getSpec().getGroup().endsWith("strimzi.io")
                 && crd.getStatus().getConditions().stream().anyMatch(condition -> {
-                return "NonStructuralSchema".equals(condition.getType())
+                    return "NonStructuralSchema".equals(condition.getType())
                         && "True".equals(condition.getStatus());
-            });
+                });
         }).map(crd -> {
             return crd.getSpec().getNames().getPlural() + "." + crd.getSpec().getGroup();
         }).collect(Collectors.toList());
