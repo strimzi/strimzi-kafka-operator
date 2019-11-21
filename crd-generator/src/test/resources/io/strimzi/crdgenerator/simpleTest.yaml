@@ -25,6 +25,7 @@ spec:
     type: "integer"
   validation:
     openAPIV3Schema:
+      type: "object"
       properties:
         affinity:
           type: "object"
