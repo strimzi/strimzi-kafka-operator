@@ -41,7 +41,6 @@ import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.greaterThan;
 
 @Tag(NODEPORT_SUPPORTED)
@@ -53,6 +52,7 @@ public class TracingST extends AbstractST {
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
     private static final String JI_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-instance/";
+    private static final String JO_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-operator/";
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
@@ -65,19 +65,6 @@ public class TracingST extends AbstractST {
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
 
     private Stack<String> jaegerConfigs = new Stack<>();
-
-    @Test
-    void testJaegerService() {
-
-        given()
-            .when()
-                .relaxedHTTPSValidation()
-                .contentType("application/json").get("/jaeger/api/services")
-            .then()
-                .statusCode(200)
-                .body(anything())
-            .log().all();
-    }
 
     @Test
     void testProducerService() {
@@ -821,11 +808,16 @@ public class TracingST extends AbstractST {
     }
 
     private void deployJaeger() {
-        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/crds/jaegertracing_v1_jaeger_crd.yaml", NAMESPACE));
-        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/service_account.yaml", NAMESPACE));
-        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role.yaml", NAMESPACE));
-        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role_binding.yaml", NAMESPACE));
-        cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/operator.yaml", NAMESPACE));
+        LOGGER.info("=== Applying jaeger operator install files ===");
+
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles())
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+
+        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
+            LOGGER.info("Applying configuration file: {}", entry.getKey());
+            jaegerConfigs.push(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).applyContent(entry.getValue());
+        }
 
         installJaegerInstance();
     }
@@ -849,21 +841,15 @@ public class TracingST extends AbstractST {
     /**
      * Delete Jaeger instance
      */
-    void deleteJaegerInstance() {
+    void deleteJaeger() {
         while (!jaegerConfigs.empty()) {
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).deleteContent(jaegerConfigs.pop());
         }
-        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/crds/jaegertracing_v1_jaeger_crd.yaml", NAMESPACE));
-        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/service_account.yaml", NAMESPACE));
-        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role.yaml", NAMESPACE));
-        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/role_binding.yaml", NAMESPACE));
-        cmdKubeClient().delete(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/master/deploy/operator.yaml", NAMESPACE));
-
     }
 
     @AfterEach
     void tearDown() {
-        deleteJaegerInstance();
+        deleteJaeger();
     }
 
     @BeforeEach
