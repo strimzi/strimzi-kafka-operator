@@ -184,9 +184,13 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
-    public K applyContent(String yamlContent) {
+    public K applyContent(String yamlContent, boolean validate) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
+            List<String> command = namespacedCommand(APPLY, "-f", "-");
+            if (!validate) {
+                command.add("--validate=false");
+            }
+            Exec.exec(yamlContent, command);
             return (K) this;
         }
     }

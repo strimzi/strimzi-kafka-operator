@@ -43,7 +43,7 @@ public abstract class AbstractCrdIT extends BaseITST {
         RuntimeException thrown2 = null;
         try {
             try {
-                cmdKubeClient().applyContent(ssStr);
+                cmdKubeClient().applyContent(ssStr, false);
             } catch (RuntimeException t) {
                 thrown = t;
             }

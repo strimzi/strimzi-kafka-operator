@@ -63,7 +63,11 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Returns an equivalent client, but logged in as cluster admin. */
     K clientWithAdmin();
 
-    K applyContent(String yamlContent);
+    default K applyContent(String yamlContent) {
+        return applyContent(yamlContent, true);
+    }
+
+    K applyContent(String yamlContent, boolean validate);
 
     K deleteContent(String yamlContent);
 
