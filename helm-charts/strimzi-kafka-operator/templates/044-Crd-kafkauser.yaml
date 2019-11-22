@@ -119,8 +119,10 @@ spec:
                   type: integer
                 producerByteRate:
                   type: integer
+                  minimum: 1
                 requestPercentage:
                   type: integer
+                  minimum: 0
         status:
           type: object
           properties:

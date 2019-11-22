@@ -50,28 +50,48 @@ public class KafkaUserQuotasTest {
     @Test
     public void normalCreate() {
         JsonObject quotasJson = new JsonObject();
+        assertThat(kuq.exists("normalCreate"), is(false));
+        assertThat(kuq.getQuotas("normalCreate"), is(nullValue()));
+        assertThat(kuq.isPathExist("/config/users/normalCreate"), is(false));
         quotasJson.put("consumer_byte_rate", "1000");
         quotasJson.put("producer_byte_rate", "2000");
         kuq.createOrUpdate("normalCreate", quotasJson);
+        assertThat(kuq.exists("normalCreate"), is(true));
+        assertThat(kuq.getQuotas("normalCreate").getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
+        assertThat(kuq.getQuotas("normalCreate").getJsonObject("config").getString("producer_byte_rate"), is("2000"));
+        assertThat(kuq.isPathExist("/config/users/normalCreate"), is(true));
     }
 
     @Test
     public void doubleCreate() {
+        assertThat(kuq.isPathExist("/config/users/doublelCreate"), is(false));
+        assertThat(kuq.exists("doubleCreate"), is(false));
+        assertThat(kuq.getQuotas("doubleCreate"), is(nullValue()));
         kuq.createOrUpdate("doubleCreate", quotasJson);
         kuq.createOrUpdate("doubleCreate", quotasJson);
+        assertThat(kuq.exists("doubleCreate"), is(true));
+        assertThat(kuq.getQuotas("doubleCreate").getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
+        assertThat(kuq.getQuotas("doubleCreate").getJsonObject("config").getString("producer_byte_rate"), is("2000"));
+        assertThat(kuq.isPathExist("/config/users/doubleCreate"), is(true));
     }
 
     @Test
     public void normalDelete() {
         kuq.createOrUpdate("normalDelete", quotasJson);
+        assertThat(kuq.isPathExist("/config/users/normalDelete"), is(true));
+        assertThat(kuq.exists("normalDelete"), is(true));
         kuq.delete("normalDelete");
+        assertThat(kuq.exists("normalDelete"), is(false));
     }
 
     @Test
     public void doubleDelete() {
         kuq.createOrUpdate("doubleDelete", quotasJson);
+        assertThat(kuq.isPathExist("/config/users/doubleDelete"), is(true));
+        assertThat(kuq.exists("doubleDelete"), is(true));
         kuq.delete("doubleDelete");
         kuq.delete("doubleDelete");
+        assertThat(kuq.exists("doubleDelete"), is(false));
     }
 
     @Test
@@ -120,21 +140,21 @@ public class KafkaUserQuotasTest {
     @Test
     public void testDeletion()  {
         JsonObject original = new JsonObject().put("version", 1).put("config", quotasJson);
-        JsonObject updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        JsonObject updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("producer_byte_rate", "1000").put("consumer_byte_rate", "2000"));
-        updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
 
         original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
-        updated = new JsonObject(new String(kuq.deleteUserJson(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
+        updated = new JsonObject(new String(kuq.removeQuotasFromJsonUser(original.encode().getBytes(Charset.defaultCharset())), Charset.defaultCharset()));
         assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
         assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
     }

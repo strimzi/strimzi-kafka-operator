@@ -1906,11 +1906,11 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 [options="header"]
 |====
 |Property                  |Description
-|consumerByteRate   1.2+<.<|Sets a quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.
+|consumerByteRate   1.2+<.<|A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.
 |integer
-|producerByteRate   1.2+<.<|Sets a quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.
+|producerByteRate   1.2+<.<|A quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.
 |integer
-|requestPercentage  1.2+<.<|Sets a quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
+|requestPercentage  1.2+<.<|A quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
 |integer
 |====
 

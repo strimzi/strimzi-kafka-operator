@@ -10,7 +10,7 @@ import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -63,7 +63,7 @@ public class KafkaUserQuotas {
             json.getJsonObject("config").put(quota.getKey(), quota.getValue().toString());
         }
 
-        return json.encode().getBytes(Charset.defaultCharset());
+        return json.encode().getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -75,7 +75,7 @@ public class KafkaUserQuotas {
      * @return  Returns the updated JSON as byte array
      */
     protected byte[] updateUserJson(byte[] user, JsonObject quotas)   {
-        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+        JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
 
         validateJsonVersion(json);
 
@@ -86,7 +86,7 @@ public class KafkaUserQuotas {
         for (Map.Entry<String, Object> quota: quotas.getMap().entrySet()) {
             json.getJsonObject("config").put(quota.getKey(), quota.getValue().toString());
         }
-        return json.encode().getBytes(Charset.defaultCharset());
+        return json.encode().getBytes(StandardCharsets.UTF_8);
 
     }
 
@@ -101,7 +101,7 @@ public class KafkaUserQuotas {
         ensurePath("/config/changes");
 
         JsonObject json = new JsonObject().put("version", 2).put("entity_path", "users/" + username);
-        zkClient.createPersistentSequential("/config/changes/config_change_", json.encode().getBytes(Charset.defaultCharset()));
+        zkClient.createPersistentSequential("/config/changes/config_change_", json.encode().getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -116,6 +116,11 @@ public class KafkaUserQuotas {
         }
     }
 
+    /* test */
+    public boolean isPathExist(String path)    {
+        return zkClient.exists(path);
+    }
+
     /**
      * Determine whether the given user has quotas.
      *
@@ -127,7 +132,7 @@ public class KafkaUserQuotas {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            String jsonString = new String(data, Charset.defaultCharset());
+            String jsonString = new String(data, StandardCharsets.UTF_8);
             JsonObject json = new JsonObject(jsonString);
             validateJsonVersion(json);
             JsonObject config = json.getJsonObject("config");
@@ -156,7 +161,7 @@ public class KafkaUserQuotas {
 
         if (data != null)   {
             log.debug("Deleting quotas for user {}", username);
-            zkClient.writeData("/config/users/" + username, deleteUserJson(data));
+            zkClient.writeData("/config/users/" + username, removeQuotasFromJsonUser(data));
             notifyChanges(username);
         } else {
             log.warn("Quotas for user {} already don't exist", username);
@@ -170,32 +175,42 @@ public class KafkaUserQuotas {
      *
      * @return  Returns the updated JSON without the quotas as byte array
      */
-    protected byte[] deleteUserJson(byte[] user)   {
-        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+    protected byte[] removeQuotasFromJsonUser(byte[] user)   {
+        JsonObject json = new JsonObject(new String(user, StandardCharsets.UTF_8));
 
         validateJsonVersion(json);
-
-        if (json.getJsonObject("config") == null)   {
+        JsonObject config = json.getJsonObject("config");
+        if (config == null) {
             json.put("config", new JsonObject());
+        } else {
+            if (config.getString("producer_byte_rate") != null) {
+                config.remove("producer_byte_rate");
+            }
+            if (config.getString("consumer_byte_rate") != null) {
+                config.remove("consumer_byte_rate");
+            }
+            if (config.getString("request_percentage") != null) {
+                config.remove("request_percentage");
+            }
         }
 
-        if (json.getJsonObject("config").getString("producer_byte_rate") != null) {
-            json.getJsonObject("config").remove("producer_byte_rate");
-        }
-        if (json.getJsonObject("config").getString("consumer_byte_rate") != null) {
-            json.getJsonObject("config").remove("consumer_byte_rate");
-        }
-        if (json.getJsonObject("config").getString("request_percentage") != null) {
-            json.getJsonObject("config").remove("request_percentage");
-        }
-
-        return json.encode().getBytes(Charset.defaultCharset());
+        return json.encode().getBytes(StandardCharsets.UTF_8);
     }
 
     protected void validateJsonVersion(JsonObject json) {
         if (json.getInteger("version") != 1) {
             throw new RuntimeException("Failed to validate the user JSON. The version is missing or has an invalid value.");
         }
+    }
+
+    protected JsonObject getQuotas(String username) {
+        byte[] data = zkClient.readData("/config/users/" + username, true);
+        if (data != null) {
+            String jsonString = new String(data, StandardCharsets.UTF_8);
+            JsonObject json = new JsonObject(jsonString);
+            return json;
+        } else return null;
+
     }
 }
 

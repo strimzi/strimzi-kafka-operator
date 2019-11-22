@@ -24,17 +24,21 @@ public class KafkaUserQuotasOperator {
         Future<ReconcileResult<Void>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                boolean exists = quotasManager.exists(username);
-                if (quotas != null) {
-                    quotasManager.createOrUpdate(username, quotas);
-                    future.complete(exists ? ReconcileResult.created(null) : ReconcileResult.patched(null));
-                } else  {
-                    if (exists) {
-                        quotasManager.delete(username);
-                        future.complete(ReconcileResult.deleted());
+                try {
+                    boolean exists = quotasManager.exists(username);
+                    if (quotas != null) {
+                        quotasManager.createOrUpdate(username, quotas);
+                        future.complete(exists ? ReconcileResult.created(null) : ReconcileResult.patched(null));
                     } else {
-                        future.complete(ReconcileResult.noop(null));
+                        if (exists) {
+                            quotasManager.delete(username);
+                            future.complete(ReconcileResult.deleted());
+                        } else {
+                            future.complete(ReconcileResult.noop(null));
+                        }
                     }
+                } catch (Throwable t) {
+                    fut.fail(t);
                 }
             },
             false,

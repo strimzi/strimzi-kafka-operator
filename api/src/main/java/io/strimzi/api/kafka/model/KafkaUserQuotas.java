@@ -6,6 +6,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -35,7 +36,8 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
 
     private Map<String, Object> additionalProperties;
 
-    @Description("Sets a quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.")
+    @Description("A quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.")
+    @Minimum(1)
     public Integer getProducerByteRate() {
         return producerByteRate;
     }
@@ -44,7 +46,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
         this.producerByteRate = producerByteRate;
     }
 
-    @Description("Sets a quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.")
+    @Description("A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.")
     public Integer getConsumerByteRate() {
         return consumerByteRate;
     }
@@ -53,7 +55,8 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
         this.consumerByteRate = consumerByteRate;
     }
 
-    @Description("Sets a quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.")
+    @Description("A quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.")
+    @Minimum(0)
     public Integer getRequestPercentage() {
         return requestPercentage;
     }
