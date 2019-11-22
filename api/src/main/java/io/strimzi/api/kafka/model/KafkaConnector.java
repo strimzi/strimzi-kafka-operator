@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -58,7 +59,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @ToString
-public class KafkaConnector extends CustomResource implements UnknownPropertyPreserving {
+public class KafkaConnector extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectorStatus> {
     private static final long serialVersionUID = 1L;
     public static final String V1ALPHA1 = "v1alpha1";
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
@@ -113,6 +114,7 @@ public class KafkaConnector extends CustomResource implements UnknownPropertyPre
         this.spec = spec;
     }
 
+    @Override
     @Description("The status of the Kafka Connector.")
     public KafkaConnectorStatus getStatus() {
         return status;

@@ -405,7 +405,7 @@ class MockBuilder<T extends HasMetadata,
     private T doCreate(String resourceName, T argument) {
         checkNotExists(resourceName);
         LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-        db.put(resourceName, incrementResourceVersion(copyResource(argument)));
+        db.put(resourceName, incrementGeneration(incrementResourceVersion(copyResource(argument))));
         fireWatchers(resourceName, argument, Watcher.Action.ADDED, "create");
         return copyResource(argument);
     }
@@ -422,9 +422,10 @@ class MockBuilder<T extends HasMetadata,
     protected T incrementGeneration(T resource) {
         Long generation = resource.getMetadata().getGeneration();
         if (generation == null) {
-            generation = 0L;
+            resource.getMetadata().setGeneration(0L);
+        } else {
+            resource.getMetadata().setGeneration(generation + 1);
         }
-        resource.getMetadata().setGeneration(generation + 1);
         return resource;
     }
 

@@ -156,6 +156,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // Compare ignoring resource version
         RT resource = (RT) w.lastEvent().resource;
         resource.getMetadata().setResourceVersion(null);
+        resource.getMetadata().setGeneration(null);
         assertEquals(resource, pod);
         assertThat(mixedOp.apply(client).delete(pod), is(false));
 
@@ -193,6 +194,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(items.size(), is(1));
         RT item = items.get(0);
         item.getMetadata().setResourceVersion(null);
+        item.getMetadata().setGeneration(null);
         assertThat(item, is(pod));
 
         // List with namespace
@@ -204,6 +206,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(items.size(), is(1));
         RT actual = items.get(0);
         actual.getMetadata().setResourceVersion(null);
+        actual.getMetadata().setGeneration(null);
         assertThat(actual, is(pod));
 
         items = mixedOp.apply(client).withLabel("other-label").list().getItems();
@@ -213,6 +216,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(items.size(), is(1));
         RT actual1 = items.get(0);
         actual1.getMetadata().setResourceVersion(null);
+        actual1.getMetadata().setGeneration(null);
         assertThat(actual1, is(pod));
 
         items = mixedOp.apply(client).withLabel("my-label", "bar").list().getItems();
@@ -222,6 +226,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(items.size(), is(1));
         RT actual2 = items.get(0);
         actual2.getMetadata().setResourceVersion(null);
+        actual2.getMetadata().setGeneration(null);
         assertThat(actual2, is(pod));
 
         items = mixedOp.apply(client).withLabels(map("my-label", "foo", "my-other-label", "gee")).list().getItems();
@@ -230,6 +235,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // Get
         RT gotResource = mixedOp.apply(client).withName(pod.getMetadata().getName()).get();
         gotResource.getMetadata().setResourceVersion(null);
+        gotResource.getMetadata().setGeneration(null);
         assertThat(gotResource, is(pod));
 
         // Get with namespace
@@ -241,6 +247,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         assertThat(w.lastEvent().action, is(Watcher.Action.DELETED));
         RT resource = (RT) w.lastEvent().resource;
         resource.getMetadata().setResourceVersion(null);
+        resource.getMetadata().setGeneration(null);
         assertThat(resource, is(pod));
 
         items = mixedOp.apply(client).list().getItems();

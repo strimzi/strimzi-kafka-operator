@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -18,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -34,8 +36,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ConnectorMockTest {
 
-    private static final Logger log = LogManager.getLogger(ConnectorMockTest.class);
     private static final String NAMESPACE = "ns";
 
     private Vertx vertx;
@@ -153,169 +152,89 @@ public class ConnectorMockTest {
         };
     }
 
-    public Predicate<KafkaConnect> connectReady() {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition -> "Ready".equals(condition.getType()));
-        };
+    private static <T extends HasMetadata & HasStatus<?>> Predicate<T> statusIsForCurrentGeneration() {
+        return c -> c.getStatus() != null
+                && c.getMetadata().getGeneration() != null
+                && c.getMetadata().getGeneration().equals(c.getStatus().getObservedGeneration());
     }
 
-    public Predicate<KafkaConnectS2I> connectS2IReady() {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition -> "Ready".equals(condition.getType()));
-        };
+    private static <T extends HasStatus<?>> Predicate<T> notReady(String reason, String message) {
+        return c -> c.getStatus() != null
+                && c.getStatus().getConditions().stream()
+                .anyMatch(condition ->
+                        "NotReady".equals(condition.getType())
+                                && "True".equals(condition.getStatus())
+                                && reason.equals(condition.getReason())
+                                && Objects.equals(message, condition.getMessage())
+                );
     }
 
-    public Predicate<KafkaConnector> connectorReady() {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition -> "Ready".equals(condition.getType()));
-        };
+    private static <T extends HasStatus<?>> Predicate<T> ready() {
+        return c -> c.getStatus() != null
+                && c.getStatus().getConditions().stream()
+                .anyMatch(condition ->
+                        "Ready".equals(condition.getType())
+                                && "True".equals(condition.getStatus())
+                );
+    }
+
+    public <T extends HasMetadata & HasStatus<?>> void waitForStatus(Resource<T, ?> resource, String resourceName, Predicate<T> predicate) {
+        try {
+            resource.waitUntilCondition(predicate, 5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (!(e instanceof TimeoutException)) {
+                throw new RuntimeException(e);
+            }
+            String conditions =
+                    resource.get().getStatus() == null ? "no status" :
+                            String.valueOf(resource.get().getStatus().getConditions());
+            fail(resourceName + " never matched required predicate: " + conditions);
+        }
     }
 
     public void waitForConnectReady(String connectName) {
         Resource<KafkaConnect, DoneableKafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        try {
-            resource.waitUntilCondition(connectReady(), 5, TimeUnit.HOURS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            fail(connectName + " never became ready: " + conditions);
-        }
+        waitForStatus(resource, connectName, ready());
     }
 
-    public void waitForConnectUnready(String connectName, String reason, String message) {
+    public void waitForConnectNotReady(String connectName, String reason, String message) {
         Resource<KafkaConnect, DoneableKafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        try {
-            resource.waitUntilCondition(connectUnreadyWithReason(reason, message), 5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            fail(connectName + " never became unready: " + conditions);
-        }
+        waitForStatus(resource, connectName,
+                ConnectorMockTest.<KafkaConnect>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
     public void waitForConnectS2iReady(VertxTestContext testContext, String connectName) {
         Resource<KafkaConnectS2I, DoneableKafkaConnectS2I> resource = Crds.kafkaConnectS2iOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        try {
-            resource.waitUntilCondition(connectS2IReady(), 5, TimeUnit.HOURS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            testContext.failNow(new AssertionError(connectName + " never became ready: " + conditions));
-        }
+        waitForStatus(resource, connectName, ready());
     }
 
-    public void waitForConnectS2iUnready(String connectName, String reason, String message) {
+    public void waitForConnectS2iNotReady(String connectName, String reason, String message) {
         Resource<KafkaConnectS2I, DoneableKafkaConnectS2I> resource = Crds.kafkaConnectS2iOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        try {
-            resource.waitUntilCondition(connectS2IUnreadyWithReason(reason, message), 5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            fail(connectName + " never became unready: " + conditions);
-        }
+        waitForStatus(resource, connectName,
+                ConnectorMockTest.<KafkaConnectS2I>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
     public void waitForConnectorReady(String connectorName) {
         Resource<KafkaConnector, DoneableKafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
-        try {
-            resource.waitUntilCondition(connectorReady(), 5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                    String.valueOf(resource.get().getStatus().getConditions());
-            fail(connectorName + " never became ready: " + conditions);
-        }
+        waitForStatus(resource, connectorName, ready());
     }
 
-    public void waitForConnectorUnready(String connectorName, String reason, String message) {
+    public void waitForConnectorNotReady(String connectorName, String reason, String message) {
         Resource<KafkaConnector, DoneableKafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
-        try {
-            resource.waitUntilCondition(connectorUnreadyWithReason(reason, message), 5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            fail(connectorName + " never became unready: " + conditions);
-        }
-    }
-
-    public Predicate<KafkaConnect> connectUnreadyWithReason(String reason, String message) {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition ->
-                        "NotReady".equals(condition.getType())
-                            && "True".equals(condition.getStatus())
-                            && reason.equals(condition.getReason())
-                            && Objects.equals(message, condition.getMessage())
-                    );
-        };
-    }
-
-    public Predicate<KafkaConnectS2I> connectS2IUnreadyWithReason(String reason, String message) {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition ->
-                            "NotReady".equals(condition.getType())
-                                    && "True".equals(condition.getStatus())
-                                    && reason.equals(condition.getReason())
-                                    && Objects.equals(message, condition.getMessage())
-                    );
-        };
-    }
-
-    public Predicate<KafkaConnector> connectorUnreadyWithReason(String reason, String message) {
-        return c -> {
-            log.debug(c);
-            return c.getStatus() != null && c.getStatus().getConditions().stream()
-                    .anyMatch(condition ->
-                            "NotReady".equals(condition.getType())
-                                    && "True".equals(condition.getStatus())
-                                    && reason.equals(condition.getReason())
-                                    && Objects.equals(message, condition.getMessage())
-                    );
-        };
+        waitForStatus(resource, connectorName,
+                ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
     @Test
@@ -329,7 +248,7 @@ public class ConnectorMockTest {
                     .withName(connectName)
                 .endMetadata()
                 .done();
-        waitForConnectUnready(connectName, "InvalidResourceException", "spec property is required");
+        waitForConnectNotReady(connectName, "InvalidResourceException", "spec property is required");
         return;
     }
 
@@ -346,7 +265,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(connectorName, "InvalidResourceException",
+        waitForConnectorNotReady(connectorName, "InvalidResourceException",
                 "Resource lacks label 'strimzi.io/cluster': No connect cluster in which to create this connector.");
         return;
     }
@@ -363,7 +282,7 @@ public class ConnectorMockTest {
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "cluster")
                 .endMetadata()
                 .done();
-        waitForConnectorUnready(connectorName, "NoSuchResourceException",
+        waitForConnectorNotReady(connectorName, "NoSuchResourceException",
                 "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
         return;
     }
@@ -393,7 +312,7 @@ public class ConnectorMockTest {
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
                 .endMetadata()
                 .done();
-        waitForConnectorUnready(connectorName, "InvalidResourceException", "spec property is required");
+        waitForConnectorNotReady(connectorName, "InvalidResourceException", "spec property is required");
         return;
     }
 
@@ -423,7 +342,7 @@ public class ConnectorMockTest {
                 .withNewSpec().endSpec()
                 .done();
         assertNotNull(Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).get());
-        waitForConnectorUnready(connectorName, "NoSuchResourceException",
+        waitForConnectorNotReady(connectorName, "NoSuchResourceException",
                 "KafkaConnect cluster is not configured with annotation strimzi.io/use-connector-resources");
     }
 
@@ -498,7 +417,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(connectorName, "NoSuchResourceException",
+        waitForConnectorNotReady(connectorName, "NoSuchResourceException",
             "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
@@ -583,7 +502,7 @@ public class ConnectorMockTest {
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
-        waitForConnectorUnready(connectorName,
+        waitForConnectorNotReady(connectorName,
                 "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
@@ -608,7 +527,7 @@ public class ConnectorMockTest {
                 .withNewSpec()
                 .endSpec()
                 .done();
-        waitForConnectorUnready(connectorName, "NoSuchResourceException",
+        waitForConnectorNotReady(connectorName, "NoSuchResourceException",
                 "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         verify(api, never()).list(
@@ -638,7 +557,7 @@ public class ConnectorMockTest {
         assertEquals(runningConnectors.keySet(), set(connectorName));
 
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName).delete();
-        waitForConnectorUnready(connectorName,
+        waitForConnectorNotReady(connectorName,
                 "NoSuchResourceException", "KafkaConnect resource 'cluster' identified by label 'strimzi.io/cluster' does not exist in namespace ns.");
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).delete();
