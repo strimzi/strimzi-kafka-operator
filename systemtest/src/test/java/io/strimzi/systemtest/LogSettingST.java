@@ -144,12 +144,12 @@ class LogSettingST extends AbstractST {
 
     @Test
     @Order(7)
-    void testGcLoggingNonSetEnabled() {
-        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(true));
-        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(true));
+    void testGcLoggingNonSetDisabled() {
+        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
+        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
 
-        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), is(true));
-        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), is(true));
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), is(false));
+        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), is(false));
     }
 
     @Test
@@ -170,9 +170,9 @@ class LogSettingST extends AbstractST {
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
-        String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String eoName = KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME);
+        String zkName = KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME);
         Map<String, String> connectPods = StUtils.depSnapshot(connectName);
         Map<String, String> mmPods = StUtils.depSnapshot(mmName);
         Map<String, String> eoPods = StUtils.depSnapshot(eoName);
@@ -185,7 +185,7 @@ class LogSettingST extends AbstractST {
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
         entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        replaceKafkaResource(GC_LOGGING_SET_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
             k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
             k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
@@ -193,19 +193,16 @@ class LogSettingST extends AbstractST {
         });
 
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-        replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-
-        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
-        StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
-        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
         StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
+
+        replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
-        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
-        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(false));
+        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
+        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
 
-        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), is(false));
-        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(false));
+        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), is(false));
+        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), is(false));
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
