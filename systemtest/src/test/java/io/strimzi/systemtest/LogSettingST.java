@@ -170,9 +170,9 @@ class LogSettingST extends AbstractST {
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
-        String eoName = KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME);
-        String kafkaName = KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME);
-        String zkName = KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME);
+        String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         Map<String, String> connectPods = StUtils.depSnapshot(connectName);
         Map<String, String> mmPods = StUtils.depSnapshot(mmName);
         Map<String, String> eoPods = StUtils.depSnapshot(eoName);
@@ -185,12 +185,16 @@ class LogSettingST extends AbstractST {
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
         entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
-        replaceKafkaResource(GC_LOGGING_SET_NAME, k -> {
+        replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
             k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
             k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
             k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
         });
+
+        StUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
 
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
@@ -198,11 +202,11 @@ class LogSettingST extends AbstractST {
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
-        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
-        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
+        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
+        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(false));
 
-        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), is(false));
-        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), is(false));
+        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), is(false));
+        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), is(false));
 
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(KafkaConnectResources.deploymentName(CLUSTER_NAME)), is(false));
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
@@ -271,7 +275,7 @@ class LogSettingST extends AbstractST {
 
         setOperationID(startDeploymentMeasuring());
 
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
