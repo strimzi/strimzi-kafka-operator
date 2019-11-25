@@ -24,16 +24,24 @@ import resources.ResourceManager;
 public class KafkaConnectResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectResource.class);
 
-    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../../examples/kafka-connect/kafka-connect.yaml";
-    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../../metrics/examples/kafka/kafka-connect-metrics.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../metrics/examples/kafka/kafka-connect-metrics.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectClient() {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
+    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
+        return kafkaConnect(name, name, kafkaConnectReplicas);
+    }
+
     public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
         return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
+    }
+
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+        return kafkaConnectWithMetrics(name, kafkaConnectReplicas);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
@@ -48,7 +56,7 @@ public class KafkaConnectResource {
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
             .endMetadata()
-            .editSpec()
+            .withNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)

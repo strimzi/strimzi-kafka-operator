@@ -16,6 +16,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -119,8 +125,7 @@ public class MetricsST extends MessagingBaseST {
 
     @Test
     void testKafkaExporterDataAfterExchange() throws Exception {
-        createTestMethodResources();
-        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         availabilityTest(5000, CLUSTER_NAME, TEST_TOPIC_NAME);
 
@@ -181,16 +186,15 @@ public class MetricsST extends MessagingBaseST {
 
     @BeforeAll
     void setupEnvironment() throws InterruptedException {
-        LOGGER.info("Creating resources before the test class");
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
-        testClassResources().kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
-        testClassResources().kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
-        testClassResources().topic(CLUSTER_NAME, "test-topic", 7, 2).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
+        KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3).done();
+        KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, "test-topic", 7, 2).done();
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
         kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);

@@ -25,9 +25,9 @@ import resources.ResourceManager;
 public class KafkaResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
 
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../../metrics/examples/kafka/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../../examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../../examples/kafka/kafka-persistent.yaml";
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../metrics/examples/kafka/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());

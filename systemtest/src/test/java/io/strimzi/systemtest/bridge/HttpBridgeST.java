@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.HttpBridgeBaseST;
 import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -22,6 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -51,7 +53,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
@@ -68,7 +70,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         String name = "my-kafka-consumer";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -102,7 +104,6 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
     @Test
     void testCustomAndUpdatedValues() {
-        createTestMethodResources();
         String bridgeName = "custom-bridge";
         String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
@@ -130,32 +131,32 @@ class HttpBridgeST extends HttpBridgeBaseST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        testMethodResources().kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, 8080)
-                .editSpec()
-                    .withNewTemplate()
-                        .withNewBridgeContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endBridgeContainer()
-                    .endTemplate()
-                    .withNewProducer()
-                    .endProducer()
-                    .withNewConsumer()
-                    .endConsumer()
-                    .withNewReadinessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endReadinessProbe()
-                    .withNewLivenessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endLivenessProbe()
-                .endSpec().done();
+        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewBridgeContainer()
+                        .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                    .endBridgeContainer()
+                .endTemplate()
+                .withNewProducer()
+                .endProducer()
+                .withNewConsumer()
+                .endConsumer()
+                .withNewReadinessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endReadinessProbe()
+                .withNewLivenessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endLivenessProbe()
+            .endSpec().done();
 
         Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
@@ -199,19 +200,19 @@ class HttpBridgeST extends HttpBridgeBaseST {
     void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         // Deploy kafka
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
                 .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .withTls(false)
-                .endKafkaListenerExternalNodePort()
-                .endListeners()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
                 .endKafka()
-                .endSpec().done();
+            .endSpec().done();
 
         // Deploy http bridge
-        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
 
         Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
         testClassResources().createServiceResource(service, NAMESPACE).done();

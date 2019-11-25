@@ -70,11 +70,10 @@ public class PrometheusST extends AbstractST {
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setup() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         cmdKubeClient().apply(StUtils.downloadYamlAndReplaceNameSpace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
 
         StUtils.createSecretFromFile("../metrics/examples/prometheus/additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);

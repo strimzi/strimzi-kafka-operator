@@ -25,7 +25,7 @@ import resources.ResourceManager;
 public class KafkaConnectS2IResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IResource.class);
 
-    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../../examples/kafka-connect/kafka-connect-s2i.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../examples/kafka-connect/kafka-connect-s2i.yaml";
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());

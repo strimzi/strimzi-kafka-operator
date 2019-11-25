@@ -20,7 +20,7 @@ import resources.ResourceManager;
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
-    public static final String PATH_TO_KAFKA_USER_CONFIG = "../../examples/user/kafka-user.yaml";
+    public static final String PATH_TO_KAFKA_USER_CONFIG = "../examples/user/kafka-user.yaml";
 
     public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserClient() {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());

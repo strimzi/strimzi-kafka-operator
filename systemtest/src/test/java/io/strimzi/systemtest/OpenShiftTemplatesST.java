@@ -194,12 +194,12 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(topic, is(notNullValue()));
         assertThat(topic.getSpec(), is(notNullValue()));
         assertThat(topic.getSpec().getTopicName(), is(nullValue()));
-        assertThat(topic.getSpec().getPartitions(), is(Integer.valueOf(10)));
-        assertThat(topic.getSpec().getReplicas(), is(Integer.valueOf(2)));
+        assertThat(topic.getSpec().getPartitions(), is(10));
+        assertThat(topic.getSpec().getReplicas(), is(2));
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources("../examples/templates/cluster-operator",

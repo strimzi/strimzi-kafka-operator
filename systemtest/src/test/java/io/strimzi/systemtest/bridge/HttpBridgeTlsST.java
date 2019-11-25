@@ -7,11 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.HttpBridgeBaseST;
 import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -25,6 +21,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.util.Random;
 
@@ -52,7 +52,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
@@ -65,7 +65,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         String name = "my-kafka-consumer";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -101,27 +101,22 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
     void createClassResources() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
 
-        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(auth);
-
         // Deploy kafka
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
                 .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .withTls(true)
-                .endKafkaListenerExternalNodePort()
-                .withTls(listenerTls)
-                .withNewTls()
-                .endTls()
-                .endListeners()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(true)
+                        .endKafkaListenerExternalNodePort()
+                        .withNewTls()
+                        .endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().done();
+            .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = testClassResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -130,7 +125,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
 
         // Deploy http bridge
-        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
             .withNewTls()
             .withTrustedCertificates(certSecret)

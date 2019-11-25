@@ -9,11 +9,14 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -39,8 +42,8 @@ public class TopicST extends MessagingBaseST {
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-        KafkaTopic kafkaTopic =  testMethodResources().topic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaTopic kafkaTopic =  KafkaTopicResource.topic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor).done();
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName));
@@ -63,7 +66,7 @@ public class TopicST extends MessagingBaseST {
 
         final String newTopicName = "topic-example-new";
 
-        kafkaTopic = testMethodResources().topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
+        kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
 
         TestUtils.waitFor("Waiting for " + newTopicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
             () -> listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(newTopicName)
@@ -85,12 +88,12 @@ public class TopicST extends MessagingBaseST {
         int numberOfTopics = 50;
         int topicPartitions = 3;
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         LOGGER.info("Creating topics via Kubernetes");
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
-            testMethodResources().topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
+            KafkaTopicResource.topic(CLUSTER_NAME, currentTopic, topicPartitions).done();
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -130,7 +133,7 @@ public class TopicST extends MessagingBaseST {
         int numberOfTopics = 50;
         int topicPartitions = 3;
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
@@ -141,7 +144,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             StUtils.waitForKafkaTopicCreation(currentTopic);
-            KafkaTopic kafkaTopic = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(currentTopic).get();
+            KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(currentTopic).get();
             verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
         }
 
@@ -171,16 +174,16 @@ public class TopicST extends MessagingBaseST {
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2, 1).done();
 
-        testMethodResources().topic(CLUSTER_NAME, topicName)
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName)
                 .editSpec()
                     .withReplicas(2)
                 .endSpec()
                 .done();
 
         TestUtils.waitFor("Waiting to " + topicName + " to be ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
+            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
         );
 
         replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
@@ -188,10 +191,10 @@ public class TopicST extends MessagingBaseST {
         String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
 
         TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
+            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
         );
 
-        String topicCRDMessage = testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
+        String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
@@ -202,7 +205,7 @@ public class TopicST extends MessagingBaseST {
     @Test
     void testDeleteTopicEnableFalse() throws Exception {
         String topicName = "my-deleted-topic";
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("delete.topic.enable", false)
@@ -210,9 +213,9 @@ public class TopicST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         StUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} was created", topicName);
@@ -222,7 +225,7 @@ public class TopicST extends MessagingBaseST {
 
         String topicUid = StUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
-        testMethodResources().kafkaTopic().inNamespace(NAMESPACE).withName(topicName).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
         StUtils.waitTopicHasRolled(topicName, topicUid);
@@ -259,30 +262,13 @@ public class TopicST extends MessagingBaseST {
         assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
-    @AfterEach
-    void deleteTestResources()  {
-        deleteTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

@@ -15,6 +15,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.crd.KafkaResource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -131,23 +133,20 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificResources() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
-        createTestClassResources();
 
         // Apply role bindings in CO namespace
         applyRoleBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<ClusterRoleBinding> clusterRoleBindingList = testClassResources().clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-                testClassResources().clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
-
-        LOGGER.info("Deploying CO to watch all namespaces");
-        testClassResources().clusterOperator("*").done();
+                KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
+        // 050-Deployment
+        KubernetesResource.clusterOperator("*").done();
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        thirdNamespaceResources = new Resources(kubeClient());
 
-        thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -167,9 +166,8 @@ class AllNamespaceST extends AbstractNamespaceST {
             .done();
 
         cluster.setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(kubeClient());
         // Deploy Kafka in other namespace than CO
-        secondNamespaceResources.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).done();
 
         cluster.setNamespace(previousNamespace);
     }
@@ -177,13 +175,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment() {
         deployTestSpecificResources();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterAll() {
-        thirdNamespaceResources.deleteResources();
-        testClassResources().deleteResources();
-        teardownEnvForOperator();
     }
 
     @Override

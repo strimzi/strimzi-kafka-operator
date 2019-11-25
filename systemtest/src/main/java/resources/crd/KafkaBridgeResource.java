@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -29,12 +28,16 @@ public class KafkaBridgeResource {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public DoneableKafkaBridge kafkaBridge(String name, String clusterName, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
-        return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, kafkaBridgeReplicas).build());
+    public static DoneableKafkaBridge kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas) {
+        return kafkaBridge(name, name, bootstrap, kafkaBridgeReplicas);
     }
 
-    private KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, int kafkaBridgeReplicas) {
+    public static DoneableKafkaBridge kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
+        return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas).build());
+    }
+
+    private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
         return new KafkaBridgeBuilder(kafkaBridge)
             .withNewMetadata()
                 .withName(name)
@@ -42,12 +45,12 @@ public class KafkaBridgeResource {
                 .withClusterName(kafkaClusterName)
             .endMetadata()
             .editSpec()
-                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withBootstrapServers(bootstrap)
                 .withReplicas(kafkaBridgeReplicas)
             .endSpec();
     }
 
-    private DoneableKafkaBridge deployKafkaBridge(KafkaBridge kafkaBridge) {
+    private static DoneableKafkaBridge deployKafkaBridge(KafkaBridge kafkaBridge) {
         return new DoneableKafkaBridge(kafkaBridge, kB -> {
             TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
@@ -67,27 +70,27 @@ public class KafkaBridgeResource {
         });
     }
 
-    public KafkaBridge KafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
+    public static KafkaBridge KafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
         kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaBridge);
         return kafkaBridge;
     }
 
-    public void deleteKafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
+    public static void deleteKafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
         kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaBridge);
     }
 
-    private KafkaBridge getKafkaBridgeFromYaml(String yamlPath) {
+    private static KafkaBridge getKafkaBridgeFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, KafkaBridge.class);
     }
 
-    private KafkaBridge waitFor(KafkaBridge kafkaBridge) {
+    private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
         LOGGER.info("Waiting for Kafka Bridge {}", kafkaBridge.getMetadata().getName());
         StUtils.waitForDeploymentReady(kafkaBridge.getMetadata().getName() + "-bridge", kafkaBridge.getSpec().getReplicas());
         LOGGER.info("Kafka Bridge {} is ready", kafkaBridge.getMetadata().getName());
         return kafkaBridge;
     }
 
-    private KafkaBridge deleteLater(KafkaBridge kafkaBridge) {
+    private static KafkaBridge deleteLater(KafkaBridge kafkaBridge) {
         return ResourceManager.deleteLater(kafkaBridgeClient(), kafkaBridge);
     }
 

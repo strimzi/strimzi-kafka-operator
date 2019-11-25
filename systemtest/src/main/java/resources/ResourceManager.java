@@ -18,9 +18,9 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,8 +38,6 @@ import static io.strimzi.systemtest.Constants.SERVICE;
 public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
-
-    protected static KubeClient kubeClient = KubeClusterResource.getInstance().client();
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
 
@@ -59,25 +57,27 @@ public class ResourceManager {
     private ResourceManager() {}
 
     public static KubeClient kubeClient() {
-        return kubeClient;
+        return BaseITST.kubeClient();
     }
 
-    public Stack<Runnable> getPointerResources() {
+    public static Stack<Runnable> getPointerResources() {
         return pointerResources;
     }
 
-    public void setMethodResources() {
+    public static void setMethodResources() {
+        LOGGER.info("Setting pointer to method resources");
         pointerResources = methodResources;
     }
 
-    public void setClassResources() {
+    public static void setClassResources() {
+        LOGGER.info("Setting pointer to class resources");
         pointerResources = classResources;
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
         LOGGER.info("Scheduled deletion of {} {} in namespace {}",
-                resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
                 pointerResources.push(() -> {
@@ -140,21 +140,21 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {}",
                             resource.getKind(), resource.getMetadata().getName());
-                    kubeClient.getClient().rbac().clusterRoleBindings().withName(resource.getMetadata().getName()).delete();
+                    kubeClient().getClient().rbac().clusterRoleBindings().withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case ROLE_BINDING:
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {}",
                             resource.getKind(), resource.getMetadata().getName());
-                    kubeClient.getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
+                    kubeClient().getClient().rbac().roleBindings().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case SERVICE:
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    kubeClient.getClient().services().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
+                    kubeClient().getClient().services().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case INGRESS:
@@ -164,7 +164,7 @@ public class ResourceManager {
                     x.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
-                    kubeClient.deleteIngress((Ingress) resource);
+                    kubeClient().deleteIngress((Ingress) resource);
                 });
                 break;
             default :
@@ -197,7 +197,7 @@ public class ResourceManager {
         StUtils.waitForDeploymentDeletion(io.strimzi.api.kafka.model.KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
         StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-entity-operator"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
 
@@ -205,7 +205,7 @@ public class ResourceManager {
         StUtils.waitForDeploymentDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
         StUtils.waitForReplicaSetDeletion(KafkaExporterResources.deploymentName(kafkaClusterName));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-kafka-exporter"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
@@ -216,7 +216,7 @@ public class ResourceManager {
         StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
         StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnect.getMetadata().getName()));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
@@ -227,11 +227,11 @@ public class ResourceManager {
         StUtils.waitForDeploymentConfigDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains("-connect-"))
                 .forEach(p -> {
                     LOGGER.debug("Deleting: {}", p.getMetadata().getName());
-                    kubeClient.deletePod(p);
+                    kubeClient().deletePod(p);
                 });
     }
 
@@ -241,7 +241,7 @@ public class ResourceManager {
         StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
         StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaMirrorMaker.getMetadata().getName()));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
@@ -252,7 +252,7 @@ public class ResourceManager {
         StUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
         StUtils.waitForReplicaSetDeletion(KafkaMirrorMakerResources.deploymentName(kafkaBridge.getMetadata().getName()));
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaBridge.getMetadata().getName() + "-bridge-"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
@@ -262,18 +262,18 @@ public class ResourceManager {
 
         StUtils.waitForDeploymentDeletion(deployment.getMetadata().getName());
 
-        kubeClient.listPods().stream()
+        kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
-    void deleteClassResources() {
+    public static void deleteClassResources() {
         while (!classResources.empty()) {
             classResources.pop().run();
         }
     }
 
-    void deleteMethodResources() {
+    public static void deleteMethodResources() {
         while (!methodResources.empty()) {
             methodResources.pop().run();
         }

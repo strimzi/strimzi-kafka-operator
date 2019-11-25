@@ -150,7 +150,7 @@ public class KubernetesResource {
             .endSubject().build(), clientNamespace);
     }
 
-    private static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+    public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
         LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
         ResourceManager.kubeClient().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
@@ -253,7 +253,7 @@ public class KubernetesResource {
         return new DoneableService(service);
     }
 
-    public Service deployKeycloakNodePortService(String namespace) {
+    public static Service deployKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
@@ -270,7 +270,7 @@ public class KubernetesResource {
             .endSpec().build();
     }
 
-    public Service deployBridgeNodePortService(String bridgeExternalService, String namespace, String clusterName) {
+    public static Service deployBridgeNodePortService(String bridgeExternalService, String namespace, String clusterName) {
         Map<String, String> map = new HashMap<>();
         map.put("strimzi.io/cluster", clusterName);
         map.put("strimzi.io/kind", "KafkaBridge");

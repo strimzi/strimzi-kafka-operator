@@ -17,9 +17,14 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -69,9 +74,9 @@ class ConnectST extends AbstractST {
                 "status.storage.topic=connect-cluster-status\n" +
                 "offset.storage.topic=connect-cluster-offsets\n");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
         String podName = StUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
@@ -109,7 +114,7 @@ class ConnectST extends AbstractST {
     @Tag(TRAVIS)
     @Tag(NODEPORT_SUPPORTED)
     void testKafkaConnectWithFileSinkPlugin() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -121,7 +126,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -129,7 +134,7 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
             .endSpec().done();
-        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
@@ -205,12 +210,12 @@ class ConnectST extends AbstractST {
 
     @Test
     void testJvmAndResources() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -239,9 +244,9 @@ class ConnectST extends AbstractST {
 
     @Test
     void testKafkaConnectScaleUpScaleDown() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
 
         // kafka cluster Connect already deployed
         List<String> connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
@@ -280,7 +285,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -299,11 +304,11 @@ class ConnectST extends AbstractST {
 
         final String userName = "user-example";
 
-        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -327,7 +332,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -354,7 +359,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -373,11 +378,11 @@ class ConnectST extends AbstractST {
 
         final String userName = "user-example-one";
 
-        testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -401,7 +406,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -452,9 +457,9 @@ class ConnectST extends AbstractST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -511,24 +516,14 @@ class ConnectST extends AbstractST {
         checkComponentConfiguration(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), "KAFKA_CONNECT_CONFIGURATION", connectConfig);
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
-        createTestClassResources();
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        setNamespace(NAMESPACE);
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

@@ -49,8 +49,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import resources.KubernetesResource;
+import resources.ResourceManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,8 +124,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
 
     public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
 
-    protected Resources testMethodResources;
-    private static Resources testClassResources;
     private static String operationID;
     Random rng = new Random();
 
@@ -377,29 +378,8 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
                 .findFirst().get().getImage();
     }
 
-    public  void createTestMethodResources() {
-        LOGGER.info("Creating resources before the test");
-        testMethodResources = new Resources(kubeClient());
-    }
-
-    public  static void createTestClassResources() {
-        LOGGER.info("Creating test class resources");
-        testClassResources = new Resources(kubeClient());
-    }
-
-    public  void deleteTestMethodResources() {
-        if (testMethodResources != null) {
-            testMethodResources.deleteResources();
-            testMethodResources = null;
-        }
-    }
-
-    public Resources testMethodResources() {
-        return testMethodResources;
-    }
-
-    public static Resources testClassResources() {
-        return testClassResources;
+    public void deleteTestMethodResources() {
+        ResourceManager.deleteMethodResources();
     }
 
     public static String getOperationID() {
@@ -408,10 +388,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
 
     public static void setOperationID(String operationID) {
         AbstractST.operationID = operationID;
-    }
-
-    public static void setTestClassResources(Resources testClassResources) {
-        AbstractST.testClassResources = testClassResources;
     }
 
     String startTimeMeasuring(Operation operation) {
@@ -652,7 +628,8 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
      * @param operationTimeout timeout for CO operations
      */
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
-        testClassResources.deleteResources();
+        ResourceManager.deleteMethodResources();
+        ResourceManager.deleteClassResources();
 
         cluster.deleteClusterOperatorInstallFiles();
         cluster.deleteNamespaces();
@@ -660,11 +637,11 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
         cluster.createNamespaces(coNamespace, bindingsNamespaces);
         cluster.applyClusterOperatorInstallFiles();
 
-        setTestClassResources(new Resources(kubeClient()));
+        ResourceManager.setClassResources();
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources().clusterOperator(coNamespace).done();
+        KubernetesResource.clusterOperator(coNamespace).done();
     }
 
     /**
@@ -675,15 +652,15 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     public  static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            testClassResources.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            testClassResources.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
@@ -968,7 +945,12 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     protected void tearDownEnvironmentAfterAll() {
-        testClassResources.deleteResources();
+        ResourceManager.deleteClassResources();
+    }
+
+    @BeforeEach
+    void createTestResources() {
+        ResourceManager.setMethodResources();
     }
 
     @AfterEach

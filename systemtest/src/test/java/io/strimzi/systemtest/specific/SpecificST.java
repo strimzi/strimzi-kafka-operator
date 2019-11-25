@@ -15,11 +15,12 @@ import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaResource;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class SpecificST extends MessagingBaseST {
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
     void testRackAware() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                 .withNewRack()
@@ -87,7 +88,7 @@ public class SpecificST extends MessagingBaseST {
                 .withLoadBalancerIP(brokerOverrideIP)
                 .build();
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -112,19 +113,19 @@ public class SpecificST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
-        testMethodResources().kafkaWithoutWait(testMethodResources().defaultKafka(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion("6.6.6")
                 .endKafka()
-            .endSpec().build());
+            .endSpec().done();
 
         LOGGER.info("Wait until Zookeeper stateful set is ready");
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
 
         StUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
 
-        Condition condition = testMethodResources().kafka().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+        Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(
                 condition,
@@ -134,24 +135,13 @@ public class SpecificST extends MessagingBaseST {
                 "NotReady");
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() {
-        deleteTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

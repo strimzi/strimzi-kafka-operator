@@ -26,7 +26,7 @@ import resources.ResourceManager;
 public class KafkaMirrorMakerResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerResource.class);
 
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../../examples/kafka-mirror-maker/kafka-mirror-maker.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../examples/kafka-mirror-maker/kafka-mirror-maker.yaml";
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
@@ -79,7 +79,7 @@ public class KafkaMirrorMakerResource {
         });
     }
 
-    public static KafkaMirrorMaker KafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
+    public static KafkaMirrorMaker kafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
         kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaMirrorMaker);
         return kafkaMirrorMaker;
     }
