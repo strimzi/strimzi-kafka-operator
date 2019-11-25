@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -278,7 +279,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             log.warn("{}: Error reconciling connector {}", reconciliation, connector.getMetadata().getName(), error);
         }
         StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
-        return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, KafkaConnector::getStatus, status,
+        return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
             (connector1, status1) -> {
                 return new KafkaConnectorBuilder(connector1).withStatus(status1).build();
             });
@@ -313,11 +314,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return
      */
-    protected <T extends CustomResource, S extends Status, L extends CustomResourceList<T>, D extends Doneable<T>> Future<Void>
+    protected <T extends CustomResource & HasStatus<S>, S extends Status, L extends CustomResourceList<T>, D extends Doneable<T>> Future<Void>
         maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L, D> resourceOperator,
                                 T resource,
                                 Reconciliation reconciliation,
-                                Function<T, S> fn,
                                 S desiredStatus,
                                 BiFunction<T, S, T> copyWithStatus) {
         Future<Void> updateStatusFuture = Future.future();
@@ -333,7 +333,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
                         updateStatusFuture.complete();
                     } else {
-                        S currentStatus = fn.apply(fetchedResource);
+                        S currentStatus = fetchedResource.getStatus();
 
                         StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
 
