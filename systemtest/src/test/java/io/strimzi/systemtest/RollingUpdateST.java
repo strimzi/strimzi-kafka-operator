@@ -678,6 +678,36 @@ class RollingUpdateST extends BaseST {
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
+    @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
+    @Test
+    void testTriggerRollingUpdateAfterOverrideBootstrap() {
+        String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
+
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        Map<String, String> kafkaPods =  StUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().getListeners().setExternal(
+                new KafkaListenerExternalLoadBalancerBuilder()
+                    .withNewOverrides()
+                        .withNewBootstrap()
+                            .withAddress(bootstrapDns)
+                        .endBootstrap()
+                    .endOverrides()
+                    .build());
+        });
+
+        StUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+
+        String bootstrapAddressDns = ((KafkaListenerExternalLoadBalancer) Crds.kafkaOperation(kubeClient().getClient())
+                .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
+                .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
+
+        assertThat(bootstrapAddressDns, is(bootstrapDns));
+    }
+
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
