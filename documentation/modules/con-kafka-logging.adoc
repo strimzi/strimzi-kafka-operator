@@ -20,6 +20,9 @@ Kafka has its own configurable loggers:
 * `log4j.logger.kafka.log.LogCleaner`
 * `log4j.logger.state.change.logger`
 * `log4j.logger.kafka.authorizer.logger`
+
+ZooKeeper also has a configurable logger:
+
 * `zookeeper.root.logger`
 
 Kafka and ZooKeeper use the Apache `log4j` logger implementation.
