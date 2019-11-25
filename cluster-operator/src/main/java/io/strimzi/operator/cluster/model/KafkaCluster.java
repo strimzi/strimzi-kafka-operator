@@ -143,6 +143,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET = "STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET";
     protected static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET";
 
+    // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
+    // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
+    // proper listener, routing and metrics configuration sent to Envoy
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "tcp-clients";
 
