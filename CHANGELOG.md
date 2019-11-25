@@ -10,8 +10,9 @@
 * Garbage Collection (GC) logging disabled by default
 * Providing PKCS12 truststore and password in the cluster and clients CA certificates Secrets
 * Providing PKCS12 keystore and password in the TLS based KafkaUser related Secret
-* Add support for Istio protocol selection in service port names
-
+* Add support for Istio protocol selection in service port names  
+Note: Strimzi is essentially addind a `tcp-` prefix to the port names in Kafka services and headless services.  
+(e.g clientstls -> tcp-clientstls)
 ## 0.14.0
 
 * Add support for configuring Ingress class (#1716)
