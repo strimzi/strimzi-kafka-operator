@@ -1,6 +1,7 @@
 # Testing Strimzi
 
-This document gives a detailed breakdown of the testing processes and testing options for Strimzi within system tests. For more information about build process see [Hacking document](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md).
+This document gives a detailed breakdown of the testing processes and testing options for Strimzi within system tests. 
+For more information about build process see [Hacking document](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md).
 
 <!-- TOC depthFrom:2 -->
 
@@ -18,8 +19,9 @@ This document gives a detailed breakdown of the testing processes and testing op
 
 ## Pre-requisites 
 
-To run any system tests you need a Kubernetes or Openshift cluster available in your active kubernetes context. You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/), [minishift](https://www.okd.io/minishift/), [oc cluster up](https://github.com/openshift/origin) or [CodeReady Contaners](https://github.com/code-ready/crc) 
-to have access to a cluster on your local machine. You can also access a remote cluster on any machine you want, but make sure you active kubernetes context points to it. For more information about remote cluster see [remote cluster](#use-remote-cluster) section.
+To run any system tests you need a Kubernetes or Openshift cluster available in your active kubernetes context. 
+You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/), [minishift](https://www.okd.io/minishift/), [oc cluster up](https://github.com/openshift/origin) or [CodeReady Contaners](https://github.com/code-ready/crc) to have access to a cluster on your local machine. You can also access a remote cluster on any machine you want, but make sure you active kubernetes context points to it. 
+For more information about remote cluster see [remote cluster](#use-remote-cluster) section.
 
 Next requirement is to have build systemtest package dependencies, which are:
 
@@ -28,11 +30,14 @@ Next requirement is to have build systemtest package dependencies, which are:
 * crd-generator
 * api
 
-You can achieve that with `mvn clean install -DskipTests` or `mvn clean install -am -pl systemtest -DskipTests` commands. The dependencies are needed because we use methods from `test` package and strimzi model from `api` package. 
+You can achieve that with `mvn clean install -DskipTests` or `mvn clean install -am -pl systemtest -DskipTests` commands. 
+The dependencies are needed because we use methods from `test` package and strimzi model from `api` package. 
 
 ## Package Structure 
 
-Systemtest package is divided into `main` and `test` as usually. In `main` you can find all support classes, which are used in the tests. Modules worth for mention are:
+Systemtest package is divided into `main` and `test` as usually. 
+In `main` you can find all support classes, which are used in the tests. 
+Modules worth for mention are:
 
 * **annotations** — we have our own `@OpenShiftOnly` annotation, which check if current cluster is Openshift or not. All other annotations should be stored here.
 * **clients** — clients implementations used in tests.
@@ -47,7 +52,7 @@ And classes:
 
 ## Test Phases
 
-In general, we have classic test phases: setup, test, teardown.
+In general, we have classic test phases: setup, exercise, test, teardown.
 
 #### Setup
 
@@ -59,7 +64,8 @@ In this phase we do the following things:
 
 The reason why last point is optional is because we have some test cases, where you want to have different kafka configuration for each test scenario and creation of Kafka cluster and other resources is done in test phase.
 
-We create resources in Kubernetes cluster via `Resources` instance, which allow you to deploy all components and change them from their default configuration if needed via builder. Currently, we have two instances of `Resources` class — one for whole test class and one for test method.
+We create resources in Kubernetes cluster via `Resources` instance, which allow you to deploy all components and change them from their default configuration if needed via builder. 
+Currently, we have two instances of `Resources` class — one for whole test class and one for test method.
 
 Example:
 ```
@@ -73,10 +79,13 @@ Example:
     }
 ```
 
+##### Exercise
+In that phase, you can specify all steps, which you need to cover some functionality. 
+In case you didn't create Kafka cluster, you should do it at the begging of test via test method resources instance of `Resources` available in `AbstractST`.
+
 ##### Test
 
-In test phase, you can specify all steps, which you need to cover some functionality. In case you didn't create Kafka cluster, you should do it at the begging of test via test method resources instance of `Resources` available in `AbstractST`.
-When your environment code is on place, you can add code for some checks, msg exchange, etc.
+When your environment code is on place from a previous phase, you can add code for some checks, msg exchange, etc.
 
 #### Teardown
 
@@ -108,7 +117,8 @@ For delete all resources from specific `Resources` instance you can do it like:
 ```
 
 
-Another important thing is environment recreation in case of failure. There is method in `AbstractST` called `recreateTestEnv()` which is called in case exception during test execution. This is useful for these tests, which can break cluster operator for next test cases.
+Another important thing is environment recreation in case of failure. There is method in `AbstractST` called `recreateTestEnv()` which is called in case exception during test execution. 
+This is useful for these tests, which can break cluster operator for next test cases.
 
 Example of skip recreate environment in case of failures. You must override method from `AbstractST` in your test class:
 ```
@@ -118,6 +128,14 @@ Example of skip recreate environment in case of failures. You must override meth
     }
 ```
 
+#### Cluster Operator log check
+
+After each test, there a check for cluster operator logs, which is looking for unexpected errors or unexpected exceptions.
+You can see the code of matcher based on Hamcrest in systemtest [matchers module](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/matchers/LogHasNoUnexpectedErrors.java).
+There is a whitelist for expected errors, which happen from time to time.
+Expected errors doesn't have any problematic impact on cluster behavior and required action is usually executed during next reconciliation.
+
+
 ## Available Test groups
 
 To execute an expected group of system tests need to add system property `groups` for example with the following values:
@@ -126,7 +144,8 @@ To execute an expected group of system tests need to add system property `groups
 `-Dgroups=acceptance,regression` — to execute many test groups
 `-Dgroups=all` — to execute all test groups
 
-If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed. The following table shows currently used tags:
+If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed. 
+The following table shows currently used tags:
 
 | Name            | Description                                                                        |
 | :-------------: | :--------------------------------------------------------------------------------: |
@@ -145,15 +164,17 @@ If `-Dgroups` system property isn't defined, all tests without an explicitly dec
 | oauth           | Execute tests which use OAuth                                                      |
 | helm            | Execute tests which use Helm for deploy cluster operator                           |
 
-For some reasons, your Kubernetes cluster doesn't support for example Network Policies or NodePort services. In that case, you can easily skip these tests with `-DexcludeGroups=networkpolicies,nodeport` property.
+For some reasons, your Kubernetes cluster doesn't support for example Network Policies or NodePort services. 
+In that case, you can easily skip these tests with `-DexcludeGroups=networkpolicies,nodeport` property.
 
-There is also a mvn profile for most of the groups, but we suggest to use profile with id `all` (default) and then include or exclued specific groups.
+There is also a mvn profile for most of the groups, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
 
 All available test groups are listed in [Constants](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
 
 ## Environment variables
 
-We can configure our system tests with several environment variables, which are loaded before test execution. All environment variables can be seen in [Environment](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
+We can configure our system tests with several environment variables, which are loaded before test execution. 
+All environment variables can be seen in [Environment](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
 | Name                      | Description                                                                          | Default                                          |
 | :-----------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------: |
@@ -185,15 +206,20 @@ To set the log level of Strimzi for system tests you need to set environment var
 
 ## Use Remote Cluster
 
-The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`. If this variable is not set, kubernetes client will use currently active context. Otherwise will use context from kubeconfig with name specified by `TEST_CLUSTER_CONTEXT` variable.
+The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`. 
+If this variable is not set, kubernetes client will use currently active context. 
+Otherwise, will use context from kubeconfig with a name specified by `TEST_CLUSTER_CONTEXT` variable.
 
-For example command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`. However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
+For example command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`. 
+However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
 
-System tests uses admin user for some actions. You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
+System tests uses admin user for some actions. 
+You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
 
 ## Helper script
 
-The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the travis build.  You can use this script to easily run the `systemtests` project.
+The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the travis build. 
+You can use this script to easily run the `systemtests` project.
 
 Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
@@ -207,5 +233,7 @@ Use the `verify` build goal and provide a `-Dit.test=TestClassName[#testMethodNa
 
 ## Skip Teardown
 
-We already introduced this environment variable, but we didn't describe full potential. This env variable is every useful in case you debug some types of test case. 
-When this variable is set, teardown phase will be skipped when test finish and if you keep it set, setup phase will be much quicker, because all components are already deployed. Unfortunately, this approach is not friendly for tests where component configuration change.  
+We already introduced this environment variable, but we didn't describe full potential. 
+This env variable is every useful in case you debug some types of test case. 
+When this variable is set, teardown phase will be skipped when test finish and if you keep it set, setup phase will be much quicker, because all components are already deployed. 
+Unfortunately, this approach is not friendly for tests where component configuration change.  
