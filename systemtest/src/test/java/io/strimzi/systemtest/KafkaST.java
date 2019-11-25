@@ -1154,7 +1154,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     void testManualTriggeringRollingUpdate() {
         String coPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 3).done();
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
