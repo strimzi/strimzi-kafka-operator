@@ -8,7 +8,8 @@
 
 You deploy the Kafka Bridge into your Kubernetes cluster by using the Cluster Operator.
 
-After the Kafka Bridge is deployed, the Cluster Operator creates a Deployment, Service, and Pod in your Kubernetes cluster, each named `strimzi-kafka-bridge` by default.
+After the Kafka Bridge is deployed, the Cluster Operator creates Kafka Bridge objects in your Kubernetes cluster.
+Objects include the _deployment_, _service_, and _pod_, each named after the name given in the custom resource for the Kafka Bridge.
 
 .Additional resources
 

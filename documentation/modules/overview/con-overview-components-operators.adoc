@@ -2,8 +2,6 @@
 //
 // overview/assembly-overview-components.adoc
 
-// UserStory: Explain Operators
-
 [id="key-features-operators_{context}"]
 = Operators
 {ProductName} provides three operators for managing a Kafka cluster running within a Kubernetes cluster:

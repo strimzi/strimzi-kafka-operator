@@ -2,12 +2,10 @@
 //
 // overview/master.adoc
 
-// UserStory: Describe how metrics data can be collected
-
 [id="metrics-overview_{context}"]
 = Metrics
 
-Metrics data allows you to monitor the performance of {ProductName}.
+Metrics data allows you to monitor the performance and health of {ProductName}.
 You can configure your deployment to capture metrics data for analysis and notifications.
 
 Metrics data is useful when investigating issues with connectivity and data delivery.

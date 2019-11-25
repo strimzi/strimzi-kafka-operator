@@ -2,12 +2,8 @@
 //
 // overview/assembly-metrics-overview.adoc
 
-// UserStory: Describe use of distributed tracing
-
 [id="metrics-overview-tracing_{context}"]
 = Distributed tracing
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
 Within a Kafka deployment, distributed tracing using Jaeger is supported for:
 

@@ -2,12 +2,8 @@
 //
 // overview/assembly-overview-components.adoc
 
-// UserStory: Explain the Bridge
-
 [id="overview-components-kafka-bridge_{context}"]
 = Kafka Bridge interface
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
 {ProductName} Kafka Bridge provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster. 
 Kafka Bridge offers the advantages of a web API connection to {ProductName}, without the need for client applications to interpret the Kafka protocol.

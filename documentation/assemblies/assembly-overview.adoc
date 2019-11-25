@@ -10,7 +10,7 @@
 = Overview of {ProductName}
 
 //standard intro
-{intro-text}
+include::../shared/snip-intro-text.adoc[leveloffset=+1]
 
 //description of Kafka features
 include::../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]

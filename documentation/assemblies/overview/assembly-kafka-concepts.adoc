@@ -2,11 +2,8 @@
 //
 // overview/master.adoc
 
-// UserStory: Describe key Kafka concepts
-
 [id="kafka-concepts_{context}"]
 = About Kafka
-A {ProductName} distribution provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
 
 Apache Kafka is an open-source distributed publish-subscribe messaging system for fault-tolerant storage and orchestration of real-time data feeds.
 

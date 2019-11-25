@@ -2,19 +2,17 @@
 //
 // overview/master.adoc
 
-// UserStory: How streams/strimzi  can be configured
-
 [id="configuration-points_{context}"]
-= {ProductName} configuration
+= Kafka configuration
 
-A deployment of {ProductName} to a Kubernetes cluster is highly configurable through the application of custom resources.
-Custom resources are created as instances of custom resource definitions (CRDs) to  extend Kubernetes resources.
+A deployment of Kafka components to a Kubernetes cluster using {ProductName} is highly configurable through the application of custom resources.
+Custom resources are created as instances of the APIs added by CRDs to extend Kubernetes resources.
 
-CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster, and are provided with {ProductName} for each component used in a deployment.
+CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster, and are provided with {ProductName} for each Kafka component used in a deployment.
 CRDs and custom resources are defined as YAML files.
 Example YAML files are provided with the {ProductName} distribution.
 
-In this chapter we look at how components are configured through custom resources, some common configuration points, and important configuration options specific to components.
+In this chapter we look at how Kafka components are configured through custom resources, starting with common configuration points and then important configuration considerations specific to components.
 
 //Intro to custom resources
 include::../../modules/overview/con-configuration-points-resources.adoc[leveloffset=+1]

@@ -2,12 +2,10 @@
 //
 // overview/assembly-configuration-points.adoc
 
-// UserStory: Common configuration options
-
 [id="configuration-points-resources_{context}"]
 = Custom resources
 
-After a CRD has been created in your cluster, you can create custom resources based on its specification.
+After a new custom resource type is added to your cluster by installing a CRD, you can create instances of the resource based on its specification.
 
 The custom resources for {ProductName} components have common configuration properties, which are defined under `spec`.
 

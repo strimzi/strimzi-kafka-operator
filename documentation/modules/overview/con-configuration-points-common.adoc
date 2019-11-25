@@ -2,8 +2,6 @@
 //
 // overview/assembly-configuration-points.adoc
 
-// UserStory: Common configuration options
-
 [id="configuration-points-common_{context}"]
 = Common configuration
 

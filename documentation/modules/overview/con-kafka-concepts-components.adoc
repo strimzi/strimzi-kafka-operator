@@ -2,18 +2,15 @@
 //
 // overview/assembly-kafka-components.adoc
 
-// UserStory: Explain Kafka's supporting components
-
 [id="kafka-concepts-components_{context}"]
 = Kafka component roles
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
-A Kafka cluster of brokers is the hub connecting Kafka components.
+A cluster of Kafka brokers is main part of the Apache Kafka project responsible for delivering messages.
+
 A broker uses Apache ZooKeeper for storing configuration data and for cluster coordination.
 Before running Apache Kafka, an Apache ZooKeeper cluster has to be ready.
 
-Each of the supporting Kafka components interact with the Kafka cluster to perform specific roles.
+Each of the other Kafka components interact with the Kafka cluster to perform specific roles.
 
 .Kafka component interaction
 

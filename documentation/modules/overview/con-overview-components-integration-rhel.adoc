@@ -1,14 +1,9 @@
 // Metadata created by nebel
 //
-// Jira:
-// QuickstartID:
-// UserStory: Integration points (RHEL downstream only) - SSO, CDC, Schema Registry
-// VerifiedInVersion:
+
 
 [id="overview-components-integration-rhel_{context}"]
 = Integration points
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
 A short introductory paragraph is required for the concept module.
 It will provide an overview of the module.

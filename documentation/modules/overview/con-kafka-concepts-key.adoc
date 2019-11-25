@@ -2,16 +2,14 @@
 //
 // overview/assembly-kafka-concepts.adoc
 
-// UserStory: Explain the key kafka concepts
-
 [id="kafka-concepts-key_{context}"]
 = Kafka concepts
 
 Knowledge of the key concepts of Kafka is important in understanding how {ProductName} works.
 
-Kafka uses brokers and topics to receive and store data in a Kafka cluster.
-Within a broker, topics are used to store messages.
-Topics are split by partitions, where data is written.
+A Kafka cluster comprises multiple brokers
+Topics are used to receive and store data in a Kafka cluster.
+Topics are split by partitions, where the data is written.
 Partitions are replicated across topics for fault tolerance.
 
 .Kafka brokers and topics
@@ -19,11 +17,10 @@ Partitions are replicated across topics for fault tolerance.
 image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics]
 
 Broker:: A broker, sometimes referred to as a server or node, orchestrates the storage and passing of messages.
-Topic:: A topic provides a destination for the storage and publication of a specific category of information.
+Topic:: A topic provides a destination for the storage of data.
+Each topic is split into one or more partitions.
 Cluster:: A group of broker instances.
-Partition:: A partition is a division of a topic that stores messages in order.
-+
-The number of partitions is defined by a topic _partition count_.
+Partition:: The number of topic partitions is defined by a topic _partition count_.
 Partition leader:: A partition leader handles all message requests for a topic.
 Partition follower:: A partition follower replicates the partition data of a partition leader.
 +

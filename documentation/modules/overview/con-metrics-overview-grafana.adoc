@@ -2,12 +2,9 @@
 //
 // overview/assembly-metrics-overview.adoc
 
-// UserStory: Describe use of Grafana
-
 [id="metrics-overview-grafana_{context}"]
 = Grafana
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+
 Grafana uses the metrics data exposed by Prometheus to present dashboard visualizations for monitoring.
 
 A deployment of Grafana is required, with Prometheus added as a data source.

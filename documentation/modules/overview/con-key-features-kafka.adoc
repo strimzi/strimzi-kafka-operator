@@ -2,14 +2,12 @@
 //
 // overview/assembly-key-features.adoc
 
-// UserStory: Explain the key features and way Kafka works
-
 [id="key-features-kafka_{context}"]
 = Kafka capabilities
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
-When deployed as a cluster, the underlying data stream-processing capabilities and component architecture of Kafka can deliver:
+A {ProductName} distribution provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
+
+The underlying data stream-processing capabilities and component architecture of Kafka can deliver:
 
 * Message ordering guarantees
 * Message rewind/replay from data storage to reconstruct an application state

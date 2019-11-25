@@ -2,16 +2,12 @@
 //
 // overview/assembly-configuration-points.adoc
 
-// UserStory: kafka connect configuration
-
 [id="configuration-points-connect_{context}"]
 = Kafka Connect configuration
-//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
-//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
-A basic Kafka Connect configuration requires a bootstrap address to connect to a kafka cluster and authentication details.
+A basic Kafka Connect configuration requires a bootstrap address to connect to a Kafka cluster, and encryption and authentication details.
 
-Connectors configuration describes the source input data and target output data to feed into and out of Kafka Connect.
+Connectors configuration, configured separately from Kafka Connect, describes the source input data and target output data to feed into and out of Kafka Connect.
 The external source data must reference specific topics that will store the messages.
 
 Connectors:: Kafka provides two built-in connectors:
@@ -21,11 +17,18 @@ Connectors:: Kafka provides two built-in connectors:
 * `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
 --
 +
-You can create other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain type of external system.
+You can add other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain type of external system.
 +
 You create a custom Kafka Connect image that uses new Kafka Connect plugins.
++
+To create the image, you can use:
++
+--
+* A Kafka container image on {DockerRepository} as a base image
+* OpenShift {docs-okd} and the {docs-okd-s2i} framework to create new container images
+--
 
-Topics:: Each Kafka Connect instance is configured by default with the same:
+Topics:: Kafka Connect instances are configured by default with the same:
 +
 --
 * Group ID for the Kafka Connect cluster
@@ -34,4 +37,20 @@ Topics:: Each Kafka Connect instance is configured by default with the same:
 * Kafka topic to store connector and task status updates
 --
 +
-If separate Kafka Connect instances are used, these settings must reflect each instance.
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+  # ...
+----
++
+If multiple different Kafka Connect instances are used, these settings must reflect each instance.

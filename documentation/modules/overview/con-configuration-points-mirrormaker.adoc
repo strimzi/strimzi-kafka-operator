@@ -2,8 +2,6 @@
 //
 // overview/assembly-configuration-points.adoc
 
-// UserStory: MirrorMaker configuration options
-
 [id="configuration-points-topic_{context}"]
 = Kafka MirrorMaker configuration
 

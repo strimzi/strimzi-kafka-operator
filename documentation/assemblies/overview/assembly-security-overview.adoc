@@ -2,11 +2,8 @@
 //
 // overview/master.adoc
 
-// UserStory: Security options - authorization, authentication and encryption
-
 [id="security-overview_{context}"]
 = Securing Kafka
-//If the assembly covers a task, start the title with a verb in the gerund form, such as Creating or Configuring.
 
 A secure deployment of {ProductName} can encompass:
 

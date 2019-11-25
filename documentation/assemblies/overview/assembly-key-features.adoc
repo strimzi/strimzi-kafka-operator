@@ -2,14 +2,11 @@
 //
 // overview/master.adoc
 
-// UserStory: Streams features
-
 [id="key-features_{context}"]
 = Key features
-//If the assembly covers a task, start the title with a verb in the gerund form, such as Creating or Configuring.
 
 //standard introduction
-{intro-text}
+include::../../shared/snip-intro-text.adoc[leveloffset=+1]
 
 //description of Kafka features and concepts
 include::../../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
