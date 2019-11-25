@@ -234,7 +234,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-System tests has its own guide with more information. See [Testing Guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/TESTING.md) document for more information.
+System tests has its own guide with more information. See [Testing Guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/TESTING.md) document for more information.
 
 ## DCO Signoff
 
