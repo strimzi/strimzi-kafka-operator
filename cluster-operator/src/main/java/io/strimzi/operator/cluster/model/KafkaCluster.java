@@ -144,16 +144,16 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET";
 
     protected static final int CLIENT_PORT = 9092;
-    protected static final String CLIENT_PORT_NAME = "clients";
+    protected static final String CLIENT_PORT_NAME = "tcp-clients";
 
     public static final int REPLICATION_PORT = 9091;
-    protected static final String REPLICATION_PORT_NAME = "replication";
+    protected static final String REPLICATION_PORT_NAME = "tcp-replication";
 
     protected static final int CLIENT_TLS_PORT = 9093;
-    protected static final String CLIENT_TLS_PORT_NAME = "clientstls";
+    protected static final String CLIENT_TLS_PORT_NAME = "tcp-clientstls";
 
     protected static final int EXTERNAL_PORT = 9094;
-    protected static final String EXTERNAL_PORT_NAME = "external";
+    protected static final String EXTERNAL_PORT_NAME = "tcp-external";
 
     protected static final int ROUTE_PORT = 443;
     protected static final String ROUTE_PORT_NAME = "route";
