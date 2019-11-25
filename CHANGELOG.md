@@ -4,7 +4,8 @@
 
 * Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
 * Add support for Kafka 2.3.1
-* Improve Kafka Exporter Grafana dashboard
+* Improved Kafka rolling update
+* Improved Kafka Exporter Grafana dashboard
 * Add sizeLimit option to ephemeral storage (#1505)
 * Add `schedulerName` to `podTemplate` (#2114)
 * Allow overriding the auto-detected Kubernetes version
