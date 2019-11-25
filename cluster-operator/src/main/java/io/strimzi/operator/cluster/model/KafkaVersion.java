@@ -307,17 +307,20 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String version;
     private final String protocolVersion;
     private final String messageVersion;
+    private final String zookeeperVersion;
     private final boolean isDefault;
 
     @JsonCreator
     public KafkaVersion(@JsonProperty("version") String version,
                         @JsonProperty("protocol") String protocolVersion,
                         @JsonProperty("format") String messageVersion,
+                        @JsonProperty("zookeeper") String zookeeperVersion,
                         @JsonProperty("default") boolean isDefault) {
 
         this.version = version;
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
+        this.zookeeperVersion = zookeeperVersion;
         this.isDefault = isDefault;
     }
 
@@ -327,6 +330,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 "version='" + version + '\'' +
                 ", protocolVersion='" + protocolVersion + '\'' +
                 ", messageVersion='" + messageVersion + '\'' +
+                ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", isDefault=" + isDefault +
                 '}';
     }
@@ -343,6 +347,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         return messageVersion;
     }
 
+    public String zookeeperVersion() {
+        return zookeeperVersion;
+    }
+
     public boolean isDefault() {
         return isDefault;
     }
@@ -357,8 +365,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * @param version1 The first version.
      * @param version2 The second version.
      * @return Zero if version1 == version2;
-     * less than 1 if version1 &gt; version2;
-     * greater than 1 if version1 &gt; version2.
+     * -1 if version1 &lt; version2;
+     * 1 if version1 &gt; version2.
      */
     public static int compareDottedVersions(String version1, String version2) {
         String[] components = version1.split("\\.");

@@ -32,6 +32,7 @@
   protocol: 2.2   
   url: https://archive.apache.org/dist/kafka/2.2.1/kafka_2.12-2.2.1.tgz
   checksum: B8D828F06DFE59E34C4CFA20C57C8C8B43374F1E7C09F12DFA5433534A380BFE09A6DE90FB86A4403939A87AB9C665E2369143C138C71391B01BBB9B384E7AC5  
+  zookeeper: 3.4.13
   third-party-libs: 2.2.x
   default: false
 - version: 2.3.0
@@ -39,5 +40,14 @@
   protocol: 2.3   
   url: https://archive.apache.org/dist/kafka/2.3.0/kafka_2.12-2.3.0.tgz
   checksum: A5ED591AB304A1F16F7FD64183871E38AABF814A2C1CA86BB3D064C83E85A6463D3C55F4D707A29FC3D7994DD7BA1F790B5A6219C6DFFDF472AFD99CEE37892E   
+  zookeeper: 3.4.14
+  third-party-libs: 2.3.x
+  default: false
+- version: 2.3.1
+  format: 2.3
+  protocol: 2.3
+  url: https://archive.apache.org/dist/kafka/2.3.1/kafka_2.12-2.3.1.tgz
+  checksum: B9FD57DE7D9691C89CF668901E5E29728F10249667611A0603C322C8823EC2D5568B51EB1A570D4D9119CD4E44E84B590CAB99B33A0355EBAC37811A7D453608
+  zookeeper: 3.4.14
   third-party-libs: 2.3.x
   default: true
