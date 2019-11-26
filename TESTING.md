@@ -8,6 +8,7 @@ For more information about build process see [Hacking document](HACKING.md).
 - [Pre-requisites](#pre-requisites)
 - [Package Structure](#package-structure)
 - [Test Phases](#test-phases)
+- [Cluster Operator log check](#cluster-operator-log-check)
 - [Available Test Groups](#available-test-groups)
 - [Environment Variables](#environment-variables)
 - [Use Remote Cluster](#use-remote-cluster)
@@ -41,8 +42,8 @@ Modules worth for mention are:
 
 * **annotations** — we have our own `@OpenShiftOnly` annotation, which check if current cluster is Openshift or not. All other annotations should be stored here.
 * **clients** — clients implementations used in tests.
-* **matchers** — it contains our matcher implementation for checking cluster operator logs. For more info see [matcher details](#matcher).
-* **utils** — a lot of actions are the same for most of the tests, and we share them through utils class ad static methods. You can find here most of the useful methods.
+* **matchers** — it contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
+* **utils** — a lot of actions are the same for most of the tests, and we share them through utils class add static methods. You can find here most of the useful methods.
 
 And classes: 
 
@@ -198,7 +199,7 @@ If you want to use your own images with different tag or from a different reposi
 
 ##### Specific Kafka version
 
-To set custom Kafka version in system tests you need to set environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](kafka-versions).
+To set custom Kafka version in system tests you need to set environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](kafka-versions.yaml).
 
 ##### Cluster Operator Log level
 
