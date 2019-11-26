@@ -14,4 +14,11 @@ COPY scripts/ tmp/bin/ bin/
 
 COPY tmp/lib/ lib/
 
+#####
+# Add Tini
+#####
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+RUN chmod +x /usr/bin/tini
+
 USER 1001
