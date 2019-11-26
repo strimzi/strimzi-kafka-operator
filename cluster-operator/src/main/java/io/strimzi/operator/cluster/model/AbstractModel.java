@@ -981,7 +981,7 @@ public abstract class AbstractModel {
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
             ResourceRequirements resources = getResources();
-            Map<String, Quantity> cpuMemory = resources == null ? null : resources.getLimits();
+            Map<String, Quantity> cpuMemory = resources == null ? null : resources.getRequests();
             // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
             // too much memory on the kubelet.
             if (cpuMemory != null && cpuMemory.get("memory") != null) {
