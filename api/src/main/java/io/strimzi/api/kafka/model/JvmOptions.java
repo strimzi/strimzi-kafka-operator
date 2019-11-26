@@ -60,7 +60,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     }
 
     @JsonProperty("-Xloggc")
-    @Description("-Xloggc option to to the JVM")
+    @Description("-Xloggc option to the JVM to output gc logs to a specified file")
     public String getXloggc() {
         return xloggc;
     }

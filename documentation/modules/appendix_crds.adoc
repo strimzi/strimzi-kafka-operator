@@ -686,7 +686,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |Property                 |Description
 |-XX               1.2+<.<|A map of -XX options to the JVM.
 |map
-|-Xloggc           1.2+<.<|-Xloggc option to to the JVM.
+|-Xloggc           1.2+<.<|-Xloggc option to the JVM to output gc logs to a specified file.
 |string
 |-Xms              1.2+<.<|-Xms option to to the JVM.
 |string

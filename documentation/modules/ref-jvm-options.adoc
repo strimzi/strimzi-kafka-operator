@@ -125,6 +125,11 @@ jvmOptions:
 
 === Output Garbage collector logs to a file
 
+[CAUTION]
+====
+CAUTION HERE
+====
+
 The `jvmOptions` section can also be configured to output the garbage collector (GC) logging to a file.
 Once GC logging has been enabled (see above) you can direct the GC logs to a file.
 To enable it, set the `Xloggc` property as follows:
@@ -135,5 +140,6 @@ To enable it, set the `Xloggc` property as follows:
 # ...
 jvmOptions:
   "-Xloggc": "/tmp/gc.log"
+  gcLoggingEnabled: true
 # ...
 ----
