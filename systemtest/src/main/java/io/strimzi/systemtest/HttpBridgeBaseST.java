@@ -4,10 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -17,17 +14,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Base for test classes where HTTP Bridge is used.
@@ -84,33 +75,6 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                     }
                 });
         return future.get(1, TimeUnit.MINUTES);
-    }
-
-    protected void deployBridgeNodePortService() throws InterruptedException {
-        Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", CLUSTER_NAME);
-        map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
-
-        // Create node port service for expose bridge outside openshift
-        Service service = getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
-                .editSpec()
-                .withType("NodePort")
-                .withSelector(map)
-                .endSpec().build();
-        testClassResources().createServiceResource(service, getBridgeNamespace()).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
-    }
-
-    protected void checkSendResponse(JsonObject response, int messageCount) {
-        JsonArray offsets = response.getJsonArray("offsets");
-        assertThat(offsets.size(), is(messageCount));
-        for (int i = 0; i < messageCount; i++) {
-            JsonObject metadata = offsets.getJsonObject(i);
-            assertThat(metadata.getInteger("partition"), is(0));
-            assertThat(metadata.getInteger("offset"), is(i));
-            LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
-        }
     }
 
     @Override
