@@ -37,7 +37,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
-    private static Resources thirdNamespaceResources;
     private static final String SECOND_CLUSTER_NAME = CLUSTER_NAME + "-second";
 
     /**
