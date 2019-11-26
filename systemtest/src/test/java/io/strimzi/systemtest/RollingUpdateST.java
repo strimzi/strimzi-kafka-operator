@@ -680,7 +680,7 @@ class RollingUpdateST extends BaseST {
 
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update.")
     @Test
-    void testTriggerRollingUpdateAfterOverrideBootstrap() {
+    void testTriggerRollingUpdateAfterOverrideBootstrap() throws FileNotFoundException, CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
@@ -704,6 +704,19 @@ class RollingUpdateST extends BaseST {
         String bootstrapAddressDns = ((KafkaListenerExternalLoadBalancer) Crds.kafkaOperation(kubeClient().getClient())
                 .inNamespace(kubeClient().getNamespace()).withName(CLUSTER_NAME).get().getSpec().getKafka()
                 .getListeners().getExternal()).getOverrides().getBootstrap().getAddress();
+
+        Map<String, String> secretData = kubeClient().getSecret("my-cluster-kafka-brokers").getData();
+
+        for (Map.Entry<String, String> item : secretData.entrySet()) {
+            if (item.getKey().endsWith(".crt")) {
+                LOGGER.info("Encoding {} cert", item.getKey());
+                ByteArrayInputStream publicCert = new ByteArrayInputStream(Base64.getDecoder().decode(item.getValue().getBytes()));
+                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+                Certificate certificate = certificateFactory.generateCertificate(publicCert);
+
+                assertThat(certificate.toString(), containsString(bootstrapAddressDns));
+            }
+        }
 
         assertThat(bootstrapAddressDns, is(bootstrapDns));
     }
