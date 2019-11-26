@@ -673,7 +673,7 @@ class KafkaST extends MessagingBaseST {
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -738,7 +738,7 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
@@ -2084,7 +2084,7 @@ class KafkaST extends MessagingBaseST {
 
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
-        kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
         super.tearDownEnvironmentAfterEach();
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

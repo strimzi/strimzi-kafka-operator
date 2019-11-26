@@ -22,7 +22,7 @@ import resources.ResourceManager;
 public class KafkaBridgeResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeResource.class);
 
-    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../../examples/kafka-bridge/kafka-bridge.yaml";
+    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/kafka-bridge/kafka-bridge.yaml";
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());

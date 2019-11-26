@@ -88,7 +88,6 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
-import static io.strimzi.systemtest.AbstractST.CLUSTER_NAME;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -489,7 +488,7 @@ public class Resources extends AbstractResources {
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress("testing"))
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()
@@ -1698,9 +1697,9 @@ public class Resources extends AbstractResources {
 
     public Service deployBridgeNodePortService(String bridgeExternalService, String namespace) {
         Map<String, String> map = new HashMap<>();
-        map.put("strimzi.io/cluster", CLUSTER_NAME);
+        map.put("strimzi.io/cluster", "testing");
         map.put("strimzi.io/kind", "KafkaBridge");
-        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
+        map.put("strimzi.io/name", "testing" + "-bridge");
 
         // Create node port service for expose bridge outside the cluster
         return getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)

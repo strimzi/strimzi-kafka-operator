@@ -108,8 +108,6 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
-        kafkaUser = "new-" + kafkaUser;
-
         replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());

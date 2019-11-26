@@ -132,7 +132,7 @@ public class StrimziUpgradeST extends AbstractST {
         } finally {
             // Get current date to create a unique folder
             String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-            String logDir = TEST_LOG_DIR + testClass + currentDate;
+            String logDir = Environment.TEST_LOG_DIR + testClass + currentDate;
 
             LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
             logCollector.collectEvents();

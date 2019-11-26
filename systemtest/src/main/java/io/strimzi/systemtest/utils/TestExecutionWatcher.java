@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils;
 
+import io.strimzi.systemtest.Environment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -15,7 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class TestExecutionWatcher implements AfterTestExecutionCallback, LifecycleMethodExecutionExceptionHandler {
@@ -50,7 +50,7 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
-        String logDir = TEST_LOG_DIR + testClass + "_" + currentDate;
+        String logDir = Environment.TEST_LOG_DIR + testClass + "_" + currentDate;
 
         LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
         logCollector.collectDeployments();
@@ -66,8 +66,8 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback, Lifecyc
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
         String logDir = !testMethod.isEmpty() ?
-                TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
-                : TEST_LOG_DIR + currentDate;
+                Environment.TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
+                : Environment.TEST_LOG_DIR + currentDate;
 
         LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
         logCollector.collectEvents();

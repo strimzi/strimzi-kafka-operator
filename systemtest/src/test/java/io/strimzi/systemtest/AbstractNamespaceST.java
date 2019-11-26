@@ -10,7 +10,8 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
 
 import java.io.File;
 import java.util.List;
@@ -29,21 +30,19 @@ public abstract class AbstractNamespaceST extends AbstractST {
     static final String USER_NAME = "my-user";
     private static final String TOPIC_EXAMPLES_DIR = "../examples/topic/kafka-topic.yaml";
 
-    static Resources secondNamespaceResources;
-
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
 
         TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
+            Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                     .getStatus().getConditions().get(0);
             LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
             return kafkaCondition.getType().equals("Ready");
         });
 
-        Condition kafkaCondition = secondNamespaceResources.kafka().inNamespace(namespace).withName(clusterName).get()
+        Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
         assertThat(kafkaCondition.getType(), is("Ready"));
@@ -55,8 +54,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String kafkaTargetName = CLUSTER_NAME + "-target";
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources.kafkaEphemeral(kafkaTargetName, 1, 1).done();
-        secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+        KafkaResource.kafkaEphemeral(kafkaTargetName, 1, 1).done();
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
         StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
@@ -79,10 +78,5 @@ public abstract class AbstractNamespaceST extends AbstractST {
         cluster.setNamespace(namespace);
         cmdKubeClient().deleteByName("KafkaTopic", topic);
         cluster.setNamespace(CO_NAMESPACE);
-    }
-
-    @AfterAll
-    void teardownAdditionalResources() {
-        secondNamespaceResources.deleteResources();
     }
 }

@@ -16,7 +16,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import resources.KubernetesResource;
+import resources.crd.KafkaConnectResource;
 import resources.crd.KafkaResource;
+import resources.crd.KafkaUserResource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -76,7 +78,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
-        secondNamespaceResources.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
         StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
         cluster.setNamespace(previousNamespace);
@@ -86,7 +88,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testUOWatchingOtherNamespace() {
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
-        secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         // Check that UO created a secret for new user
         StUtils.waitForSecretReady(USER_NAME);
@@ -97,10 +99,10 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(NODEPORT_SUPPORTED)
     void testUserInDifferentNamespace() throws Exception {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         StUtils.waitForSecretReady(USER_NAME);
-        Condition kafkaCondition = secondNamespaceResources.kafkaUser().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
+        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
                 .getStatus().getConditions().get(0);
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());

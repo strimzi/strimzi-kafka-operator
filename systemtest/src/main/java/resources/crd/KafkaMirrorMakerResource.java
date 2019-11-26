@@ -93,9 +93,9 @@ public class KafkaMirrorMakerResource {
     }
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
-        LOGGER.info("Waiting for Kafka Bridge {}", kafkaMirrorMaker.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-bridge", kafkaMirrorMaker.getSpec().getReplicas());
-        LOGGER.info("Kafka Bridge {} is ready", kafkaMirrorMaker.getMetadata().getName());
+        LOGGER.info("Waiting for Kafka MirrorMaker {}", kafkaMirrorMaker.getMetadata().getName());
+        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker", kafkaMirrorMaker.getSpec().getReplicas());
+        LOGGER.info("Kafka MirrorMaker {} is ready", kafkaMirrorMaker.getMetadata().getName());
         return kafkaMirrorMaker;
     }
 

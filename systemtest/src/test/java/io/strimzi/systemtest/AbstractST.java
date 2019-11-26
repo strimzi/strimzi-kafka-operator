@@ -122,8 +122,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
-
     private static String operationID;
     Random rng = new Random();
 
@@ -376,10 +374,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     public String  getInitContainerImageName(String podName) {
         return kubeClient().getPod(podName).getSpec().getInitContainers().stream()
                 .findFirst().get().getImage();
-    }
-
-    public void deleteTestMethodResources() {
-        ResourceManager.deleteMethodResources();
     }
 
     public static String getOperationID() {
@@ -941,7 +935,7 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
+        ResourceManager.deleteMethodResources();
     }
 
     protected void tearDownEnvironmentAfterAll() {

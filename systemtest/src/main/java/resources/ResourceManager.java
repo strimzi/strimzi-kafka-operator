@@ -268,12 +268,14 @@ public class ResourceManager {
     }
 
     public static void deleteClassResources() {
+        LOGGER.info("Going to clear all class resources");
         while (!classResources.empty()) {
             classResources.pop().run();
         }
     }
 
     public static void deleteMethodResources() {
+        LOGGER.info("Going to clear all method resources");
         while (!methodResources.empty()) {
             methodResources.pop().run();
         }
