@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Configures Ingress listeners
  */
-@JsonPropertyOrder({"bootstrap", "brokers", "certificateAndKey"})
+@JsonPropertyOrder({"bootstrap", "brokers", "brokerCertAndKey"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

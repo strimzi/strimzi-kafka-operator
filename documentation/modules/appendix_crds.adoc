@@ -330,15 +330,15 @@ Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 [options="header"]
 |====
-|Property          |Description
-|serverKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|Property                 |Description
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
 ### `CertAndKeySecretSource` schema reference
 
-Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-LoadBalancerListenerConfiguration-{context}[`LoadBalancerListenerConfiguration`], xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`], xref:type-RouteListenerConfiguration-{context}[`RouteListenerConfiguration`], xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
+Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`], xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
 
 
 [options="header"]
@@ -370,7 +370,7 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 |configuration       1.2+<.<|External listener configuration.
-|xref:type-RouteListenerConfiguration-{context}[`RouteListenerConfiguration`]
+|xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -426,16 +426,16 @@ Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 |string
 |====
 
-[id='type-RouteListenerConfiguration-{context}']
-### `RouteListenerConfiguration` schema reference
+[id='type-KafkaListenerExternalConfiguration-{context}']
+### `KafkaListenerExternalConfiguration` schema reference
 
-Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
+Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
 
 
 [options="header"]
 |====
-|Property          |Description
-|serverKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|Property                 |Description
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 
@@ -457,7 +457,7 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
 |configuration       1.2+<.<|External listener configuration.
-|xref:type-LoadBalancerListenerConfiguration-{context}[`LoadBalancerListenerConfiguration`]
+|xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -519,19 +519,6 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 |string
 |====
 
-[id='type-LoadBalancerListenerConfiguration-{context}']
-### `LoadBalancerListenerConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`]
-
-
-[options="header"]
-|====
-|Property          |Description
-|serverKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
 [id='type-KafkaListenerExternalNodePort-{context}']
 ### `KafkaListenerExternalNodePort` schema reference
 
@@ -550,7 +537,7 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
 |xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 |configuration       1.2+<.<|External listener configuration.
-|xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`]
+|xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -612,19 +599,6 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 |map
 |====
 
-[id='type-NodePortListenerConfiguration-{context}']
-### `NodePortListenerConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
-
-
-[options="header"]
-|====
-|Property          |Description
-|serverKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
 [id='type-KafkaListenerExternalIngress-{context}']
 ### `KafkaListenerExternalIngress` schema reference
 
@@ -658,12 +632,12 @@ Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternal
 
 [options="header"]
 |====
-|Property          |Description
-|bootstrap  1.2+<.<|External bootstrap ingress configuration.
+|Property                 |Description
+|bootstrap         1.2+<.<|External bootstrap ingress configuration.
 |xref:type-IngressListenerBootstrapConfiguration-{context}[`IngressListenerBootstrapConfiguration`]
-|brokers    1.2+<.<|External broker ingress configuration.
+|brokers           1.2+<.<|External broker ingress configuration.
 |xref:type-IngressListenerBrokerConfiguration-{context}[`IngressListenerBrokerConfiguration`] array
-|serverKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 

@@ -36,7 +36,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
     private NodePortListenerOverride overrides;
-    private NodePortListenerConfiguration configuration;
+    private KafkaListenerExternalConfiguration configuration;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
@@ -85,11 +85,11 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     }
 
     @Description("External listener configuration")
-    public NodePortListenerConfiguration getConfiguration() {
+    public KafkaListenerExternalConfiguration getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(NodePortListenerConfiguration configuration) {
+    public void setConfiguration(KafkaListenerExternalConfiguration configuration) {
         this.configuration = configuration;
     }
 

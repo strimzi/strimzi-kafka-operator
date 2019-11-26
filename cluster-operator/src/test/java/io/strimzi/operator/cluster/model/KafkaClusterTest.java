@@ -3705,11 +3705,11 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewKafkaListenerExternalIngress()
                                 .withNewConfiguration()
-                                    .withNewServerKey()
+                                    .withNewBrokerCertAndKey()
                                         .withCertificate(cert)
                                         .withKey(key)
                                         .withSecretName(secret)
-                                    .endServerKey()
+                                    .endBrokerCertAndKey()
                                 .endConfiguration()
                             .endKafkaListenerExternalIngress()
                         .endListeners()
@@ -3717,9 +3717,9 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(k.getSecretSource().getSecretName(), is(secret));
-        assertThat(k.getSecretSource().getKey(), is(key));
-        assertThat(k.getSecretSource().getCertificate(), is(cert));
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
     }
 
     @Test
@@ -3736,11 +3736,11 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withNewConfiguration()
-                                    .withNewServerKey()
+                                    .withNewBrokerCertAndKey()
                                         .withCertificate(cert)
                                         .withKey(key)
                                         .withSecretName(secret)
-                                    .endServerKey()
+                                    .endBrokerCertAndKey()
                                 .endConfiguration()
                             .endKafkaListenerExternalNodePort()
                         .endListeners()
@@ -3748,9 +3748,9 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(k.getSecretSource().getSecretName(), is(secret));
-        assertThat(k.getSecretSource().getKey(), is(key));
-        assertThat(k.getSecretSource().getCertificate(), is(cert));
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
     }
 
     @Test
@@ -3767,11 +3767,11 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewKafkaListenerExternalRoute()
                                 .withNewConfiguration()
-                                    .withNewServerKey()
+                                    .withNewBrokerCertAndKey()
                                     .withCertificate(cert)
                                         .withKey(key)
                                         .withSecretName(secret)
-                                        .endServerKey()
+                                        .endBrokerCertAndKey()
                                 .endConfiguration()
                             .endKafkaListenerExternalRoute()
                         .endListeners()
@@ -3779,9 +3779,9 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(k.getSecretSource().getSecretName(), is(secret));
-        assertThat(k.getSecretSource().getKey(), is(key));
-        assertThat(k.getSecretSource().getCertificate(), is(cert));
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
     }
 
     @Test
@@ -3798,11 +3798,11 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewKafkaListenerExternalLoadBalancer()
                                     .withNewConfiguration()
-                                        .withNewServerKey()
+                                        .withNewBrokerCertAndKey()
                                             .withCertificate(cert)
                                             .withKey(key)
                                             .withSecretName(secret)
-                                        .endServerKey()
+                                        .endBrokerCertAndKey()
                                 .endConfiguration()
                             .endKafkaListenerExternalLoadBalancer()
                         .endListeners()
@@ -3810,13 +3810,13 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(k.getSecretSource().getSecretName(), is(secret));
-        assertThat(k.getSecretSource().getKey(), is(key));
-        assertThat(k.getSecretSource().getCertificate(), is(cert));
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
     }
 
     @Test
-    public void testExternalCertificateTls() {
+    public void testCustomCertificateTls() {
 
         String cert = "my-external-cert.crt";
         String key = "my.key";
@@ -3829,11 +3829,11 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewTls()
                                 .withNewConfiguration()
-                                    .withNewServerKey()
+                                    .withNewBrokerCertAndKey()
                                         .withCertificate(cert)
                                         .withKey(key)
                                         .withSecretName(secret)
-                                    .endServerKey()
+                                    .endBrokerCertAndKey()
                                 .endConfiguration()
                             .endTls()
                         .endListeners()
@@ -3841,8 +3841,8 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        assertThat(k.getSecretSource().getSecretName(), is(secret));
-        assertThat(k.getSecretSource().getKey(), is(key));
-        assertThat(k.getSecretSource().getCertificate(), is(cert));
+        assertThat(k.getSecretSourceTls().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceTls().getKey(), is(key));
+        assertThat(k.getSecretSourceTls().getCertificate(), is(cert));
     }
 }

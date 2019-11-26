@@ -21,7 +21,7 @@ import static java.util.Collections.emptyMap;
 /**
  * Configures Tls listeners
  */
-@JsonPropertyOrder({"serverKey"})
+@JsonPropertyOrder({"brokerCertAndKey"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -32,16 +32,16 @@ import static java.util.Collections.emptyMap;
 public class TlsListenerConfiguration implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private CertAndKeySecretSource serverKey;
+    private CertAndKeySecretSource brokerCertAndKey;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair.")
-    public CertAndKeySecretSource getServerKey() {
-        return serverKey;
+    public CertAndKeySecretSource getBrokerCertAndKey() {
+        return brokerCertAndKey;
     }
 
-    public void setServerKey(CertAndKeySecretSource serverKey) {
-        this.serverKey = serverKey;
+    public void setBrokerCertAndKey(CertAndKeySecretSource brokerCertAndKey) {
+        this.brokerCertAndKey = brokerCertAndKey;
     }
 
     @Override

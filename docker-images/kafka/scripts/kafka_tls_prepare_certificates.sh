@@ -26,7 +26,7 @@ function create_keystore {
 # $3: Public key to be imported
 # $4: Private key to be imported
 # $5: Alias of the certificate
-function create_keystore_for_ext_listener {
+function create_keystore_without_ca_file {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $5 -password pass:$2 -out $1
 }
 
@@ -76,7 +76,7 @@ echo "Preparing keystore for replication and clienttls listener is complete"
 if [ -n "$KAFKA_CUSTOM_TLS_CERT" ] && [ -n "$KAFKA_CUSTOM_TLS_KEY" ]; then
     echo "Preparing keystore for external listener"
 
-    create_keystore_for_ext_listener /tmp/kafka/custom.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_CERT} /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_KEY} ${KAFKA_CUSTOM_TLS_CERT}
+    create_keystore_without_ca_file /tmp/kafka/custom.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_CERT} /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_KEY} ${KAFKA_CUSTOM_TLS_CERT}
 
     echo "Preparing keystore for external listener is complete"
 fi

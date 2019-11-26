@@ -285,7 +285,7 @@ spec:
                         configuration:
                           type: object
                           properties:
-                            serverKey:
+                            brokerCertAndKey:
                               type: object
                               properties:
                                 certificate:
@@ -435,7 +435,7 @@ spec:
                                     type: object
                                 required:
                                 - host
-                            serverKey:
+                            brokerCertAndKey:
                               type: object
                               properties:
                                 certificate:

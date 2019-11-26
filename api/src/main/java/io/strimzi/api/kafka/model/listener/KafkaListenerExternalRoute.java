@@ -34,7 +34,7 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private List<NetworkPolicyPeer> networkPolicyPeers;
     private RouteListenerOverride overrides;
-    private RouteListenerConfiguration configuration;
+    private KafkaListenerExternalConfiguration configuration;
 
     @Description("Must be `" + TYPE_ROUTE + "`")
     @Override
@@ -72,11 +72,11 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     }
 
     @Description("External listener configuration")
-    public RouteListenerConfiguration getConfiguration() {
+    public KafkaListenerExternalConfiguration getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(RouteListenerConfiguration configuration) {
+    public void setConfiguration(KafkaListenerExternalConfiguration configuration) {
         this.configuration = configuration;
     }
 

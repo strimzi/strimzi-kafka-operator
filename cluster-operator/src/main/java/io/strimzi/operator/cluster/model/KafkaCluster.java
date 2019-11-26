@@ -136,7 +136,9 @@ public class KafkaCluster extends AbstractModel {
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
+    private static final String ENV_VAR_KAFKA_CUSTOM_EXT_CERT = "KAFKA_CUSTOM_EXT_CERT";
     private static final String ENV_VAR_KAFKA_CUSTOM_TLS_CERT = "KAFKA_CUSTOM_TLS_CERT";
+    private static final String ENV_VAR_KAFKA_CUSTOM_EXT_KEY = "KAFKA_CUSTOM_EXT_KEY";
     private static final String ENV_VAR_KAFKA_CUSTOM_TLS_KEY = "KAFKA_CUSTOM_TLS_KEY";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
@@ -217,7 +219,8 @@ public class KafkaCluster extends AbstractModel {
     private KafkaVersion kafkaVersion;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
-    private CertAndKeySecretSource secretSource = null;
+    private CertAndKeySecretSource secretSourceExternal = null;
+    private CertAndKeySecretSource secretSourceTls = null;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -514,36 +517,32 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getExternal() != null) {
                 if (result.isExposedWithIngress()) {
-                    if (((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration() != null &&
-                            ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                        result.setSecretSource(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getServerKey());
+                    if (((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration() != null) {
+                        result.setSecretSourceExternal(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
                     }
                 }
 
                 if (result.isExposedWithNodePort()) {
-                    if (((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration() != null &&
-                            ((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                        result.setSecretSource(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getServerKey());
+                    if (((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration() != null) {
+                        result.setSecretSourceExternal(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
                     }
                 }
 
                 if (result.isExposedWithLoadBalancer()) {
-                    if (((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration() != null &&
-                            ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                        result.setSecretSource(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getServerKey());
+                    if (((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration() != null) {
+                        result.setSecretSourceExternal(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
                     }
                 }
 
                 if (result.isExposedWithRoute()) {
-                    if (((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration() != null &&
-                            ((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey() != null) {
-                        result.setSecretSource(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getServerKey());
+                    if (((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration() != null) {
+                        result.setSecretSourceExternal(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
                     }
                 }
             }
 
             if (listeners.getTls() != null && listeners.getTls().getConfiguration() != null) {
-                result.setSecretSource(listeners.getTls().getConfiguration().getServerKey());
+                result.setSecretSourceTls(listeners.getTls().getConfiguration().getBrokerCertAndKey());
             }
         }
 
@@ -1303,8 +1302,11 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
-        if (secretSource != null) {
-            volumeList.add(createSecretVolume("custom-certs", this.secretSource.getSecretName(), isOpenShift));
+        if (secretSourceExternal != null) {
+            volumeList.add(createSecretVolume("custom-certs", this.secretSourceExternal.getSecretName(), isOpenShift));
+        }
+        if (secretSourceTls != null) {
+            volumeList.add(createSecretVolume("custom-certs", this.secretSourceTls.getSecretName(), isOpenShift));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
@@ -1357,7 +1359,7 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         volumeMountList.add(createVolumeMount("ready-files", "/var/opt/kafka"));
 
-        if (secretSource != null) {
+        if (secretSourceExternal != null || secretSourceTls != null) {
             volumeMountList.add(createVolumeMount("custom-certs", "/opt/kafka/custom-certs"));
         }
 
@@ -1622,9 +1624,13 @@ public class KafkaCluster extends AbstractModel {
         // Add user defined environment variables to the Kafka broker containers
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
-        if (secretSource != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_CERT, secretSource.getCertificate()));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_KEY, secretSource.getKey()));
+        if (secretSourceExternal != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXT_CERT, secretSourceExternal.getCertificate()));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXT_KEY, secretSourceExternal.getKey()));
+        }
+        if (secretSourceTls != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_CERT, secretSourceTls.getCertificate()));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_KEY, secretSourceTls.getKey()));
         }
 
         return varList;
@@ -2167,12 +2173,20 @@ public class KafkaCluster extends AbstractModel {
         return false;
     }
 
-    public CertAndKeySecretSource getSecretSource() {
-        return this.secretSource;
+    public CertAndKeySecretSource getSecretSourceExternal() {
+        return this.secretSourceExternal;
     }
 
-    public void setSecretSource(CertAndKeySecretSource secretSource) {
-        this.secretSource = secretSource;
+    public CertAndKeySecretSource getSecretSourceTls() {
+        return this.secretSourceTls;
+    }
+
+    public void setSecretSourceExternal(CertAndKeySecretSource secretSourceExternal) {
+        this.secretSourceExternal = secretSourceExternal;
+    }
+
+    public void setSecretSourceTls(CertAndKeySecretSource secretSourceTls) {
+        this.secretSourceTls = secretSourceTls;
     }
 
     @Override
