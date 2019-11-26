@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cmdClient;
 
 /**
  * A {@link KubeCmdClient} wrapping {@code kubectl}.
@@ -11,9 +11,7 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
 
-    Kubectl() {
-
-    }
+    public Kubectl() { }
 
     Kubectl(String futureNamespace) {
         namespace = futureNamespace;
@@ -29,7 +27,6 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
         return namespace;
     }
 
-
     @Override
     public String defaultNamespace() {
         return "default";
@@ -44,4 +41,6 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
     public Kubectl clientWithAdmin() {
         return this;
     }
+
+
 }

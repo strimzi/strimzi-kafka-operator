@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.LogCollector;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

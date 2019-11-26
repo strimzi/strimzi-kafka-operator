@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.annotations;
 
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.Minishift;
-import io.strimzi.test.k8s.OpenShift;
+import io.strimzi.test.k8s.cluster.Minishift;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;

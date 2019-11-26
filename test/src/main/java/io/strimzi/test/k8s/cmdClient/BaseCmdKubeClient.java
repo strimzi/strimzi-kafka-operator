@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cmdClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,10 +39,9 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     private static final String APPLY = "apply";
     private static final String DELETE = "delete";
 
-    public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
-    public static final String SERVICE = "service";
     public static final String CM = "cm";
+
     String namespace = defaultNamespace();
 
     protected abstract String cmd();
@@ -55,13 +55,10 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     protected static class Context implements AutoCloseable {
         @Override
-        public void close() {
-
-        }
+        public void close() { }
     }
 
     private static final Context NOOP = new Context();
-
 
     @Override
     public abstract K clientWithAdmin();
@@ -173,15 +170,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
-    public K replaceContent(String yamlContent) {
-        try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand("replace", "-f", "-"));
-            return (K) this;
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
@@ -235,6 +223,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         return Exec.exec(asList(command));
     }
 
+    @Override
+    public List<String> execInCurrentNamespace(String... commands) {
+        return namespacedCommand(commands);
+    }
+
     enum ExType {
         BREAK,
         CONTINUE,
@@ -259,27 +252,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             }
         });
         return (K) this;
-    }
-
-    @Override
-    public K waitForDeployment(String name, int expected) {
-        return waitFor("deployment", name, actualObj -> {
-            JsonNode replicasNode = actualObj.get("status").get("replicas");
-            JsonNode readyReplicasName = actualObj.get("status").get("readyReplicas");
-            return replicasNode != null && readyReplicasName != null
-                    && replicasNode.asInt() == readyReplicasName.asInt() && replicasNode.asInt() == expected;
-
-        });
-    }
-
-    @Override
-    public K waitForDeploymentConfig(String name) {
-        return waitFor("deploymentConfig", name, actualObj -> {
-            JsonNode replicasNode = actualObj.get("status").get("replicas");
-            JsonNode readyReplicasName = actualObj.get("status").get("readyReplicas");
-            return replicasNode != null && readyReplicasName != null
-                    && replicasNode.asInt() == readyReplicasName.asInt();
-        });
     }
 
     @Override
@@ -375,7 +347,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             return Exec.exec("bash", "-c", join(" ", namespacedCommand("logs", resourceType + "/" + resourceName, "--since=" + sinceSeconds + "s",
                     "|", "grep", " -e " + join(" -e ", grepPattern), "-B", "1"))).out();
         } catch (KubeClusterException e) {
-            if (e.result != null && e.result.exitStatus() == 1) {
+            if (e.result != null && e.result.returnCode() == 1) {
                 LOGGER.info("{} not found", grepPattern);
             } else {
                 LOGGER.error("Caught exception while searching {} in logs", grepPattern);

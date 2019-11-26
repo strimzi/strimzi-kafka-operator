@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
+import static io.strimzi.test.k8s.cmdClient.BaseCmdKubeClient.STATEFUL_SET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

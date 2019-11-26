@@ -2,13 +2,19 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cluster;
 
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import io.strimzi.test.k8s.exceptions.NoClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Locale;
+
+import static io.strimzi.test.BaseITST.CONFIG;
 
 /**
  * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
@@ -23,16 +29,12 @@ public interface KubeCluster {
     /** Return true iff this kind of cluster is running on the local machine */
     boolean isClusterUp();
 
-    /** Attempt to start a cluster */
-    void clusterUp();
-
-    /** Attempt to stop a cluster */
-    void clusterDown();
-
     /** Return a default CMD cmdClient for this kind of cluster. */
     KubeCmdClient defaultCmdClient();
 
-    KubeClient defaultClient();
+    default KubeClient defaultClient() {
+        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
+    }
 
     /**
      * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's

@@ -20,7 +20,11 @@ public class ExecResult implements Serializable {
         this.stdErr = stdErr;
     }
 
-    public int exitStatus() {
+    public boolean exitStatus() {
+        return returnCode == 0;
+    }
+
+    public int returnCode() {
         return returnCode;
     }
 

@@ -43,7 +43,7 @@ import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -736,7 +736,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     /**
      * Delete CO deployed via helm chart.
      */
-    public  void deleteClusterOperatorViaHelmChart() {
+    public void deleteClusterOperatorViaHelmChart() {
         LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
     }

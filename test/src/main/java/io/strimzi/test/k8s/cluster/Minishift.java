@@ -2,11 +2,15 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cluster;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import io.strimzi.test.k8s.cmdClient.Oc;
 
 public class Minishift implements KubeCluster {
 
@@ -16,16 +20,6 @@ public class Minishift implements KubeCluster {
     @Override
     public boolean isAvailable() {
         return Exec.isExecutableOnPath(CMD);
-    }
-
-    @Override
-    public void clusterUp() {
-        Exec.exec(CMD, "start");
-    }
-
-    @Override
-    public void clusterDown() {
-        Exec.exec(CMD, "stop");
     }
 
     @Override
@@ -42,11 +36,6 @@ public class Minishift implements KubeCluster {
     @Override
     public KubeCmdClient defaultCmdClient() {
         return new Oc();
-    }
-
-    @Override
-    public KubeClient defaultClient() {
-        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     public String toString() {

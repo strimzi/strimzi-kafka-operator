@@ -86,7 +86,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         // Check that UO created a secret for new user
-        cmdKubeClient().waitForResourceCreation("Secret", USER_NAME);
+        StUtils.waitForSecretReady(USER_NAME);
         setNamespace(previousNamespace);
     }
 

@@ -7,7 +7,7 @@ package io.strimzi.test;
 import io.fabric8.kubernetes.client.Config;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.KubeCmdClient;
+import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;

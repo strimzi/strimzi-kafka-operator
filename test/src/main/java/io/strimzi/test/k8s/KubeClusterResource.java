@@ -4,6 +4,10 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import io.strimzi.test.k8s.exceptions.NoClusterException;
+
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
