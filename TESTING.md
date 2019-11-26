@@ -1,7 +1,7 @@
 # Testing Strimzi
 
 This document gives a detailed breakdown of the testing processes and testing options for Strimzi within system tests. 
-For more information about build process see [Hacking document](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md).
+For more information about build process see [Hacking document](HACKING.md).
 
 <!-- TOC depthFrom:2 -->
 
@@ -131,7 +131,7 @@ Example of skip recreate environment in case of failures. You must override meth
 #### Cluster Operator log check
 
 After each test, there a check for cluster operator logs, which is looking for unexpected errors or unexpected exceptions.
-You can see the code of matcher based on Hamcrest in systemtest [matchers module](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/matchers/LogHasNoUnexpectedErrors.java).
+You can see the code of matcher based on Hamcrest in systemtest [matchers module](systemtest/src/main/java/io/strimzi/systemtest/matchers/LogHasNoUnexpectedErrors.java).
 There is a whitelist for expected errors, which happen from time to time.
 Expected errors doesn't have any problematic impact on cluster behavior and required action is usually executed during next reconciliation.
 
@@ -169,12 +169,12 @@ In that case, you can easily skip these tests with `-DexcludeGroups=networkpolic
 
 There is also a mvn profile for most of the groups, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
 
-All available test groups are listed in [Constants](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
+All available test groups are listed in [Constants](systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
 
 ## Environment variables
 
 We can configure our system tests with several environment variables, which are loaded before test execution. 
-All environment variables can be seen in [Environment](https://github.com/strimzi/strimzi-kafka-operator/blob/master/systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
+All environment variables can be seen in [Environment](systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
 | Name                      | Description                                                                          | Default                                          |
 | :-----------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------: |
@@ -198,7 +198,7 @@ If you want to use your own images with different tag or from a different reposi
 
 ##### Specific Kafka version
 
-To set custom Kafka version in system tests you need to set environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
+To set custom Kafka version in system tests you need to set environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](kafka-versions).
 
 ##### Cluster Operator Log level
 

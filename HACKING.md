@@ -1,6 +1,6 @@
 # Developing Strimzi
 
-This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md) document.
+This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](DEV_QUICK_START.md) document.
 
 <!-- TOC depthFrom:2 -->
 
@@ -234,7 +234,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-System tests has its own guide with more information. See [Testing Guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/TESTING.md) document for more information.
+System tests has its own guide with more information. See [Testing Guide](TESTING.md) document for more information.
 
 ## DCO Signoff
 
