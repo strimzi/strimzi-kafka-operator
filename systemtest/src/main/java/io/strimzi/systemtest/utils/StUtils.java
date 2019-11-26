@@ -26,6 +26,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import resources.crd.KafkaUserResource;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -643,12 +644,26 @@ public class StUtils {
         LOGGER.info("Kafka user secret {} created", secretName);
     }
 
+    public static void waitForKafkaUserCreation(String userName) {
+        LOGGER.info("Waiting for Kafka user creation {}", userName);
+        waitForSecretReady(userName);
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready")
+        );
+        LOGGER.info("Kafka user {} created", userName);
+    }
+
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
         TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
         LOGGER.info("Kafka user {} deleted", userName);
+    }
+
+    public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
+        TestUtils.waitFor("Wait until increase observation level from " + observation + " for user " + userName, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            () -> observation < KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
     public static void waitForKafkaUserCreationError(String userName, String eoPodName) {

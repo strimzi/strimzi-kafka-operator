@@ -108,12 +108,17 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
+        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
+        LOGGER.info("observation: {}", observedGeneration);
+
         replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
-        StUtils.waitForSecretReady(kafkaUser);
+        StUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, kafkaUser);
+        StUtils.waitForKafkaUserCreation(kafkaUser);
+
         kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
