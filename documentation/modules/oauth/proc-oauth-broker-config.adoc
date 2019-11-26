@@ -65,7 +65,7 @@ For example:
      tlsTrustedCertificates: <6>
      - secretName: oauth-server-cert
        certificate: ca.crt
-   disableTlsHostnameVerification: true <7>
+     disableTlsHostnameVerification: true <7>
 
    //Option 2
    authentication: <8>
@@ -84,7 +84,7 @@ For example:
 <4> The user name profile claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
 <5> OPTION 1: TLS connection to the authorization server.
 <6> (Optional) Trusted certificates for TLS connection to the authorization server.
-<7> Enable TLS hostname verification. Default is `false`.
+<7> (Optional) Disable TLS hostname verification. Default is `false`.
 <8> OPTION 2: Introspection endpoint to connect directly to the authorization server.
 
 . Save and exit the editor, then wait for rolling updates to complete.

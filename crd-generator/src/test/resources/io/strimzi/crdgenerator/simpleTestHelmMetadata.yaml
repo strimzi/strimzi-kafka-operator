@@ -420,5 +420,14 @@ spec:
         stringProperty:
           type: "string"
           pattern: ".*"
+      oneOf:
+      - properties:
+          either: {}
+        required:
+        - "either"
+      - properties:
+          or: {}
+        required:
+        - "or"
       required:
       - "stringProperty"

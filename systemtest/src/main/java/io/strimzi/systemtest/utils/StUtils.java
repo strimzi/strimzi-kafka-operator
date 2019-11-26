@@ -219,6 +219,7 @@ public class StUtils {
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT * 2, () -> {
                 try {
@@ -229,6 +230,7 @@ public class StUtils {
                 }
             });
         StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
+        LOGGER.info("StatefulSet {} rolling update finished", name);
         return ssSnapshot(name);
     }
 
@@ -240,10 +242,12 @@ public class StUtils {
      * @return The snapshot of the Deployment after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        LOGGER.info("Waiting for Deployment {} rolling update", name);
         TestUtils.waitFor("Deployment " + name + " rolling update",
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(name, snapshot));
         StUtils.waitForDeploymentReady(name);
         StUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
+        LOGGER.info("Deployment {} rolling update finished", name);
         return depSnapshot(name);
     }
 

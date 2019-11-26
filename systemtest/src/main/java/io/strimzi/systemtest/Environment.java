@@ -61,7 +61,7 @@ public class Environment {
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
-    private static final String ST_KAFKA_VERSION_DEFAULT = "2.3.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = "2.3.1";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
@@ -102,5 +102,6 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN);
+        LOGGER.info(debugFormat, IMAGE_PULL_POLICY_ENV, IMAGE_PULL_POLICY);
     }
 }

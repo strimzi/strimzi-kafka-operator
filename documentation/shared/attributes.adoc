@@ -22,7 +22,7 @@
 
 // Kafka upgrade attributes used in kafka upgrades section
 :KafkaVersionLower: 2.2.1
-:KafkaVersionHigher: 2.3.0
+:KafkaVersionHigher: 2.3.1
 //log message format version
 :LogMsgVersLower: 2.2
 :LogMsgVersHigher: 2.3

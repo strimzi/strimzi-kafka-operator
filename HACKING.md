@@ -277,10 +277,10 @@ We can configure our system tests with several environment variables, which are 
 | DOCKER_ORG                | Specify organization which owns image used in system tests                           | strimzi                                          |
 | DOCKER_TAG                | Specify image tags used in system tests                                              | latest                                           |
 | DOCKER_REGISTRY           | Specify docker registry used in system tests                                         | docker.io                                        |
-| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.3.0 |
+| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.3.1 |
 | BRIDGE_IMAGE              | Specify kafka bridge image used in systemtest                                        | docker.io/strimzi/kafka-bridge:latest            |
 | TEST_LOG_DIR              | Directory for store logs collected during the tests                                  | ../systemtest/target/logs/                       |
-| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.3.0                                            |
+| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.3.1                                            |
 | STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator                                                       | DEBUG                                            |
 | KUBERNETES_DOMAIN         | Cluster domain. It's used for specify URL endpoint of testing clients                | .nip.io                                          |
 

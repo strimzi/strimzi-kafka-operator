@@ -10,8 +10,11 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -46,13 +49,30 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithMissingRequired() {
-        try {
-            createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.consumer.bootstrapServers in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.producer in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.whitelist in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
+            });
+
+        String expectedMsg1a = "spec.consumer.bootstrapServers in body is required";
+        String expectedMsg1b = "spec.producer in body is required";
+        String expectedMsg1c = "spec.whitelist in body is required";
+
+        String expectedMsg2a = "spec.consumer.bootstrapServers: Required value";
+        String expectedMSg2b = "spec.whitelist: Required value";
+        String expectedMsg2c = "spec.producer: Required value";
+
+        assertThat(exception.getMessage(), anyOf(
+                allOf(
+                        containsStringIgnoringCase(expectedMsg1a),
+                        containsStringIgnoringCase(expectedMsg1b),
+                        containsStringIgnoringCase(expectedMsg1c)),
+                allOf(
+                        containsStringIgnoringCase(expectedMsg2a),
+                        containsStringIgnoringCase(expectedMSg2b),
+                        containsStringIgnoringCase(expectedMsg2c))
+                ));
     }
 
     @Test
@@ -67,12 +87,28 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithTlsAuthWithMissingRequired() {
-        try {
-            createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.producer.authentication.certificateAndKey.certificate in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.producer.authentication.certificateAndKey.key in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
+            });
+
+        String expectedMsg1a = "spec.producer.authentication.certificateAndKey.certificate in body is required";
+        String expectedMsg1b = "spec.producer.authentication.certificateAndKey.key in body is required";
+
+        String expectedMsg2a = "spec.producer.authentication.certificateAndKey.certificate: Required value";
+        String expectedMSg2b = "spec.producer.authentication.certificateAndKey.key: Required value";
+        String expectedMsg2c = "spec.whitelist: Required value";
+
+        assertThat(exception.getMessage(), anyOf(
+                allOf(
+                        containsStringIgnoringCase(expectedMsg1a),
+                        containsStringIgnoringCase(expectedMsg1b)),
+                allOf(
+                        containsStringIgnoringCase(expectedMsg2a),
+                        containsStringIgnoringCase(expectedMSg2b),
+                        containsStringIgnoringCase(expectedMsg2c))
+        ));
     }
 
     @Test

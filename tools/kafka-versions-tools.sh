@@ -40,6 +40,12 @@ function get_kafka_urls {
     eval binary_urls="$(yq read $VERSIONS_FILE '*.url' -j | tr '[],' '() ')"
 }
 
+function get_zookeeper_versions {
+
+    eval zk_versions="$(yq read $VERSIONS_FILE '*.zookeeper' -j | tr '[],' '() ')"
+
+}
+
 function get_kafka_checksums {
     eval checksums="$(yq read $VERSIONS_FILE '*.checksum' -j | tr '[],' '() ')"
 }

@@ -91,15 +91,27 @@ public class ClusterOperatorConfig {
      * @return  Cluster Operator configuration instance
      */
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
+        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES));
+        return fromMap(map, lookup);
+    }
+
+    /**
+     * Loads configuration parameters from a related map and custom KafkaVersion.Lookup instance.
+     * THis is used for testing.
+     *
+     * @param map   map from which loading configuration parameters
+     * @param lookup KafkaVersion.Lookup instance with the supported Kafka version information
+     * @return  Cluster Operator configuration instance
+     */
+    static ClusterOperatorConfig fromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
         Set<String> namespaces = parseNamespaceList(map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE));
         long reconciliationInterval = parseReconciliationInerval(map.get(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
         long operationTimeout = parseOperationTimeout(map.get(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS));
         boolean createClusterRoles = parseCreateClusterRoles(map.get(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES));
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY));
-        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS));
-
         return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, imagePullSecrets);
+
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {

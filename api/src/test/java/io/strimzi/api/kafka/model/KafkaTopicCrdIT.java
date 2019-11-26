@@ -10,8 +10,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -45,12 +48,24 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicWithMissingProperty() {
-        try {
-            createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.partitions in body is required"), is(true));
-            assertThat(e.getMessage().contains("spec.replicas in body is required"), is(true));
-        }
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
+            });
+
+        String expectedMsg1a = "spec.partitions in body is required";
+        String expectedMsg1b = "spec.replicas in body is required";
+        String expectedMsg2a = "spec.partitions: Required value";
+        String expectedMsg2b = "spec.replicas: Required value";
+        assertThat(exception.getMessage(), anyOf(
+                allOf(
+                        containsStringIgnoringCase(expectedMsg1a),
+                        containsStringIgnoringCase(expectedMsg1b)),
+                allOf(
+                        containsStringIgnoringCase(expectedMsg2a),
+                        containsStringIgnoringCase(expectedMsg2b))
+                ));
     }
 
     @BeforeAll

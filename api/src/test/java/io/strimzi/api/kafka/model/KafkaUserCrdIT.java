@@ -5,13 +5,9 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -41,15 +37,6 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaUserWithExtraProperty() {
         createDelete(KafkaUser.class, "KafkaUser-with-extra-property.yaml");
-    }
-
-    @Test
-    void testKafkaUserWithMissingRequired() {
-        try {
-            createDelete(KafkaUser.class, "KafkaUser-with-missing-required.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertThat(e.getMessage().contains("spec.authentication in body is required"), is(true));
-        }
     }
 
     @BeforeAll

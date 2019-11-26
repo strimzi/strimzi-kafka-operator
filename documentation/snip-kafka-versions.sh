@@ -8,8 +8,9 @@ source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
 . $(dirname $0)/../multi-platform-support.sh
 
 # Parse the Kafka versions file and get a list of version strings in an array 
-# called "versions" and likewise for protocols and formats
+# called "versions" and likewise for protocols, formats and zookeeper versions
 get_kafka_versions
+get_zookeeper_versions
 get_kafka_protocols
 get_kafka_formats
 
@@ -25,7 +26,7 @@ cat <<EOF
 EOF
 for i in "${!versions[@]}"
 do 
-    echo "| ${versions[$i]} | ${protocols[$i]} | ${formats[$i]} | 3.4.13"
+    echo "| ${versions[$i]} | ${protocols[$i]} | ${formats[$i]} | ${zk_versions[$i]}"
 done
 cat <<EOF
 |=================
