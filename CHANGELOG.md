@@ -2,6 +2,8 @@
 
 ## 0.16.0
 
+* When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
+
 ## 0.15.0
 
 * Drop support for Kafka 2.1.0, 2.1.1, and 2.2.0
