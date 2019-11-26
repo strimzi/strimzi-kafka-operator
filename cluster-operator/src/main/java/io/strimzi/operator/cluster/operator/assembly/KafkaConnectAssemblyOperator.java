@@ -85,7 +85,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
             return this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation,
-                    KafkaConnect::getStatus, kafkaConnectStatus,
+                    kafkaConnectStatus,
                 (connect1, status) -> {
                     return new KafkaConnectBuilder(connect1).withStatus(status).build();
                 });
@@ -115,7 +115,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
                     kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
 
-                    this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation, KafkaConnect::getStatus, kafkaConnectStatus,
+                    this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation, kafkaConnectStatus,
                         (connect1, status) -> new KafkaConnectBuilder(connect1).withStatus(status).build()).setHandler(statusResult -> {
                             // If both features succeeded, createOrUpdate succeeded as well
                             // If one or both of them failed, we prefer the reconciliation failure as the main error
