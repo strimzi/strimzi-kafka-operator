@@ -3,7 +3,7 @@
 // overview/master.adoc
 
 [id="metrics-overview_{context}"]
-= Metrics
+= Monitoring
 
 Metrics data allows you to monitor the performance and health of {ProductName}.
 You can configure your deployment to capture metrics data for analysis and notifications.

@@ -3,18 +3,16 @@
 // overview/master.adoc
 
 [id="overview-components_{context}"]
-= {ProductName} components
+= {ProductName} operators
 
-Having discussed the basics of Kafka, we can now look at how {ProductName} supports Kafka by using:
-
-* *Operators* to deploy and manage the components and dependencies to Kubernetes
-* *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
+Having discussed the basics of Kafka, we can now look at how {ProductName} supports Kafka using _operators_ to deploy and manage the components and dependencies to Kubernetes
 
 Operators are a method of packaging, deploying, and managing a Kubernetes application.
-{ProductName} Operators extend Kubernetes functionality, automating common and complex tasks related to a Kafka deployment.
+{ProductName} operators extend Kubernetes functionality, automating common and complex tasks related to a Kafka deployment.
 By implementing knowledge of Kafka operations in code, Kafka administration tasks are simplified and require less manual intervention.
 
 //description of operators
+[discrete]
 include::../../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
 
 //description of cluster operator
@@ -25,7 +23,3 @@ include::../../modules/overview/con-overview-components-topic-operator.adoc[leve
 
 //description of user operator
 include::../../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
-
-//description of kafka bridge
-include::../../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
-include::../../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]

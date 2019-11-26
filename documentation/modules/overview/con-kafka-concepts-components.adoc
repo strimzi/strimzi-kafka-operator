@@ -3,7 +3,7 @@
 // overview/assembly-kafka-components.adoc
 
 [id="kafka-concepts-components_{context}"]
-= Kafka component roles
+= Kafka component architecture
 
 A cluster of Kafka brokers is main part of the Apache Kafka project responsible for delivering messages.
 
@@ -30,4 +30,5 @@ You can deploy Kafka Connect with Source2Image support, which provides a conveni
 Kafka MirrorMaker:: Kafka MirrorMaker replicates data between two Kafka clusters, within or across data centers.
 +
 Using producers and consumers, MirrorMaker consumes messages from the primary cluster and writes them to the secondary cluster.
+Kafka Bridge:: Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 Kafka Exporter:: Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics. Consumer lag is the delay between the last message written to a partition and the message currently being picked up from that partition by a consumer

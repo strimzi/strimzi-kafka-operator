@@ -3,7 +3,7 @@
 // overview/master.adoc
 
 [id="kafka-components_{context}"]
-= Kafka components
+= {ProductName} deployment of Kafka
 
 Apache Kafka components are provided for deployment to Kubernetes with the {ProductName} distribution.
 The Kafka components are generally run as clusters for availability.
@@ -14,6 +14,10 @@ A typical deployment incorporating Kafka components might include:
 * *ZooKeeper* cluster of replicated ZooKeeper instances
 * *Kafka Connect* cluster for external data connections
 * *Kafka MirrorMaker* cluster to mirror the Kafka cluster in a secondary cluster
-* *Kafka Exporter* to extract Kafka metrics data for monitoring.
+* *Kafka Exporter* to extract Kafka metrics data for monitoring
+* *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
 
 include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]
+//description of kafka bridge
+include::../../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]

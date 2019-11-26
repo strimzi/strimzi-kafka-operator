@@ -12,7 +12,8 @@ The custom resources for {ProductName} components have common configuration prop
 In this fragment from a Kafka topic custom resource, the `apiVersion` and `kind` properties identify the associated CRD.
 The `spec` property shows configuration that defines the number of partitions and replicas for the topic.
 
-.Kafka topic custom resource
+[discrete]
+== Kafka topic custom resource
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}

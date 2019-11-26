@@ -12,11 +12,7 @@ Within a Kafka deployment, distributed tracing using Jaeger is supported for:
 
 Template configuration properties are set for the Kafka resources, which describe tracing environment variables.
 
-.Tracing for Kafka clients
+[discrete]
+== Tracing for Kafka clients
 Client applications, such as Kafka producers and consumers, can also be set up so that transactions are monitored.
-
-Client tracing requires:
-
-* Tracing dependencies in the client `pom.xml` configuration file
-* A Jaeger tracer initialized for the client application to use
-* _Instrumentation_ code to describe the tracing profile in the client code
+Clients are configured with a tracing profile, and a tracer is initialized for the client application to use.

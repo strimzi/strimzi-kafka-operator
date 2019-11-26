@@ -23,11 +23,52 @@ JBOD (Just a Bunch of Disks, suitable for Kafka only):: JBOD allows you to use m
 +
 The persistent storage capacity used by an existing Kafka cluster can be increased.
 
-Listeners:: The following types of listener are supported:
-Listeners configure how clients connect to a Kafka cluster.
+Listeners:: Listeners configure how clients connect to a Kafka cluster.
 +
+The following types of listener are supported:
++
+--
 * *Plain listener* that does not use encryption
 * *TLS listener* that uses encryption
 * *External listener* for access outside of Kubernetes
+--
++
+External listeners expose Kafka by specifying a `type`:
++
+--
+* `route` to use OpenShift Routes and HAProxy router
+* `loadbalancer` to use loadbalancer services
+* `nodeport` to use ports on the Kubernetes nodes
+* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}.
+--
 
 Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
+
+[discrete]
+== Example YAML showing Kafka configuration
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    listeners:
+      tls:
+        authentication:
+          type: tls
+      external:
+        type: route
+        authentication:
+          type: tls
+    # ...
+    storage:
+      type: persistent-claim
+      size: 10000Gi
+    # ...
+    rack:
+      topologyKey: failure-domain.beta.kubernetes.io/zone
+    # ...
+----
