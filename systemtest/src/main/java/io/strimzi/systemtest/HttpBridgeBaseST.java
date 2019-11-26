@@ -108,7 +108,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         for (int i = 0; i < messageCount; i++) {
             JsonObject metadata = offsets.getJsonObject(i);
             assertThat(metadata.getInteger("partition"), is(0));
-            assertThat(metadata.getLong("offset"), is(i));
+            assertThat(metadata.getInteger("offset"), is(i));
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
     }

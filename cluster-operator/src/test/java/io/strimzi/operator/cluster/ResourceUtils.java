@@ -15,13 +15,11 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -29,8 +27,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -39,10 +36,13 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -50,6 +50,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.AdminClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -82,8 +83,18 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeConfigsResult;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.TopicListing;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -210,8 +221,8 @@ public class ResourceUtils {
                     .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
-                .addToData("truststore.p12", caStore)
-                .addToData("truststore.password", caStorePassword)
+                .addToData("ca.p12", caStore)
+                .addToData("ca.password", caStorePassword)
                 .build();
     }
 
@@ -530,19 +541,70 @@ public class ResourceUtils {
     public static ZookeeperLeaderFinder zookeeperLeaderFinder(Vertx vertx, KubernetesClient client) {
         return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             () -> new BackOff(5_000, 2, 4)) {
-            @Override
-            protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
-                return Future.succeededFuture(true);
-            }
+                @Override
+                protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
+                    return Future.succeededFuture(true);
+                }
 
-            @Override
-            protected PemTrustOptions trustOptions(Secret s) {
-                return new PemTrustOptions();
-            }
+                @Override
+                protected PemTrustOptions trustOptions(Secret s) {
+                    return new PemTrustOptions();
+                }
 
+                @Override
+                protected PemKeyCertOptions keyCertOptions(Secret s) {
+                    return new PemKeyCertOptions();
+                }
+            };
+    }
+
+    public static AdminClientProvider adminClientProvider() {
+        return new AdminClientProvider() {
             @Override
-            protected PemKeyCertOptions keyCertOptions(Secret s) {
-                return new PemKeyCertOptions();
+            public AdminClient createAdminClient(String hostname, Secret clusterCaCertSecret, Secret coKeySecret) {
+                AdminClient mock = mock(AdminClient.class);
+                DescribeClusterResult dcr;
+                try {
+                    Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
+                    declaredConstructor.setAccessible(true);
+                    KafkaFuture<Node> objectKafkaFuture = KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091));
+                    dcr = declaredConstructor.newInstance(null, objectKafkaFuture, null, null);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.describeCluster()).thenReturn(dcr);
+
+                ListTopicsResult ltr;
+                try {
+                    Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
+                    declaredConstructor.setAccessible(true);
+                    KafkaFuture<Map<String, TopicListing>> future = KafkaFutureImpl.completedFuture(emptyMap());
+                    ltr = declaredConstructor.newInstance(future);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.listTopics(any())).thenReturn(ltr);
+
+                DescribeTopicsResult dtr;
+                try {
+                    Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class);
+                    declaredConstructor.setAccessible(true);
+                    dtr = declaredConstructor.newInstance(emptyMap());
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.describeTopics(any())).thenReturn(dtr);
+
+                DescribeConfigsResult dcfr;
+                try {
+                    Constructor<DescribeConfigsResult> declaredConstructor = DescribeConfigsResult.class.getDeclaredConstructor(Map.class);
+                    declaredConstructor.setAccessible(true);
+                    dcfr = declaredConstructor.newInstance(emptyMap());
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.describeConfigs(any())).thenReturn(dcfr);
+                return mock;
             }
         };
     }

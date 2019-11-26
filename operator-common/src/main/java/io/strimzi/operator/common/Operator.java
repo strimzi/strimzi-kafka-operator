@@ -7,12 +7,14 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstraction of an operator which is driven by resources of a given {@link #kind()}.
@@ -57,15 +59,12 @@ public interface Operator {
 
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, Handler<AsyncResult<Void>> handler) {
         if (desiredNames.size() > 0) {
-            AtomicInteger counter = new AtomicInteger(desiredNames.size());
+            List<Future> futures = new ArrayList<>();
             for (NamespaceAndName resourceRef : desiredNames) {
                 Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
-                reconcile(reconciliation).setHandler(result -> {
-                    if (counter.getAndDecrement() == 0) {
-                        handler.handle(Future.succeededFuture());
-                    }
-                });
+                futures.add(reconcile(reconciliation));
             }
+            CompositeFuture.join(futures).map((Void) null).setHandler(handler);
         } else {
             handler.handle(Future.succeededFuture());
         }

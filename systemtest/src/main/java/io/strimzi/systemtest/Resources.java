@@ -904,7 +904,7 @@ public class Resources extends AbstractResources {
     }
 
     public DoneableDeployment clusterOperator(String namespace) {
-        return createNewDeployment(defaultCLusterOperator(namespace, Constants.CONNECT_STATUS_TIMEOUT, Constants.RECONCILIATION_INTERVAL).build());
+        return createNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
     }
 
     private DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {

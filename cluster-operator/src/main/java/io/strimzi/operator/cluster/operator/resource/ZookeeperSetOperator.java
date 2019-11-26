@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -71,19 +70,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         return false;
     }
 
-    /**
-     * Method `maybeRollingUpdate` uses an algorithm for rolling update of Zookeeper cluster.
-     * It is based on restarting the Zookeeper leader replica as the last one. So the quorum is preserved.
-     * The leader is determined by sending `stat` word to each pod.
-     */
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
-        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        return maybeRollingUpdate(ss, podRestart, leaderFinder.secretOperator.get(ss.getMetadata().getNamespace(),
-                ClusterOperator.secretName(cluster)));
-    }
-
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();

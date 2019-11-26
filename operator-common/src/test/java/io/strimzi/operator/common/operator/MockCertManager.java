@@ -229,6 +229,12 @@ public class MockCertManager implements CertManager {
     }
 
     @Override
+    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
+        // never called during the tests which use this MockCertManager
+        write(keyStoreFile, "key store");
+    }
+
+    @Override
     public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         // never called during the tests which use this MockCertManager

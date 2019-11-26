@@ -30,8 +30,6 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
@@ -47,10 +45,6 @@ import java.util.List;
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>>
     extends AbstractOperator<T, AbstractWatchableResourceOperator<C, T, L, D, R>> {
-
-    private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
-
-    protected static final int LOCK_TIMEOUT_MS = 10000;
 
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;

@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -119,7 +119,10 @@ public class JbodStorageTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
-                new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
+                new ResourceOperatorSupplier(this.vertx, this.mockClient,
+                        ResourceUtils.zookeeperLeaderFinder(this.vertx, this.mockClient),
+                        ResourceUtils.adminClientProvider(),
+                        pfa, 60_000L);
 
         this.kao = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), ros, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
@@ -161,12 +164,14 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to add a new volume to the JBOD storage
         volumes.add(new PersistentClaimStorageBuilder()
@@ -202,12 +207,14 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to remove a volume from the JBOD storage
         volumes.remove(0);
@@ -240,12 +247,14 @@ public class JbodStorageTest {
         this.init();
 
         // first reconcile for cluster creation
-        CompletableFuture<Boolean> createAsync = new CompletableFuture<>();
+        CountDownLatch createAsync = new CountDownLatch(1);
         this.kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME)).setHandler(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            createAsync.complete(true);
+            createAsync.countDown();
         });
-        createAsync.get(60, TimeUnit.SECONDS);
+        if (!createAsync.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
 
         // trying to update id for a volume from in the JBOD storage
         volumes.get(0).setId(3);

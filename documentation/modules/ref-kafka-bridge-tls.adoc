@@ -5,7 +5,7 @@
 [id='ref-kafka-bridge-tls-{context}']
 = TLS support for Kafka connection to the Kafka Bridge
 
-TLS support for Kafka connection is configured in the `tls` property in `KafkaBridge.spec.kafka`.
+TLS support for Kafka connection is configured in the `tls` property in `KafkaBridge.spec`.
 The `tls` property contains a list of secrets with key names under which the certificates are stored.
 The certificates must be stored in X509 format.
 

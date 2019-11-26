@@ -53,7 +53,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
         String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(0, true);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         StUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
@@ -70,7 +72,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
         String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(0, true);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         StUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
@@ -237,5 +241,10 @@ class RecoveryST extends AbstractST {
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
+    }
+
+    @Override
+    void assertNoCoErrorsLogged(long sinceSeconds) {
+        LOGGER.info("No search in strimzi-cluster-operator log for errors");
     }
 }
