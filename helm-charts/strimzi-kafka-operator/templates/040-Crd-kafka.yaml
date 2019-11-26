@@ -1315,6 +1315,11 @@ spec:
                                 type: string
                               value:
                                 type: string
+                jmxMetrics:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
                 version:
                   type: string
               required:

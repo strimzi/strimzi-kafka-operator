@@ -25,6 +25,13 @@ fi
 rm /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
 export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 
+if [ "$KAFKA_JMX_ENABLED" = "true" ]; then
+  # opening jmx port on 9404 insecurely
+  KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9404 -Dcom.sun.management.jmxremote.rmi.port=9404 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true -Dcom.sun.management.jmxremote.authenticate=false "
+fi
+
+KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"

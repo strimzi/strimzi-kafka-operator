@@ -1,0 +1,11 @@
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-jmx-options-{context}']
+
+= Jmx Metrics metrics
+
+{ProductName} supports JMX Metrics on the Kafka brokers. When metrics are enabled, they are exposed on port 9404.
+
+include::../modules/ref-jmx-options.adoc[leveloffset=+1]

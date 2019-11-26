@@ -90,6 +90,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+|jmxMetrics           1.2+<.<|JMX Options for Kafka brokers.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |version              1.2+<.<|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
@@ -909,6 +911,19 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |value  1.2+<.<|The environment variable value.
 |string
+|====
+
+[id='type-KafkaJmxOptions-{context}']
+### `KafkaJmxOptions` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+[options="header"]
+|====
+|Property        |Description
+|enabled  1.2+<.<|Description for whether jmx options are enabled.
+|boolean
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

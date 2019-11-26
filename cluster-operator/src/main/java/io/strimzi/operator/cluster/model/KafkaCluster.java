@@ -188,6 +188,9 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
 
+    // Env vars for JMX service
+    protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
+
     // Kafka configuration
     private String zookeeperConnect;
     private Rack rack;
@@ -197,6 +200,7 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
+    private boolean isJmxEnabled;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -390,6 +394,10 @@ public class KafkaCluster extends AbstractModel {
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
+
+        if (kafkaClusterSpec.getKafkaJmxOptions() != null) {
+            result.setJmxEnabled(true);
+        }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
         List<String> errorsInConfig = configuration.validate(versions.version(kafkaClusterSpec.getVersion()));
@@ -622,7 +630,7 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isMetricsEnabled()) {
+        if (isMetricsEnabled() || isJmxEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
         return ports;
@@ -1512,6 +1520,10 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (isJmxEnabled()) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
+        }
+
         String logDirs = dataVolumeMountPaths.stream()
                 .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
@@ -1749,7 +1761,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (isMetricsEnabled) {
+        if (isMetricsEnabled || isJmxEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
             metricsPort.setPort(new IntOrString(METRICS_PORT));
 
@@ -1803,6 +1815,22 @@ public class KafkaCluster extends AbstractModel {
      */
     public KafkaListeners getListeners() {
         return listeners;
+    }
+
+    /**
+     * @return Return if the jmx has been enabled
+     */
+    public boolean isJmxEnabled() {
+        return isJmxEnabled;
+    }
+
+    /**
+     * Sets the object with jmx options enabled
+     *
+     * @param jmxEnabled if jmx is enabled
+     */
+    public void setJmxEnabled(boolean jmxEnabled) {
+        isJmxEnabled = jmxEnabled;
     }
 
     /**

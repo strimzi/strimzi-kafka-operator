@@ -1,0 +1,16 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-mirror-maker.adoc
+
+[id='con-kafka-jmx-options-{context}']
+
+= JMX Options
+
+Use the `jmxOptions` property to expose the JMX port on kafka brokers via the kafka broker headless service. You can
+access the Kafka broker JMX by deploying a pod into the cluster and then referencing the specific broker you want
+on the kafka broker headless service on port 9404.
+
+JMX options allow you to gather JMX metrics from the Kafka brokers and also invoke MBean operations on the kafka broker.
+This can be used to gather JMX metrics and export to remote sinks such as logstash and Splunk.
+
+For more information on the supported options, see xref:ref-jmx-options-deployment-configuration-kafka[JMX configuration].
