@@ -44,9 +44,11 @@ public class BaseITST {
     public static synchronized KubeClusterResource kubeCluster() {
         if (cluster == null) {
             try {
-                cluster = KubeClusterResource.getKubeClusterResource();
+                cluster = KubeClusterResource.getInstance();
                 namespace = cluster.defaultNamespace();
+                LOGGER.info("Cluster default namespace is {}", namespace);
                 defaultNamespace = cluster.cmdClient().defaultNamespace();
+                LOGGER.info("Cluster command line client default namespace is {}", defaultNamespace);
             } catch (RuntimeException e) {
                 Assumptions.assumeTrue(false, e.getMessage());
             }

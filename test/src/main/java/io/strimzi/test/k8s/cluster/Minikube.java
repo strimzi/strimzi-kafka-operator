@@ -42,7 +42,7 @@ public class Minikube implements KubeCluster {
 
     @Override
     public KubeClient defaultClient() {
-        return new KubeClient(new DefaultKubernetesClient(CONFIG), "default");
+        return KubeClient.getInstance(new DefaultKubernetesClient(CONFIG), "default");
     }
 
     public String toString() {

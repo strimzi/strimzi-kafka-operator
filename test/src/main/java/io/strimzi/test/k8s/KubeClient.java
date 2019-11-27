@@ -60,10 +60,18 @@ public class KubeClient {
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);
     protected final KubernetesClient client;
     protected String namespace;
+    public static KubeClient kubeClientInstance;
 
-    public KubeClient(KubernetesClient client, String namespace) {
+    private KubeClient(KubernetesClient client, String namespace) {
         this.client = client;
         this.namespace = namespace;
+    }
+
+    public static synchronized KubeClient getInstance(KubernetesClient client, String namespace) {
+        if (kubeClientInstance == null) {
+            kubeClientInstance = new KubeClient(client, namespace);
+        }
+        return kubeClientInstance;
     }
 
     public KubernetesClient getClient() {

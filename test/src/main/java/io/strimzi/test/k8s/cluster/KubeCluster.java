@@ -33,7 +33,7 @@ public interface KubeCluster {
     KubeCmdClient defaultCmdClient();
 
     default KubeClient defaultClient() {
-        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
+        return KubeClient.getInstance(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     /**

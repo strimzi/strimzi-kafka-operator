@@ -30,8 +30,6 @@ public class KubeClusterResource {
     private KubeCmdClient cmdClient;
     private KubeClient client;
     private HelmClient helmClient;
-    private static KubeClusterResource kubeClusterResource;
-
     private static KubeClusterResource instance;
 
     public static synchronized KubeClusterResource getInstance() {
@@ -43,15 +41,6 @@ public class KubeClusterResource {
 
     private KubeClusterResource() {
         bootstrap = true;
-    }
-
-    public static KubeClusterResource getKubeClusterResource() {
-        synchronized (KubeClusterResource.class) {
-            if (kubeClusterResource == null) {
-                kubeClusterResource = new KubeClusterResource();
-            }
-        }
-        return kubeClusterResource;
     }
 
     /** Gets the namespace in use */

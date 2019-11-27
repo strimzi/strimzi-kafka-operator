@@ -1049,6 +1049,7 @@ public class Resources extends AbstractResources {
     }
 
     DoneableClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        LOGGER.info("CLUSTER ROLE BINDING in namespace {}", namespace);
         return clusterRoleBinding(defaultClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
     }
 
