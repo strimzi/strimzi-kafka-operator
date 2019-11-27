@@ -262,7 +262,7 @@ public class StUtils {
         String name = KafkaConnectS2IResources.deploymentName(clusterName);
         TestUtils.waitFor("DeploymentConfig roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depConfigHasRolled(name, snapshot));
-        StUtils.waitForConnectS2IReady(clusterName);
+        StUtils.waitForConnectS2IStatus(clusterName, "Ready");
         return depConfigSnapshot(name);
     }
 
@@ -489,14 +489,15 @@ public class StUtils {
     }
 
     /**
-     * Wait until the given Kafka Connect S2I cluster is ready.
+     * Wait until the given Kafka Connect S2I cluster is in desired state.
      * @param name The name of the Kafka Connect S2I cluster.
+     * @param status desired status value
      */
-    public static void waitForConnectS2IReady(String name) {
-        LOGGER.info("Waiting for Kafka Connect S2I {}", name);
+    public static void waitForConnectS2IStatus(String name, String status) {
+        LOGGER.info("Waiting for Kafka Connect S2I {} state: {}", name, status);
         TestUtils.waitFor("Test " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals("Ready"));
-        LOGGER.info("Kafka Connect S2I {} is ready", name);
+            () -> Crds.kafkaConnectS2iOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals(status));
+        LOGGER.info("Kafka Connect S2I {} is in desired state: {}", name, status);
     }
 
     /**

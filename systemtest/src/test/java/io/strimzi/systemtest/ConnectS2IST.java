@@ -6,10 +6,15 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,6 +33,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.CoreMatchers.is;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
@@ -61,6 +68,7 @@ class ConnectS2IST extends AbstractST {
         String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
+        assertThat(kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).list().getItems().size(), is(2));
     }
 
     @Test
@@ -183,6 +191,73 @@ class ConnectS2IST extends AbstractST {
         checkSpecificVariablesInContainer(connectPodName, KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), envVarUpdated);
     }
 
+    @Test
+    void testJvmAndResources() {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        final String kafkaConnectS2IName = "kafka-connect-s2i-name-4";
+
+        Map<String, String> jvmOptionsXX = new HashMap<>();
+        jvmOptionsXX.put("UseG1GC", "true");
+
+        KafkaConnectS2I kafkaConnectS2i = testMethodResources().kafkaConnectS2IWithoutWait(testMethodResources().defaultKafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect")
+            .endMetadata()
+            .editSpec()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("400M"))
+                        .addToLimits("cpu", new Quantity("2"))
+                        .addToRequests("memory", new Quantity("300M"))
+                        .addToRequests("cpu", new Quantity("1"))
+                        .build())
+                .withBuildResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("1000M"))
+                        .addToLimits("cpu", new Quantity("1000"))
+                        .addToRequests("memory", new Quantity("400M"))
+                        .addToRequests("cpu", new Quantity("1000"))
+                        .build())
+                .withNewJvmOptions()
+                    .withXmx("200m")
+                    .withXms("200m")
+                    .withServer(true)
+                    .withXx(jvmOptionsXX)
+                .endJvmOptions()
+            .endSpec().build());
+
+        StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
+
+        TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
+            () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
+
+        kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").cascading(true).delete();
+
+        replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
+            kc.getSpec().setBuildResources(new ResourceRequirementsBuilder()
+                    .addToLimits("memory", new Quantity("1000M"))
+                    .addToLimits("cpu", new Quantity("1"))
+                    .addToRequests("memory", new Quantity("400M"))
+                    .addToRequests("cpu", new Quantity("1"))
+                    .build());
+        });
+
+        TestUtils.waitFor("Test", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect").get().getSpec().getResources().getRequests().get("cpu").equals(new Quantity("1")));
+
+        cmdKubeClient().exec("oc", "start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
+
+        StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
+
+        String podName = StUtils.getPodNameByPrefix(kafkaConnectS2IName);
+
+        assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
+                "400M", "2", "300M", "1");
+        assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
+                "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
+
+        testMethodResources().deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
+    }
+
 
     @BeforeEach
     void createTestResources() {
@@ -202,6 +277,6 @@ class ConnectS2IST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT,  Constants.RECONCILIATION_INTERVAL).done();
+        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
     }
 }
