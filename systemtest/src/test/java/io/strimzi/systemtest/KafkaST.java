@@ -140,7 +140,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(LOADBALANCER_SUPPORTED)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         setOperationID(startTimeMeasuring(Operation.SCALE_UP));
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -245,7 +245,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     void testZookeeperScaleUpScaleDown() {
         setOperationID(startTimeMeasuring(Operation.SCALE_UP));
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
