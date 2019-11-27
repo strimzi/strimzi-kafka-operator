@@ -82,7 +82,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @param command The command
      * @return The process result.
      */
-    @Deprecated
     ExecResult execInPodContainer(String pod, String container, String... command);
 
     /**
@@ -139,7 +138,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     String getResourceAsJson(String resourceType, String resourceName);
 
-    @Deprecated
     K waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
 
     Date getResourceCreateTimestamp(String pod, String s);

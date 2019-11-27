@@ -30,7 +30,7 @@ public class Minikube implements KubeCluster {
         try {
             return Exec.exec(CMD, "status").exitStatus();
         } catch (KubeClusterException e) {
-            e.printStackTrace();;
+            e.printStackTrace();
             return false;
         }
     }
