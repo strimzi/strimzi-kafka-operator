@@ -20,7 +20,7 @@ Here we demonstrate how a ConfigMap defines a root logger for a Kafka resource.
 
 . Create the ConfigMap.
 +
-You can create the ConfigMap as a YAML file or from a properties file at the `kubectl` command line.
+You can create the ConfigMap as a YAML file or from a properties file using `kubectl` at the command line.
 +
 ConfigMap example with a root logger definition for Kafka:
 +
