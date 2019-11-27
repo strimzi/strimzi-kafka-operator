@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import resources.KubernetesResource;
 import resources.ResourceManager;
+import resources.crd.KafkaBridgeResource;
 import resources.crd.KafkaClientsResource;
 import resources.crd.KafkaConnectResource;
 import resources.crd.KafkaConnectS2IResource;
@@ -795,48 +796,48 @@ public class TracingST extends AbstractST {
     void testKafkaBridgeService(Vertx vertx) throws Exception {
         WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
-        .editSpec()
-            .editKafka()
-                .editListeners()
-                    .withNewKafkaListenerExternalNodePort()
-                        .withTls(false)
-                    .endKafkaListenerExternalNodePort()
-                .endListeners()
-            .endKafka()
-        .endSpec()
-        .done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         // Deploy http bridge
-        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
-                .editSpec()
-                    .withNewJaegerTracing()
-                    .endJaegerTracing()
-                        .withNewTemplate()
-                            .withNewBridgeContainer()
-                                .addNewEnv()
-                                    .withName("JAEGER_SERVICE_NAME")
-                                    .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_AGENT_HOST")
-                                    .withValue(JAEGER_AGENT_NAME)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_TYPE")
-                                    .withValue(JAEGER_SAMPLER_TYPE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_PARAM")
-                                    .withValue(JAEGER_SAMPLER_PARAM)
-                                .endEnv()
-                            .endBridgeContainer()
-                        .endTemplate()
-                .endSpec()
-                .done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editSpec()
+                .withNewJaegerTracing()
+                .endJaegerTracing()
+                    .withNewTemplate()
+                        .withNewBridgeContainer()
+                            .addNewEnv()
+                                .withName("JAEGER_SERVICE_NAME")
+                                .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_NAME)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                        .endBridgeContainer()
+                    .endTemplate()
+            .endSpec()
+            .done();
 
         Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
-        testMethodResources().createServiceResource(service, NAMESPACE).done();
+        KubernetesResource.createServiceResource(service, NAMESPACE).done();
         StUtils.waitForNodePortService(BRIDGE_EXTERNAL_SERVICE);
 
         int bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
@@ -845,7 +846,7 @@ public class TracingST extends AbstractST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
 
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);

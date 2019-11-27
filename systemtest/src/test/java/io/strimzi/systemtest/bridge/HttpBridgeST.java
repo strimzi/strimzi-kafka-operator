@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import resources.KubernetesResource;
 import resources.crd.KafkaBridgeResource;
 import resources.crd.KafkaResource;
 import resources.crd.KafkaTopicResource;
@@ -213,7 +214,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
 
         Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
-        testClassResources().createServiceResource(service, NAMESPACE).done();
+        KubernetesResource.createServiceResource(service, NAMESPACE).done();
         StUtils.waitForNodePortService(bridgeExternalService);
 
         bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);

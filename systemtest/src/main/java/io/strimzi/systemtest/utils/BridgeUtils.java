@@ -10,11 +10,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import resources.KubernetesResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,7 +39,7 @@ public class BridgeUtils {
         map.put("strimzi.io/name", clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
+        return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace)
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)

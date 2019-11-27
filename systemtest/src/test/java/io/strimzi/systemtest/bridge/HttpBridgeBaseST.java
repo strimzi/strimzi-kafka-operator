@@ -9,6 +9,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -20,7 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import resources.KubernetesResource;
 import resources.ResourceManager;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
