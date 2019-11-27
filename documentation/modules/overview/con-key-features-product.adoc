@@ -5,9 +5,9 @@
 [id="key-features-product_{context}"]
 = How {ProductName} supports Kafka
 
-{ProductName} provides container images and operators for running Kafka on Kubernetes.
+{ProductName} provides container images and Operators for running Kafka on Kubernetes.
 
-{ProductName} operators simplify the process of:
+{ProductName} Operators simplify the process of:
 
 * Deploying and running Kafka clusters
 * Deploying and running Kafka components
