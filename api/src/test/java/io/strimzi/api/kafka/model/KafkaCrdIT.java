@@ -133,11 +133,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
-    @Override
-    protected void teardownEnvForOperator() {
-        super.teardownEnvForOperator();
-    }
-
     @Test
     public void testKafkaWithInvalidStorage() {
         Throwable exception = assertThrows(
@@ -154,13 +149,13 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_KAFKA);
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources(TestUtils.CRD_KAFKA);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA);
+        cluster.deleteNamespaces();
     }
 }

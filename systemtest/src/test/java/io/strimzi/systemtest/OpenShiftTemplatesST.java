@@ -28,8 +28,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -215,15 +213,5 @@ public class OpenShiftTemplatesST extends AbstractST {
     protected void tearDownEnvironmentAfterAll() {
         deleteCustomResources();
         deleteNamespaces();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() {
-
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
     }
 }
