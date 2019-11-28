@@ -11,7 +11,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples metrics systemtest
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples metrics
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
@@ -102,7 +102,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 docu_check:
 	./.travis/check_docs.sh
 
-spotbugs: $(SUBDIRS)
+spotbugs: $(SUBDIRS) systemtest_make
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
@@ -132,5 +132,8 @@ crd_install: install
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+systemtest_make:
+	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
 .PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check
