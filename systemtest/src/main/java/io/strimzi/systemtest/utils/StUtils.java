@@ -483,8 +483,8 @@ public class StUtils {
                 if (kubeClient().getDeployment(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("Deployment {} is not deleted!", name);
-                    kubeClient().deleteDeployment(name);
+                    LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("deployment", name);
                     return false;
                 }
             });
@@ -557,8 +557,8 @@ public class StUtils {
                 if (kubeClient().getDeploymentConfig(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("Deployment {} is not deleted!", name);
-                    kubeClient().deleteDeploymentConfig(name);
+                    LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("deploymentconfig", name);
                     return false;
                 }
             });
@@ -576,8 +576,8 @@ public class StUtils {
                 if (kubeClient().getStatefulSet(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("StatefulSet {} is not deleted!", name);
-                    kubeClient().deleteStatefulSet(name);
+                    LOGGER.warn("StatefulSet {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("statefulset", name);
                     return false;
                 }
             });
@@ -607,8 +607,8 @@ public class StUtils {
                     return true;
                 } else {
                     String rsName = kubeClient().getReplicaSetNameByPrefix(name);
-                    LOGGER.warn("ReplicaSet {} is not deleted yet!", rsName);
-                    kubeClient().deleteReplicaSet(rsName);
+                    LOGGER.warn("ReplicaSet {} is not deleted yet! Triggering force delete by cmd client!", rsName);
+                    cmdKubeClient().deleteByName("replicaset", rsName);
                     return false;
                 }
             });
@@ -642,6 +642,24 @@ public class StUtils {
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> kubeClient().getSecret(secretName) != null);
         LOGGER.info("Kafka user secret {} created", secretName);
+    }
+
+    public static void waitForClusterSecretsDeletion(String clusterName) {
+        LOGGER.info("Waiting for Kafka cluster {} secrets deletion", clusterName);
+        TestUtils.waitFor("Expected secrets for Kafka cluster " + clusterName + " will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            () -> {
+                List<Secret> secretList = kubeClient().listSecrets("strimzi.io/cluster", clusterName);
+                if (secretList.isEmpty()) {
+                    return true;
+                } else {
+                    for (Secret secret : secretList) {
+                        LOGGER.warn("Secret {} is not deleted yet! Triggering force delete by cmd client!", secret.getMetadata().getName());
+                        cmdKubeClient().deleteByName("secret", secret.getMetadata().getName());
+                    }
+                    return false;
+                }
+            });
+        LOGGER.info("Kafka cluster {} secrets deleted", clusterName);
     }
 
     public static void waitForKafkaUserCreation(String userName) {

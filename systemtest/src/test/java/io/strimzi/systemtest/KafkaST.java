@@ -1186,7 +1186,7 @@ class KafkaST extends MessagingBaseST {
                 || !getAnnotationsForSTS(kafkaName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
-        StUtils.waitTillSsHasRolled(kafkaName, 1, kafkaPods);
+        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
@@ -1207,7 +1207,7 @@ class KafkaST extends MessagingBaseST {
                 || !getAnnotationsForSTS(zkName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
-        StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
+        StUtils.waitTillSsHasRolled(zkName, 3, zkPods);
     }
 
     @Test

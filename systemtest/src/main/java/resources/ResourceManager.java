@@ -21,6 +21,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,6 +59,10 @@ public class ResourceManager {
 
     public static KubeClient kubeClient() {
         return BaseITST.kubeClient();
+    }
+
+    public static KubeCmdClient cmdKubeClient() {
+        return BaseITST.cmdKubeClient();
     }
 
     public static Stack<Runnable> getPointerResources() {
@@ -183,18 +188,18 @@ public class ResourceManager {
         String kafkaClusterName = kafka.getMetadata().getName();
         LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafkaClusterName);
 
-        StUtils.waitForStatefulSetDeletion(io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
+        StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
                 StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
 
-        StUtils.waitForStatefulSetDeletion(io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName(kafkaClusterName));
+        StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(kafkaClusterName));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
                 StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
 
         // Wait for EO deletion
-        StUtils.waitForDeploymentDeletion(io.strimzi.api.kafka.model.KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
+        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
         StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
         kubeClient().listPods().stream()
@@ -208,6 +213,8 @@ public class ResourceManager {
         kubeClient().listPods().stream()
                 .filter(p -> p.getMetadata().getName().contains(kafka.getMetadata().getName() + "-kafka-exporter"))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+
+        StUtils.waitForClusterSecretsDeletion(kafkaClusterName);
     }
 
     private static void waitForDeletion(KafkaConnect kafkaConnect) {
@@ -272,6 +279,7 @@ public class ResourceManager {
         while (!classResources.empty()) {
             classResources.pop().run();
         }
+        classResources.clear();
     }
 
     public static void deleteMethodResources() {
@@ -279,6 +287,8 @@ public class ResourceManager {
         while (!methodResources.empty()) {
             methodResources.pop().run();
         }
+        methodResources.clear();
+        pointerResources = classResources;
     }
 
     public static String getImageValueFromCO(String name) {
