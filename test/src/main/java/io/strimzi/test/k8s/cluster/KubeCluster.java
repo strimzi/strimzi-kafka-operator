@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s.cluster;
 
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
@@ -14,14 +15,14 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static io.strimzi.test.BaseITST.CONFIG;
-
 /**
  * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
  */
 public interface KubeCluster {
 
     String ENV_VAR_TEST_CLUSTER = "TEST_CLUSTER";
+    Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+
 
     /** Return true iff this kind of cluster installed on the local machine. */
     boolean isAvailable();
@@ -33,7 +34,7 @@ public interface KubeCluster {
     KubeCmdClient defaultCmdClient();
 
     default KubeClient defaultClient() {
-        return KubeClient.getInstance(new DefaultOpenShiftClient(CONFIG), "myproject");
+        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     /**

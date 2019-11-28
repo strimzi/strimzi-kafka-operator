@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import java.io.File;
 import java.util.List;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -31,7 +32,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     static Resources secondNamespaceResources;
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
-        String previousNamespace = setNamespace(namespace);
+        String previousNamespace = cluster.setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
 
         TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
@@ -46,28 +47,28 @@ public abstract class AbstractNamespaceST extends AbstractST {
                 .getStatus().getConditions().get(0);
 
         assertThat(kafkaCondition.getType(), is("Ready"));
-        setNamespace(previousNamespace);
+        cluster.setNamespace(previousNamespace);
     }
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO(String sourceClusterName) {
         String kafkaSourceName = sourceClusterName;
         String kafkaTargetName = CLUSTER_NAME + "-target";
 
-        String previousNamespace = setNamespace(SECOND_NAMESPACE);
+        String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.kafkaEphemeral(kafkaTargetName, 1, 1).done();
         secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
         StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
-        setNamespace(previousNamespace);
+        cluster.setNamespace(previousNamespace);
     }
 
     void deployNewTopic(String topicNamespace, String kafkaClusterNamespace, String topic) {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
-        setNamespace(topicNamespace);
+        cluster.setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            setNamespace(kafkaClusterNamespace);
+            cluster.setNamespace(kafkaClusterNamespace);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);
         });
@@ -75,9 +76,9 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     void deleteNewTopic(String namespace, String topic) {
         LOGGER.info("Deleting topic {} in namespace {}", topic, namespace);
-        setNamespace(namespace);
+        cluster.setNamespace(namespace);
         cmdKubeClient().deleteByName("KafkaTopic", topic);
-        setNamespace(CO_NAMESPACE);
+        cluster.setNamespace(CO_NAMESPACE);
     }
 
     @AfterAll

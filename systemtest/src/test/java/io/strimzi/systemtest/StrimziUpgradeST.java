@@ -32,6 +32,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -58,7 +60,7 @@ public class StrimziUpgradeST extends AbstractST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
-        setNamespace(NAMESPACE);
+        cluster.setNamespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
@@ -282,12 +284,12 @@ public class StrimziUpgradeST extends AbstractST {
 
     @BeforeEach
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
+        cluster.createNamespace(NAMESPACE);
     }
 
     @Override
     protected void tearDownEnvironmentAfterEach() {
-        deleteNamespaces();
+        cluster.deleteNamespaces();
     }
 
     // There is no value of having teardown logic for class resources due to the fact that
@@ -298,7 +300,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        deleteNamespaces();
-        createNamespace(NAMESPACE);
+        cluster.deleteNamespaces();
+        cluster.createNamespace(NAMESPACE);
     }
 }

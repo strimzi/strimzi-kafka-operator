@@ -134,13 +134,13 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }

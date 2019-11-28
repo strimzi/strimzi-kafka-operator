@@ -16,8 +16,8 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
@@ -61,6 +61,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -69,9 +71,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-public abstract class TopicOperatorBaseIT extends BaseITST {
+public abstract class TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorBaseIT.class);
+
+    private static KubeClusterResource cluster = KubeClusterResource.getInstance();
 
     protected static String oldNamespace;
 
@@ -105,9 +109,8 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         } catch (NoClusterException e) {
             assumeTrue(false, e.getMessage());
         }
-        cmdKubeClient()
-                .createNamespace(NAMESPACE);
-        oldNamespace = setNamespace(NAMESPACE);
+        cmdKubeClient().createNamespace(NAMESPACE);
+        oldNamespace = cluster.setNamespace(NAMESPACE);
         LOGGER.info("#### Creating " + "../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info(new String(Files.readAllBytes(new File("../install/topic-operator/02-Role-strimzi-topic-operator.yaml").toPath())));
         cmdKubeClient().create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
@@ -136,7 +139,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
     public void setup() throws Exception {
         vertx = Vertx.vertx();
         LOGGER.info("Setting up test");
-        kubeCluster().before();
+        cluster.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         int counts = 3;
         do {
@@ -161,7 +164,7 @@ public abstract class TopicOperatorBaseIT extends BaseITST {
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
         adminClient = AdminClient.create(p);
 
-        kubeClient = BaseITST.kubeClient().getClient();
+        kubeClient = kubeClient().getClient();
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         startTopicOperator();

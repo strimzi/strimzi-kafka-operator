@@ -53,25 +53,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);
     protected final KubernetesClient client;
     protected String namespace;
-    public static KubeClient kubeClientInstance;
 
-    private KubeClient(KubernetesClient client, String namespace) {
+    public KubeClient(KubernetesClient client, String namespace) {
         this.client = client;
         this.namespace = namespace;
-    }
-
-    public static synchronized KubeClient getInstance(KubernetesClient client, String namespace) {
-        if (kubeClientInstance == null) {
-            kubeClientInstance = new KubeClient(client, namespace);
-        }
-        return kubeClientInstance;
     }
 
     public KubernetesClient getClient() {

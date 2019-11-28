@@ -40,7 +40,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.utils.TestExecutionWatcher;
-import io.strimzi.test.BaseITST;
+import io.strimzi.test.BaseST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
@@ -81,6 +81,8 @@ import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -91,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @ExtendWith(TestExecutionWatcher.class)
-public abstract class AbstractST extends BaseITST implements TestSeparator {
+public abstract class AbstractST extends BaseST implements TestSeparator {
 
     static {
         Crds.registerCustomKinds();
@@ -127,7 +129,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     Random rng = new Random();
 
     protected HelmClient helmClient() {
-        return kubeCluster().helmClient().namespace(getNamespace());
+        return cluster.helmClient().namespace(cluster.getNamespace());
     }
 
     static String zookeeperServiceName(String clusterName) {
@@ -654,11 +656,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
         testClassResources.deleteResources();
 
-        deleteClusterOperatorInstallFiles();
-        deleteNamespaces();
+        cluster.deleteClusterOperatorInstallFiles();
+        cluster.deleteNamespaces();
 
-        createNamespaces(coNamespace, bindingsNamespaces);
-        applyClusterOperatorInstallFiles();
+        cluster.createNamespaces(coNamespace, bindingsNamespaces);
+        cluster.applyClusterOperatorInstallFiles();
 
         setTestClassResources(new Resources(kubeClient()));
 
@@ -724,12 +726,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = setNamespace("kube-system");
+        String oldNamespace = cluster.setNamespace("kube-system");
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         cmdKubeClient().applyContent(helmServiceAccount);
         helmClient().init();
-        setNamespace(oldNamespace);
+        cluster.setNamespace(oldNamespace);
         helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
     }
 
@@ -978,7 +980,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             if (context.getExecutionException().isPresent()) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 context.getExecutionException().get().printStackTrace();
-                recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
+                recreateTestEnv(cluster.getClusterOperatorNamespace(), cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();

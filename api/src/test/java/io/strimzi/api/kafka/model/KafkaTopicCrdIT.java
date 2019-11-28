@@ -70,13 +70,13 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_TOPIC);
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources(TestUtils.CRD_TOPIC);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }

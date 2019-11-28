@@ -32,6 +32,8 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -199,8 +201,8 @@ public class OpenShiftTemplatesST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        createNamespace(NAMESPACE);
-        createCustomResources("../examples/templates/cluster-operator",
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources("../examples/templates/cluster-operator",
                 "../examples/templates/topic-operator",
                 TestUtils.CRD_KAFKA,
                 TestUtils.CRD_KAFKA_CONNECT,
@@ -211,7 +213,7 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @Override
     protected void tearDownEnvironmentAfterAll() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }

@@ -7,16 +7,21 @@ package io.strimzi.api.kafka.model;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
-import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public abstract class AbstractCrdIT extends BaseITST {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public abstract class AbstractCrdIT {
+
+    protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
     protected void assumeKube1_11Plus() {
         VersionInfo version = new DefaultKubernetesClient().getVersion();
@@ -66,6 +71,6 @@ public abstract class AbstractCrdIT extends BaseITST {
 
     @BeforeEach
     public void setupTests() {
-        kubeCluster().before();
+        cluster.before();
     }
 }
