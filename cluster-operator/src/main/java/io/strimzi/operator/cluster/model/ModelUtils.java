@@ -93,11 +93,11 @@ public class ModelUtils {
     }
 
     /**
-     * @param ss The StatefulSet
-     * @return The environment of the Kafka container in the SS.
+     * @param sts The StatefulSet
+     * @return The environment of the Kafka container in the sts.
      */
-    public static Map<String, String> getKafkaContainerEnv(StatefulSet ss) {
-        for (Container container : ss.getSpec().getTemplate().getSpec().getContainers()) {
+    public static Map<String, String> getKafkaContainerEnv(StatefulSet sts) {
+        for (Container container : sts.getSpec().getTemplate().getSpec().getContainers()) {
             if ("kafka".equals(container.getName())) {
                 LinkedHashMap<String, String> map = new LinkedHashMap<>(container.getEnv() == null ? 2 : container.getEnv().size());
                 if (container.getEnv() != null) {
@@ -108,7 +108,7 @@ public class ModelUtils {
                 return map;
             }
         }
-        throw new KafkaUpgradeException("Could not find 'kafka' container in StatefulSet " + ss.getMetadata().getName());
+        throw new KafkaUpgradeException("Could not find 'kafka' container in StatefulSet " + sts.getMetadata().getName());
     }
 
     public static List<EnvVar> envAsList(Map<String, String> env) {

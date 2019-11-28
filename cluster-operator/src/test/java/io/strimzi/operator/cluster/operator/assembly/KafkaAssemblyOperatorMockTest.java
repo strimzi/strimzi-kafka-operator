@@ -266,16 +266,16 @@ public class KafkaAssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
-            StatefulSet kafkaSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
-            kafkaSs.setStatus(new StatefulSetStatus());
-            context.verify(() -> assertThat(kafkaSs, is(notNullValue())));
-            context.verify(() -> assertThat(kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION), is("0")));
-            context.verify(() -> assertThat(kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0")));
-            context.verify(() -> assertThat(kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION), is("0")));
-            StatefulSet zkSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
-            context.verify(() -> assertThat(zkSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION), is("0")));
-            context.verify(() -> assertThat(zkSs.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0")));
-            context.verify(() -> assertThat(zkSs, is(notNullValue())));
+            StatefulSet kafkaSts = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
+            kafkaSts.setStatus(new StatefulSetStatus());
+            context.verify(() -> assertThat(kafkaSts, is(notNullValue())));
+            context.verify(() -> assertThat(kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION), is("0")));
+            context.verify(() -> assertThat(kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0")));
+            context.verify(() -> assertThat(kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION), is("0")));
+            StatefulSet zkSts = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
+            context.verify(() -> assertThat(zkSts.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION), is("0")));
+            context.verify(() -> assertThat(zkSts.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0")));
+            context.verify(() -> assertThat(zkSts, is(notNullValue())));
             context.verify(() -> assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(CLUSTER_NAME)).get(), is(notNullValue())));
             context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricAndLogConfigsName(CLUSTER_NAME)).get(), is(notNullValue())));
             context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(CLUSTER_NAME)).get(), is(notNullValue())));
@@ -410,7 +410,7 @@ public class KafkaAssemblyOperatorMockTest {
         KafkaAssemblyOperator kco = createCluster(params, context);
 
         mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).delete();
-        assertThat("Expected ss " + statefulSet + " to be not exist",
+        assertThat("Expected sts " + statefulSet + " to be not exist",
                 mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
 
         LOGGER.info("Reconciling again -> update");
@@ -420,7 +420,7 @@ public class KafkaAssemblyOperatorMockTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
             assertThat(
-                    "Expected ss " + statefulSet + " to have been recreated",
+                    "Expected sts " + statefulSet + " to have been recreated",
                     mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(notNullValue()));
             updateAsync.flag();
         });

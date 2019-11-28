@@ -126,16 +126,16 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, VERSIONS).generateStatefulSet(false, null, null);
+        StatefulSet kafkaSts = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, VERSIONS).generateStatefulSet(false, null, null);
 
-        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
+        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSts));
 
         List<StatefulSet> states = new ArrayList<>(2);
         when(kso.reconcile(anyString(), anyString(), any(StatefulSet.class))).thenAnswer(invocation -> {
             reconcileExceptions.accept(states.size());
-            StatefulSet ss = invocation.getArgument(2);
-            states.add(new StatefulSetBuilder(ss).build());
-            return Future.succeededFuture(ReconcileResult.patched(new StatefulSetBuilder(ss).build()));
+            StatefulSet sts = invocation.getArgument(2);
+            states.add(new StatefulSetBuilder(sts).build());
+            return Future.succeededFuture(ReconcileResult.patched(new StatefulSetBuilder(sts).build()));
         });
 
         AtomicInteger rollingUpdates = new AtomicInteger();
@@ -157,7 +157,7 @@ public class KafkaUpdateTest {
         Future<KafkaAssemblyOperator.ReconciliationState> future = op
                 .new ReconciliationState(reconciliation, updatedKafka) {
                     @Override
-                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                    public Future<Void> waitForQuiescence(StatefulSet sts) {
                         return Future.succeededFuture();
                     }
                 }

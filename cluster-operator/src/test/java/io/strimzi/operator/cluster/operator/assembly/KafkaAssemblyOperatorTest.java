@@ -528,7 +528,7 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                    public Future<Void> waitForQuiescence(StatefulSet sts) {
                         return Future.succeededFuture();
                     }
                 };
@@ -575,7 +575,7 @@ public class KafkaAssemblyOperatorTest {
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
             // We expect a statefulSet for kafka and zookeeper...
-            context.verify(() -> assertThat(capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()),
+            context.verify(() -> assertThat(capturedSs.stream().map(sts -> sts.getMetadata().getName()).collect(Collectors.toSet()),
                     is(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)))));
 
             // expected Secrets with certificates
@@ -583,7 +583,7 @@ public class KafkaAssemblyOperatorTest {
 
             // Check PDBs
             context.verify(() -> assertThat(pdbCaptor.getAllValues().size(), is(2)));
-            context.verify(() -> assertThat(pdbCaptor.getAllValues().stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()),
+            context.verify(() -> assertThat(pdbCaptor.getAllValues().stream().map(sts -> sts.getMetadata().getName()).collect(Collectors.toSet()),
                     is(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)))));
 
             // Check PVCs
@@ -996,12 +996,12 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSet patch
         when(mockZsOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
-            StatefulSet ss = invocation.getArgument(2);
-            return Future.succeededFuture(ReconcileResult.patched(ss));
+            StatefulSet sts = invocation.getArgument(2);
+            return Future.succeededFuture(ReconcileResult.patched(sts));
         });
         when(mockKsOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
-            StatefulSet ss = invocation.getArgument(2);
-            return Future.succeededFuture(ReconcileResult.patched(ss));
+            StatefulSet sts = invocation.getArgument(2);
+            return Future.succeededFuture(ReconcileResult.patched(sts));
         });
         when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
@@ -1042,7 +1042,7 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                    public Future<Void> waitForQuiescence(StatefulSet sts) {
                         return Future.succeededFuture();
                     }
                 };

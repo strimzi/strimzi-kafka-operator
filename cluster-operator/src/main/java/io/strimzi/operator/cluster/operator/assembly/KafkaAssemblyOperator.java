@@ -584,7 +584,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 };
                 if (this.clusterCa.keyReplaced()) {
                     zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(ss -> zkSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                        .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
                         clusterCa.caCertSecret(),
                         oldCoSecret));
                 } else {
@@ -592,7 +592,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(ss -> kafkaSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                        .compose(sts -> kafkaSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
                                 clusterCa.caCertSecret(),
                                 oldCoSecret))
                         .compose(i -> deploymentOperations.getAsync(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name)))
@@ -620,13 +620,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaManualRollingUpdate() {
-            Future<StatefulSet> futss = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
-            if (futss != null) {
-                return futss.compose(ss -> {
-                    if (ss != null) {
-                        if (Annotations.booleanAnnotation(ss, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+            Future<StatefulSet> futsts = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+            if (futsts != null) {
+                return futsts.compose(sts -> {
+                    if (sts != null) {
+                        if (Annotations.booleanAnnotation(sts, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
-                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+                            return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
 
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
@@ -641,14 +641,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkManualRollingUpdate() {
-            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (futss != null) {
-                return futss.compose(ss -> {
-                    if (ss != null) {
-                        if (Annotations.booleanAnnotation(ss, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+            Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            if (futsts != null) {
+                return futsts.compose(sts -> {
+                    if (sts != null) {
+                        if (Annotations.booleanAnnotation(sts, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
 
-                            return zkSetOperations.maybeRollingUpdate(ss, pod -> {
+                            return zkSetOperations.maybeRollingUpdate(sts, pod -> {
 
                                 log.debug("{}: Rolling Zookeeper pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
@@ -663,15 +663,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * If the SS exists, complete any pending rolls
+         * If the STS exists, complete any pending rolls
          *
-         * @return A Future which completes with the current state of the SS, or with null if the SS never existed.
+         * @return A Future which completes with the current state of the STS, or with null if the STS never existed.
          */
-        public Future<Void> waitForQuiescence(StatefulSet ss) {
-            if (ss != null) {
-                return kafkaSetOperations.maybeRollingUpdate(ss,
+        public Future<Void> waitForQuiescence(StatefulSet sts) {
+            if (sts != null) {
+                return kafkaSetOperations.maybeRollingUpdate(sts,
                     pod -> {
-                        boolean notUpToDate = !isPodUpToDate(ss, pod);
+                        boolean notUpToDate = !isPodUpToDate(sts, pod);
                         if (notUpToDate) {
                             log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
                         }
@@ -683,54 +683,54 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaUpgrade() {
-            String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-            return kafkaSetOperations.getAsync(namespace, kafkaSsName).compose(
-                ss -> {
-                    if (ss == null) {
+            String kafkaStsName = KafkaCluster.kafkaClusterName(name);
+            return kafkaSetOperations.getAsync(namespace, kafkaStsName).compose(
+                sts -> {
+                    if (sts == null) {
                         return Future.succeededFuture(this);
                     }
-                    log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
+                    log.debug("Does STS {} need to be upgraded?", sts.getMetadata().getName());
                     // Get the current version of the cluster
                     // Strimzi 0.8.x and 0.9.0 didn't set the annotation, so if it's absent we know it must be 2.0.0
-                    KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
-                    log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
-                    String fromVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_FROM_VERSION);
+                    KafkaVersion currentVersion = versions.version(Annotations.annotations(sts).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
+                    log.debug("STS {} has current version {}", sts.getMetadata().getName(), currentVersion);
+                    String fromVersionAnno = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_FROM_VERSION);
                     KafkaVersion fromVersion;
                     if (fromVersionAnno != null) { // We're mid-upgrade
                         fromVersion = versions.version(fromVersionAnno);
                     } else {
                         fromVersion = currentVersion;
                     }
-                    log.debug("SS {} is from version {}", ss.getMetadata().getName(), fromVersion);
-                    String toVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_TO_VERSION);
+                    log.debug("STS {} is from version {}", sts.getMetadata().getName(), fromVersion);
+                    String toVersionAnno = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_TO_VERSION);
                     KafkaVersion toVersion;
                     if (toVersionAnno != null) { // We're mid-upgrade
                         toVersion = versions.version(toVersionAnno);
                     } else {
                         toVersion = versions.version(kafkaAssembly.getSpec().getKafka().getVersion());
                     }
-                    log.debug("SS {} is to version {}", ss.getMetadata().getName(), toVersion);
+                    log.debug("STS {} is to version {}", sts.getMetadata().getName(), toVersion);
                     KafkaUpgrade upgrade = new KafkaUpgrade(fromVersion, toVersion);
                     log.debug("Kafka upgrade {}", upgrade);
                     if (upgrade.isNoop()) {
                         log.debug("Kafka.spec.kafka.version unchanged");
                         return Future.succeededFuture(this);
                     } else {
-                        // Wait until the SS is not being updated (it shouldn't be, but there's no harm in checking)
-                        return waitForQuiescence(ss).compose(v -> {
+                        // Wait until the STS is not being updated (it shouldn't be, but there's no harm in checking)
+                        return waitForQuiescence(sts).compose(v -> {
                             String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
-                            Future<StatefulSet> f = Future.succeededFuture(ss);
+                            Future<StatefulSet> f = Future.succeededFuture(sts);
                             Future<?> result;
                             if (upgrade.isUpgrade()) {
                                 if (currentVersion.equals(fromVersion)) {
-                                    f = f.compose(ignored -> kafkaUpgradePhase1(ss, upgrade, image));
+                                    f = f.compose(ignored -> kafkaUpgradePhase1(sts, upgrade, image));
                                 }
                                 result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, upgrade));
                             } else {
                                 if (currentVersion.equals(fromVersion)) {
-                                    f = f.compose(ignored -> kafkaDowngradePhase1(ss, upgrade));
+                                    f = f.compose(ignored -> kafkaDowngradePhase1(sts, upgrade));
                                 }
-                                result = f.compose(ignored -> kafkaDowngradePhase2(ss, upgrade, image));
+                                result = f.compose(ignored -> kafkaDowngradePhase2(sts, upgrade, image));
                             }
                             return result.map(this);
                         });
@@ -744,11 +744,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Set inter.broker.protocol.version if it's not set
          * Perform a rolling update.
          */
-        private Future<StatefulSet> kafkaUpgradePhase1(StatefulSet ss, KafkaUpgrade upgrade, String upgradedImage) {
+        private Future<StatefulSet> kafkaUpgradePhase1(StatefulSet sts, KafkaUpgrade upgrade, String upgradedImage) {
             log.info("{}: {}, phase 1", reconciliation, upgrade);
 
-            Map<String, String> annotations = Annotations.annotations(ss);
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
+            Map<String, String> annotations = Annotations.annotations(sts);
+            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
             String string = env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, "");
             log.debug("Current config {}", string);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(string);
@@ -804,7 +804,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reconciliation, ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
             annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
             // update the annotations, image and environment
-            StatefulSet newSs = new StatefulSetBuilder(ss)
+            StatefulSet newSts = new StatefulSetBuilder(sts)
                     .editMetadata()
                         .withAnnotations(annotations)
                     .endMetadata()
@@ -823,8 +823,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // patch and rolling upgrade
             String name = KafkaCluster.kafkaClusterName(this.name);
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return kafkaSetOperations.reconcile(namespace, name, newSs)
-                    .compose(result -> kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+            return kafkaSetOperations.reconcile(namespace, name, newSts)
+                    .compose(result -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
                         return true;
                     }).map(result.resource()))
@@ -843,22 +843,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Note: The log.message.format.version is left at the old version.
          * It is a manual action to remove that once the user has updated all their clients.
          */
-        private Future<Void> kafkaUpgradePhase2(StatefulSet ss, KafkaUpgrade upgrade) {
-            if (ss == null) {
+        private Future<Void> kafkaUpgradePhase2(StatefulSet sts, KafkaUpgrade upgrade) {
+            if (sts == null) {
                 // It was a one-phase update
                 return Future.succeededFuture();
             }
             // Cluster is now using new binaries, but old proto version
             log.info("{}: {}, phase 2", reconciliation, upgrade);
             // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
-            Map<String, String> annotations = Annotations.annotations(ss);
+            Map<String, String> annotations = Annotations.annotations(sts);
             log.info("{}: Upgrade: Removing annotations {}, {}",
                     reconciliation, ANNO_STRIMZI_IO_FROM_VERSION, ANNO_STRIMZI_IO_TO_VERSION);
             annotations.remove(ANNO_STRIMZI_IO_FROM_VERSION);
             annotations.remove(ANNO_STRIMZI_IO_TO_VERSION);
 
             // Remove inter.broker.protocol.version (so the new version's default is used)
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
+            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.get(ENV_VAR_KAFKA_CONFIGURATION));
 
             log.info("{}: Upgrade: Removing Kafka config {}, will default to {}",
@@ -869,7 +869,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Update to new proto version and rolling upgrade
             currentKafkaConfig.removeConfigOption(INTERBROKER_PROTOCOL_VERSION);
 
-            StatefulSet newSs = new StatefulSetBuilder(ss)
+            StatefulSet newSts = new StatefulSetBuilder(sts)
                     .editMetadata()
                         .withAnnotations(annotations)
                     .endMetadata()
@@ -884,10 +884,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .endSpec()
                     .build();
 
-            // Reconcile the SS and perform a rolling update of the pods
+            // Reconcile the STS and perform a rolling update of the pods
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), newSs)
-                    .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+            return kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), newSts)
+                    .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
                         return true;
                     }))
@@ -903,14 +903,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *     <li>Set the log.message.format.version to the old version</li>
          *     <li>Set the inter.broker.protocol.version to the old version</li>
          *     <li>Set the strimzi.io/upgrade-phase=1 (to record progress of the upgrade in case of CO failure)</li>
-         *     <li>Reconcile the SS and perform a rolling update of the pods</li>
+         *     <li>Reconcile the STS and perform a rolling update of the pods</li>
          * </ol>
          */
-        private Future<StatefulSet> kafkaDowngradePhase1(StatefulSet ss, KafkaUpgrade upgrade) {
+        private Future<StatefulSet> kafkaDowngradePhase1(StatefulSet sts, KafkaUpgrade upgrade) {
             log.info("{}: {}, phase 1", reconciliation, upgrade);
 
-            Map<String, String> annotations = Annotations.annotations(ss);
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
+            Map<String, String> annotations = Annotations.annotations(sts);
+            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, ""));
 
             String oldMessageFormat = currentKafkaConfig.getConfigOption(LOG_MESSAGE_FORMAT_VERSION);
@@ -945,11 +945,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // brokers speaking protocol of the lower version.
                 phases = "2 (1st phase skips rolling update)";
                 log.info("{}: {}, phase 1 of {} completed", reconciliation, upgrade, phases);
-                return Future.succeededFuture(ss);
+                return Future.succeededFuture(sts);
             }
 
             // update the annotations, image and environment
-            StatefulSet newSs = new StatefulSetBuilder(ss)
+            StatefulSet newSts = new StatefulSetBuilder(sts)
                     .editMetadata()
                         .withAnnotations(annotations)
                     .endMetadata()
@@ -967,8 +967,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // patch and rolling upgrade
             String name = KafkaCluster.kafkaClusterName(this.name);
             log.info("{}: Downgrade: Patch + rolling update of {}", reconciliation, name);
-            return kafkaSetOperations.reconcile(namespace, name, newSs)
-                    .compose(result -> kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+            return kafkaSetOperations.reconcile(namespace, name, newSts)
+                    .compose(result -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
                         return true;
                     }).map(result.resource()))
@@ -985,15 +985,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *     <li>Remove the strimzi.io/from-kafka-version since this is the last phase</li>
          *     <li>Remove the strimzi.io/to-kafka-version since this is the last phase</li>
          *     <li>Remove inter.broker.protocol.version (so the new version's default is used)</li>
-         *     <li>Update the image in the SS</li>
-         *     <li>Reconcile the SS and perform a rolling update of the pods</li>
+         *     <li>Update the image in the STS</li>
+         *     <li>Reconcile the STS and perform a rolling update of the pods</li>
          * </ol>
          */
-        private Future<Void> kafkaDowngradePhase2(StatefulSet ss, KafkaUpgrade downgrade, String downgradedImage) {
+        private Future<Void> kafkaDowngradePhase2(StatefulSet sts, KafkaUpgrade downgrade, String downgradedImage) {
             log.info("{}: {}, phase 2", reconciliation, downgrade);
             // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
 
-            Map<String, String> annotations = Annotations.annotations(ss);
+            Map<String, String> annotations = Annotations.annotations(sts);
 
             log.info("{}: Upgrade: Removing annotations {}, {}",
                     reconciliation, ANNO_STRIMZI_IO_FROM_VERSION, ANNO_STRIMZI_IO_TO_VERSION);
@@ -1002,14 +1002,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, downgrade.to().version());
 
             // Remove inter.broker.protocol.version (so the new version's default is used)
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
+            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, ""));
             log.info("{}: Upgrade: Removing Kafka config {}, will default to {}",
                     reconciliation, INTERBROKER_PROTOCOL_VERSION, downgrade.to().protocolVersion());
             currentKafkaConfig.removeConfigOption(INTERBROKER_PROTOCOL_VERSION);
             env.put(ENV_VAR_KAFKA_CONFIGURATION, currentKafkaConfig.getConfiguration());
 
-            StatefulSet newSs = new StatefulSetBuilder(ss)
+            StatefulSet newSts = new StatefulSetBuilder(sts)
                     .editMetadata()
                         .withAnnotations(annotations)
                     .endMetadata()
@@ -1025,10 +1025,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .endSpec()
                     .build();
 
-            // Reconcile the SS and perform a rolling update of the pods
+            // Reconcile the STS and perform a rolling update of the pods
             log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), newSs)
-                    .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+            return kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), newSts)
+                    .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
                         log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
                         return true;
                     }))
@@ -1146,9 +1146,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSs = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-            Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
+            StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+            return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
@@ -1175,8 +1175,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * In this case quorum cannot be preserved.
          */
         Future<ReconciliationState> zkScaleUpStep() {
-            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            return withVoid(futss.map(ss -> ss == null ? Integer.valueOf(0) : ss.getSpec().getReplicas())
+            Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return withVoid(futsts.map(sts -> sts == null ? Integer.valueOf(0) : sts.getSpec().getReplicas())
                     .compose(currentReplicas -> {
                         if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
                             zkCluster.setReplicas(currentReplicas + 1);
@@ -1449,8 +1449,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         .withPort(kafkaCluster.getLoadbalancerPort())
                                         .build());
                             } else if (kafkaCluster.isExposedWithNodePort()) {
-                                ServiceSpec ss = serviceOperations.get(namespace, serviceName).getSpec();
-                                Integer nodePort = ss.getPorts().get(0).getNodePort();
+                                ServiceSpec sts = serviceOperations.get(namespace, serviceName).getSpec();
+                                Integer nodePort = sts.getPorts().get(0).getNodePort();
 
                                 setExternalListenerStatus(new ListenerAddressBuilder()
                                         .withHost("<AnyNodeAddress>")
@@ -1860,15 +1860,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
-            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-            PodTemplateSpec template = kafkaSs.getSpec().getTemplate();
+            StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSs));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSts));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
@@ -2465,14 +2465,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     entityOperator == null ? null : entityOperator.generateSecret(clusterCa)));
         }
 
-        private boolean isPodUpToDate(StatefulSet ss, Pod pod) {
-            final int ssGeneration = StatefulSetOperator.getSsGeneration(ss);
+        private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
+            final int stsGeneration = StatefulSetOperator.getStsGeneration(sts);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
-            log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
-                    ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
+            log.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+                    sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
-                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
-            return ssGeneration == podGeneration;
+                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, stsGeneration);
+            return stsGeneration == podGeneration;
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
@@ -2483,8 +2483,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
-        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
-            boolean isPodUpToDate = isPodUpToDate(ss, pod);
+        private boolean isPodToRestart(StatefulSet sts, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
+            boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
             boolean isFsResizeNeeded = false;

@@ -71,17 +71,17 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
-        String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        final int replicas = ss.getSpec().getReplicas();
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+        String namespace = sts.getMetadata().getNamespace();
+        String name = sts.getMetadata().getName();
+        final int replicas = sts.getSpec().getReplicas();
         log.debug("Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
         ArrayList<Pod> pods = new ArrayList<>();
-        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
-            Pod pod = podOperations.get(ss.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
+            Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
             zkRoll |= podRestart.test(pod);
             pods.add(pod);
         }
@@ -101,7 +101,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                         log.debug("Possibly restarting non-leader pod {}", podName);
                         // roll the pod and wait until it is ready
                         // this prevents rolling into faulty state (note: this applies just for ZK pods)
-                        fut = fut.compose(ignore -> maybeRestartPod(ss, podName, podRestart));
+                        fut = fut.compose(ignore -> maybeRestartPod(sts, podName, podRestart));
                     } else {
                         log.debug("Deferring restart of leader {}", podName);
                     }
@@ -113,7 +113,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                     return fut.compose(ar -> {
                         // the leader is rolled as the last
                         log.debug("Possibly restarting leader pod (previously deferred) {}", leader);
-                        return maybeRestartPod(ss, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
+                        return maybeRestartPod(sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }
             }).setHandler(rollFuture);

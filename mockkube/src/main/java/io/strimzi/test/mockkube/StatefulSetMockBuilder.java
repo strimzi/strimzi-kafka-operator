@@ -110,17 +110,17 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
     private void mockScale(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
         when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
             checkDoesExist(resourceName);
-            StatefulSet ss = copyResource(db.get(resourceName));
+            StatefulSet sts = copyResource(db.get(resourceName));
             int newScale = invocation.getArgument(0);
-            ss.getSpec().setReplicas(newScale);
-            return doPatch(resourceName, ss);
+            sts.getSpec().setReplicas(newScale);
+            return doPatch(resourceName, sts);
         });
         when(resource.scale(anyInt())).thenAnswer(invocation -> {
             checkDoesExist(resourceName);
-            StatefulSet ss = copyResource(db.get(resourceName));
+            StatefulSet sts = copyResource(db.get(resourceName));
             int newScale = invocation.getArgument(0);
-            ss.getSpec().setReplicas(newScale);
-            return doPatch(resourceName, ss);
+            sts.getSpec().setReplicas(newScale);
+            return doPatch(resourceName, sts);
         });
     }
 
