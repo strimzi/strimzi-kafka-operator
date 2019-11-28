@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class KafkaVersion implements Comparable<KafkaVersion> {
+public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     @JsonProperty("version")
     String version;
@@ -66,7 +66,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     @Override
-    public int compareTo(KafkaVersion o) {
+    public int compareTo(TestKafkaVersion o) {
         return compareDottedVersions(this.version, o.version);
     }
 
@@ -105,7 +105,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        KafkaVersion that = (KafkaVersion) o;
+        TestKafkaVersion that = (TestKafkaVersion) o;
         return version.equals(that.version);
     }
 
@@ -115,19 +115,19 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      *
      * @return A list of the kafka versions listed in the kafka-versions.yaml file
      */
-    public static List<KafkaVersion> parseKafkaVersions() throws IOException {
+    public static List<TestKafkaVersion> parseKafkaVersions() throws IOException {
 
         YAMLMapper mapper = new YAMLMapper();
 
         Reader versionsFileReader = new InputStreamReader(
-                KafkaVersion.class.getResourceAsStream("/kafka-versions.yaml"),
+                TestKafkaVersion.class.getResourceAsStream("/kafka-versions.yaml"),
                 StandardCharsets.UTF_8);
 
-        List<KafkaVersion> kafkaVersions = mapper.readValue(versionsFileReader, new TypeReference<List<KafkaVersion>>() {
+        List<TestKafkaVersion> testKafkaVersions = mapper.readValue(versionsFileReader, new TypeReference<List<TestKafkaVersion>>() {
         });
 
-        Collections.sort(kafkaVersions);
+        Collections.sort(testKafkaVersions);
 
-        return kafkaVersions;
+        return testKafkaVersions;
     }
 }

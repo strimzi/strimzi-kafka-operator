@@ -104,13 +104,13 @@ public class KafkaUpdateTest {
                 .build();
     }
 
-    private Kafka changedKafka(Kafka initialKafka, String version, Map<String, Object> config) {
+    private Kafka changedKafkaVersion(Kafka initialKafka, String version, Map<String, Object> config) {
         return new KafkaBuilder(initialKafka)
                 .editSpec()
-                .editKafka()
-                .withVersion(version)
-                .withConfig(config)
-                .endKafka()
+                    .editKafka()
+                        .withVersion(version)
+                        .withConfig(config)
+                    .endKafka()
                 .endSpec()
                 .build();
     }
@@ -227,7 +227,7 @@ public class KafkaUpdateTest {
         Kafka initialKafka = initialKafka(initialKafkaVersion, config);
         List<StatefulSet> states = upgrade(context, singletonMap(upgradedKafkaVersion, upgradedImage),
             initialKafka, null,
-            changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+            changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
         context.verify(() -> assertThat(states.size(), is(expectSinglePhase ? 1 : 2)));
@@ -279,7 +279,7 @@ public class KafkaUpdateTest {
         try {
             upgrade(context, singletonMap(upgradedKafkaVersion, upgradedImage),
                 initialKafka, null,
-                changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+                changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
                 invocationCount -> { },
                 invocationCount -> {
                     if (invocationCount == 0
@@ -311,7 +311,7 @@ public class KafkaUpdateTest {
         // Do the upgrade again, but without throwing this time
         states = upgrade(context, singletonMap(upgradedKafkaVersion, upgradedImage),
             initialKafka, states.get(0),
-            changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+            changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
 
@@ -368,7 +368,7 @@ public class KafkaUpdateTest {
         List<StatefulSet> states = upgrade(context,
                 singletonMap(upgradedKafkaVersion, upgradedImage),
             initialKafka, null,
-            changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+            changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
         context.verify(() -> assertThat(states.size(), is(expectSinglePhase ? 1 : 2)));
@@ -419,7 +419,7 @@ public class KafkaUpdateTest {
         try {
             upgrade(context, singletonMap(upgradedKafkaVersion, upgradedImage),
                 initialKafka, null,
-                changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+                changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
                 invocationCount -> { },
                 invocationCount -> {
                     if (invocationCount == 0
@@ -452,7 +452,7 @@ public class KafkaUpdateTest {
         // Do the upgrade again, but without throwing this time
         states = upgrade(context, singletonMap(upgradedKafkaVersion, upgradedImage),
             initialKafka, states.get(0),
-            changedKafka(initialKafka, upgradedKafkaVersion, emptyMap()),
+            changedKafkaVersion(initialKafka, upgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
 
@@ -529,7 +529,7 @@ public class KafkaUpdateTest {
         List<StatefulSet> states = upgrade(context,
                 singletonMap(downgradedKafkaVersion, downgradedImage),
             initialKafka, null,
-            changedKafka(initialKafka, downgradedKafkaVersion, emptyMap()),
+            changedKafkaVersion(initialKafka, downgradedKafkaVersion, emptyMap()),
             invocationCount -> { },
             invocationCount -> { });
         context.verify(() -> assertThat(states.size(), is(expectFirstPhase ? 2 : 1)));
@@ -568,14 +568,14 @@ public class KafkaUpdateTest {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
         ZookeeperSetOperator zkso = mock(ZookeeperSetOperator.class);
 
-        StatefulSet initialKafkaSs = KafkaCluster.fromCrd(initialKafka, VERSIONS)
+        StatefulSet initialKafkaSts = KafkaCluster.fromCrd(initialKafka, VERSIONS)
                 .generateStatefulSet(false, null, null);
 
-        StatefulSet initialZookeeperSs = ZookeeperCluster.fromCrd(initialKafka, VERSIONS)
+        StatefulSet initialZookeeperSts = ZookeeperCluster.fromCrd(initialKafka, VERSIONS)
                 .generateStatefulSet(false, null, null);
 
-        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialKafkaSs));
-        when(zkso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialZookeeperSs));
+        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialKafkaSts));
+        when(zkso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialZookeeperSts));
         when(kso.maybeRollingUpdate(any(), any())).thenAnswer(invocation -> Future.succeededFuture());
 
         // The only way to grab the updated stateful set is to intercept it when it is given to the zookeeper set operations
@@ -613,8 +613,10 @@ public class KafkaUpdateTest {
                         null,
                         null,
                         null,
+                        null,
                         null),
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
+
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Future<KafkaAssemblyOperator.ReconciliationState> future = op.new ReconciliationState(reconciliation, updatedKafka) {
@@ -624,8 +626,8 @@ public class KafkaUpdateTest {
             }
         }.zkVersionChange();
 
-        StatefulSet changedZkSs = zkStatefulSets.get(0);
-        return changedZkSs;
+        StatefulSet changedZkSts = zkStatefulSets.get(0);
+        return changedZkSts;
     }
 
     @Test
@@ -635,12 +637,13 @@ public class KafkaUpdateTest {
         String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
 
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
-        Kafka changedKafka = changedKafka(initialKafka, changedKafkaVersion, emptyMap());
+        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
+        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
 
-        StatefulSet changedZkSs = zkChange(context, initialKafka, changedKafka);
+        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
 
-        Container container1 = changedZkSs.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
         context.verify(() -> {
                 assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
                 context.completeNow();
@@ -656,12 +659,13 @@ public class KafkaUpdateTest {
         String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
 
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION));
-        Kafka changedKafka = changedKafka(initialKafka, changedKafkaVersion, emptyMap());
+        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION));
+        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
 
-        StatefulSet changedZkSs = zkChange(context, initialKafka, changedKafka);
+        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
 
-        Container container1 = changedZkSs.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
         context.verify(() -> {
                 assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
                 context.completeNow();
@@ -677,12 +681,13 @@ public class KafkaUpdateTest {
         String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
 
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
-        Kafka changedKafka = changedKafka(initialKafka, changedKafkaVersion, emptyMap());
+        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
+        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
 
-        StatefulSet changedZkSs = zkChange(context, initialKafka, changedKafka);
+        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
 
-        Container container1 = changedZkSs.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
         context.verify(() -> {
                 assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
                 context.completeNow();

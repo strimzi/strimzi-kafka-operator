@@ -732,17 +732,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkVersionChange() {
 
-            String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-            String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
-
-            Future<StatefulSet> kafkaSsFuture = kafkaSetOperations.getAsync(namespace, kafkaSsName);
-            Future<StatefulSet> zkSsFuture = zkSetOperations.getAsync(namespace, zkSsName);
-
-            return CompositeFuture.all(kafkaSsFuture, zkSsFuture).compose(allFutures -> {
+            return CompositeFuture.all(
+                    kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)),
+                    zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+            ).compose(allFutures -> {
                 if (allFutures.succeeded()) {
 
-                    StatefulSet zkSts = zkSsFuture.result();
-                    StatefulSet kafkaSts = kafkaSsFuture.result();
+                    StatefulSet kafkaSts = allFutures.resultAt(0);
+                    StatefulSet zkSts = allFutures.resultAt(1);
 
                     if (zkSts == null || kafkaSts == null) {
                         return Future.succeededFuture(this);
@@ -750,24 +747,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     KafkaVersionChange versionChange = getKafkaVersionChange(kafkaSts);
 
-                    log.debug("Checking if we need to change the Zookeeper image for Zookeeper cluster {}", zkSsName);
-
                     if (versionChange.isNoop()) {
                         log.debug("Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
                         return Future.succeededFuture(this);
                     } else {
+                        String versionChangeType;
                         if (versionChange.isDowngrade()) {
-                            log.debug("Kafka downgrade from {} to {} requires Zookeeper downgrade from {} to {}",
+                            versionChangeType = "downgrade";
+                        } else {
+                            versionChangeType = "upgrade";
+                        }
+                        if (versionChange.requiresZookeeperChange()) {
+                            log.debug("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
+                                    versionChangeType,
                                     versionChange.from().version(),
                                     versionChange.to().version(),
+                                    versionChangeType,
                                     versionChange.from().zookeeperVersion(),
                                     versionChange.to().zookeeperVersion());
                         } else {
-                            log.debug("Kafka upgrade from {} to {} requires Zookeeper upgrade from {} to {}",
+                            log.debug("Kafka {} from {} to {} requires no change in Zookeeper version",
+                                    versionChangeType,
                                     versionChange.from().version(),
-                                    versionChange.to().version(),
-                                    versionChange.from().zookeeperVersion(),
-                                    versionChange.to().zookeeperVersion());
+                                    versionChange.to().version());
+
                         }
                         return updateZkStatefulSet(zkSts, kafkaAssembly, versionChange).map(this);
                     }
@@ -783,14 +786,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                 String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
 
-                // TODO: Do we need to pull in any config changes for the new version of zk?
-
-                // update the Zookeeper
+                // update the Zookeeper stateful set
                 StatefulSet newZookeeperSs = new StatefulSetBuilder(zookeeperSs)
                         .editSpec()
                             .editTemplate()
                                 .editSpec()
-                                    .editFirstContainer()
+                                    .editMatchingContainer(container -> container.getName().equals("zookeeper"))
                                         .withImage(newZkImage)
                                     .endContainer()
                                 .endSpec()

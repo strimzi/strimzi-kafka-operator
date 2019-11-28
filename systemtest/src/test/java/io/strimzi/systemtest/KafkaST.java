@@ -32,7 +32,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.utils.KafkaVersion;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -1798,7 +1798,7 @@ class KafkaST extends MessagingBaseST {
         }
     }
 
-    void runVersionChange(KafkaVersion initialVersion, KafkaVersion newVersion, int kafkaReplicas, int zkReplicas) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas) {
 
         String logMsgFormat;
         if (initialVersion.compareTo(newVersion) < 0) {
@@ -1841,7 +1841,7 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        LOGGER.debug("Updating Kafka CR version field to " + newVersion.version());
+        LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Get the Kafka resource from K8s
         Kafka retrievedKafka = Crds.kafkaOperation(kubeClient(NAMESPACE).getClient())
@@ -1866,10 +1866,7 @@ class KafkaST extends MessagingBaseST {
 
         // Wait for the kafka broker version change roll
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.debug("1st Kafka roll (image change) is complete");
-        // Wait for the kafka rolling update
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        LOGGER.debug("2nd Kafka roll (update) is complete");
+        LOGGER.debug("Kafka roll (image change) is complete");
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
@@ -1897,10 +1894,10 @@ class KafkaST extends MessagingBaseST {
     @Test
     void testKafkaClusterUpgrade() throws IOException {
 
-        List<KafkaVersion> sortedVersions = KafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
 
-        KafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
-        KafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
+        TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 2);
+        TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 1);
 
         runVersionChange(initialVersion, newVersion, 3, 3);
 
@@ -1909,10 +1906,10 @@ class KafkaST extends MessagingBaseST {
     @Test
     void testKafkaClusterDowngrade() throws IOException {
 
-        List<KafkaVersion> sortedVersions = KafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.parseKafkaVersions();
 
-        KafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
-        KafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);
+        TestKafkaVersion initialVersion = sortedVersions.get(sortedVersions.size() - 1);
+        TestKafkaVersion newVersion = sortedVersions.get(sortedVersions.size() - 2);
 
         runVersionChange(initialVersion, newVersion, 3, 3);
 

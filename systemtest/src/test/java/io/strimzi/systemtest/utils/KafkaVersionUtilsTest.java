@@ -13,7 +13,7 @@ public class KafkaVersionUtilsTest {
 
     @Test
     public void parsingTest() throws Exception {
-        List<KafkaVersion> versions = KafkaVersion.parseKafkaVersions();
+        List<TestKafkaVersion> versions = TestKafkaVersion.parseKafkaVersions();
         assertTrue(versions.size() > 0);
     }
 }
