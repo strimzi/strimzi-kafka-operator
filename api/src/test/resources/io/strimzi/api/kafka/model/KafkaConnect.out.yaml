@@ -5,6 +5,8 @@ metadata:
   name: "test-kafka-connect"
 spec:
   replicas: 6
+  config:
+    name: "bar"
   image: "foo"
   tolerations:
   - effect: "NoSchedule"
@@ -18,8 +20,6 @@ spec:
   logging:
     type: "inline"
     loggers: {}
-  config:
-    name: "bar"
   bootstrapServers: "kafka:9092"
   externalConfiguration:
     env:

@@ -22,8 +22,10 @@ class PredicatedWatcher<CM extends HasMetadata> {
     private final String str;
     private final Watcher<CM> watcher;
     private final Predicate<CM> predicate;
+    private final String kind;
 
-    private PredicatedWatcher(String str, Predicate<CM> predicate, Watcher<CM> watcher) {
+    private PredicatedWatcher(String kind, String str, Predicate<CM> predicate, Watcher<CM> watcher) {
+        this.kind = kind;
         this.str = str;
         this.watcher = watcher;
         this.predicate = predicate;
@@ -37,20 +39,20 @@ class PredicatedWatcher<CM extends HasMetadata> {
         return predicate;
     }
 
-    static <CM extends HasMetadata> PredicatedWatcher<CM> watcher(Watcher<CM> watcher) {
-        return new PredicatedWatcher<>("watch on all", resource1 -> ((Predicate<CM>) resource -> true).test(resource1), watcher);
+    static <CM extends HasMetadata> PredicatedWatcher<CM> watcher(String kind, Watcher<CM> watcher) {
+        return new PredicatedWatcher<>(kind, "watch on all", resource1 -> ((Predicate<CM>) resource -> true).test(resource1), watcher);
     }
 
-    static <CM extends HasMetadata> PredicatedWatcher<CM> namedWatcher(String name, Watcher<CM> watcher) {
-        return new PredicatedWatcher<>("watch on named " + name, resource1 -> ((Predicate<CM>) resource -> name.equals(resource.getMetadata().getName())).test(resource1), watcher);
+    static <CM extends HasMetadata> PredicatedWatcher<CM> namedWatcher(String kind, String name, Watcher<CM> watcher) {
+        return new PredicatedWatcher<>(kind, "watch on named " + name, resource1 -> ((Predicate<CM>) resource -> name.equals(resource.getMetadata().getName())).test(resource1), watcher);
     }
 
-    static <CM extends HasMetadata> PredicatedWatcher<CM> predicatedWatcher(String desc, Predicate<CM> predicate, Watcher<CM> watcher) {
-        return new PredicatedWatcher<>(desc, resource -> predicate.test(resource), watcher);
+    static <CM extends HasMetadata> PredicatedWatcher<CM> predicatedWatcher(String kind, String desc, Predicate<CM> predicate, Watcher<CM> watcher) {
+        return new PredicatedWatcher<>(kind, desc, resource -> predicate.test(resource), watcher);
     }
 
     public String toString() {
-        return str;
+        return str + " for kind " + kind;
     }
 
     public void maybeFire(CM removed, Watcher.Action action) {

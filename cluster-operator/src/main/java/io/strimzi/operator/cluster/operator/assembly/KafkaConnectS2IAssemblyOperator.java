@@ -6,26 +6,28 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2Istatus;
-import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -39,6 +41,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.function.Function;
 
 /**
  * <p>Assembly operator for a "Kafka Connect S2I" assembly, which manages:</p>
@@ -48,7 +51,7 @@ import java.util.HashMap;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
@@ -56,25 +59,33 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
     private final KafkaVersion.Lookup versions;
+    private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperations;
 
     /**
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
-     * @param certManager Certificate manager
-     * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                           CertManager certManager, PasswordGenerator passwordGenerator,
+
                                            ResourceOperatorSupplier supplier,
                                            ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, certManager, passwordGenerator, supplier.connectS2IOperator, supplier, config);
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+    }
+
+    public KafkaConnectS2IAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+                                           ResourceOperatorSupplier supplier,
+                                           ClusterOperatorConfig config,
+                                           Function<Vertx, KafkaConnectApi> connectClientProvider) {
+        super(vertx, pfa, KafkaConnectS2I.RESOURCE_KIND, supplier.connectS2IOperator, supplier, config, connectClientProvider);
         this.deploymentConfigOperations = supplier.deploymentConfigOperations;
         this.imagesStreamOperations = supplier.imagesStreamOperations;
         this.buildConfigOperations = supplier.buildConfigOperations;
+        this.connectOperations = supplier.connectOperator;
         this.versions = config.versions();
+
     }
 
     @Override
@@ -114,6 +125,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                     .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                    .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I))
                     .compose(i -> chainFuture.complete(), chainFuture)
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
@@ -137,6 +149,18 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         } else {
             return Future.failedFuture("The OpenShift build, image or apps APIs are not available in this Kubernetes cluster. Kafka Connect S2I deployment cannot be enabled.");
         }
+    }
+
+    @Override
+    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnectS2I connects2i) {
+        return connectOperations.getAsync(connects2i.getMetadata().getNamespace(), connects2i.getMetadata().getName()).compose(connect -> {
+            // If there's a non-s2i of the same name then do nothing, since that takes precedence
+            if (connect == null) {
+                return Future.succeededFuture();
+            } else {
+                return super.reconcileConnectors(reconciliation, connects2i);
+            }
+        });
     }
 
     /**

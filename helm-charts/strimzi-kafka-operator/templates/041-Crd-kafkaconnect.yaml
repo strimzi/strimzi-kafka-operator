@@ -42,6 +42,8 @@ spec:
           properties:
             replicas:
               type: integer
+            config:
+              type: object
             image:
               type: string
             livenessProbe:
@@ -759,8 +761,6 @@ spec:
               - type
             bootstrapServers:
               type: string
-            config:
-              type: object
             externalConfiguration:
               type: object
               properties:

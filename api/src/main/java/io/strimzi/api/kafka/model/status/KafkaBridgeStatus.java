@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Represents a status of the Kafka Bridge resource
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
 @EqualsAndHashCode
+@ToString(callSuper = true)
 public class KafkaBridgeStatus extends Status {
     private static final long serialVersionUID = 1L;
 

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Represents a status of the Kafka Connect S2I resource
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url", "buildConfigName" })
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaConnectS2Istatus extends KafkaConnectStatus {
     private static final long serialVersionUID = 1L;
 

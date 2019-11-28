@@ -27,9 +27,9 @@ public class StatusUtils {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
     }
 
-    public static Condition buildConditionFromReconciliationResult(AsyncResult<Void> reconciliationResult) {
+    public static Condition buildConditionFromException(Throwable error) {
         Condition readyCondition;
-        if (reconciliationResult.succeeded()) {
+        if (error == null) {
             readyCondition = new ConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
                     .withType("Ready")
@@ -40,18 +40,22 @@ public class StatusUtils {
                     .withLastTransitionTime(iso8601Now())
                     .withType("NotReady")
                     .withStatus("True")
-                    .withReason(reconciliationResult.cause().getClass().getSimpleName())
-                    .withMessage(reconciliationResult.cause().getMessage())
+                    .withReason(error.getClass().getSimpleName())
+                    .withMessage(error.getMessage())
                     .build();
         }
         return readyCondition;
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
+        setStatusConditionAndObservedGeneration(resource, status, result.cause());
+    }
+
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition readyCondition = StatusUtils.buildConditionFromReconciliationResult(result);
+        Condition readyCondition = StatusUtils.buildConditionFromException(error);
         status.setConditions(Collections.singletonList(readyCondition));
     }
 

@@ -1227,7 +1227,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1299,6 +1299,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |Property                      |Description
 |replicas               1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
+|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
+|map
 |image                  1.2+<.<|The docker image for the pods.
 |string
 |livenessProbe          1.2+<.<|Pod liveness checking.
@@ -1327,8 +1329,6 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
-|config                 1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.
-|map
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |resources              1.2+<.<|CPU and memory resources to reserve.
@@ -2212,5 +2212,50 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |integer
 |url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
 |string
+|====
+
+[id='type-KafkaConnector-{context}']
+### `KafkaConnector` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Connector.
+|xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
+|status  1.2+<.<|The status of the Kafka Connector.
+|xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`]
+|====
+
+[id='type-KafkaConnectorSpec-{context}']
+### `KafkaConnectorSpec` schema reference
+
+Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|class     1.2+<.<|The Class for the Kafka Connector.
+|string
+|tasksMax  1.2+<.<|The maximum number of tasks for the Kafka Connector.
+|integer
+|config    1.2+<.<|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
+|map
+|====
+
+[id='type-KafkaConnectorStatus-{context}']
+### `KafkaConnectorStatus` schema reference
+
+Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
 |====
 

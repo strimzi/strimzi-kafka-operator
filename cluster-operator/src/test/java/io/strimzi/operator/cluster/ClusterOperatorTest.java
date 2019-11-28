@@ -183,7 +183,7 @@ public class ClusterOperatorTest {
         }
 
 
-        if (numWatchers.get() > (openShift ? 5 : 4) * namespaceList.size()) { // we do not have connectS2I on k8s
+        if (numWatchers.get() > (openShift ? 7 : 5) * namespaceList.size()) { // we do not have connectS2I on k8s
             context.failNow(new Throwable("Looks like there were more watchers than namespaces"));
         }
         context.completeNow();
@@ -262,7 +262,7 @@ public class ClusterOperatorTest {
             }
         }
 
-        if (numWatchers.get() > (openShift ? 5 : 4)) { // we do not have connectS2I on k8s
+        if (numWatchers.get() > (openShift ? 7 : 5)) { // we do not have connectS2I on k8s
             context.failNow(new Throwable("Looks like there were more watchers than should be"));
         }
         context.completeNow();
