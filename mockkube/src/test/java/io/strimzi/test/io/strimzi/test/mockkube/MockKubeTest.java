@@ -310,7 +310,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     // TODO Test Deployment/StatefulSet creation causes ReplicaSet and Pod creation
-    // TODO Test Deployment/SS Pod deletion causes new Pod creation
+    // TODO Test Deployment/STS Pod deletion causes new Pod creation
     // TODO Test Pod with VCT causes PVC creation
 
     // TODO Test other resource types

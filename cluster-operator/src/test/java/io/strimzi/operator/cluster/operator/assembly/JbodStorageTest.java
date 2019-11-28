@@ -296,8 +296,8 @@ public class JbodStorageTest {
     }
 
     private List<PersistentVolumeClaim> getPvcs(String namespace, String name) {
-        String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaSsName);
+        String kafkaStsName = KafkaCluster.kafkaClusterName(name);
+        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaStsName);
         return mockClient.persistentVolumeClaims().inNamespace(namespace).withLabels(pvcSelector.toMap())
                 .list().getItems();
     }

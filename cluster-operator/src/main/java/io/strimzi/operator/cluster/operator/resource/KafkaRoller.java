@@ -92,18 +92,18 @@ public class KafkaRoller {
 
     KafkaRoller(Vertx vertx, PodOperator podOperations,
                 long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                StatefulSet ss, Secret clusterCaCertSecret, Secret coKeySecret) {
+                StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret) {
         this(vertx, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                ss, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider());
+                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider());
     }
 
     KafkaRoller(Vertx vertx, PodOperator podOperations,
                 long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                StatefulSet ss, Secret clusterCaCertSecret, Secret coKeySecret,
+                StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
                 AdminClientProvider adminClientProvider) {
-        this.namespace = ss.getMetadata().getNamespace();
-        this.cluster = Labels.cluster(ss);
-        this.numPods = ss.getSpec().getReplicas();
+        this.namespace = sts.getMetadata().getNamespace();
+        this.cluster = Labels.cluster(sts);
+        this.numPods = sts.getSpec().getReplicas();
         this.backoffSupplier = backOffSupplier;
         this.clusterCaCertSecret = clusterCaCertSecret;
         this.coKeySecret = coKeySecret;

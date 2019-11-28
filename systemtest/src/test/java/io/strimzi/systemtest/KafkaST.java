@@ -170,10 +170,10 @@ class KafkaST extends MessagingBaseST {
         final String newPodName = KafkaResources.kafkaPodName(CLUSTER_NAME,  newPodId);
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
-        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
         LOGGER.info("Scaled up to {}", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
@@ -192,7 +192,7 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
         LOGGER.info("Scaled down to {}", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -785,11 +785,11 @@ class KafkaST extends MessagingBaseST {
         setOperationID(startTimeMeasuring(Operation.NEXT_RECONCILIATION));
 
         // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
-        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
+        String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
         String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        Map<String, String> zkPods = StUtils.ssSnapshot(zkSsName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(zkStsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStsName);
         Map<String, String> eoPods = StUtils.depSnapshot(eoDepName);
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
@@ -816,8 +816,8 @@ class KafkaST extends MessagingBaseST {
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        assertThat(StUtils.ssHasRolled(zkSsName, zkPods), is(false));
-        assertThat(StUtils.ssHasRolled(kafkaSsName, kafkaPods), is(false));
+        assertThat(StUtils.ssHasRolled(zkStsName, zkPods), is(false));
+        assertThat(StUtils.ssHasRolled(kafkaStsName, kafkaPods), is(false));
         assertThat(StUtils.depHasRolled(eoDepName, eoPods), is(false));
         TimeMeasuringSystem.stopOperation(getOperationID());
     }

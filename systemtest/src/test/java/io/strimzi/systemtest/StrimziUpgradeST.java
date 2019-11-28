@@ -43,8 +43,8 @@ public class StrimziUpgradeST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
-    private String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-    private String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+    private String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+    private String kafkaStsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
     private String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
 
     private Map<String, String> zkPods;
@@ -185,17 +185,17 @@ public class StrimziUpgradeST extends AbstractST {
 
     private void waitForRollingUpdate() {
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        StUtils.waitTillSsHasRolled(zkSsName, 3, zkPods);
+        StUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
         StUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
     }
 
     private void makeSnapshots() {
-        zkPods = StUtils.ssSnapshot(zkSsName);
-        kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        zkPods = StUtils.ssSnapshot(zkStsName);
+        kafkaPods = StUtils.ssSnapshot(kafkaStsName);
         eoPods = StUtils.depSnapshot(eoDepName);
     }
 
@@ -220,8 +220,8 @@ public class StrimziUpgradeST extends AbstractST {
         String tOImage = images.getString("topicOperator");
         String uOImage = images.getString("userOperator");
 
-        checkContainerImages(kubeClient().getStatefulSet(zkSsName).getSpec().getSelector().getMatchLabels(), zkImage);
-        checkContainerImages(kubeClient().getStatefulSet(kafkaSsName).getSpec().getSelector().getMatchLabels(), kafkaImage);
+        checkContainerImages(kubeClient().getStatefulSet(zkStsName).getSpec().getSelector().getMatchLabels(), zkImage);
+        checkContainerImages(kubeClient().getStatefulSet(kafkaStsName).getSpec().getSelector().getMatchLabels(), kafkaImage);
         checkContainerImages(kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(), 0, tOImage);
         checkContainerImages(kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(), 1, uOImage);
     }
@@ -248,7 +248,7 @@ public class StrimziUpgradeST extends AbstractST {
                 replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 if (!kafkaVersion.equals("2.0.0")) {
-                    StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                    StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 }
                 makeSnapshots();
             }
@@ -258,18 +258,18 @@ public class StrimziUpgradeST extends AbstractST {
                 LOGGER.info("Going to set log message format version to " + logMessageVersion);
                 replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
-                StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+                StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 makeSnapshots();
             }
         }
     }
 
     void logPodImages() {
-        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkSsName));
+        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkStsName));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }
-        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaSsName));
+        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaStsName));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }

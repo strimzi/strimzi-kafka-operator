@@ -298,7 +298,7 @@ public class ZookeeperLeaderFinder {
         String podName = pod.getMetadata().getName();
         int index = podName.lastIndexOf('-');
         if (index == -1 || index >= podName.length()) {
-            // This should be impossible if the pod name conforms to the names used for SS pods
+            // This should be impossible if the pod name conforms to the names used for STS pods
             throw new RuntimeException();
         }
         int podId = parseInt(podName.substring(index + 1));

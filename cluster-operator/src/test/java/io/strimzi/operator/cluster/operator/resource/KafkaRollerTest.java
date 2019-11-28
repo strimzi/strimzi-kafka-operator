@@ -92,8 +92,8 @@ public class KafkaRollerTest {
     @Test
     public void controllerless(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        StatefulSet ss = buildStatefulSet();
-        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, -1);
+        StatefulSet sts = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(sts, podOps, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 1, 2, 3, 4));
@@ -102,8 +102,8 @@ public class KafkaRollerTest {
     @Test
     public void pod2IsController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        StatefulSet ss = buildStatefulSet();
-        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 2);
+        StatefulSet sts = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(sts, podOps, 2);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 1, 3, 4, 2));
@@ -112,8 +112,8 @@ public class KafkaRollerTest {
     @Test
     public void controllerChangesDuringRoll(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        StatefulSet ss = buildStatefulSet();
-        TestingKafkaRoller kafkaRoller = rollerWithControllers(ss, podOps, 0, 1);
+        StatefulSet sts = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(sts, podOps, 0, 1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(2, 3, 4, 0, 1));
@@ -342,8 +342,8 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    private TestingKafkaRoller rollerWithControllers(StatefulSet ss, PodOperator podOps, int... controllers) {
-        return new TestingKafkaRoller(ss, null, null, podOps,
+    private TestingKafkaRoller rollerWithControllers(StatefulSet sts, PodOperator podOps, int... controllers) {
+        return new TestingKafkaRoller(sts, null, null, podOps,
             null, null, null,
             brokerId -> succeededFuture(true),
             controllers);
@@ -460,7 +460,7 @@ public class KafkaRollerTest {
         private final Throwable controllerException;
         private final int[] controllers;
 
-        private TestingKafkaRoller(StatefulSet ss, Secret clusterCaCertSecret, Secret coKeySecret,
+        private TestingKafkaRoller(StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
                                   PodOperator podOps,
                                   RuntimeException acOpenException, Throwable acCloseException,
                                   Throwable controllerException,
@@ -468,7 +468,7 @@ public class KafkaRollerTest {
                                   int... controllers) {
             super(KafkaRollerTest.vertx, podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
-                ss, clusterCaCertSecret, coKeySecret);
+                sts, clusterCaCertSecret, coKeySecret);
             this.controllers = controllers;
             this.controllerCall = 0;
             this.acOpenException = acOpenException;

@@ -63,8 +63,8 @@ public class PartialRollingUpdateTest {
 
     private Vertx vertx;
     private Kafka cluster;
-    private StatefulSet kafkaSs;
-    private StatefulSet zkSs;
+    private StatefulSet kafkaSts;
+    private StatefulSet zkSts;
     private Pod kafkaPod0;
     private Pod kafkaPod1;
     private Pod kafkaPod2;
@@ -136,8 +136,8 @@ public class PartialRollingUpdateTest {
         context.completeNow();
         LOGGER.info("bootstrap reconciliation complete");
 
-        this.kafkaSs = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
-        this.zkSs = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
+        this.kafkaSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
+        this.zkSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
         this.zkPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 0)).get();
         this.zkPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 1)).get();
         this.zkPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 2)).get();
@@ -167,7 +167,7 @@ public class PartialRollingUpdateTest {
                 .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
-                .withInitialStatefulSets(set(zkSs, kafkaSs))
+                .withInitialStatefulSets(set(zkSts, kafkaSts))
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
@@ -181,7 +181,7 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledKafkaCluster(VertxTestContext context) {
-        kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         kafkaPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         kafkaPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
@@ -207,7 +207,7 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
-        zkSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        zkSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         zkPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
         zkPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");

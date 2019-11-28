@@ -205,9 +205,9 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        checkStatefulSet(ss);
-        checkOwnerReference(zc.createOwnerReference(), ss);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        checkStatefulSet(sts);
+        checkOwnerReference(zc.createOwnerReference(), sts);
     }
 
     @Test
@@ -229,22 +229,22 @@ public class ZookeeperClusterTest {
         });
     }
 
-    private void checkStatefulSet(StatefulSet ss) {
-        assertThat(ss.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(cluster)));
+    private void checkStatefulSet(StatefulSet sts) {
+        assertThat(sts.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(cluster)));
         // ... in the same namespace ...
-        assertThat(ss.getMetadata().getNamespace(), is(namespace));
+        assertThat(sts.getMetadata().getNamespace(), is(namespace));
         // ... with these labels
-        assertThat(ss.getMetadata().getLabels(), is(expectedLabels()));
-        assertThat(ss.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
+        assertThat(sts.getMetadata().getLabels(), is(expectedLabels()));
+        assertThat(sts.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
 
-        assertThat(ss.getSpec().getTemplate().getSpec().getSchedulerName(), is("default-scheduler"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("default-scheduler"));
 
-        List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = sts.getSpec().getTemplate().getSpec().getContainers();
 
         assertThat(containers.size(), is(2));
 
         // checks on the main Zookeeper container
-        assertThat(ss.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
         assertThat(containers.get(0).getImage(), is(image + "-zk"));
         assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
         assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
@@ -319,13 +319,13 @@ public class ZookeeperClusterTest {
     @Test
     public void withOldAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withOldAffinity");
-        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
-        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -415,15 +415,15 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()), is(true));
-        assertThat(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
-        assertThat(ss.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()), is(true));
+        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
+        assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
-        assertThat(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(ss.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
-        assertThat(ss.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(sts.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
+        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
 
         // Check Service
         Service svc = zc.generateService();
@@ -457,9 +457,9 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
-        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
+        Lifecycle lifecycle = sts.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertThat(lifecycle, is(notNullValue()));
         assertThat(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"), is(true));
     }
@@ -471,9 +471,9 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
-        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
+        Lifecycle lifecycle = sts.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertThat(lifecycle, is(notNullValue()));
         assertThat(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"), is(true));
     }
@@ -497,10 +497,10 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -516,10 +516,10 @@ public class ZookeeperClusterTest {
                 image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, secrets);
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
+        StatefulSet sts = zc.generateStatefulSet(true, null, secrets);
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -541,10 +541,10 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, singletonList(secret1));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
+        StatefulSet sts = zc.generateStatefulSet(true, null, singletonList(secret1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
     @Test
@@ -554,8 +554,8 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
     }
 
     /**
@@ -647,11 +647,11 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
-        assertThat(ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
-        assertThat(ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
-        assertThat(ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
     @Test
@@ -661,8 +661,8 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
     @Test
@@ -986,8 +986,8 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(false, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
     @Test
@@ -1002,8 +1002,8 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(false, null, null);
-        assertThat(ss.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
     }
 
     @Test

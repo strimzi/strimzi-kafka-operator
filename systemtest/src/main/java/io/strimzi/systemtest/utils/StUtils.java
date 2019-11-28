@@ -407,7 +407,7 @@ public class StUtils {
 
     /**
      *
-     * Wait until the SS is ready and all of its Pods are also ready.
+     * Wait until the STS is ready and all of its Pods are also ready.
      * @param name The name of the StatefulSet
      * @param expectPods The number of pods expected.
      */

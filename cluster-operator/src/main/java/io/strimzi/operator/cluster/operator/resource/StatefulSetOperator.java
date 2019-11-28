@@ -87,13 +87,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * is complete. Starting with pod 0, each pod will be deleted and re-created automatically by the ReplicaSet,
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
-     * @param ss The StatefulSet
+     * @param sts The StatefulSet
      * @param podNeedsRestart Predicate for deciding whether the pod needs to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart) {
-        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String namespace = ss.getMetadata().getNamespace();
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart) {
+        String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        String namespace = sts.getMetadata().getNamespace();
         Future<Secret> clusterCaKeySecretFuture = secretOperations.getAsync(
                 namespace, KafkaResources.clusterCaCertificateSecretName(cluster));
         Future<Secret> coKeySecretFuture = secretOperations.getAsync(
@@ -107,7 +107,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             if (coKeySecret == null) {
                 return Future.failedFuture(missingSecretFuture(namespace, ClusterOperator.secretName(cluster)));
             }
-            return maybeRollingUpdate(ss, podNeedsRestart, clusterCaKeySecret, coKeySecret);
+            return maybeRollingUpdate(sts, podNeedsRestart, clusterCaKeySecret, coKeySecret);
         });
     }
 
@@ -115,10 +115,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
     }
 
-    public abstract Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+    public abstract Future<Void> maybeRollingUpdate(StatefulSet sts, Predicate<Pod> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
 
-    public Future<Void> deletePvc(StatefulSet ss, String pvcName) {
-        String namespace = ss.getMetadata().getNamespace();
+    public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
+        String namespace = sts.getMetadata().getNamespace();
         Future<Void> f = Future.future();
         Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
         r.setHandler(h -> {
@@ -135,20 +135,20 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * Asynchronously apply the given {@code podNeedsRestart}, if it returns true then restart the pod
      * given by {@code podName} by deleting it and letting it be recreated by K8s;
      * in any case return a Future which completes when the given (possibly recreated) pod is ready.
-     * @param ss The StatefulSet.
+     * @param sts The StatefulSet.
      * @param podName The name of the Pod to possibly restart.
      * @param podNeedsRestart The predicate for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podNeedsRestart) {
+    Future<Void> maybeRestartPod(StatefulSet sts, String podName, Predicate<Pod> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
-        String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        return podOperations.getAsync(ss.getMetadata().getNamespace(), podName).compose(pod -> {
+        String namespace = sts.getMetadata().getNamespace();
+        String name = sts.getMetadata().getName();
+        return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
             if (podNeedsRestart.test(pod)) {
-                fut = restartPod(ss, pod);
+                fut = restartPod(sts, pod);
             } else {
                 log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
                 fut = Future.succeededFuture();
@@ -163,12 +163,12 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     /**
      * Asynchronously delete the given pod, return a Future which completes when the Pod has been recreated.
      * Note: The pod might not be ready when the returned Future completes.
-     * @param ss The StatefulSet
+     * @param sts The StatefulSet
      * @param pod The pod to be restarted
      * @return a Future which completes when the Pod has been recreated
      */
-    private Future<Void> restartPod(StatefulSet ss, Pod pod) {
-        return podOperations.restart("Rolling update of " + ss.getMetadata().getNamespace() + "/" + ss.getMetadata().getName(),
+    private Future<Void> restartPod(StatefulSet sts, Pod pod) {
+        return podOperations.restart("Rolling update of " + sts.getMetadata().getNamespace() + "/" + sts.getMetadata().getName(),
                 pod, operationTimeoutMs);
     }
 
@@ -219,7 +219,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @return The {@code strimzi.io/generation} of the given StatefulSet.
      */
     @SuppressWarnings("deprecation")
-    public static int getSsGeneration(StatefulSet resource) {
+    public static int getStsGeneration(StatefulSet resource) {
         if (resource == null) {
             return NO_GENERATION;
         }
@@ -243,12 +243,12 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     @Override
     protected Future<ReconcileResult<StatefulSet>> internalCreate(String namespace, String name, StatefulSet desired) {
-        // Create the SS...
+        // Create the STS...
         Future<ReconcileResult<StatefulSet>> result = Future.future();
         setGeneration(desired, INIT_GENERATION);
         Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(namespace, name, desired);
 
-        // ... then wait for the SS to be ready...
+        // ... then wait for the STS to be ready...
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
             .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
@@ -281,7 +281,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         if (shouldIncrementGeneration(diff)) {
             incrementGeneration(current, desired);
         } else {
-            setGeneration(desired, getSsGeneration(current));
+            setGeneration(desired, getStsGeneration(current));
         }
 
         // Don't scale via patch
