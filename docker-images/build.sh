@@ -119,6 +119,17 @@ function fetch_and_unpack_kafka_binaries {
         # Store the folder address for use in the image build 
         version_dist_dirs["$kafka_version"]="./tmp/$kafka_version"
 
+        # create a file listing all the jars with colliding class files in the Kafka dist
+        # (on the assumption that this is OK). This file will be used after building the images to detect any collisions
+        # added by the third-party jars mechanism.
+        whilelist_file="$binary_file_dir/$kafka_version.whitelist"
+        if [ ! -e $whilelist_file ]
+        then
+            unzipped_dir=`mktemp -d`
+            ./extract-jars.sh "$dist_dir/libs" "$unzipped_dir"
+            ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | sort | uniq > "$whilelist_file" || true
+            rm -rf $unzipped_dir
+        fi
     done
 
 }
