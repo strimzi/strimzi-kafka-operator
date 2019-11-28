@@ -2,6 +2,7 @@
 
 ## 0.16.0
 
+* Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
 
 ## 0.15.0

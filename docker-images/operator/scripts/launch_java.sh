@@ -33,4 +33,4 @@ JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/
 # Enable GC logging for memory tracking
 JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
-exec java $JAVA_OPTS -classpath $JAVA_CLASSPATH $JAVA_MAIN $@
+exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath $JAVA_CLASSPATH $JAVA_MAIN $@

@@ -66,4 +66,4 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Kafka server with final configuration
-exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/strimzi.properties
+exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/kafka-server-start.sh /tmp/strimzi.properties"
