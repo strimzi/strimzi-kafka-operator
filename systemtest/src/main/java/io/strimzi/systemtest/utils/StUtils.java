@@ -28,13 +28,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -335,10 +334,12 @@ public class StUtils {
     }
 
     public static File downloadYamlAndReplaceNameSpace(String url, String namespace) {
+        BufferedReader br = null;
+        OutputStreamWriter bw = null;
         try {
             InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
             StringBuilder sb = new StringBuilder();
-            BufferedReader br = new BufferedReader(new InputStreamReader(bais));
+            br = new BufferedReader(new InputStreamReader(bais, "UTF-8"));
             String read;
             while ((read = br.readLine()) != null) {
                 sb.append(read + "\n");
@@ -346,7 +347,8 @@ public class StUtils {
             br.close();
             String yaml = sb.toString();
             File yamlFile = File.createTempFile("temp-file", ".yaml");
-            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            FileOutputStream fileStream = new FileOutputStream(yamlFile);
+            bw = new OutputStreamWriter(fileStream, "UTF-8");
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
             yaml = yaml.replace("securityContext:\n" +
                     "        runAsNonRoot: true\n" +
@@ -356,13 +358,28 @@ public class StUtils {
             return yamlFile;
 
         } catch (IOException e) {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
         return null;
     }
 
     public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) {
-        byte[] encoded = new byte[0];
+        byte[] encoded;
+        OutputStreamWriter bw = null;
         try {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
@@ -370,11 +387,19 @@ public class StUtils {
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
 
             File yamlFile = File.createTempFile("temp-file", ".yaml");
-            BufferedWriter bw = new BufferedWriter(new FileWriter(yamlFile));
+            FileOutputStream fileStream = new FileOutputStream(yamlFile);
+            bw = new OutputStreamWriter(fileStream, "UTF-8");
             bw.write(yaml);
             bw.close();
             return yamlFile.toPath().toFile();
         } catch (IOException e) {
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
             e.printStackTrace();
         }
         return null;
@@ -902,7 +927,7 @@ public class StUtils {
     }
 
     public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
-        byte[] encoded = new byte[0];
+        byte[] encoded;
         try {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 

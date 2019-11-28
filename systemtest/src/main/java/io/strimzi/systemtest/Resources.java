@@ -788,14 +788,6 @@ public class Resources extends AbstractResources {
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
-    @Deprecated
-    private void waitForPodDeletion(String name) {
-        LOGGER.info("Waiting when Pod {} in namespace {} will be deleted", name, client().getNamespace());
-
-        TestUtils.waitFor("pod " + name + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().getPod(name) == null);
-    }
-
     public DoneableKafkaTopic topic(String clusterName, String topicName) {
         return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
