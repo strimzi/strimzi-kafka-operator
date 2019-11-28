@@ -32,3 +32,5 @@ include::assembly-deployment-configuration-kafka-bridge.adoc[leveloffset=+1]
 include::assembly-oauth.adoc[leveloffset=+1]
 
 include::assembly-customizing-deployments.adoc[leveloffset=+1]
+
+include::assembly-external-logging.adoc[leveloffset=+1]

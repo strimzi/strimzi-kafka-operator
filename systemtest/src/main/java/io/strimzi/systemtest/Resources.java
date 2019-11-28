@@ -547,7 +547,16 @@ public class Resources extends AbstractResources {
         return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaClusterName, kafkaConnectS2IReplicas).build());
     }
 
-    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
+    public KafkaConnectS2I kafkaConnectS2IWithoutWait(KafkaConnectS2I kafkaConnectS2I) {
+        kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kafkaConnectS2I);
+        return kafkaConnectS2I;
+    }
+
+    public void deleteKafkaConnectS2IWithoutWait(KafkaConnectS2I kafkaConnectS2I) {
+        kafkaConnectS2I().inNamespace(client().getNamespace()).delete(kafkaConnectS2I);
+    }
+
+    public KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectS2IReplicas) {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
@@ -674,7 +683,7 @@ public class Resources extends AbstractResources {
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForConnectS2IReady(kafkaConnectS2I.getMetadata().getName());
+        StUtils.waitForConnectS2IStatus(kafkaConnectS2I.getMetadata().getName(), "Ready");
         LOGGER.info("Kafka Connect S2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }
@@ -786,14 +795,6 @@ public class Resources extends AbstractResources {
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
                 .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
-    }
-
-    @Deprecated
-    private void waitForPodDeletion(String name) {
-        LOGGER.info("Waiting when Pod {} in namespace {} will be deleted", name, client().getNamespace());
-
-        TestUtils.waitFor("pod " + name + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().getPod(name) == null);
     }
 
     public DoneableKafkaTopic topic(String clusterName, String topicName) {

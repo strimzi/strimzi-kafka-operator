@@ -176,10 +176,6 @@ public class KafkaClient implements AutoCloseable {
      */
     public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName, String securityProtocol) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-
-        IntPredicate msgCntPredicate = x -> x == -1;
-
-
         return resultPromise;
     }
 

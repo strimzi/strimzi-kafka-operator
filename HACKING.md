@@ -1,6 +1,6 @@
 # Developing Strimzi
 
-This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](https://github.com/strimzi/strimzi-kafka-operator/blob/master/DEV_QUICK_START.md) document.
+This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](DEV_QUICK_START.md) document.
 
 <!-- TOC depthFrom:2 -->
 
@@ -234,75 +234,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-#### Test groups
-
-To execute an expected group of system tests need to add system property `junitTags` with following value:
-
-`-DjunitTags=integration` - to execute one test group
-`-DjunitTags=acceptance,regression` - to execute many test groups
-`-DjunitTags=all` - to execute all test groups
-
-If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed. The following table shows currently used tags:
-
-| Name          | Description                                                                        |
-| :-----------: | :--------------------------------------------------------------------------------: |
-| travis        | Marks tests executed on Travis                                                     |
-| acceptance    | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
-| regression    | Regression tests, which contains all non-flaky tests.                              |
-| upgrade       | Upgrade tests for specific versions of the Strimzi.                                |
-| flaky         | Execute all flaky tests (tests, which are failing from time to time)               |
-| all           | Execute all system tests with any tag                                              |
-
-#### Helper script
-
-The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the travis build.  You can use this script to easily run the `systemtests` project.
-
-Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
-
-    EXTRA_ARGS="-Dfoo=bar" ./systemtest/scripts/run_tests.sh
-    
-#### Running single test class
-
-Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system property. 
-
-    mvn verify -pl systemtest -P systemtests -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
-
-
-#### Environment variables
-
-We can configure our system tests with several environment variables, which are loaded before test execution:
-
-| Name                      | Description                                                                          | Default                                          |
-| :-----------------------: | :----------------------------------------------------------------------------------: | :----------------------------------------------: |
-| DOCKER_ORG                | Specify organization which owns image used in system tests                           | strimzi                                          |
-| DOCKER_TAG                | Specify image tags used in system tests                                              | latest                                           |
-| DOCKER_REGISTRY           | Specify docker registry used in system tests                                         | docker.io                                        |
-| TEST_CLIENT_IMAGE         | Specify test client image used in systemtest                                         | docker.io/strimzi/test-client:latest-kafka-2.3.1 |
-| BRIDGE_IMAGE              | Specify kafka bridge image used in systemtest                                        | docker.io/strimzi/kafka-bridge:latest            |
-| TEST_LOG_DIR              | Directory for store logs collected during the tests                                  | ../systemtest/target/logs/                       |
-| ST_KAFKA_VERSION          | Kafka version used in images during the system tests                                 | 2.3.1                                            |
-| STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator                                                       | DEBUG                                            |
-| KUBERNETES_DOMAIN         | Cluster domain. It's used for specify URL endpoint of testing clients                | .nip.io                                          |
-
-If you want to use your own images with different tag or from different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
-
-`KUBERNETES_DOMAIN` should be specified only in case you are using specific configuration in your kubernetes cluster.
-
-##### Specific Kafka version
-
-To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` to one of the values in [kafka-versions](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions).
-
-##### Cluster Operator Log level
-
-To set the log level of Strimzi for system tests need to add system property `STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
-
-#### Test Cluster
-
-The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`. If this variable is not set, kubernetes client will use currently active context. Otherwise will use context from kubeconfig with name specified by `TEST_CLUSTER_CONTEXT` variable.
-
-For example command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`. However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
-
-System tests uses admin user for some actions. You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
+System tests has its own guide with more information. See [Testing Guide](TESTING.md) document for more information.
 
 ## DCO Signoff
 
