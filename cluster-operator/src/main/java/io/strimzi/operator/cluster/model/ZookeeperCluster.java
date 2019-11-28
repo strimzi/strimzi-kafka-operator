@@ -84,6 +84,7 @@ public class ZookeeperCluster extends AbstractModel {
             .withInitialDelaySeconds(15)
             .build();
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
+    public static final String DEFAULT_GC_LOG_FILEPATH = "var/zookeeper";
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
@@ -200,6 +201,7 @@ public class ZookeeperCluster extends AbstractModel {
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        zk.setGcLogToFile(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : zookeeperClusterSpec.getJvmOptions().isGcLogToFile());
 
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
@@ -531,6 +533,8 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);

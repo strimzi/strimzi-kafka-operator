@@ -526,8 +526,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                -Xloggc:
-                  type: string
+                gcLogToFile:
+                  type: boolean
                 gcLoggingEnabled:
                   type: boolean
             logging:

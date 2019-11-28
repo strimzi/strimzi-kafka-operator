@@ -785,14 +785,14 @@ spec:
                   properties:
                     -XX:
                       type: object
-                    -Xloggc:
-                      type: string
                     -Xms:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
+                    gcLogToFile:
+                      type: boolean
                     gcLoggingEnabled:
                       type: boolean
                 resources:
@@ -1619,14 +1619,14 @@ spec:
                   properties:
                     -XX:
                       type: object
-                    -Xloggc:
-                      type: string
                     -Xms:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
+                    gcLogToFile:
+                      type: boolean
                     gcLoggingEnabled:
                       type: boolean
                 resources:
@@ -2378,6 +2378,8 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
+                    gcLogToFile:
+                      type: boolean
                     gcLoggingEnabled:
                       type: boolean
                 livenessProbe:
@@ -2483,6 +2485,8 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
+                        gcLogToFile:
+                          type: boolean
                         gcLoggingEnabled:
                           type: boolean
                 userOperator:
@@ -2552,6 +2556,8 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
+                        gcLogToFile:
+                          type: boolean
                         gcLoggingEnabled:
                           type: boolean
                 affinity:

@@ -31,9 +31,9 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     private String xmx;
     private String xms;
-    private String xloggc;
     private Boolean server;
     private boolean gcLoggingEnabled = false;
+    private boolean gcLogToFile = false;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -59,16 +59,6 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
         this.xms = xms;
     }
 
-    @JsonProperty("-Xloggc")
-    @Description("-Xloggc option to the JVM to output gc logs to a specified file")
-    public String getXloggc() {
-        return xloggc;
-    }
-
-    public void setXloggc(String xloggc) {
-        this.xloggc = xloggc;
-    }
-
     @JsonProperty("-server")
     @Description("-server option to to the JVM")
     public Boolean isServer() {
@@ -86,6 +76,15 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    @Description("Specifies whether the Garbage Collection logs should be written to a file. The default is false. If set to true GcLoggingEnabled must also be true.")
+    public boolean isGcLogToFile() {
+        return gcLogToFile;
+    }
+
+    public void setGcLogToFile(boolean gcLogToFile) {
+        this.gcLogToFile = gcLogToFile;
     }
 
     @JsonProperty("-XX")

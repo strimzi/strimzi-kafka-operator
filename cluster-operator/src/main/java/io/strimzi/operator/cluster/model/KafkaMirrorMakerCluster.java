@@ -55,6 +55,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
     public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     protected static final boolean DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED = false;
+    public static final String DEFAULT_GC_LOG_FILEPATH = "/var/mirrorMaker";
 
     // Kafka Mirror Maker configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_MIRRORMAKER_";
@@ -158,6 +159,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setLogging(spec.getLogging());
             kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
+            kafkaMirrorMakerCluster.setGcLogToFile(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : spec.getJvmOptions().isGcLogToFile());
             kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
             Map<String, Object> metrics = spec.getMetrics();
@@ -390,6 +392,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE, Boolean.toString(producer.getAbortOnSendFailure())));
         }
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         if (tracing != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));

@@ -59,6 +59,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    public static final String DEFAULT_GC_LOG_FILEPATH = "/var/kafkaBridge";
 
     // Cluster Operator environment variables for custom discovery labels and annotations
     protected static final String CO_ENV_VAR_CUSTOM_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
@@ -143,6 +144,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaBridgeCluster.setGcLogToFile(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : spec.getJvmOptions().isGcLogToFile());
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
@@ -332,6 +334,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));

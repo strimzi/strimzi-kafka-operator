@@ -56,6 +56,7 @@ public class EntityTopicOperator extends AbstractModel {
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
+    public static final String DEFAULT_GC_LOG_FILEPATH = "/var/topicOperator";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -218,6 +219,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                result.setGcLogToFile(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : topicOperatorSpec.getJvmOptions().isGcLogToFile());
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
@@ -259,6 +261,8 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

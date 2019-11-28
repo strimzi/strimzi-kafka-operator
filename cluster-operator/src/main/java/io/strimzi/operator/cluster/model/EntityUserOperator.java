@@ -57,6 +57,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
+    public static final String DEFAULT_GC_LOG_FILEPATH = "/var/entityUserOperator";
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -204,6 +205,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                result.setGcLogToFile(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : userOperatorSpec.getJvmOptions().isGcLogToFile());
                 result.setResources(userOperatorSpec.getResources());
                 if (userOperatorSpec.getReadinessProbe() != null) {
                     result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
@@ -257,6 +259,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

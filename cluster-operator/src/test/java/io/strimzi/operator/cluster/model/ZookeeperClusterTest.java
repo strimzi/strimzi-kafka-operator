@@ -266,6 +266,8 @@ public class ZookeeperClusterTest {
                 .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
         assertThat(actual, is(expectedConfig));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_GC_LOG_TO_FILE), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOG_TO_FILE)));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_GC_LOG_FILEPATH), is(ZookeeperCluster.DEFAULT_GC_LOG_FILEPATH));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
         assertThat(tlsSidecarContainer.getImage(), is(image));

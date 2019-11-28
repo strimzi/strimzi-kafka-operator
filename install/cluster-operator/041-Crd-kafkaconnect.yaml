@@ -74,14 +74,14 @@ spec:
               properties:
                 -XX:
                   type: object
-                -Xloggc:
-                  type: string
                 -Xms:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                gcLogToFile:
+                  type: boolean
                 gcLoggingEnabled:
                   type: boolean
             affinity:

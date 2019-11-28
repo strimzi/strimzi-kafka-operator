@@ -686,12 +686,12 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |Property                 |Description
 |-XX               1.2+<.<|A map of -XX options to the JVM.
 |map
-|-Xloggc           1.2+<.<|-Xloggc option to the JVM to output gc logs to a specified file.
-|string
 |-Xms              1.2+<.<|-Xms option to to the JVM.
 |string
 |-Xmx              1.2+<.<|-Xmx option to to the JVM.
 |string
+|gcLogToFile       1.2+<.<|Specifies whether the Garbage Collection logs should be written to a file. The default is false. If set to true GcLoggingEnabled must also be true.
+|boolean
 |gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
 |====
@@ -1029,6 +1029,8 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [options="header"]
 |====
 |Property                 |Description
+|gcLogToFile       1.2+<.<|Specifies whether the Garbage Collection logs should be written to a file. The default is false. If set to true GcLoggingEnabled must also be true.
+|boolean
 |gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
 |====

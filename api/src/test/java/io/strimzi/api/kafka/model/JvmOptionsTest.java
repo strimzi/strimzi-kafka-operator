@@ -15,12 +15,10 @@ public class JvmOptionsTest {
         JvmOptions opts = TestUtils.fromJson("{" +
                 "  \"-Xmx\": \"2g\"," +
                 "  \"-Xms\": \"1g\"," +
-                " \"-Xloggc\": \"file.log\"" +
                 "}", JvmOptions.class);
 
         assertThat(opts.getXms(), is("1g"));
         assertThat(opts.getXmx(), is("2g"));
-        assertThat(opts.getXloggc(), is("file.log"));
     }
 
     @Test
@@ -29,7 +27,6 @@ public class JvmOptionsTest {
 
         assertThat(opts.getXms(), is(nullValue()));
         assertThat(opts.getXmx(), is(nullValue()));
-        assertThat(opts.getXloggc(), is(nullValue()));
     }
 
     @Test

@@ -369,6 +369,8 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(new Integer(33)));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION), is("foo=bar" + LINE_SEPARATOR));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_GC_LOG_TO_FILE), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOG_TO_FILE)));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_GC_LOG_FILEPATH), is(KafkaCluster.DEFAULT_GC_LOG_FILEPATH));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS),
                 is(kc.dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","))));
         assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));

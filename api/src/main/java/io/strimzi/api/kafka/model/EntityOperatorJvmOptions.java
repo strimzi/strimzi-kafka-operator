@@ -29,6 +29,8 @@ public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Seri
 
     private boolean gcLoggingEnabled = false;
 
+    private boolean gcLogToFile = false;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Specifies whether the Garbage Collection logging is enabled. The default is false.")
@@ -38,6 +40,15 @@ public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Seri
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    @Description("Specifies whether the Garbage Collection logs should be written to a file. The default is false. If set to true GcLoggingEnabled must also be true.")
+    public boolean isGcLogToFile() {
+        return gcLogToFile;
+    }
+
+    public void setGcLogToFile(boolean gcLogToFile) {
+        this.gcLogToFile = gcLogToFile;
     }
 
     @Override

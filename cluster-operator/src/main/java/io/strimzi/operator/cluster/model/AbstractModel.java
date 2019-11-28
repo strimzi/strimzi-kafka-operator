@@ -87,6 +87,7 @@ public abstract class AbstractModel {
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
+    protected static final boolean DEFAULT_JVM_GC_LOG_TO_FILE = false;
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
@@ -99,6 +100,8 @@ public abstract class AbstractModel {
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_TO_FILE = "ENV_VAR_STRIMZI_GC_LOG_TO_FILE";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_FILEPATH = "ENV_VAR_STRIMZI_GC_LOG_FILEPATH";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */
@@ -148,6 +151,7 @@ public abstract class AbstractModel {
 
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
+    protected boolean gcLogToFile = false;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -276,6 +280,10 @@ public abstract class AbstractModel {
 
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    protected void setGcLogToFile(boolean gcLogToFile) {
+        this.gcLogToFile = gcLogToFile;
     }
 
     protected abstract String getDefaultLogConfigFileName();
@@ -989,17 +997,11 @@ public abstract class AbstractModel {
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
                 }
-            // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
-            // leave `Xmx` undefined.
+                // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
+                // leave `Xmx` undefined.
             } else if (xms == null) {
                 kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
             }
-        }
-
-        // Define `Xloggc` and set the filepath to output gc logs
-        String xloggc = jvmOptions != null ? jvmOptions.getXloggc() : null;
-        if (xloggc != null) {
-            kafkaHeapOpts.append(' ').append("-Xloggc:").append(xloggc);
         }
 
         String trim = kafkaHeapOpts.toString().trim();

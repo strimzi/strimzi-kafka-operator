@@ -220,6 +220,7 @@ public class KafkaCluster extends AbstractModel {
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
+    public static final String DEFAULT_GC_LOG_FILEPATH = "/var/kafka";
 
     /**
      * Private key and certificate for each Kafka Pod name
@@ -388,6 +389,8 @@ public class KafkaCluster extends AbstractModel {
         result.setLogging(logging == null ? new InlineLogging() : logging);
 
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
+
+        result.setGcLogToFile(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOG_TO_FILE : kafkaClusterSpec.getJvmOptions().isGcLogToFile());
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
@@ -1436,6 +1439,8 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_TO_FILE, String.valueOf(gcLogToFile)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_FILEPATH, DEFAULT_GC_LOG_FILEPATH));
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
