@@ -112,9 +112,10 @@ spec:
               properties:
                 consumerByteRate:
                   type: integer
+                  minimum: 0
                 producerByteRate:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                 requestPercentage:
                   type: integer
                   minimum: 0

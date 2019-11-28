@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaUserModelTest {
     private final KafkaUser tlsUser = ResourceUtils.createKafkaUserTls();
     private final KafkaUser scramShaUser = ResourceUtils.createKafkaUserScramSha();
-    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas();
+    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas(1000, 2000, 42);
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
     private final CertManager mockCertManager = new MockCertManager();
@@ -72,6 +72,24 @@ public class KafkaUserModelTest {
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
+        assertThat(model.getQuotas().getConsumerByteRate(), is(quotas.getConsumerByteRate()));
+        assertThat(model.getQuotas().getProducerByteRate(), is(quotas.getProducerByteRate()));
+        assertThat(model.getQuotas().getRequestPercentage(), is(quotas.getRequestPercentage()));
+    }
+
+    @Test
+    public void testQuotasFromCrdNullValues()   {
+        KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(null, 2000, null);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, quotasUserWithNulls, clientsCaCert, clientsCaKey, null);
+
+        assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
+        assertThat(model.name, is(ResourceUtils.NAME));
+        assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
+                .withKind(KafkaUser.RESOURCE_KIND)
+                .withKubernetesName()
+                .withKubernetesInstance(ResourceUtils.NAME)
+                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
+        KafkaUserQuotas quotas = quotasUserWithNulls.getSpec().getQuotas();
         assertThat(model.getQuotas().getConsumerByteRate(), is(quotas.getConsumerByteRate()));
         assertThat(model.getQuotas().getProducerByteRate(), is(quotas.getProducerByteRate()));
         assertThat(model.getQuotas().getRequestPercentage(), is(quotas.getRequestPercentage()));

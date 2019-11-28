@@ -4,12 +4,16 @@
  */
 package io.strimzi.operator.user.operator;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.zjsonpatch.JsonDiff;
 import io.vertx.core.json.JsonObject;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -38,7 +42,16 @@ public class KafkaUserQuotas {
 
         if (data != null)   {
             log.debug("Updating quotas for user {}", username);
-            zkClient.writeData("/config/users/" + username, updateUserJson(data, quotas));
+            JsonNode diff = null;
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                diff = JsonDiff.asJson(objectMapper.readTree(data), objectMapper.readTree(quotas.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (diff != null && diff.size() > 0) {
+                zkClient.writeData("/config/users/" + username, updateUserJson(data, quotas));
+            }
         } else {
             log.debug("Creating quotas for user {}", username);
             ensurePath("/config/users");

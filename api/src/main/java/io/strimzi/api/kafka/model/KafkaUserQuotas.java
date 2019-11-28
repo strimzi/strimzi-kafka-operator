@@ -18,7 +18,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Represent the Quotas configuration for Kafka User
+ * Represent the Quotas configuration for Kafka User. Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas
  */
 @Buildable(
         editableEnabled = false,
@@ -37,7 +37,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
     private Map<String, Object> additionalProperties;
 
     @Description("A quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.")
-    @Minimum(1)
+    @Minimum(0)
     public Integer getProducerByteRate() {
         return producerByteRate;
     }
@@ -47,6 +47,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
     }
 
     @Description("A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.")
+    @Minimum(0)
     public Integer getConsumerByteRate() {
         return consumerByteRate;
     }
