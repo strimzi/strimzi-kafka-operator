@@ -100,8 +100,8 @@ public abstract class AbstractModel {
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
     public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
-    public static final String ENV_VAR_STRIMZI_GC_LOG_TO_FILE = "ENV_VAR_STRIMZI_GC_LOG_TO_FILE";
-    public static final String ENV_VAR_STRIMZI_GC_LOG_FILEPATH = "ENV_VAR_STRIMZI_GC_LOG_FILEPATH";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_TO_FILE = "STRIMZI_GC_LOG_TO_FILE";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_FILEPATH = "STRIMZI_GC_LOG_FILEPATH";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
     /** Annotation on PVCs storing the original configuration (so we can revert changes). */

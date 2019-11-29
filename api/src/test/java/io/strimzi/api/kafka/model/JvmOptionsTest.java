@@ -14,7 +14,7 @@ public class JvmOptionsTest {
     public void testXmxXmsXloggc() {
         JvmOptions opts = TestUtils.fromJson("{" +
                 "  \"-Xmx\": \"2g\"," +
-                "  \"-Xms\": \"1g\"," +
+                "  \"-Xms\": \"1g\"" +
                 "}", JvmOptions.class);
 
         assertThat(opts.getXms(), is("1g"));
