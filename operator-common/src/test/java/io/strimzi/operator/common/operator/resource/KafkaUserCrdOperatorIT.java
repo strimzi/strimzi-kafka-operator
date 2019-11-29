@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Future;
@@ -55,8 +56,13 @@ public class KafkaUserCrdOperatorIT {
     protected static CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> kafkaUserOperator;
     protected static String namespace = "user-crd-it-namespace";
 
+    private static KubeClusterResource cluster;
+
     @BeforeAll
     public static void before() {
+        cluster = KubeClusterResource.getInstance();
+        cluster.setTestNamespace(namespace);
+
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -67,7 +73,7 @@ public class KafkaUserCrdOperatorIT {
         kafkaUserOperator = new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
 
         log.info("Preparing namespace");
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Namespace {} is already created, going to delete it", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
