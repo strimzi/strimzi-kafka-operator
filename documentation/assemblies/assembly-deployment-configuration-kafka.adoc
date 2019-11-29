@@ -43,7 +43,7 @@ include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
 
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
-include::assembly-logging.adoc[leveloffset=+1]
+include::../modules/con-kafka-logging.adoc[leveloffset=+1]
 
 include::assembly-kafka-rack.adoc[leveloffset=+1]
 
