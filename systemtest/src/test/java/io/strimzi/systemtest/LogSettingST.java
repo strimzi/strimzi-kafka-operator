@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -43,7 +42,6 @@ import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyString;
 
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
@@ -141,64 +139,43 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(1)
     void testLoggersKafka() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(STATEFUL_SET, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), "kafka", duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, KAFKA_MAP), is(true));
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(STATEFUL_SET, KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(ZOOKEEPER_LOGGERS, ZOOKEEPER_MAP), is(true));
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Topic operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(DEPLOYMENT, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Topic operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, TO_MAP), is(true));
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("User operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(DEPLOYMENT, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("User operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, UO_MAP), is(true));
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Kafka connect's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(DEPLOYMENT, KafkaConnectResources.deploymentName(CLUSTER_NAME), duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Kafka connect's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, CONNECT_MAP), is(true));
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(DEPLOYMENT, KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM_MAP), is(true));
     }
 
     @Test
     @Order(7)
     void testLoggersBridge() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Bridge's log level is set properly", checkLoggersLevel(BRIDGE_LOGGERS, duration, BRIDGE_MAP), is(true));
-        String log = cmdKubeClient().searchInLog(DEPLOYMENT, KafkaBridgeResources.deploymentName(CLUSTER_NAME), duration, ERROR);
-        assertThat(log, emptyString());
+        assertThat("Bridge's log level is set properly", checkLoggersLevel(BRIDGE_LOGGERS, BRIDGE_MAP), is(true));
     }
 
     @Test
@@ -271,11 +248,11 @@ class LogSettingST extends AbstractST {
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
     }
 
-    private boolean checkLoggersLevel(Map<String, String> loggers, int since, String configMapName) {
+    private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
         boolean result = false;
         String configMap = kubeClient().getConfigMap(configMapName).getData().get(configMapName.contains("operator") ? "log4j2.properties" : "log4j.properties");
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
-            LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
+            LOGGER.info("Check log level setting for logger: {} Expected: {}", entry.getKey(), entry.getValue());
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
@@ -416,7 +393,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(BRIDGE_LOGGERS)
