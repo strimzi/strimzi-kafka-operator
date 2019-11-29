@@ -40,7 +40,6 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.utils.TestExecutionWatcher;
-import io.strimzi.test.BaseST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
@@ -100,7 +99,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
-    protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
