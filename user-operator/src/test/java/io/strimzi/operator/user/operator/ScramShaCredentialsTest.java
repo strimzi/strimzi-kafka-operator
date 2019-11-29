@@ -38,7 +38,7 @@ public class ScramShaCredentialsTest {
     }
 
     @BeforeEach
-    public void createSS() {
+    public void createSTS() {
         scramShaCred = new ScramShaCredentials(zkServer.getZkConnectString(), 6_000);
     }
 
