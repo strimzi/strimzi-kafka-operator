@@ -978,7 +978,7 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
             if (context.getExecutionException().isPresent()) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 context.getExecutionException().get().printStackTrace();
-                recreateTestEnv(cluster.getClusterOperatorNamespace(), cluster.getBindingsNamespaces());
+                recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();

@@ -45,19 +45,18 @@ public class KubeClusterResource {
 
     private static final String CO_INSTALL_DIR = "../install/cluster-operator";
 
-    private boolean bootstrap;
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
+    private boolean bootstrap;
     private KubeClient client;
     private HelmClient helmClient;
-    private static KubeClusterResource cluster = KubeClusterResource.getInstance();
+    private static KubeClusterResource cluster;
 
-    private static String namespace = cluster.defaultNamespace();
-    private static String testNamespace = cluster.cmdClient().defaultNamespace();
+    private String namespace;
+    private String testNamespace;
 
-    protected String clusterOperatorNamespace = testNamespace;
     protected List<String> bindingsNamespaces = new ArrayList<>();
-    public List<String> deploymentNamespaces = new ArrayList<>();
+    private List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
 
@@ -68,10 +67,9 @@ public class KubeClusterResource {
         if (cluster == null) {
             try {
                 cluster = new KubeClusterResource();
-                namespace = cluster.defaultNamespace();
-                LOGGER.info("Cluster default namespace is {}", namespace);
-                testNamespace = cluster.cmdClient().defaultNamespace();
-                LOGGER.info("Cluster command line client default namespace is {}", testNamespace);
+                initNamespaces();
+                LOGGER.info("Cluster default namespace is {}", cluster.getNamespace());
+                LOGGER.info("Cluster command line client default namespace is {}", cluster.getTestNamespace());
             } catch (RuntimeException e) {
                 Assumptions.assumeTrue(false, e.getMessage());
             }
@@ -80,7 +78,12 @@ public class KubeClusterResource {
     }
 
     private KubeClusterResource() {
-        bootstrap = true;
+        this.bootstrap = true;
+    }
+
+    private static void initNamespaces() {
+        cluster.setDefaultNamespace(cmdKubeClient().defaultNamespace());
+        cluster.setTestNamespace(cmdKubeClient().defaultNamespace());
     }
 
     /**
@@ -101,6 +104,14 @@ public class KubeClusterResource {
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
+    public void setTestNamespace(String testNamespace) {
+        this.testNamespace = testNamespace;
+    }
+
+    public void setDefaultNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     /**
      * Sets the namespace value for Kubernetes clients
      * @param futureNamespace Namespace which should be used in Kubernetes clients
@@ -117,10 +128,6 @@ public class KubeClusterResource {
         return bindingsNamespaces;
     }
 
-    public String getClusterOperatorNamespace() {
-        return clusterOperatorNamespace;
-    }
-
     /**
      * Gets namespace which is used in Kubernetes clients at the moment
      * @return Used namespace
@@ -134,7 +141,7 @@ public class KubeClusterResource {
      * @return CMD client
      */
     public static KubeCmdClient<?> cmdKubeClient() {
-        return cluster.cmdClient().namespace(namespace);
+        return cluster.cmdClient().namespace(cluster.getNamespace());
     }
 
     /**
@@ -151,7 +158,7 @@ public class KubeClusterResource {
      * @return Kubernetes client
      */
     public static KubeClient kubeClient() {
-        return cluster.client().namespace(namespace);
+        return cluster.client().namespace(cluster.getNamespace());
     }
 
     /**
@@ -198,7 +205,7 @@ public class KubeClusterResource {
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
-        clusterOperatorNamespace = useNamespace;
+        testNamespace = useNamespace;
         LOGGER.info("Using namespace {}", useNamespace);
         cluster.setNamespace(useNamespace);
     }
@@ -271,7 +278,7 @@ public class KubeClusterResource {
 
     public KubeCmdClient cmdClient() {
         if (cmdClient == null) {
-            this.cmdClient = cluster().defaultCmdClient();
+            cmdClient = cluster().defaultCmdClient();
         }
         return cmdClient;
     }
@@ -293,7 +300,7 @@ public class KubeClusterResource {
     public KubeCluster cluster() {
         if (kubeCluster == null) {
             try {
-                this.kubeCluster = KubeCluster.bootstrap();
+                kubeCluster = KubeCluster.bootstrap();
             } catch (NoClusterException e) {
                 assumeTrue(false, e.getMessage());
             }
@@ -305,17 +312,21 @@ public class KubeClusterResource {
         if (bootstrap) {
             if (kubeCluster == null) {
                 try {
-                    this.kubeCluster = KubeCluster.bootstrap();
+                    kubeCluster = KubeCluster.bootstrap();
                 } catch (NoClusterException e) {
                     assumeTrue(false, e.getMessage());
                 }
             }
             if (cmdClient == null) {
-                this.cmdClient = kubeCluster.defaultCmdClient();
+                cmdClient = kubeCluster.defaultCmdClient();
             }
             if (client == null) {
                 this.client = kubeCluster.defaultClient();
             }
         }
+    }
+
+    public String getTestNamespace() {
+        return testNamespace;
     }
 }
