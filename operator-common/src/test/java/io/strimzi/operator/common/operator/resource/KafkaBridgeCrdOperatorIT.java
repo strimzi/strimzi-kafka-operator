@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Future;
@@ -56,8 +57,13 @@ public class KafkaBridgeCrdOperatorIT {
     protected static CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge> kafkaBridgeOperator;
     protected static String namespace = "bridge-crd-it-namespace";
 
+    private static KubeClusterResource cluster;
+
     @BeforeAll
     public static void before() {
+        cluster = KubeClusterResource.getInstance();
+        cluster.setTestNamespace(namespace);
+
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -68,7 +74,7 @@ public class KafkaBridgeCrdOperatorIT {
         kafkaBridgeOperator = new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class);
 
         log.info("Preparing namespace");
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Namespace {} is already created, going to delete it", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
