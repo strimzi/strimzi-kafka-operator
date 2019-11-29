@@ -1176,8 +1176,8 @@ class KafkaST extends MessagingBaseST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSS(kafkaName) == null
-                || !getAnnotationsForSS(kafkaName).containsKey("strimzi.io/manual-rolling-update"));
+            () -> getAnnotationsForSTS(kafkaName) == null
+                || !getAnnotationsForSTS(kafkaName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         StUtils.waitTillSsHasRolled(kafkaName, 1, kafkaPods);
@@ -1197,8 +1197,8 @@ class KafkaST extends MessagingBaseST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSS(zkName) == null
-                || !getAnnotationsForSS(zkName).containsKey("strimzi.io/manual-rolling-update"));
+            () -> getAnnotationsForSTS(zkName) == null
+                || !getAnnotationsForSTS(zkName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
@@ -1339,7 +1339,7 @@ class KafkaST extends MessagingBaseST {
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
-    private Map<String, String> getAnnotationsForSS(String ssName) {
+    private Map<String, String> getAnnotationsForSTS(String ssName) {
         return kubeClient().getStatefulSet(ssName).getMetadata().getAnnotations();
     }
 
@@ -1738,7 +1738,7 @@ class KafkaST extends MessagingBaseST {
 
     void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
         for (Map.Entry<String, String> label : labels.entrySet()) {
-            assertThat("Label exists with concrete value in HasMetadata(Services, CM, SS) resources",
+            assertThat("Label exists with concrete value in HasMetadata(Services, CM, STS) resources",
                     label.getValue().equals(resources.getMetadata().getLabels().get(label.getKey())));
         }
     }
