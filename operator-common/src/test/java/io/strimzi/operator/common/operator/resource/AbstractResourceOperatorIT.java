@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Future;
@@ -41,8 +42,13 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
     protected static KubernetesClient client;
     protected static String namespace = "resource-operator-it-namespace";
 
+    private static KubeClusterResource cluster;
+
     @BeforeAll
     public static void before() {
+        cluster = KubeClusterResource.getInstance();
+        cluster.setTestNamespace(namespace);
+
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -51,7 +57,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
 
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Namespace {} is already created, going to delete it", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
