@@ -8,8 +8,6 @@
 Kafka Connect has its own configurable loggers:
 
 * `connect.root.logger.level`
-* `log4j.logger.org.apache.zookeeper`
-* `log4j.logger.org.I0Itec.zkclient`
 * `log4j.logger.org.reflections`
 
 Kafka Connect uses the Apache `log4j` logger implementation.
