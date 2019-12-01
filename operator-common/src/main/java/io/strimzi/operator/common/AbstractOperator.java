@@ -172,10 +172,16 @@ public abstract class AbstractOperator<
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
                 Lock lock = res.result();
                 try {
-                    Future<T> result = callable.call();
-                    lock.release();
-                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                    result.setHandler(handler);
+                    callable.call().setHandler(callableRes -> {
+                        if (callableRes.succeeded()) {
+                            handler.complete(callableRes.result());
+                        } else {
+                            handler.fail(callableRes.cause());
+                        }
+
+                        log.debug("{}: Lock {} released", reconciliation, lockName);
+                        lock.release();
+                    });
                 } catch (Throwable ex) {
                     lock.release();
                     log.debug("{}: Lock {} released", reconciliation, lockName);
