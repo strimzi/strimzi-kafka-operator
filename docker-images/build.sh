@@ -2,6 +2,7 @@
 set -e
 
 source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+source $(dirname $(realpath $0))/../multi-platform-support.sh
 
 # Image directories
 base_images="base"
@@ -127,7 +128,7 @@ function fetch_and_unpack_kafka_binaries {
         then
             unzipped_dir=`mktemp -d`
             ./extract-jars.sh "$dist_dir/libs" "$unzipped_dir"
-            ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | sort | uniq > "$whilelist_file" || true
+            ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | $SORT | $UNIQ > "$whilelist_file" || true
             rm -rf $unzipped_dir
         fi
     done
