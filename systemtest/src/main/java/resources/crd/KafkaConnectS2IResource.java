@@ -36,7 +36,7 @@ public class KafkaConnectS2IResource {
         return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build());
     }
 
-    private static KafkaConnectS2IBuilder defaultKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String name, String kafkaClusterName, int kafkaConnectReplicas) {
+    public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String name, String kafkaClusterName, int kafkaConnectReplicas) {
         return new KafkaConnectS2IBuilder(kafkaConnectS2I)
             .withNewMetadata()
                 .withName(name)
@@ -90,7 +90,7 @@ public class KafkaConnectS2IResource {
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka ConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForConnectS2IReady(kafkaConnectS2I.getMetadata().getName());
+        StUtils.waitForConnectS2IStatus(kafkaConnectS2I.getMetadata().getName(), "Ready");
         LOGGER.info("Kafka ConnectS2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }

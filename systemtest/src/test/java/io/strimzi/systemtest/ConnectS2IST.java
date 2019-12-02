@@ -206,7 +206,7 @@ class ConnectS2IST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        KafkaConnectS2I kafkaConnectS2i = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2I kafkaConnectS2i = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -229,7 +229,7 @@ class ConnectS2IST extends AbstractST {
                     .withServer(true)
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
-            .endSpec().build());
+            .endSpec().done());
 
         StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
 

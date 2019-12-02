@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import resources.KubernetesResource;
 import resources.ResourceManager;
 import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaConnectorResource;
 import resources.crd.KafkaResource;
 import resources.crd.KafkaTopicResource;
 import resources.crd.KafkaUserResource;
@@ -151,10 +152,9 @@ class ConnectST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(TRAVIS)
     @Tag(NODEPORT_SUPPORTED)
     void testKafkaConnectAndConnectorFileSinkPlugin() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                     .editListeners()
@@ -166,7 +166,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
@@ -175,22 +175,11 @@ class ConnectST extends AbstractST {
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                 .endSpec().done();
-        testMethodResources().topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String connectorName = "license-source";
         String topicName = "my-topic";
-        testMethodResources().kafkaConnector(new KafkaConnectorBuilder()
-                .editOrNewMetadata()
-                    .withName(connectorName)
-                    .addToLabels("strimzi.io/cluster", CLUSTER_NAME)
-                .endMetadata()
-                .editOrNewSpec()
-                    .withClassName("org.apache.kafka.connect.file.FileStreamSourceConnector")
-                    .addToConfig("file", "/opt/kafka/LICENSE")
-                    .addToConfig("topic", topicName)
-                    .withTasksMax(2)
-                .endSpec()
-                .build()).done();
+        KafkaConnectorResource.kafkaConnector(connectorName, CLUSTER_NAME, topicName, 2).done();
 
         // consume from the topic (we don't really care about the contents)
         try (KafkaClient testClient = new KafkaClient()) {
@@ -523,7 +512,7 @@ class ConnectST extends AbstractST {
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        setNamespace(NAMESPACE);
+        cluster.setNamespace(NAMESPACE);
         KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

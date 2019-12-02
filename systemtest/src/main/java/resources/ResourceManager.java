@@ -18,10 +18,10 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeCmdClient;
+import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,11 +58,11 @@ public class ResourceManager {
     private ResourceManager() {}
 
     public static KubeClient kubeClient() {
-        return BaseITST.kubeClient();
+        return KubeClusterResource.kubeClient();
     }
 
     public static KubeCmdClient cmdKubeClient() {
-        return BaseITST.cmdKubeClient();
+        return KubeClusterResource.cmdKubeClient();
     }
 
     public static Stack<Runnable> getPointerResources() {
