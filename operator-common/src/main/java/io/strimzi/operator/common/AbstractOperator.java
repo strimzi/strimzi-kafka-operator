@@ -179,8 +179,8 @@ public abstract class AbstractOperator<
                             handler.fail(callableRes.cause());
                         }
 
-                        log.debug("{}: Lock {} released", reconciliation, lockName);
                         lock.release();
+                        log.debug("{}: Lock {} released", reconciliation, lockName);
                     });
                 } catch (Throwable ex) {
                     lock.release();
