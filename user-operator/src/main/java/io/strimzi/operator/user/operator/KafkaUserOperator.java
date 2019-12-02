@@ -178,7 +178,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                kafkaUserQuotasOperator.reconcile(userName, user.quotasToJson()),
+                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), user.quotasToJson()),
+                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(userName), user.quotasToJson()),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))

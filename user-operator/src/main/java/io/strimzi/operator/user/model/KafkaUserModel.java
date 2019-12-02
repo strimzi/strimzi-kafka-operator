@@ -396,7 +396,7 @@ public class KafkaUserModel {
     }
 
     /**
-     * Sets the authentication method.
+     * Sets the quotas to the user.
      *
      * @param quotas KafkaUserQuotas to be set.
      */
