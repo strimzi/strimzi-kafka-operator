@@ -4,7 +4,7 @@ function get_heap_size {
   FRACTION=$1
   MAX=$2
   # Get the max heap used by a jvm which used all the ram available to the container
-  MAX_POSSIBLE_HEAP=$(java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 -XshowSettings:vm -version \
+  MAX_POSSIBLE_HEAP=$(java -XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport -XX:MaxRAMFraction=1 -XshowSettings:vm -version \
     |& awk '/Max\. Heap Size \(Estimated\): [0-9KMG]+/{ print $5}' \
     | gawk -f to_bytes.gawk)
 
