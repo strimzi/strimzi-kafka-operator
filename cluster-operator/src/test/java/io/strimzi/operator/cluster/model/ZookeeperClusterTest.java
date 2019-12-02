@@ -100,7 +100,7 @@ public class ZookeeperClusterTest {
             .withReadinessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
             .build();
 
-    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson, null))
+    private final Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, false, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson, null))
             .editSpec()
                 .editZookeeper()
                     .withTlsSidecar(tlsSidecar)
@@ -146,8 +146,8 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLIENT_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(ZookeeperCluster.CLIENT_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
-        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.METRICS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.METRICS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.PROMETHEUS_METRICS_PORT_NAME));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.PROMETHEUS_METRICS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headful.getMetadata().getAnnotations(), is(zc.getPrometheusAnnotations()));
 

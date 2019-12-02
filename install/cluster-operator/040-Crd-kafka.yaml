@@ -793,6 +793,11 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
+                jmxRemote:
+                  type: object
+                  properties:
+                    secure:
+                      type: boolean
                 resources:
                   type: object
                   properties:
@@ -800,8 +805,6 @@ spec:
                       type: object
                     requests:
                       type: object
-                metrics:
-                  type: object
                 logging:
                   type: object
                   properties:
@@ -1310,6 +1313,8 @@ spec:
                                 type: string
                               value:
                                 type: string
+                prometheusMetrics:
+                  type: object
                 version:
                   type: string
               required:

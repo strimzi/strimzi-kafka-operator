@@ -83,7 +83,7 @@ public class KafkaExporter extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
 
         // Kafka Exporter is all about metrics - they are always enabled
-        this.isMetricsEnabled = true;
+        this.isPrometheusMetricsEnabled = true;
     }
 
     public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -180,13 +180,13 @@ public class KafkaExporter extends AbstractModel {
 
         List<ServicePort> ports = new ArrayList<>(1);
 
-        ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
         return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
         return portList;
     }
 
@@ -221,8 +221,8 @@ public class KafkaExporter extends AbstractModel {
                 .withCommand("/opt/kafka-exporter/kafka_exporter_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, METRICS_PORT_NAME, livenessProbeOptions))
-                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, METRICS_PORT_NAME, readinessProbeOptions))
+                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, PROMETHEUS_METRICS_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, PROMETHEUS_METRICS_PORT_NAME, readinessProbeOptions))
                 .withResources(getResources())
                 .withVolumeMounts(createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))

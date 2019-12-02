@@ -122,7 +122,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED;
+        this.isPrometheusMetricsEnabled = DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -162,7 +162,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             Map<String, Object> metrics = spec.getMetrics();
             if (metrics != null) {
-                kafkaMirrorMakerCluster.setMetricsEnabled(true);
+                kafkaMirrorMakerCluster.setPrometheusMetricsEnabled(true);
                 kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
             }
 
@@ -225,8 +225,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled()) {
+            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
             return createService("ClusterIP", ports, getPrometheusAnnotations());
         } else {
             return null;
@@ -235,8 +235,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled()) {
+            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -375,7 +375,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 getConsumerConfiguration().getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER,
                 getProducerConfiguration().getConfiguration()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled())));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST, whitelist));

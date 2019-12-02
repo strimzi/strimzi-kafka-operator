@@ -33,6 +33,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.KafkaJmxRemote;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
@@ -177,8 +178,8 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
-        assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.METRICS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.PROMETHEUS_METRICS_PORT_NAME));
+        assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.PROMETHEUS_METRICS_PORT)));
         assertThat(headful.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headful.getMetadata().getAnnotations(), is(kc.getPrometheusAnnotations()));
 
@@ -190,7 +191,7 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()
-                        .withMetrics(null)
+                        .withPrometheusMetrics(null)
                     .endKafka()
                 .endSpec()
                 .build();
@@ -215,6 +216,39 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
         checkOwnerReference(kc.createOwnerReference(), headful);
+    }
+
+    @Test
+    public void testGenerateHeadlessServiceWithJmxMetrics() {
+        KafkaJmxRemote opts = new KafkaJmxRemote();
+        opts.setSecure(true);
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withJmxRemote(opts)
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafka, VERSIONS);
+        Service headless = kc.generateHeadlessService();
+
+        assertThat(headless.getSpec().getType(), is("ClusterIP"));
+        assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(headless.getSpec().getPorts().size(), is(4));
+        assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(3).getName(), is(KafkaCluster.JMX_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
+
+        checkOwnerReference(kc.createOwnerReference(), headless);
     }
 
     @Test

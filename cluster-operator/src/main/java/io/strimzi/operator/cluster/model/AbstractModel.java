@@ -122,9 +122,12 @@ public abstract class AbstractModel {
     protected String headlessServiceName;
     protected String name;
 
-    protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "metrics";
-    protected boolean isMetricsEnabled;
+    protected static final int PROMETHEUS_METRICS_PORT = 9404;
+    protected static final String PROMETHEUS_METRICS_PORT_NAME = "prometheus";
+    protected boolean isPrometheusMetricsEnabled;
+
+    protected static final int JMX_PORT = 9999;
+    protected static final String JMX_PORT_NAME = "jmx";
 
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;
@@ -264,12 +267,12 @@ public abstract class AbstractModel {
     /**
      * @return Whether metrics are enabled.
      */
-    public boolean isMetricsEnabled() {
-        return isMetricsEnabled;
+    public boolean isPrometheusMetricsEnabled() {
+        return isPrometheusMetricsEnabled;
     }
 
-    protected void setMetricsEnabled(boolean isMetricsEnabled) {
-        this.isMetricsEnabled = isMetricsEnabled;
+    protected void setPrometheusMetricsEnabled(boolean isMetricsEnabled) {
+        this.isPrometheusMetricsEnabled = isMetricsEnabled;
     }
 
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
@@ -365,7 +368,7 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
         Map<String, String> data = new HashMap<>();
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
-        if (isMetricsEnabled()) {
+        if (isPrometheusMetricsEnabled()) {
             HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
@@ -1067,10 +1070,10 @@ public abstract class AbstractModel {
      * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
      */
     protected Map<String, String> getPrometheusAnnotations()    {
-        if (isMetricsEnabled) {
+        if (isPrometheusMetricsEnabled) {
             Map<String, String> annotations = new HashMap<String, String>(3);
 
-            annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
+            annotations.put("prometheus.io/port", String.valueOf(PROMETHEUS_METRICS_PORT));
             annotations.put("prometheus.io/scrape", "true");
             annotations.put("prometheus.io/path", "/metrics");
 

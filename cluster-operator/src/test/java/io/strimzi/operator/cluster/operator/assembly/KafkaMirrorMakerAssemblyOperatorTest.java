@@ -165,7 +165,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
-            if (mirror.isMetricsEnabled()) {
+            if (mirror.isPrometheusMetricsEnabled()) {
                 metricsNames.add(KafkaMirrorMakerResources.metricsAndLogConfigMapName(clusterCmName));
             }
 

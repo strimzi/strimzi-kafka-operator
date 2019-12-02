@@ -18,6 +18,6 @@ When metrics are enabled, they are exposed on port 9404.
 
 For more information about configuring Prometheus and Grafana, see xref:assembly-metrics-setup-str[Metrics].
 
-include::../modules/ref-metrics.adoc[leveloffset=+1]
+include::../modules/ref-prometheus-metrics.adoc[leveloffset=+1]
 
 include::../modules/proc-configuring-metrics.adoc[leveloffset=+1]

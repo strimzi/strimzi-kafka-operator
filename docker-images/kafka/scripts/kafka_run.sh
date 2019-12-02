@@ -25,8 +25,35 @@ fi
 rm /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
 export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 
+if [ "$KAFKA_JMX_ENABLED" = "true" ]; then
+  KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
+
+  if [ -n "$KAFKA_JMX_USERNAME" ]; then
+   # Secure JMX port on 9999 with username and password
+    ACCESS_FILE="/tmp/access.file"
+    PASSWORD_FILE="/tmp/password.file"
+
+  cat << EOF > "${ACCESS_FILE}"
+${KAFKA_USERNAME} readonly
+EOF
+
+  cat << EOF > "${PASSWORD_FILE}"
+$KAFKA_USERNAME $KAFKA_PASSWORD
+EOF
+  chmod 400 "${PASSWORD_FILE}"
+  KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
+  fi
+
+  else
+    # expose the port insecurely
+    KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
+
+fi
+
+KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
+
 # enabling Prometheus JMX exporter as Java agent
-if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
+if [ "$KAFKA_PROMETHEUS_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 

@@ -200,8 +200,8 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(mm.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
-        assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.METRICS_PORT_NAME));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.PROMETHEUS_METRICS_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.PROMETHEUS_METRICS_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getMetadata().getAnnotations(), is(mm.getPrometheusAnnotations()));
 

@@ -123,7 +123,7 @@ public class KafkaExporterTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, null,
-                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, new KafkaExporterSpec());
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
         assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
@@ -161,7 +161,7 @@ public class KafkaExporterTest {
         assertThat(containers.get(0).getImage(), is(ke.image));
         assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(containers.get(0).getPorts().size(), is(1));
-        assertThat(containers.get(0).getPorts().get(0).getName(), is(KafkaExporter.METRICS_PORT_NAME));
+        assertThat(containers.get(0).getPorts().get(0).getName(), is(KafkaExporter.PROMETHEUS_METRICS_PORT_NAME));
         assertThat(containers.get(0).getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
 
@@ -232,7 +232,7 @@ public class KafkaExporterTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, exporterSpec);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
@@ -268,7 +268,7 @@ public class KafkaExporterTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, false,  kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, exporterSpec);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
@@ -280,7 +280,7 @@ public class KafkaExporterTest {
     @Test
     public void testExporterNotDeployed() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
@@ -297,8 +297,8 @@ public class KafkaExporterTest {
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(ke.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
-        assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.METRICS_PORT_NAME));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(AbstractModel.PROMETHEUS_METRICS_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.PROMETHEUS_METRICS_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getMetadata().getAnnotations(), is(ke.getPrometheusAnnotations()));
 
@@ -308,7 +308,7 @@ public class KafkaExporterTest {
     @Test
     public void testGenerateServiceWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 

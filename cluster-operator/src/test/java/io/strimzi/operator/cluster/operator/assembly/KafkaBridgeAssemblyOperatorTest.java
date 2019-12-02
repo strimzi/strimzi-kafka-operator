@@ -157,7 +157,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
-            if (bridge.isMetricsEnabled()) {
+            if (bridge.isPrometheusMetricsEnabled()) {
                 metricsNames.add(KafkaBridgeResources.metricsAndLogConfigMapName(clusterCmName));
             }
 

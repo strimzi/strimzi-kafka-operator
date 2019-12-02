@@ -126,7 +126,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.livenessPath = "/healthy";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
+        this.isPrometheusMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -162,7 +162,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         Map<String, Object> metrics = spec.getMetrics();
         if (metrics != null) {
-            kafkaBridgeCluster.setMetricsEnabled(true);
+            kafkaBridgeCluster.setPrometheusMetricsEnabled(true);
             kafkaBridgeCluster.setMetricsConfig(metrics.entrySet());
         }
 
@@ -215,8 +215,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
 
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled()) {
+            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return createService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
@@ -232,8 +232,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
 
-        if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled) {
+            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -330,7 +330,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));

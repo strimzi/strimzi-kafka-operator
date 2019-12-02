@@ -281,6 +281,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaGenerateCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
+                .compose(state -> state.kafkaJmxSecret())
                 .compose(state -> state.kafkaPodDisruptionBudget())
                 .compose(state -> state.kafkaStatefulSet())
                 .compose(state -> state.kafkaRollingUpdate())
@@ -1728,6 +1729,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaBrokersSecret() {
             return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()));
+        }
+
+        Future<ReconciliationState> kafkaJmxSecret() {
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.jmxSecretName(name),
+                    kafkaCluster.isSecureJmx() ? kafkaCluster.generateJmxSecret() : null));
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {

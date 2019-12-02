@@ -70,7 +70,7 @@ public class KafkaConnectCluster extends AbstractModel {
     static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
-    protected static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
+    protected static final boolean DEFAULT_KAFKA_CONNECT_PROMETHEUS_METRICS_ENABLED = false;
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
@@ -117,7 +117,7 @@ public class KafkaConnectCluster extends AbstractModel {
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
+        this.isPrometheusMetricsEnabled = DEFAULT_KAFKA_CONNECT_PROMETHEUS_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -169,7 +169,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         Map<String, Object> metrics = spec.getMetrics();
         if (metrics != null) {
-            kafkaConnect.setMetricsEnabled(true);
+            kafkaConnect.setPrometheusMetricsEnabled(true);
             kafkaConnect.setMetricsConfig(metrics.entrySet());
         }
         kafkaConnect.setUserAffinity(affinity(spec));
@@ -248,8 +248,8 @@ public class KafkaConnectCluster extends AbstractModel {
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled()) {
+            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
@@ -258,8 +258,8 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
-        if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled) {
+            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -427,7 +427,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled())));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 

@@ -89,13 +89,16 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
@@ -130,7 +133,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    private static final String ENV_VAR_KAFKA_PROMETHEUS_METRICS_ENABLED = "KAFKA_PROMETHEUS_METRICS_ENABLED";
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
@@ -175,6 +178,12 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka";
 
+    private static final String SECRET_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
+    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
+    private static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_USERNAME";
+    private static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_PASSWORD";
+
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
 
@@ -191,6 +200,9 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
 
+    // Env vars for JMX service
+    protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
+
     // Kafka configuration
     private String zookeeperConnect;
     private Rack rack;
@@ -200,6 +212,8 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
+    private boolean isJmxEnabled;
+    private boolean isSecureJmx;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -222,7 +236,7 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_REPLICAS = 3;
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
-    private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
+    private static final boolean DEFAULT_KAFKA_PROMETHEUS_METRICS_ENABLED = false;
 
     /**
      * Private key and certificate for each Kafka Pod name
@@ -253,7 +267,7 @@ public class KafkaCluster extends AbstractModel {
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
+        this.isPrometheusMetricsEnabled = DEFAULT_KAFKA_PROMETHEUS_METRICS_ENABLED;
 
         setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
 
@@ -347,6 +361,14 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * @param cluster The name of the cluster.
+     * @return The name of the jmx Secret.
+     */
+    public static String jmxSecretName(String cluster) {
+        return cluster + KafkaCluster.SECRET_JMX_SECRET_SUFFIX;
+    }
+
+    /**
+     * @param cluster The name of the cluster.
      * @return The name of the clients CA certificate Secret.
      */
     public static String clientsCaCertSecretName(String cluster) {
@@ -394,6 +416,11 @@ public class KafkaCluster extends AbstractModel {
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
+        if (kafkaClusterSpec.getJmxRemote() != null) {
+            result.setJmxEnabled(true);
+            result.setSecureJmx(kafkaClusterSpec.getJmxRemote().getSecure());
+        }
+
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
         List<String> errorsInConfig = configuration.validate(versions.version(kafkaClusterSpec.getVersion()));
         if (!errorsInConfig.isEmpty()) {
@@ -410,10 +437,10 @@ public class KafkaCluster extends AbstractModel {
         }
         result.setConfiguration(configuration);
 
-        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
-        if (metrics != null) {
-            result.setMetricsEnabled(true);
-            result.setMetricsConfig(metrics.entrySet());
+        Map<String, Object> prometheusMetrics = kafkaClusterSpec.getPrometheusMetrics();
+        if (prometheusMetrics != null) {
+            result.setPrometheusMetricsEnabled(true);
+            result.setMetricsConfig(prometheusMetrics.entrySet());
         }
 
         if (oldStorage != null) {
@@ -625,8 +652,8 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled()) {
+            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
         }
         return ports;
     }
@@ -638,7 +665,7 @@ public class KafkaCluster extends AbstractModel {
      * @return List with generated ports
      */
     private List<ServicePort> getHeadlessServicePorts() {
-        List<ServicePort> ports = new ArrayList<>(3);
+        List<ServicePort> ports = new ArrayList<>(4);
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         if (listeners != null && listeners.getPlain() != null) {
@@ -647,6 +674,10 @@ public class KafkaCluster extends AbstractModel {
 
         if (listeners != null && listeners.getTls() != null) {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        }
+
+        if (isJmxEnabled) {
+            ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
         return ports;
@@ -1086,6 +1117,24 @@ public class KafkaCluster extends AbstractModel {
         return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }
 
+    /**
+     * Generate the Secret containing the username and password to secure the jmx port on the kafka brokers
+     *
+     * @return The generated Secret
+     */
+    public Secret generateJmxSecret() {
+
+        Map<String, String> data = new HashMap<>();
+        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
+        for (String key : keys) {
+            String value = UUID.randomUUID().toString();
+
+            data.put(key, Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.US_ASCII)));
+        }
+
+        return createSecret(KafkaCluster.jmxSecretName(cluster), data);
+    }
+
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(5);
         portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
@@ -1102,8 +1151,8 @@ public class KafkaCluster extends AbstractModel {
             portList.add(createContainerPort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, "TCP"));
         }
 
-        if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        if (isPrometheusMetricsEnabled) {
+            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -1437,7 +1486,7 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_PROMETHEUS_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
@@ -1501,6 +1550,14 @@ public class KafkaCluster extends AbstractModel {
                             varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                         }
                     }
+                }
+            }
+
+            if (isJmxEnabled) {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
+                if (isSecureJmx) {
+                    varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
+                    varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
                 }
             }
         }
@@ -1752,9 +1809,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (isMetricsEnabled) {
+        if (isPrometheusMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(METRICS_PORT));
+            metricsPort.setPort(new IntOrString(PROMETHEUS_METRICS_PORT));
 
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                     .withPorts(metricsPort)
@@ -1762,6 +1819,18 @@ public class KafkaCluster extends AbstractModel {
                     .build();
 
             rules.add(metricsRule);
+        }
+
+        if (isJmxEnabled) {
+            NetworkPolicyPort jmxPort = new NetworkPolicyPort();
+            jmxPort.setPort(new IntOrString(JMX_PORT));
+
+            NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
+                    .withPorts(jmxPort)
+                    .withFrom()
+                    .build();
+
+            rules.add(jmxRule);
         }
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -1806,6 +1875,22 @@ public class KafkaCluster extends AbstractModel {
      */
     public KafkaListeners getListeners() {
         return listeners;
+    }
+
+    /**
+     * @return Return if the jmx has been enabled
+     */
+    public boolean isJmxEnabled() {
+        return isJmxEnabled;
+    }
+
+    /**
+     * Sets the object with jmx options enabled
+     *
+     * @param jmxEnabled if jmx is enabled
+     */
+    public void setJmxEnabled(boolean jmxEnabled) {
+        isJmxEnabled = jmxEnabled;
     }
 
     /**
@@ -2037,5 +2122,13 @@ public class KafkaCluster extends AbstractModel {
     @Override
     public KafkaConfiguration getConfiguration() {
         return (KafkaConfiguration) configuration;
+    }
+
+    public boolean isSecureJmx() {
+        return isSecureJmx;
+    }
+
+    public void setSecureJmx(boolean secureJmx) {
+        isSecureJmx = secureJmx;
     }
 }

@@ -211,7 +211,7 @@ public class KafkaAssemblyOperatorMockTest {
                     .withNewKafka()
                         .withReplicas(kafkaReplicas)
                         .withStorage(kafkaStorage)
-                        .withMetrics(singletonMap("foo", "bar"))
+                        .withPrometheusMetrics(singletonMap("foo", "bar"))
                         .withResources(resources)
                     .endKafka()
                     .withNewZookeeper()

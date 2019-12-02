@@ -40,7 +40,7 @@ import java.util.Map;
         "rack", "brokerRackInitImage",
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
-        "jvmOptions", "resources",
+        "jvmOptions", "jmxRemote", "resources",
         "metrics", "logging", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
@@ -71,7 +71,8 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
-    private Map<String, Object> metrics;
+    private KafkaJmxRemote jmxRemote;
+    private Map<String, Object> prometheusMetrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private KafkaListeners listeners;
@@ -212,14 +213,25 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
-        return metrics;
+    @Description("JMX Options for Kafka brokers")
+    @JsonProperty("jmxRemote")
+    public KafkaJmxRemote getJmxRemote() {
+        return jmxRemote;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
+    public void setJmxRemote(KafkaJmxRemote kafkaJmxRemote) {
+        this.jmxRemote = kafkaJmxRemote;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The Prometheus JMX Exporter configuration. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    public Map<String, Object> getPrometheusMetrics() {
+        return prometheusMetrics;
+    }
+
+    public void setPrometheusMetrics(Map<String, Object> prometheusMetrics) {
+        this.prometheusMetrics = prometheusMetrics;
     }
 
     @Description("The pod's affinity rules.")
