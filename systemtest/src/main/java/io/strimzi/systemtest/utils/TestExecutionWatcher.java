@@ -16,7 +16,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class TestExecutionWatcher implements AfterTestExecutionCallback, LifecycleMethodExecutionExceptionHandler {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);

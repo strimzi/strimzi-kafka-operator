@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(PROMETHEUS)

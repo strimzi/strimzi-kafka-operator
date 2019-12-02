@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
 import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

@@ -7,7 +7,7 @@ package io.strimzi.api.kafka.model;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
@@ -128,14 +128,14 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }
 

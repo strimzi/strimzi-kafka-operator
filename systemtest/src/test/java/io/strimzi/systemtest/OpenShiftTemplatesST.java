@@ -21,19 +21,19 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -201,8 +201,8 @@ public class OpenShiftTemplatesST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        createNamespace(NAMESPACE);
-        createCustomResources("../examples/templates/cluster-operator",
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources("../examples/templates/cluster-operator",
                 "../examples/templates/topic-operator",
                 TestUtils.CRD_KAFKA,
                 TestUtils.CRD_KAFKA_CONNECT,
@@ -213,17 +213,7 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @Override
     protected void tearDownEnvironmentAfterAll() {
-        deleteCustomResources();
-        deleteNamespaces();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() {
-
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }

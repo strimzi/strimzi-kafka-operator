@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -134,13 +134,13 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
+        cluster.createNamespace(NAMESPACE);
+        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
-        deleteNamespaces();
+        cluster.deleteCustomResources();
+        cluster.deleteNamespaces();
     }
 }

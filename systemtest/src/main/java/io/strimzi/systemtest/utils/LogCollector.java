@@ -11,8 +11,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 
-import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.TestUtils.writeFile;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class LogCollector {
     private static final Logger LOGGER = LogManager.getLogger(LogCollector.class);

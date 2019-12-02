@@ -53,7 +53,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubeClient {
 

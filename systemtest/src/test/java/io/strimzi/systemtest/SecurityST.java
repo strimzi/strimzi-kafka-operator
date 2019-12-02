@@ -18,7 +18,7 @@ import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.MetricsUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
@@ -51,6 +51,8 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -125,7 +127,7 @@ class SecurityST extends MessagingBaseST {
                                 commandForZookeeperPort2888).out();
                 checkZookeeperCertificates(outputForZookeeperPort2888);
             } catch (KubeClusterException e) {
-                if (e.result != null && e.result.exitStatus() == 104) {
+                if (e.result != null && e.result.returnCode() == 104) {
                     LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", KafkaResources.zookeeperPodName(CLUSTER_NAME, podId));
                 } else {
                     throw new RuntimeException(e);

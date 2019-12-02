@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cmdClient;
 
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -10,8 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * A {@link KubeCmdClient} implementation wrapping {@code oc}.
@@ -22,9 +20,7 @@ public class Oc extends BaseCmdKubeClient<Oc> {
 
     private static final String OC = "oc";
 
-    Oc() {
-
-    }
+    public Oc() { }
 
     private Oc(String futureNamespace) {
         namespace = futureNamespace;
@@ -73,10 +69,6 @@ public class Oc extends BaseCmdKubeClient<Oc> {
         return this;
     }
 
-    public Oc newApp(String template) {
-        return newApp(template, emptyMap());
-    }
-
     public Oc newApp(String template, Map<String, String> params) {
         List<String> cmd = namespacedCommand("new-app", template);
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -85,11 +77,6 @@ public class Oc extends BaseCmdKubeClient<Oc> {
         }
 
         Exec.exec(cmd);
-        return this;
-    }
-
-    public Oc newProject(String name) {
-        Exec.exec(namespacedCommand("new-project", name));
         return this;
     }
 

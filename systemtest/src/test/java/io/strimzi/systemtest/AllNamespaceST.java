@@ -22,6 +22,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -41,13 +42,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-        String previousNamespace = setNamespace(THIRD_NAMESPACE);
+        String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
         deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
-        setNamespace(previousNamespace);
+        cluster.setNamespace(previousNamespace);
     }
 
     /**
@@ -71,29 +72,29 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Test
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
-        String previousNamespace = setNamespace(SECOND_NAMESPACE);
+        String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
         secondNamespaceResources.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
         StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
-        setNamespace(previousNamespace);
+        cluster.setNamespace(previousNamespace);
     }
 
     @Test
     void testUOWatchingOtherNamespace() {
-        String previousNamespace = setNamespace(SECOND_NAMESPACE);
+        String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         // Check that UO created a secret for new user
-        cmdKubeClient().waitForResourceCreation("Secret", USER_NAME);
-        setNamespace(previousNamespace);
+        StUtils.waitForSecretReady(USER_NAME);
+        cluster.setNamespace(previousNamespace);
     }
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testUserInDifferentNamespace() throws Exception {
-        String startingNamespace = setNamespace(SECOND_NAMESPACE);
+        String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         StUtils.waitForSecretReady(USER_NAME);
@@ -114,7 +115,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         }
         waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
 
-        setNamespace(startingNamespace);
+        cluster.setNamespace(startingNamespace);
     }
 
     void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {
@@ -143,7 +144,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying CO to watch all namespaces");
         testClassResources().clusterOperator("*").done();
 
-        String previousNamespace = setNamespace(THIRD_NAMESPACE);
+        String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
         thirdNamespaceResources = new Resources(kubeClient());
 
         thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -165,12 +166,12 @@ class AllNamespaceST extends AbstractNamespaceST {
             .endSpec()
             .done();
 
-        setNamespace(SECOND_NAMESPACE);
+        cluster.setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources = new Resources(kubeClient());
         // Deploy Kafka in other namespace than CO
         secondNamespaceResources.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).done();
 
-        setNamespace(previousNamespace);
+        cluster.setNamespace(previousNamespace);
     }
 
     @BeforeAll

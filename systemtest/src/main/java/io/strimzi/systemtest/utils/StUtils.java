@@ -53,8 +53,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static io.strimzi.test.BaseITST.cmdKubeClient;
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -334,12 +334,14 @@ public class StUtils {
     }
 
     public static File downloadYamlAndReplaceNameSpace(String url, String namespace) {
+        InputStream bais = null;
         BufferedReader br = null;
-        OutputStreamWriter bw = null;
+        OutputStreamWriter osw = null;
+
         try {
-            InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
+            bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
             StringBuilder sb = new StringBuilder();
-            br = new BufferedReader(new InputStreamReader(bais, "UTF-8"));
+            br = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
             String read;
             while ((read = br.readLine()) != null) {
                 sb.append(read + "\n");
@@ -347,39 +349,50 @@ public class StUtils {
             br.close();
             String yaml = sb.toString();
             File yamlFile = File.createTempFile("temp-file", ".yaml");
-            FileOutputStream fileStream = new FileOutputStream(yamlFile);
-            bw = new OutputStreamWriter(fileStream, "UTF-8");
+            osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8);
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
             yaml = yaml.replace("securityContext:\n" +
                     "        runAsNonRoot: true\n" +
                     "        runAsUser: 65534", "");
-            bw.write(yaml);
-            bw.close();
+            osw.write(yaml);
+            osw.close();
             return yamlFile;
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bais != null) {
+                try {
+                    bais.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
             if (br != null) {
                 try {
                     br.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-            if (bw != null) {
+
+            if (osw != null) {
                 try {
-                    bw.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                    osw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-            e.printStackTrace();
+
         }
         return null;
     }
 
     public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) {
         byte[] encoded;
-        OutputStreamWriter bw = null;
+        OutputStreamWriter osw = null;
+
         try {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
@@ -387,20 +400,20 @@ public class StUtils {
             yaml = yaml.replaceAll("namespace: .*", "namespace: " + namespace);
 
             File yamlFile = File.createTempFile("temp-file", ".yaml");
-            FileOutputStream fileStream = new FileOutputStream(yamlFile);
-            bw = new OutputStreamWriter(fileStream, "UTF-8");
-            bw.write(yaml);
-            bw.close();
+            osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8);
+            osw.write(yaml);
+            osw.close();
             return yamlFile.toPath().toFile();
         } catch (IOException e) {
-            if (bw != null) {
+            e.printStackTrace();
+        } finally {
+            if (osw != null) {
                 try {
-                    bw.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                    osw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-            e.printStackTrace();
         }
         return null;
     }

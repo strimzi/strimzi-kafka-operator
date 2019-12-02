@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.executor;
 
-import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

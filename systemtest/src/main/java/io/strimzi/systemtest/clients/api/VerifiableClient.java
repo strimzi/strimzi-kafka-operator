@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import static io.strimzi.test.BaseITST.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
  * Class represent verifiable kafka client which keeps common features of kafka clients

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.k8s.cmdClient;
 
 import io.strimzi.test.executor.ExecResult;
 
@@ -53,12 +53,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Replaces the resources in the given files. */
     K replace(File... files);
 
-    /**
-     * Replace with the given YAML.
-     * @param yamlContent The replacement YAML.
-     * @return This kube client.
-     */
-    K replaceContent(String yamlContent);
 
     /** Returns an equivalent client, but logged in as cluster admin. */
     K clientWithAdmin();
@@ -79,6 +73,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     ExecResult execInPod(String pod, String... command);
 
+    List<String> execInCurrentNamespace(String... commands);
+
     /**
      * Execute the given {@code command} in the given {@code container} which is deployed in {@code pod}.
      * @param pod The pod
@@ -94,23 +90,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @return The process result.
      */
     ExecResult exec(String... command);
-
-    /**
-     * Wait for the deployment with the given {@code name} to
-     * have {@code replicas==readyReplicas && replicas==expected}.
-     * @param name The deployment name.
-     * @param expected Number of expected pods
-     * @return This kube client.
-     */
-    K waitForDeployment(String name, int expected);
-
-    /**
-     * Wait for the deploymentConfig with the given {@code name} to
-     * have replicas==readyReplicas.
-     * @param name The deploymentConfig name.
-     * @return This kube client.
-     */
-    K waitForDeploymentConfig(String name);
 
     /**
      * Wait for the resource with the given {@code name} to be created.

@@ -33,7 +33,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.kafka.common.config.TopicConfig;
@@ -74,6 +74,8 @@ import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -99,7 +101,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
-        createCustomResources("../examples/templates/cluster-operator");
+        cluster.createCustomResources("../examples/templates/cluster-operator");
         String appName = "strimzi-ephemeral";
         Oc oc = (Oc) cmdKubeClient();
         String clusterName = "openshift-my-cluster";
@@ -126,7 +128,7 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
         StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
         StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
-        deleteCustomResources("../examples/templates/cluster-operator");
+        cluster.deleteCustomResources("../examples/templates/cluster-operator");
     }
 
     @Test

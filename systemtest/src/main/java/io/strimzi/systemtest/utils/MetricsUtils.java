@@ -22,8 +22,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.BaseITST.cmdKubeClient;
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class MetricsUtils {
 

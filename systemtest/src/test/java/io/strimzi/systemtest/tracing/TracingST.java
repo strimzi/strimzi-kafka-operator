@@ -47,6 +47,8 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.test.TestUtils.getFileAsString;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -899,7 +901,7 @@ public class TracingST extends AbstractST {
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
             jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).applyContent(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
         }
 
         installJaegerInstance();
@@ -917,7 +919,7 @@ public class TracingST extends AbstractST {
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
             jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).applyContent(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
         }
     }
 
@@ -926,7 +928,7 @@ public class TracingST extends AbstractST {
      */
     void deleteJaeger() {
         while (!jaegerConfigs.empty()) {
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).deleteContent(jaegerConfigs.pop());
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).deleteContent(jaegerConfigs.pop());
         }
     }
 

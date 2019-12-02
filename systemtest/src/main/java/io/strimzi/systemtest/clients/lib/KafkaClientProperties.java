@@ -31,7 +31,7 @@ import java.util.Base64;
 import java.util.Properties;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
-import static io.strimzi.test.BaseITST.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressFBWarnings("REC_CATCH_EXCEPTION")

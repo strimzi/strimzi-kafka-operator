@@ -42,7 +42,7 @@ class HelmChartST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        createNamespace(NAMESPACE);
+        cluster.createNamespace(NAMESPACE);
         deployClusterOperatorViaHelmChart();
     }
 
@@ -55,13 +55,13 @@ class HelmChartST extends AbstractST {
     @Override
     protected void tearDownEnvironmentAfterAll() {
         deleteClusterOperatorViaHelmChart();
-        deleteNamespaces();
+        cluster.deleteNamespaces();
     }
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         deleteClusterOperatorViaHelmChart();
-        deleteNamespaces();
-        createNamespace(NAMESPACE);
+        cluster.deleteNamespaces();
+        cluster.createNamespace(NAMESPACE);
     }
 }

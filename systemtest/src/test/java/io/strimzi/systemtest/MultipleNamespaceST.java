@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -29,13 +30,13 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-        setNamespace(SECOND_NAMESPACE);
+        cluster.setNamespace(SECOND_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(CO_NAMESPACE, SECOND_NAMESPACE, TOPIC_NAME);
         deleteNewTopic(CO_NAMESPACE, TOPIC_NAME);
-        setNamespace(CO_NAMESPACE);
+        cluster.setNamespace(CO_NAMESPACE);
     }
 
     /**
@@ -72,7 +73,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying CO to watch multiple namespaces");
         testClassResources().clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
-        setNamespace(SECOND_NAMESPACE);
+        cluster.setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
 
         secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -84,7 +85,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
                 .endEntityOperator()
             .endSpec().done();
 
-        setNamespace(CO_NAMESPACE);
+        cluster.setNamespace(CO_NAMESPACE);
     }
 
     @Override
