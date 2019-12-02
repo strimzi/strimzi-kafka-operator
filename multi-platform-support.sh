@@ -10,6 +10,8 @@ CP=cp
 SED=sed
 GREP=grep
 WC=wc
+UNIQ=uniq
+SORT=sort
 
 UNAME_S=$(uname -s)
 if [ $UNAME_S = "Darwin" ];
@@ -20,4 +22,6 @@ then
     SED=gsed
     GREP=ggrep
     WC=gwc
+    UNIQ=guniq
+    SORT=gsort
 fi
