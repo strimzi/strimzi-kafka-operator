@@ -24,7 +24,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.KafkaJmxRemote;
+import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -740,9 +740,9 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     public void testUpdateClusterJmxOptionsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        KafkaJmxRemote options = new KafkaJmxRemote();
-        options.setSecure(params.jmxSecure);
-        kafkaAssembly.getSpec().getKafka().setJmxRemote(options);
+        KafkaJmxOptions options = new KafkaJmxOptions();
+        options.setAuthentication(params.jmxSecure);
+        kafkaAssembly.getSpec().getKafka().setJmxOptions(options);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 

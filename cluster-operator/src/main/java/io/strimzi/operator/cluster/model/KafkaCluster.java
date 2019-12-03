@@ -86,6 +86,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -98,7 +99,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
@@ -133,7 +133,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_PROMETHEUS_METRICS_ENABLED";
+    private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
@@ -178,11 +178,11 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka";
 
-    private static final String SECRET_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    private static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
     private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-    private static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_USERNAME";
-    private static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_PASSWORD";
+    private static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
+    private static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
 
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
@@ -213,7 +213,7 @@ public class KafkaCluster extends AbstractModel {
     private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
     private boolean isJmxEnabled;
-    private boolean isSecureJmx;
+    private boolean isAuthenticatedJmx;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -364,7 +364,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The name of the jmx Secret.
      */
     public static String jmxSecretName(String cluster) {
-        return cluster + KafkaCluster.SECRET_JMX_SECRET_SUFFIX;
+        return cluster + KafkaCluster.KAFKA_JMX_SECRET_SUFFIX;
     }
 
     /**
@@ -416,9 +416,9 @@ public class KafkaCluster extends AbstractModel {
 
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
-        if (kafkaClusterSpec.getJmxRemote() != null) {
-            result.setJmxEnabled(true);
-            result.setSecureJmx(kafkaClusterSpec.getJmxRemote().getSecure());
+        if (kafkaClusterSpec.getJmxOptions() != null) {
+            result.setJmxEnabled(Boolean.TRUE);
+            result.setAuthenticatedJmx(kafkaClusterSpec.getJmxOptions().getAuthentication());
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
@@ -1123,13 +1123,11 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateJmxSecret() {
-
         Map<String, String> data = new HashMap<>();
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
         for (String key : keys) {
-            String value = UUID.randomUUID().toString();
-
-            data.put(key, Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.US_ASCII)));
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
         return createSecret(KafkaCluster.jmxSecretName(cluster), data);
@@ -1555,7 +1553,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (isJmxEnabled) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
-                if (isSecureJmx) {
+                if (isAuthenticatedJmx) {
                     varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
                     varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
                 }
@@ -2124,11 +2122,11 @@ public class KafkaCluster extends AbstractModel {
         return (KafkaConfiguration) configuration;
     }
 
-    public boolean isSecureJmx() {
-        return isSecureJmx;
+    public boolean isAuthenticatedJmx() {
+        return isAuthenticatedJmx;
     }
 
-    public void setSecureJmx(boolean secureJmx) {
-        isSecureJmx = secureJmx;
+    public void setAuthenticatedJmx(boolean authenticatedJmx) {
+        isAuthenticatedJmx = authenticatedJmx;
     }
 }

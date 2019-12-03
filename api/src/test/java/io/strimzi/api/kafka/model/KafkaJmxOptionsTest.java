@@ -11,14 +11,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 
-public class KafkaJmxRemoteTest {
+public class KafkaJmxOptionsTest {
     @Test
-    public void testSecure() {
-        KafkaJmxRemote opts = TestUtils.fromJson("{" +
-                "\"secure\": \"true\"" +
-                "}", KafkaJmxRemote.class);
+    public void testAuthentication() {
+        KafkaJmxOptions opts = TestUtils.fromJson("{" +
+                "\"authentication\": \"true\"" +
+                "}", KafkaJmxOptions.class);
 
-        assertThat(opts.getSecure(),  is(true));
+        assertThat(opts.getAuthentication(),  is(true));
     }
 
 }

@@ -1,18 +1,18 @@
 // Module included in the following assemblies:
 //
-// assembly-jvm-options.adoc
+// assembly-deployment-configuration-kafka.adoc
 
-[id='ref-kafka-jmx-remote-options-{context}']
+[id='ref-kafka-jmx-options-{context}']
 = JMX configuration
 
-You can configure JMX options by using the `jmxRemote` property in the following resources:
+You can configure JMX options by using the `jmxOptions` property in the following resources:
 
 * `Kafka.spec.kafka`
 
 You can configure username and password protection for the JMX port that is opened on the Kafka brokers.
 
 .Securing the JMX Port
-To enable security for the JMX port, set the `secure` parameter to `true`, for example:
+To enable security for the JMX port, set the `authentication` parameter to `true`, for example:
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -22,16 +22,18 @@ metadata:
 spec:
   kafka:
     # ...
-    jmxRemote:
-      secure: true
+    jmxOptions:
+      authentication: true
     # ...
   zookeeper:
     # ...
 ----
 In the above example, the JMX port on the Kafka brokers are opened and then the JMX port on the Kafka headless service
-is opened. This will allow you to deploy a pod internally into a cluster and obtain JMX metrics by using the headless
-service and specifying which broker you want to address. For example, to get metrics from broker 0 we address the
-headless service by doing the following:  "_`<cluster-name>`_-kafka-0- _`<cluster-name>`_-_`<headless-service-name>`_" on the JMX port.
+is opened.
+This will allow you to deploy a pod internally into a cluster and obtain JMX metrics by using the headless
+service and specifying which broker you want to address.
+For example, to get metrics from broker 0 we address the headless service by doing the following:
+"_`<cluster-name>`_-kafka-0- _`<cluster-name>`_-_`<headless-service-name>`_" on the JMX port.
 If the JMX port is secured then you can get the username and password by referencing them from the JMX secret in the
 deployment of your pod.
 
@@ -46,12 +48,13 @@ metadata:
 spec:
   kafka:
     # ...
-    jmxRemote:
-      secure: false
+    jmxOptions:
+      authentication: false
     # ...
   zookeeper:
     # ...
 ----
 
 This will just open the JMX Port on the headless service and you can follow a similar approach as described above
-to deploy a pod into the cluster. The only difference is that any pod will be able to read from the JMX port.
+to deploy a pod into the cluster.
+The only difference is that any pod will be able to read from the JMX port.

@@ -33,7 +33,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.KafkaJmxRemote;
+import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
@@ -220,12 +220,12 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateHeadlessServiceWithJmxMetrics() {
-        KafkaJmxRemote opts = new KafkaJmxRemote();
-        opts.setSecure(true);
+        KafkaJmxOptions opts = new KafkaJmxOptions();
+        opts.setAuthentication(true);
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()
-                        .withJmxRemote(opts)
+                        .withJmxOptions(opts)
                     .endKafka()
                 .endSpec()
                 .build();

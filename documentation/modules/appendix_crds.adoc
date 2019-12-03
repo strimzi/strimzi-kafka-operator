@@ -80,8 +80,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions           1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|jmxRemote            1.2+<.<|JMX Options for Kafka brokers.
-|xref:type-KafkaJmxRemote-{context}[`KafkaJmxRemote`]
+|jmxOptions           1.2+<.<|JMX Options for Kafka brokers.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |resources            1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
@@ -696,16 +696,16 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 |boolean
 |====
 
-[id='type-KafkaJmxRemote-{context}']
-### `KafkaJmxRemote` schema reference
+[id='type-KafkaJmxOptions-{context}']
+### `KafkaJmxOptions` schema reference
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 
 [options="header"]
 |====
-|Property       |Description
-|secure  1.2+<.<|When `secure` is enabled, then it will secure the remote JMX port with a username and password.
+|Property               |Description
+|authentication  1.2+<.<|When `authentication` is enabled, then it will secure the remote JMX port with a username and password.
 |boolean
 |====
 

@@ -21,20 +21,20 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
-public class KafkaJmxRemote implements UnknownPropertyPreserving, Serializable {
+public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    private Boolean secure;
+    private Boolean authentication;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("When `secure` is enabled, then it will secure the remote JMX port with a username and password.")
-    @JsonProperty("secure")
-    public Boolean getSecure() {
-        return secure;
+    @Description("When `authentication` is enabled, then it will secure the remote JMX port with a username and password.")
+    @JsonProperty(value = "authentication", required = true)
+    public Boolean getAuthentication() {
+        return authentication;
     }
 
-    public void setSecure(Boolean secure) {
-        this.secure = secure;
+    public void setAuthentication(Boolean authentication) {
+        this.authentication = authentication;
     }
 
     @Override

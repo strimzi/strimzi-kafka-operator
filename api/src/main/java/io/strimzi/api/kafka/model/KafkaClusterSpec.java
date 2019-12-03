@@ -40,7 +40,7 @@ import java.util.Map;
         "rack", "brokerRackInitImage",
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
-        "jvmOptions", "jmxRemote", "resources",
+        "jvmOptions", "jmxOptions", "resources",
         "metrics", "logging", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
@@ -71,7 +71,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
-    private KafkaJmxRemote jmxRemote;
+    private KafkaJmxOptions jmxOptions;
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
@@ -214,13 +214,13 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("JMX Options for Kafka brokers")
-    @JsonProperty("jmxRemote")
-    public KafkaJmxRemote getJmxRemote() {
-        return jmxRemote;
+    @JsonProperty("jmxOptions")
+    public KafkaJmxOptions getJmxOptions() {
+        return jmxOptions;
     }
 
-    public void setJmxRemote(KafkaJmxRemote kafkaJmxRemote) {
-        this.jmxRemote = kafkaJmxRemote;
+    public void setJmxOptions(KafkaJmxOptions jmxOptions) {
+        this.jmxOptions = jmxOptions;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

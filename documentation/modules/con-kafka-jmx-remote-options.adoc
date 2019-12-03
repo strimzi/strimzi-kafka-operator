@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-kafka-jmx-remote-options.adoc
+// assembly-kafka-jmx-options.adoc
 
 [id='con-kafka-jmx-options-{context}']
 

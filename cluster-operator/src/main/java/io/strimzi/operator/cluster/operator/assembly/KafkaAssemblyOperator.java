@@ -1733,7 +1733,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaJmxSecret() {
             return withVoid(secretOperations.reconcile(namespace, KafkaCluster.jmxSecretName(name),
-                    kafkaCluster.isSecureJmx() ? kafkaCluster.generateJmxSecret() : null));
+                    kafkaCluster.isAuthenticatedJmx() ? kafkaCluster.generateJmxSecret() : null));
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {

@@ -51,7 +51,7 @@ include::assembly-healthchecks.adoc[leveloffset=+1]
 
 include::assembly-prometheus-metrics.adoc[leveloffset=+1]
 
-include::assembly-kafka-jmx-remote.adoc[leveloffset=+1]
+include::assembly-kafka-jmx-options.adoc[leveloffset=+1]
 
 include::assembly-jvm-options.adoc[leveloffset=+1]
 

@@ -793,11 +793,13 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
-                jmxRemote:
+                jmxOptions:
                   type: object
                   properties:
-                    secure:
+                    authentication:
                       type: boolean
+                  required:
+                  - authentication
                 resources:
                   type: object
                   properties:

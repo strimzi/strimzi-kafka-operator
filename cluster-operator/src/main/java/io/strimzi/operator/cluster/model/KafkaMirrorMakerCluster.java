@@ -235,7 +235,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        if (isMetricsEnabled()) {
+        if (isMetricsEnabled) {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
@@ -375,7 +375,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 getConsumerConfiguration().getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER,
                 getProducerConfiguration().getConfiguration()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled())));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST, whitelist));

@@ -30,18 +30,18 @@ if [ "$KAFKA_JMX_ENABLED" = "true" ]; then
 
   if [ -n "$KAFKA_JMX_USERNAME" ]; then
    # Secure JMX port on 9999 with username and password
-    ACCESS_FILE="/tmp/access.file"
-    PASSWORD_FILE="/tmp/password.file"
+    JMX_ACCESS_FILE="/tmp/access.file"
+    JMX_PASSWORD_FILE="/tmp/password.file"
 
-  cat << EOF > "${ACCESS_FILE}"
-${KAFKA_USERNAME} readonly
+  cat << EOF > "${JMX_ACCESS_FILE}"
+${KAFKA_JMX_USERNAME} readonly
 EOF
 
-  cat << EOF > "${PASSWORD_FILE}"
-$KAFKA_USERNAME $KAFKA_PASSWORD
+  cat << EOF > "${JMX_PASSWORD_FILE}"
+$KAFKA_JMX_USERNAME $KAFKA_JMX_PASSWORD
 EOF
-  chmod 400 "${PASSWORD_FILE}"
-  KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
+  chmod 400 "${JMX_PASSWORD_FILE}"
+  KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${JMX_ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${JMX_PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
   fi
 
   else
@@ -53,7 +53,7 @@ fi
 KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
 
 # enabling Prometheus JMX exporter as Java agent
-if [ "$KAFKA_PROMETHEUS_METRICS_ENABLED" = "true" ]; then
+if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
