@@ -25,7 +25,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.common.PasswordGenerator;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -402,23 +401,6 @@ public class KafkaUserModel {
      */
     public void setQuotas(KafkaUserQuotas quotas) {
         this.quotas = quotas;
-    }
-
-    public JsonObject quotasToJson() {
-        JsonObject quotasJson = new JsonObject();
-        if (quotas == null) {
-            return quotasJson;
-        }
-        if (quotas.getProducerByteRate() != null) {
-            quotasJson.put("producer_byte_rate", quotas.getProducerByteRate().toString());
-        }
-        if (quotas.getConsumerByteRate() != null) {
-            quotasJson.put("consumer_byte_rate", quotas.getConsumerByteRate().toString());
-        }
-        if (quotas.getRequestPercentage() != null) {
-            quotasJson.put("request_percentage", quotas.getRequestPercentage().toString());
-        }
-        return quotasJson;
     }
 
     /**

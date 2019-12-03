@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -28,7 +29,6 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -170,17 +170,17 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         Set<SimpleAclRule> tlsAcls = null;
         Set<SimpleAclRule> scramOrNoneAcls = null;
-        JsonObject newQuotasTls = null;
-        JsonObject newQuotasPlain = null;
+        KafkaUserQuotas newQuotasTls = null;
+        KafkaUserQuotas newQuotasPlain = null;
 
         if (user.isTlsUser())   {
             tlsAcls = user.getSimpleAclRules();
-            newQuotasTls = user.quotasToJson();
+            newQuotasTls = user.getQuotas();
             newQuotasPlain = null;
         } else if (user.isScramUser() || user.isNoneUser())  {
             scramOrNoneAcls = user.getSimpleAclRules();
             newQuotasTls = null;
-            newQuotasPlain = user.quotasToJson();
+            newQuotasPlain = user.getQuotas();
         }
 
 
