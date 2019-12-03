@@ -52,7 +52,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import resources.KubernetesResource;
 import resources.ResourceManager;
 
 import java.io.File;
@@ -607,75 +606,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
-        ResourceManager.deleteMethodResources();
-        ResourceManager.deleteClassResources();
-
-        cluster.deleteClusterOperatorInstallFiles();
-        cluster.deleteNamespaces();
-
-        cluster.createNamespaces(coNamespace, bindingsNamespaces);
-        cluster.applyClusterOperatorInstallFiles();
-
-        ResourceManager.setClassResources();
-
-        applyRoleBindings(coNamespace, bindingsNamespaces);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(coNamespace).done();
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
-     */
-    public  static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
-        for (String bindingsNamespace : bindingsNamespaces) {
-            // 020-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 021-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 030-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
-            // 031-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
-            // 032-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
-        }
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     */
-    public static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, Collections.singletonList(namespace));
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
-     */
-    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
-        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
-    }
-
-    /**
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
     public void deployClusterOperatorViaHelmChart() {
@@ -949,15 +879,27 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
-        assertNoCoErrorsLogged(0);
+        boolean logError = false;
+        AssertionError assertionError = new AssertionError();
+        try {
+            assertNoCoErrorsLogged(0);
+        } catch (AssertionError e) {
+            LOGGER.error("Cluster Operator contains unexpected errors!");
+            logError = true;
+            assertionError = e;
+        }
+
         if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent()) {
+            if (context.getExecutionException().isPresent() || logError) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
-                context.getExecutionException().get().printStackTrace();
                 recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();
+        }
+
+        if (logError) {
+            throw assertionError;
         }
     }
 

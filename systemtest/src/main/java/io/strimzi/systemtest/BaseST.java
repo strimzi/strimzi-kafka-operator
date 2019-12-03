@@ -9,7 +9,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
+import resources.KubernetesResource;
+import resources.ResourceManager;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,6 +64,75 @@ public class BaseST {
         cluster.deleteClusterOperatorInstallFiles();
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
+     */
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
+     * @param operationTimeout timeout for CO operations
+     */
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
+        ResourceManager.deleteMethodResources();
+        ResourceManager.deleteClassResources();
+
+        KubeClusterResource.getInstance().deleteClusterOperatorInstallFiles();
+        KubeClusterResource.getInstance().deleteNamespaces();
+
+        KubeClusterResource.getInstance().createNamespaces(coNamespace, bindingsNamespaces);
+        KubeClusterResource.getInstance().applyClusterOperatorInstallFiles();
+
+        ResourceManager.setClassResources();
+
+        applyRoleBindings(coNamespace, bindingsNamespaces);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(coNamespace).done();
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
+     */
+    public static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+        for (String bindingsNamespace : bindingsNamespaces) {
+            // 020-RoleBinding
+            KubernetesResource.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            // 021-ClusterRoleBinding
+            KubernetesResource.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            // 030-ClusterRoleBinding
+            KubernetesResource.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            // 031-RoleBinding
+            KubernetesResource.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            // 032-RoleBinding
+            KubernetesResource.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+        }
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     */
+    public static void applyRoleBindings(String namespace) {
+        applyRoleBindings(namespace, Collections.singletonList(namespace));
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
+     */
+    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
+        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
     }
 
     @BeforeEach
