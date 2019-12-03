@@ -19,6 +19,8 @@ pipeline {
     environment {
         ARTIFACTS_DIR = 'systemtest/target/logs'
         JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
+        ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
+        KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
     }
     stages {
         stage('Clean WS') {
