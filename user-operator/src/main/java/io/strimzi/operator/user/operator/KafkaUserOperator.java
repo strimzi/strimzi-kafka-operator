@@ -28,6 +28,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -169,17 +170,24 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
 
         Set<SimpleAclRule> tlsAcls = null;
         Set<SimpleAclRule> scramOrNoneAcls = null;
+        JsonObject newQuotasTls = null;
+        JsonObject newQuotasPlain = null;
 
         if (user.isTlsUser())   {
             tlsAcls = user.getSimpleAclRules();
+            newQuotasTls = user.quotasToJson();
+            newQuotasPlain = null;
         } else if (user.isScramUser() || user.isNoneUser())  {
             scramOrNoneAcls = user.getSimpleAclRules();
+            newQuotasTls = null;
+            newQuotasPlain = user.quotasToJson();
         }
+
 
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), user.quotasToJson()),
-                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(userName), user.quotasToJson()),
+                kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), newQuotasTls),
+                kafkaUserQuotasOperator.reconcile(user.getName(), newQuotasPlain),
                 reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
