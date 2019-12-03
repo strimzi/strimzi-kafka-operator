@@ -41,7 +41,7 @@ public class KafkaConnectResource {
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name, kafkaConnectReplicas);
+        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {

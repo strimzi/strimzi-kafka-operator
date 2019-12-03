@@ -49,7 +49,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import resources.ResourceManager;
@@ -122,6 +124,9 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     public static final String LIMITS_CPU = "1000m";
 
     private static String operationID;
+    protected String testClass;
+    protected String testName;
+
     Random rng = new Random();
 
     protected HelmClient helmClient() {
@@ -873,8 +878,18 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     @BeforeEach
-    void createTestResources() {
+    void createTestResources(TestInfo testInfo) {
+        if (testInfo.getTestMethod().isPresent()) {
+            testName = testInfo.getTestMethod().get().getName();
+        }
         ResourceManager.setMethodResources();
+    }
+
+    @BeforeAll
+    void setTestClassName(TestInfo testInfo) {
+        if (testInfo.getTestClass().isPresent()) {
+            testClass = testInfo.getTestClass().get().getName();
+        }
     }
 
     @AfterEach

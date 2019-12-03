@@ -70,7 +70,7 @@ public class KafkaBridgeResource {
         });
     }
 
-    public static KafkaBridge KafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
+    public static KafkaBridge kafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {
         kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaBridge);
         return kafkaBridge;
     }

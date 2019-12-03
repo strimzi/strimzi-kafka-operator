@@ -5,9 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import resources.KubernetesResource;
 import resources.ResourceManager;
@@ -21,9 +18,6 @@ public class BaseST {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
     protected static final String CLUSTER_NAME = "my-cluster";
-
-    protected String testClass;
-    protected String testName;
 
     /**
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
@@ -133,19 +127,5 @@ public class BaseST {
      */
     public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
         applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
-    }
-
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        if (testInfo.getTestMethod().isPresent()) {
-            testName = testInfo.getTestMethod().get().getName();
-        }
-    }
-
-    @BeforeAll
-    void createTestClassResources(TestInfo testInfo) {
-        if (testInfo.getTestClass().isPresent()) {
-            testClass = testInfo.getTestClass().get().getName();
-        }
     }
 }
