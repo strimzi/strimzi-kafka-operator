@@ -732,7 +732,7 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.getSpec().getKafka().setPrometheusMetrics(singletonMap("something", "changed"));
+        kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 

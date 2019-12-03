@@ -142,7 +142,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
-            if (connect.isPrometheusMetricsEnabled()) {
+            if (connect.isMetricsEnabled()) {
                 metricsNames.add(KafkaConnectResources.metricsAndLogConfigMapName(clusterCmName));
             }
 

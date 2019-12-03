@@ -83,7 +83,7 @@ public class ZookeeperCluster extends AbstractModel {
             .withTimeoutSeconds(5)
             .withInitialDelaySeconds(15)
             .build();
-    private static final boolean DEFAULT_ZOOKEEPER_PROMETHEUS_METRICS_ENABLED = false;
+    private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
@@ -154,7 +154,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isPrometheusMetricsEnabled = DEFAULT_ZOOKEEPER_PROMETHEUS_METRICS_ENABLED;
+        this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
 
@@ -203,7 +203,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
-            zk.setPrometheusMetricsEnabled(true);
+            zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
 
@@ -317,8 +317,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(2);
-        if (isPrometheusMetricsEnabled()) {
-            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
+        if (isMetricsEnabled()) {
+            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
@@ -397,9 +397,9 @@ public class ZookeeperCluster extends AbstractModel {
 
         rules.add(clientsIngressRule);
 
-        if (isPrometheusMetricsEnabled) {
+        if (isMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(PROMETHEUS_METRICS_PORT));
+            metricsPort.setPort(new IntOrString(METRICS_PORT));
 
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                     .withPorts(metricsPort)
@@ -529,7 +529,7 @@ public class ZookeeperCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
@@ -562,8 +562,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
-        if (isPrometheusMetricsEnabled()) {
-            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
+        if (isMetricsEnabled()) {
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;

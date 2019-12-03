@@ -5,6 +5,7 @@
 
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
+* Expose JMX port on Kafka brokers via an internal service
 
 ## 0.15.0
 
@@ -16,7 +17,6 @@
 * Add `schedulerName` to `podTemplate` (#2114)
 * Allow overriding the auto-detected Kubernetes version
 * Garbage Collection (GC) logging disabled by default
-* Expose JMX port on Kafka brokers via an internal service
 * Providing PKCS12 truststore and password in the cluster and clients CA certificates Secrets
 * Providing PKCS12 keystore and password in the TLS based KafkaUser related Secret
 * Add support for Istio protocol selection in service port names  

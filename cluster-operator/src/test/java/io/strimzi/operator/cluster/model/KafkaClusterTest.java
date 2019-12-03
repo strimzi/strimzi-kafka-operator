@@ -178,8 +178,8 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
-        assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.PROMETHEUS_METRICS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.PROMETHEUS_METRICS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.METRICS_PORT_NAME));
+        assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
         assertThat(headful.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headful.getMetadata().getAnnotations(), is(kc.getPrometheusAnnotations()));
 
@@ -191,7 +191,7 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()
-                        .withPrometheusMetrics(null)
+                        .withMetrics(null)
                     .endKafka()
                 .endSpec()
                 .build();

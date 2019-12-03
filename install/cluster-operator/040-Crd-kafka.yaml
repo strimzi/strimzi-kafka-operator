@@ -805,6 +805,8 @@ spec:
                       type: object
                     requests:
                       type: object
+                metrics:
+                  type: object
                 logging:
                   type: object
                   properties:
@@ -1313,8 +1315,6 @@ spec:
                                 type: string
                               value:
                                 type: string
-                prometheusMetrics:
-                  type: object
                 version:
                   type: string
               required:

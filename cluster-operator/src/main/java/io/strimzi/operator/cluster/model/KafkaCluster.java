@@ -133,7 +133,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    private static final String ENV_VAR_KAFKA_PROMETHEUS_METRICS_ENABLED = "KAFKA_PROMETHEUS_METRICS_ENABLED";
+    private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_PROMETHEUS_METRICS_ENABLED";
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
@@ -236,7 +236,7 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_REPLICAS = 3;
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
-    private static final boolean DEFAULT_KAFKA_PROMETHEUS_METRICS_ENABLED = false;
+    private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     /**
      * Private key and certificate for each Kafka Pod name
@@ -267,7 +267,7 @@ public class KafkaCluster extends AbstractModel {
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isPrometheusMetricsEnabled = DEFAULT_KAFKA_PROMETHEUS_METRICS_ENABLED;
+        this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
 
@@ -437,10 +437,10 @@ public class KafkaCluster extends AbstractModel {
         }
         result.setConfiguration(configuration);
 
-        Map<String, Object> prometheusMetrics = kafkaClusterSpec.getPrometheusMetrics();
-        if (prometheusMetrics != null) {
-            result.setPrometheusMetricsEnabled(true);
-            result.setMetricsConfig(prometheusMetrics.entrySet());
+        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
+        if (metrics != null) {
+            result.setMetricsEnabled(true);
+            result.setMetricsConfig(metrics.entrySet());
         }
 
         if (oldStorage != null) {
@@ -652,8 +652,8 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isPrometheusMetricsEnabled()) {
-            ports.add(createServicePort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, PROMETHEUS_METRICS_PORT, "TCP"));
+        if (isMetricsEnabled()) {
+            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
         return ports;
     }
@@ -1151,8 +1151,8 @@ public class KafkaCluster extends AbstractModel {
             portList.add(createContainerPort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, "TCP"));
         }
 
-        if (isPrometheusMetricsEnabled) {
-            portList.add(createContainerPort(PROMETHEUS_METRICS_PORT_NAME, PROMETHEUS_METRICS_PORT, "TCP"));
+        if (isMetricsEnabled) {
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -1486,7 +1486,7 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_PROMETHEUS_METRICS_ENABLED, String.valueOf(isPrometheusMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
@@ -1809,9 +1809,9 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (isPrometheusMetricsEnabled) {
+        if (isMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(PROMETHEUS_METRICS_PORT));
+            metricsPort.setPort(new IntOrString(METRICS_PORT));
 
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                     .withPorts(metricsPort)

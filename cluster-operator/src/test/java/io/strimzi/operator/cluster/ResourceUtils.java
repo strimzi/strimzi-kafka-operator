@@ -164,7 +164,7 @@ public class ResourceUtils {
         return new KafkaBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout)).editSpec()
                     .editKafka()
-                        .withPrometheusMetrics(metricsCm)
+                        .withMetrics(metricsCm)
                         .withConfig(kafkaConfigurationJson)
                     .endKafka()
                     .editZookeeper()
@@ -373,7 +373,7 @@ public class ResourceUtils {
         kafkaClusterSpec.setLivenessProbe(livenessProbe);
         kafkaClusterSpec.setReadinessProbe(livenessProbe);
         if (metricsCm != null) {
-            kafkaClusterSpec.setPrometheusMetrics(metricsCm);
+            kafkaClusterSpec.setMetrics(metricsCm);
         }
 
         KafkaJmxRemote jmxRemote = new KafkaJmxRemote();

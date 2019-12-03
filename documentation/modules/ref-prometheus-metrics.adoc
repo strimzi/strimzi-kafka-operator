@@ -12,7 +12,7 @@ Prometheus metrics are enabled by configuring the `metrics` property in followin
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
-When the `prometheusMetrics` property is not defined in the resource, the Prometheus metrics will be disabled.
+When the `metrics` property is not defined in the resource, the Prometheus metrics will be disabled.
 To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
 
 .Example of enabling metrics without any further configuration
@@ -25,13 +25,13 @@ metadata:
 spec:
   kafka:
     # ...
-    prometheusMetrics: {}
+    metrics: {}
     # ...
   zookeeper:
     # ...
 ----
 
-The `prometheusMetrics` property might contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+The `metrics` property might contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 
 .Example of enabling metrics with additional Prometheus JMX Exporter configuration
 [source,yaml,subs=attributes+]
@@ -43,7 +43,7 @@ metadata:
 spec:
   kafka:
     # ...
-    prometheusMetrics:
+    metrics:
       lowercaseOutputName: true
       rules:
         - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"

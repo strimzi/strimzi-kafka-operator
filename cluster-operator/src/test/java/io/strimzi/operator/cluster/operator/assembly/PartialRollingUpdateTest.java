@@ -96,7 +96,7 @@ public class PartialRollingUpdateTest {
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
-                        .withPrometheusMetrics(emptyMap())
+                        .withMetrics(emptyMap())
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
