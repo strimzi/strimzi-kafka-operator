@@ -246,16 +246,16 @@ public class KafkaRoller {
             try {
                 try {
                     adminClient = adminClient(podId);
-                    Integer controller = controller(podId, adminClient, 1, TimeUnit.MINUTES);
+                    Integer controller = controller(podId, adminClient, operationTimeoutMs, TimeUnit.MILLISECONDS);
                     int stillRunning = podToContext.reduceValuesToInt(100, v -> v.future.isComplete() ? 0 : 1,
                             0, Integer::sum);
                     if (controller == podId && stillRunning > 1) {
                         log.debug("Pod {} is controller and there are other pods to roll", podId);
                         throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                     } else {
-                        if (canRoll(adminClient, podId, 1, TimeUnit.MINUTES)) {
+                        if (canRoll(adminClient, podId, operationTimeoutMs, TimeUnit.MILLISECONDS)) {
                             log.debug("Pod {} can be rolled now", podId);
-                            restartAndAwaitReadiness(pod, 5, TimeUnit.MINUTES);
+                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
                             log.debug("Pod {} cannot be rolled right now", podId);
                             throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
@@ -266,7 +266,7 @@ public class KafkaRoller {
                 }
             } catch (ForceableProblem e) {
                 if (finalAttempt) {
-                    restartAndAwaitReadiness(pod, 5, TimeUnit.MINUTES);
+                    restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
                     throw e;
                 }
@@ -277,7 +277,7 @@ public class KafkaRoller {
             // We rely on Kube to try restarting such pods.
             log.debug("Pod {} does not need to be restarted", podId);
             log.debug("Waiting for non-restarted pod {} to become ready", podId);
-            await(isReady(pod), 5, TimeUnit.MINUTES, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
+            await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
             log.debug("Pod {} is now ready", podId);
         }
     }
