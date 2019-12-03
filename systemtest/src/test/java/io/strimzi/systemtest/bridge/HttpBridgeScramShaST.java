@@ -33,6 +33,7 @@ import java.util.Random;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.bridge.HttpBridgeST.NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,7 +44,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 class HttpBridgeScramShaST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
-    private static final String NAMESPACE = "bridge-cluster-test-scram-sha";
 
     private String bridgeHost = "";
     private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
