@@ -37,7 +37,13 @@ public class KafkaMirrorMakerResource {
         return deployKafkaMirrorMaker(defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
-    private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker, String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int kafkaMirrorMakerReplicas, boolean tlsListener) {
+    private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker,
+                                                                   String name,
+                                                                   String sourceBootstrapServer,
+                                                                   String targetBootstrapServer,
+                                                                   String groupId,
+                                                                   int kafkaMirrorMakerReplicas,
+                                                                   boolean tlsListener) {
         return new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
             .withNewMetadata()
                 .withName(name)

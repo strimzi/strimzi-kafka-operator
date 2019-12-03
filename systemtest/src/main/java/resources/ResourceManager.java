@@ -80,7 +80,7 @@ public class ResourceManager {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
+    public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> operation, T resource) {
         LOGGER.info("Scheduled deletion of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
         switch (resource.getKind()) {
@@ -88,7 +88,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     waitForDeletion((Kafka) resource);
@@ -98,7 +98,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
@@ -108,7 +108,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
@@ -118,7 +118,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
@@ -128,7 +128,7 @@ public class ResourceManager {
                 pointerResources.add(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
@@ -166,7 +166,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
@@ -176,7 +176,7 @@ public class ResourceManager {
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    x.inNamespace(resource.getMetadata().getNamespace())
+                    operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
                             .delete();
                 });
