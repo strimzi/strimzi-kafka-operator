@@ -1,0 +1,22 @@
+Kafka cluster allows user to enforce certain requests to control usage of the resources by clients.
+We can divide quotas to the two groups:
+
+* network usage quotas, which as are defined as the byte rate threshold for each group of clients sharing a quota
+* hardware utilization quotas, which are defined as the percentage of time a client can utilize on request handler I/O threads and network threads of each broker within a quota window
+
+There are several reasons why using quotas for the Kafka clients might be reasonable.
+Let's consider wrongly set Kafka producer which is sending requests at high rate.
+This can be considered as DoS attack and the client might get blocked.
+With network limiting quota it is less probable to happen.
+
+.An example Kafka user quotas
+[source,yaml,subs=attributes+]
+----
+spec:
+  quotas:
+    producerByteRate: 1000
+    consumerByteRate: 2000
+    requestPercentage: 55
+----
+
+For more info about Kafka user quotas visit http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].

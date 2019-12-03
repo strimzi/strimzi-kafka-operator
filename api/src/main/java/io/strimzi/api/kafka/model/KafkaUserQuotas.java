@@ -6,6 +6,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -20,6 +21,7 @@ import static java.util.Collections.emptyMap;
 /**
  * Represent the Quotas configuration for Kafka User. Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,

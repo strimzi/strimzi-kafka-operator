@@ -1902,6 +1902,7 @@ It must have the value `transactionalId` for the type `AclRuleTransactionalIdRes
 
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 
 [options="header"]
 |====
