@@ -39,7 +39,14 @@ COMMAND="@strimzi-ci run tests profile=${TEST_PROFILE} testcase="
 
 for line in ${TMP_FAILED_TESTS}
 do
-  COMMAND="${COMMAND}${line},"
+  # Compare test method name and test class name
+  IFS='#' read -ra TEST_NAME <<< "${line}"
+  if [[ ${TEST_NAME[0]} == ${TEST_NAME[1]} ]]
+  then
+    COMMAND="${COMMAND}${TEST_NAME[1]},"
+  else
+    COMMAND="${COMMAND}${line},"
+  fi
 done
 
 echo "Re-run command:"
