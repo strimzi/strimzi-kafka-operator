@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -46,6 +47,7 @@ class ConnectS2IST extends AbstractST {
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
 
     @Test
+    @Tag(ACCEPTANCE)
     void testDeployS2IWithMongoDBPlugin() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
