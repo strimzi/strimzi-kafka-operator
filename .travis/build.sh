@@ -32,9 +32,16 @@ if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
 fi
 
 CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
-if [ -n "$CHANGED_DERIVED" ] ; then
-  echo "ERROR: Uncommitted changes in derived resources:"
-  echo "$CHANGED_DERIVED"
+GENERATED_FILES=$(git ls-files --other --exclude-standard -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
+if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
+  if [ -n "$CHANGED_DERIVED" ] ; then
+    echo "ERROR: Uncommitted changes in derived resources:"
+    echo "$CHANGED_DERIVED"
+  fi
+  if [ -n "$GENERATED_FILES" ] ; then
+    echo "ERROR: Uncommitted changes in generated resources:"
+    echo "$GENERATED_FILES"
+  fi
   echo "Run the following to add up-to-date resources:"
   echo "  mvn clean verify -DskipTests -DskipITs \\"
   echo "    && make crd_install \\"
