@@ -152,10 +152,11 @@ for pod in $pods; do
 done;
 
 # getting CO deployment from the pod
+$platform get deployment strimzi-cluster-operator -o yaml -n $namespace > $direct/reports/deployments/cluster-operator.yaml
+$platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace > $direct/reports/pods/cluster-operator.yaml
 co_pod=$($platform get pod -l strimzi.io/kind=cluster-operator -o name -n $namespace)
-$platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace > $direct/reports/deployments/cluster-operator.yaml
-$platform logs $co_pod -n $namespace > $direct/reports/podLogs/cluster-operator.yaml
-$platform logs $co_pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-cluster-operator.yaml
+$platform logs $co_pod -n $namespace > $direct/reports/podLogs/cluster-operator.log
+$platform logs $co_pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-cluster-operator.log
 
 # getting CO replicaset
 co_rs=$($platform get replicaset -l strimzi.io/kind=cluster-operator -o name -n $namespace)
