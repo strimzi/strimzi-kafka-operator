@@ -253,7 +253,7 @@ public class KafkaRoller {
                         log.debug("Pod {} is controller and there are other pods to roll", podId);
                         throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                     } else {
-                        if (canRoll(adminClient, podId, 1_000, TimeUnit.MILLISECONDS)) {
+                        if (canRoll(adminClient, podId, 60_000, TimeUnit.MILLISECONDS)) {
                             log.debug("Pod {} can be rolled now", podId);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
