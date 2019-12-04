@@ -136,9 +136,9 @@ public class KafkaCluster extends AbstractModel {
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
-    private static final String ENV_VAR_KAFKA_CUSTOM_EXT_CERT = "KAFKA_CUSTOM_EXT_CERT";
+    private static final String ENV_VAR_KAFKA_CUSTOM_EXTERNAL_CERT = "KAFKA_CUSTOM_EXTERNAL_CERT";
     private static final String ENV_VAR_KAFKA_CUSTOM_TLS_CERT = "KAFKA_CUSTOM_TLS_CERT";
-    private static final String ENV_VAR_KAFKA_CUSTOM_EXT_KEY = "KAFKA_CUSTOM_EXT_KEY";
+    private static final String ENV_VAR_KAFKA_CUSTOM_EXTERNAL_KEY = "KAFKA_CUSTOM_EXTERNAL_KEY";
     private static final String ENV_VAR_KAFKA_CUSTOM_TLS_KEY = "KAFKA_CUSTOM_TLS_KEY";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
@@ -1303,10 +1303,10 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         if (secretSourceExternal != null) {
-            volumeList.add(createSecretVolume("custom-certs", this.secretSourceExternal.getSecretName(), isOpenShift));
+            volumeList.add(createSecretVolume("custom-external-certs", this.secretSourceExternal.getSecretName(), isOpenShift));
         }
         if (secretSourceTls != null) {
-            volumeList.add(createSecretVolume("custom-certs", this.secretSourceTls.getSecretName(), isOpenShift));
+            volumeList.add(createSecretVolume("custom-tls-certs", this.secretSourceTls.getSecretName(), isOpenShift));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
@@ -1359,8 +1359,12 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         volumeMountList.add(createVolumeMount("ready-files", "/var/opt/kafka"));
 
-        if (secretSourceExternal != null || secretSourceTls != null) {
-            volumeMountList.add(createVolumeMount("custom-certs", "/opt/kafka/custom-certs"));
+        if (secretSourceExternal != null) {
+            volumeMountList.add(createVolumeMount("custom-external-certs", "/opt/kafka/custom-certs"));
+        }
+
+        if (secretSourceTls != null) {
+            volumeMountList.add(createVolumeMount("custom-tls-certs", "/opt/kafka/custom-certs"));
         }
 
         if (rack != null || isExposedWithNodePort()) {
@@ -1625,8 +1629,8 @@ public class KafkaCluster extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
 
         if (secretSourceExternal != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXT_CERT, secretSourceExternal.getCertificate()));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXT_KEY, secretSourceExternal.getKey()));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXTERNAL_CERT, secretSourceExternal.getCertificate()));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXTERNAL_KEY, secretSourceExternal.getKey()));
         }
         if (secretSourceTls != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_CERT, secretSourceTls.getCertificate()));

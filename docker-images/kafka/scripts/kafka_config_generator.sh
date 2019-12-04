@@ -156,7 +156,7 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
       LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="none"
     fi
 
-    if [ -n "$KAFKA_CUSTOM_EXT_CERT" ] && [ -n "$KAFKA_CUSTOM_EXT_KEY" ]; then
+    if [ -n "$KAFKA_CUSTOM_EXTERNAL_CERT" ] && [ -n "$KAFKA_CUSTOM_EXTERNAL_KEY" ]; then
       LISTENER_NAME_EXTERNAL_SSL_KEYSTORE_LOCATION="/tmp/kafka/custom.keystore.p12"
     else
       LISTENER_NAME_EXTERNAL_SSL_KEYSTORE_LOCATION="/tmp/kafka/cluster.keystore.p12"

@@ -81,6 +81,14 @@ if [ -n "$KAFKA_CUSTOM_TLS_CERT" ] && [ -n "$KAFKA_CUSTOM_TLS_KEY" ]; then
     echo "Preparing keystore for external listener is complete"
 fi
 
+if [ -n "$KAFKA_CUSTOM_EXTERNAL_CERT" ] && [ -n "$KAFKA_CUSTOM_EXTERNAL_KEY" ]; then
+    echo "Preparing keystore for external listener"
+
+    create_keystore_without_ca_file /tmp/kafka/custom.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/custom-certs/${KAFKA_CUSTOM_EXTERNAL_CERT} /opt/kafka/custom-certs/${KAFKA_CUSTOM_EXTERNAL_KEY} ${KAFKA_CUSTOM_EXTERNAL_CERT}
+
+    echo "Preparing keystore for external listener is complete"
+fi
+
 echo "Preparing truststore for clienttls listener"
 # Add each certificate to the trust store
 STORE=/tmp/kafka/clients.truststore.p12
