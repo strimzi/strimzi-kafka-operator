@@ -1,0 +1,20 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-kafka-jmx-options.adoc
+
+[id='con-kafka-jmx-options-{context}']
+
+= JMX remote options
+
+.Prerequisites
+
+* A Kubernetes cluster
+* A running Cluster Operator
+
+Use the `jmxOptions` property in the Kafka cluster spec to expose the JMX port on Kafka brokers via the Kafka broker headless service.
+You can enable security on the broker by turning on security in the `jmxOptions` spec.
+
+You can gather JMX metrics from the Kafka brokers by using the JMX options.
+For examples of JMX metrics that can be obtained, see link:https://kafka.apache.org/documentation/#remote_jmx[JMX metrics available on Kafka Brokers].
+
+For more information on the supported options, see xref:ref-kafka-jmx-options[JMX configuration].

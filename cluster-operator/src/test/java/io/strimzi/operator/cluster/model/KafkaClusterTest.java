@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
@@ -221,7 +222,9 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateHeadlessServiceWithJmxMetrics() {
         KafkaJmxOptions opts = new KafkaJmxOptions();
-        opts.setAuthentication(true);
+        KafkaJmxOptionsAuthentication authentication = new KafkaJmxOptionsAuthentication();
+        authentication.setPasswordProtected(true);
+        opts.setAuthentication(authentication);
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()

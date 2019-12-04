@@ -706,6 +706,19 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |====
 |Property               |Description
 |authentication  1.2+<.<|When `authentication` is enabled, then it will secure the remote JMX port with a username and password.
+|xref:type-KafkaJmxOptionsAuthentication-{context}[`KafkaJmxOptionsAuthentication`]
+|====
+
+[id='type-KafkaJmxOptionsAuthentication-{context}']
+### `KafkaJmxOptionsAuthentication` schema reference
+
+Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|password  1.2+<.<|When `password` is enabled, then it will secure the remote JMX port with a username and password.
 |boolean
 |====
 

@@ -797,7 +797,12 @@ spec:
                   type: object
                   properties:
                     authentication:
-                      type: boolean
+                      type: object
+                      properties:
+                        password:
+                          type: boolean
+                      required:
+                      - password
                   required:
                   - authentication
                 resources:

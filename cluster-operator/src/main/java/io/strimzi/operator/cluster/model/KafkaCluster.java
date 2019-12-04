@@ -418,7 +418,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (kafkaClusterSpec.getJmxOptions() != null) {
             result.setJmxEnabled(Boolean.TRUE);
-            result.setAuthenticatedJmx(kafkaClusterSpec.getJmxOptions().getAuthentication());
+            result.setAuthenticatedJmx(kafkaClusterSpec.getJmxOptions().getAuthentication().getPasswordProtected());
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
@@ -1125,8 +1125,8 @@ public class KafkaCluster extends AbstractModel {
     public Secret generateJmxSecret() {
         Map<String, String> data = new HashMap<>();
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
+        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
         for (String key : keys) {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 

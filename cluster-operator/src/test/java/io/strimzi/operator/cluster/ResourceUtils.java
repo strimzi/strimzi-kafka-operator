@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthentication;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -376,9 +377,11 @@ public class ResourceUtils {
             kafkaClusterSpec.setMetrics(metricsCm);
         }
 
-        KafkaJmxOptions jmxRemote = new KafkaJmxOptions();
-        jmxRemote.setAuthentication(jmxSecure);
-        kafkaClusterSpec.setJmxOptions(jmxRemote);
+        KafkaJmxOptions jmxOptions = new KafkaJmxOptions();
+        KafkaJmxOptionsAuthentication authentication = new KafkaJmxOptionsAuthentication();
+        authentication.setPasswordProtected(jmxSecure);
+        jmxOptions.setAuthentication(authentication);
+        kafkaClusterSpec.setJmxOptions(jmxOptions);
 
         if (kafkaConfiguration != null) {
             kafkaClusterSpec.setConfig(kafkaConfiguration);

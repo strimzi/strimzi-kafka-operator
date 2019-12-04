@@ -21,19 +21,19 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
-public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
+public class KafkaJmxOptionsAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    private KafkaJmxOptionsAuthentication authentication;
+    private Boolean passwordProtected;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("When `authentication` is enabled, then it will secure the remote JMX port with a username and password.")
-    @JsonProperty(value = "authentication", required = true)
-    public KafkaJmxOptionsAuthentication getAuthentication() {
-        return authentication;
+    @Description("When `password` is enabled, then it will secure the remote JMX port with a username and password.")
+    @JsonProperty(value = "password", required = true)
+    public Boolean getPasswordProtected() {
+        return passwordProtected;
     }
 
-    public void setAuthentication(KafkaJmxOptionsAuthentication authentication) {
-        this.authentication = authentication;
+    public void setPasswordProtected(Boolean passwordProtected) {
+        this.passwordProtected = passwordProtected;
     }
 
     @Override
@@ -46,4 +46,3 @@ public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable 
         this.additionalProperties.put(name, value);
     }
 }
-
