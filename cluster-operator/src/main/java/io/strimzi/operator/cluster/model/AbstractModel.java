@@ -128,8 +128,6 @@ public abstract class AbstractModel {
 
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;
-    protected String logConfigName;
-
 
     protected Storage storage;
 
