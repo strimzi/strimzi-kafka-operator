@@ -9,6 +9,7 @@ Within a Kafka deployment, distributed tracing using Jaeger is supported for:
 
 * MirrorMaker to trace messages from a source cluster to a target cluster
 * Kafka Connect to trace messages consumed and produced by Kafka Connect
+* Kafka Bridge to trace messages consumed and produced by Kafka Bridge, and HTTP requests from client applications
 
 Template configuration properties are set for the Kafka resources, which describe tracing environment variables.
 

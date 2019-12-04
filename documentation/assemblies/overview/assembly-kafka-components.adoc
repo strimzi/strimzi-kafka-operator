@@ -17,6 +17,8 @@ A typical deployment incorporating Kafka components might include:
 * *Kafka Exporter* to extract Kafka metrics data for monitoring
 * *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
 
+Not all of these components are mandatory, though you need Kafka and ZooKeeper as a minimum.
+
 include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]
 //description of kafka bridge
 include::../../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
