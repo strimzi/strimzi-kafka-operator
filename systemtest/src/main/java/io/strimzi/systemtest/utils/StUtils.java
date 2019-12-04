@@ -665,7 +665,7 @@ public class StUtils {
     public static void waitForKafkaUserCreation(String userName) {
         LOGGER.info("Waiting for Kafka user creation {}", userName);
         waitForSecretReady(userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName,
+        TestUtils.waitFor("Waits for Kafka user creation " + userName,
                 Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KafkaUserResource.kafkaUserClient()
                     .inNamespace(kubeClient().getNamespace())
@@ -684,7 +684,7 @@ public class StUtils {
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
-        TestUtils.waitFor("Wait until increase observation level from " + observation + " for user " + userName,
+        TestUtils.waitFor("Wait until increase observation generation from " + observation + " for user " + userName,
                 Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
             () -> observation < KafkaUserResource.kafkaUserClient()
                     .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
