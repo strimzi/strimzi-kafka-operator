@@ -93,7 +93,7 @@ public class TopicOperatorTest {
             .withTlsSidecar(tlsSidecar)
             .build();
 
-    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson, null);
+    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson, null);
     private final TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -122,7 +122,7 @@ public class TopicOperatorTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, false, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson, null);
         TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
         assertThat(tc.getImage(), is("strimzi/operator:latest"));

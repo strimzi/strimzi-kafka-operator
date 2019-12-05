@@ -798,6 +798,18 @@ spec:
                       pattern: '[0-9]+[mMgG]?'
                     gcLoggingEnabled:
                       type: boolean
+                jmxOptions:
+                  type: object
+                  properties:
+                    authentication:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                          - password
+                      required:
+                      - type
                 resources:
                   type: object
                   properties:
@@ -1315,11 +1327,6 @@ spec:
                                 type: string
                               value:
                                 type: string
-                jmxMetrics:
-                  type: object
-                  properties:
-                    secure:
-                      type: boolean
                 version:
                   type: string
               required:

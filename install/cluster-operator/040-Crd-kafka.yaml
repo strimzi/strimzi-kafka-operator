@@ -799,12 +799,12 @@ spec:
                     authentication:
                       type: object
                       properties:
-                        password:
-                          type: boolean
+                        type:
+                          type: string
+                          enum:
+                          - password
                       required:
-                      - password
-                  required:
-                  - authentication
+                      - type
                 resources:
                   type: object
                   properties:

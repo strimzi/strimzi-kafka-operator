@@ -5,36 +5,34 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
-)
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+/*
+ * Configure the authentication protocol on the Kafka Broker's JMX port.
+ */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaJmxOptionsAuthentication implements UnknownPropertyPreserving, Serializable {
+@JsonSubTypes({
+        @JsonSubTypes.Type(name = KafkaJmxOptionsAuthenticationPassword.TYPE_PASSWORD, value = KafkaJmxOptionsAuthenticationPassword.class)
+})
+public abstract class KafkaJmxOptionsAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    private Boolean passwordProtected;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("When `password` is enabled, then it will secure the remote JMX port with a username and password.")
-    @JsonProperty(value = "password", required = true)
-    public Boolean getPasswordProtected() {
-        return passwordProtected;
-    }
-
-    public void setPasswordProtected(Boolean passwordProtected) {
-        this.passwordProtected = passwordProtected;
-    }
+    @Description("Authentication type. " +
+            "Currently the only supported types are `password`." +
+            "`password` type creates a username and protected port with no TLS.")
+    public abstract String getType();
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

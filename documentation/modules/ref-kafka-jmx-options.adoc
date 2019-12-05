@@ -1,3 +1,4 @@
+
 // Module included in the following assemblies:
 //
 // assembly-deployment-configuration-kafka.adoc
@@ -12,7 +13,8 @@ You can configure JMX options by using the `jmxOptions` property in the followin
 You can configure username and password protection for the JMX port that is opened on the Kafka brokers.
 
 .Securing the JMX Port
-To enable security for the JMX port, set the `password` parameter in the `authentication` field to `true`, for example:
+Currently the JMX port can only be secured via username and password.
+To enable security for the JMX port, set the `type` parameter in the `authentication` field to `password`, for example:
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -24,7 +26,7 @@ spec:
     # ...
     jmxOptions:
       authentication:
-        password: true
+        type: "password"
     # ...
   zookeeper:
     # ...
@@ -39,8 +41,7 @@ If the JMX port is secured then you can get the username and password by referen
 deployment of your pod.
 
 .Using an open JMX port
-You can also use the JMX port without security set the `password` parameter in the `authentication` field to `false`, for example:
-[source,yaml,subs=attributes+]
+To disable security for the JMX port, do not fill in the `authentication` field, for example:[source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -49,9 +50,7 @@ metadata:
 spec:
   kafka:
     # ...
-    jmxOptions:
-      authentication:
-        password: true
+    jmxOptions: {}
     # ...
   zookeeper:
     # ...

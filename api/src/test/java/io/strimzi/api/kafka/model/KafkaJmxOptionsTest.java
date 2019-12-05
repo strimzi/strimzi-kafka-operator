@@ -7,8 +7,11 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 
@@ -17,12 +20,21 @@ public class KafkaJmxOptionsTest {
     public void testAuthentication() {
         KafkaJmxOptions opts = TestUtils.fromJson("{" +
                 "\"authentication\": {" +
-                    "\"password\": true" +
+                    "\"type\": \"password\"" +
                     "}" +
                 "}", KafkaJmxOptions.class);
 
         assertThat(opts.getAuthentication(),  is(notNullValue()));
-        assertThat(opts.getAuthentication().getPasswordProtected(),  is(true));
+        assertThat(opts.getAuthentication().getType(),  is(KafkaJmxOptionsAuthenticationPassword.TYPE_PASSWORD));
     }
+
+    @Test
+    public void testNoJmxOpts() {
+        KafkaJmxOptions opts = TestUtils.fromJson("{}", KafkaJmxOptions.class);
+
+        assertThat(opts.getAuthentication(),  is(nullValue()));
+        assertThat(opts.getAdditionalProperties(),  is(Collections.emptyMap()));
+    }
+
 
 }

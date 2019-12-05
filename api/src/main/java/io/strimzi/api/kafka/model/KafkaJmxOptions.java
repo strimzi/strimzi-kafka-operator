@@ -19,15 +19,16 @@ import java.util.Map;
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
     private KafkaJmxOptionsAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("When `authentication` is enabled, then it will secure the remote JMX port with a username and password.")
-    @JsonProperty(value = "authentication", required = true)
+    @Description("Authentication configuration for connecting to the Kafka JMX port")
+    @JsonProperty("authentication")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaJmxOptionsAuthentication getAuthentication() {
         return authentication;
     }

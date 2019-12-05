@@ -418,7 +418,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (kafkaClusterSpec.getJmxOptions() != null) {
             result.setJmxEnabled(Boolean.TRUE);
-            result.setAuthenticatedJmx(kafkaClusterSpec.getJmxOptions().getAuthentication().getPasswordProtected());
+            AuthenticationUtils.configureKafkaJmxOptions(kafkaClusterSpec.getJmxOptions().getAuthentication(), result);
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());

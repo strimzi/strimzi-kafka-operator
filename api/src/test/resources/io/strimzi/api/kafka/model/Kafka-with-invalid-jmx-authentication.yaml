@@ -1,0 +1,23 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: strimzi-ephemeral
+spec:
+  kafka:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 500Gi
+    listeners:
+      plain: {}
+      tls: {}
+    jmxOptions:
+      authentication:
+        type: "not-right"
+  zookeeper:
+    replicas: 3
+    storage:
+      type: ephemeral
+  maintenanceTimeWindows:
+    - first window
+    - second window

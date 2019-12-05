@@ -28,8 +28,6 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.KafkaJmxOptions;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthentication;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -342,7 +340,6 @@ public class ResourceUtils {
     public static Kafka createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                            String image, int healthDelay, int healthTimeout,
                                            Map<String, Object> metricsCm,
-                                           boolean jmxSecure,
                                            Map<String, Object> kafkaConfiguration,
                                            Map<String, Object> zooConfiguration,
                                            Storage kafkaStorage,
@@ -376,12 +373,6 @@ public class ResourceUtils {
         if (metricsCm != null) {
             kafkaClusterSpec.setMetrics(metricsCm);
         }
-
-        KafkaJmxOptions jmxOptions = new KafkaJmxOptions();
-        KafkaJmxOptionsAuthentication authentication = new KafkaJmxOptionsAuthentication();
-        authentication.setPasswordProtected(jmxSecure);
-        jmxOptions.setAuthentication(authentication);
-        kafkaClusterSpec.setJmxOptions(jmxOptions);
 
         if (kafkaConfiguration != null) {
             kafkaClusterSpec.setConfig(kafkaConfiguration);
