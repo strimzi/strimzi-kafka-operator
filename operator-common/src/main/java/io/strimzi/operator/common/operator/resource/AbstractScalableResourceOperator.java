@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +67,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
      * The value will be null if the resource didn't exist (hence no scaling occurred).
      */
     public Future<Integer> scaleUp(String namespace, String name, int scaleTo) {
-        Future<Integer> fut = Future.future();
+        Promise<Integer> fut = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -85,7 +86,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
             false,
             fut
         );
-        return fut;
+        return fut.future();
     }
 
     protected abstract Integer currentScale(String namespace, String name);
@@ -102,7 +103,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
      * The value will be null if the resource didn't exist (hence no scaling occurred).
      */
     public Future<Integer> scaleDown(String namespace, String name, int scaleTo) {
-        Future<Integer> fut = Future.future();
+        Promise<Integer> fut = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -123,6 +124,6 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
             false,
             fut
         );
-        return fut;
+        return fut.future();
     }
 }

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,7 +90,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         final Future<Void> rollFuture;
         if (zkRoll) {
             // Find the leader
-            rollFuture = Future.future();
+            Promise<Void> promise = Promise.promise();
+            rollFuture = promise.future();
             Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
                 log.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));

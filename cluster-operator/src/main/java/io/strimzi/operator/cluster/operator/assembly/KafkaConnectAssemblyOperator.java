@@ -27,6 +27,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,7 +72,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect) {
-        Future<Void> createOrUpdateFuture = Future.future();
+        Promise<Void> createOrUpdateFuture = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaConnectCluster connect;
@@ -99,7 +100,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        Future<Void> chainFuture = Future.future();
+        Promise<Void> chainFuture = Promise.promise();
         connectServiceAccount(namespace, connect)
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -110,7 +111,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect))
-                .compose(i -> chainFuture.complete(), chainFuture)
+                .compose(i -> {
+                    chainFuture.complete();
+                    return chainFuture.future();
+                })
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
                     kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
@@ -128,7 +132,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             }
                         });
                 });
-        return createOrUpdateFuture;
+        return createOrUpdateFuture.future();
     }
 
     private Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {

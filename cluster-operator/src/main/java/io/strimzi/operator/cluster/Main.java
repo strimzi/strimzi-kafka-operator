@@ -21,6 +21,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,8 +110,8 @@ public class Main {
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
-            Future<String> fut = Future.future();
-            futures.add(fut);
+            Promise<String> fut = Promise.promise();
+            futures.add(fut.future());
             ClusterOperator operator = new ClusterOperator(namespace,
                     config.getReconciliationIntervalMs(),
                     client,
@@ -165,7 +166,7 @@ public class Main {
 
             }
 
-            Future<Void> returnFuture = Future.future();
+            Promise<Void> returnFuture = Promise.promise();
             CompositeFuture.all(futures).setHandler(res -> {
                 if (res.succeeded())    {
                     returnFuture.complete();
@@ -174,7 +175,7 @@ public class Main {
                 }
             });
 
-            return returnFuture;
+            return returnFuture.future();
         } else {
             return Future.succeededFuture();
         }

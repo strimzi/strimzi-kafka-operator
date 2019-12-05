@@ -78,7 +78,7 @@
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.0</okhttp.version>
         <okio.version>1.15.0</okio.version>
-        <vertx.version>3.7.1</vertx.version>
+        <vertx.version>3.8.4</vertx.version>
         <vertx-juni5.version>3.8.1</vertx-juni5.version>
         <log4j.version>2.11.1</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>

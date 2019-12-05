@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -146,7 +147,7 @@ class KafkaAvailability {
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        Future<Map<String, Config>> f = Future.future();
+        Promise<Map<String, Config>> f = Promise.promise();
         ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
             if (error != null) {
                 f.fail(error);
@@ -158,7 +159,7 @@ class KafkaAvailability {
                             entry -> entry.getValue())));
             }
         });
-        return f;
+        return f.future();
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
@@ -177,7 +178,7 @@ class KafkaAvailability {
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        Future<Collection<TopicDescription>> descFuture = Future.future();
+        Promise<Collection<TopicDescription>> descFuture = Promise.promise();
         ac.describeTopics(names).all()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
@@ -187,11 +188,11 @@ class KafkaAvailability {
                         descFuture.complete(tds.values());
                     }
                 });
-        return descFuture;
+        return descFuture.future();
     }
 
     protected Future<Set<String>> topicNames() {
-        Future<Set<String>> namesFuture = Future.future();
+        Promise<Set<String>> namesFuture = Promise.promise();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {
                     if (error != null) {
@@ -201,6 +202,6 @@ class KafkaAvailability {
                         namesFuture.complete(names);
                     }
                 });
-        return namesFuture;
+        return namesFuture.future();
     }
 }

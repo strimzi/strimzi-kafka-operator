@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -89,7 +90,7 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     public Future<T> updateStatusAsync(T resource) {
-        Future<T> blockingFuture = Future.future();
+        Promise<T> blockingFuture = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             try {
@@ -146,6 +147,6 @@ public class CrdOperator<C extends KubernetesClient,
             }
         }, true, blockingFuture);
 
-        return blockingFuture;
+        return blockingFuture.future();
     }
 }

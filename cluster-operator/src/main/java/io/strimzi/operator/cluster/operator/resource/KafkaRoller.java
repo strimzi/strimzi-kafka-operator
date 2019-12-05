@@ -14,6 +14,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -149,19 +150,19 @@ public class KafkaRoller {
         for (Integer podId: podIds) {
             futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
         }
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         CompositeFuture.join(futures).setHandler(ar -> {
             singleExecutor.shutdown();
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });
-        return result;
+        return result.future();
     }
 
     private static class RestartContext {
-        final Future<Void> future;
+        final Promise<Void> future;
         final BackOff backOff;
         RestartContext(Supplier<BackOff> backOffSupplier) {
-            future = Future.future();
+            future = Promise.promise();
             backOff = backOffSupplier.get();
             backOff.delayMs();
         }
@@ -219,7 +220,7 @@ public class KafkaRoller {
                 }
             }
         }, delay, unit);
-        return ctx.future;
+        return ctx.future.future();
     }
 
     /**
@@ -247,7 +248,7 @@ public class KafkaRoller {
                 try {
                     adminClient = adminClient(podId);
                     Integer controller = controller(podId, adminClient, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                    int stillRunning = podToContext.reduceValuesToInt(100, v -> v.future.isComplete() ? 0 : 1,
+                    int stillRunning = podToContext.reduceValuesToInt(100, v -> v.future.future().isComplete() ? 0 : 1,
                             0, Integer::sum);
                     if (controller == podId && stillRunning > 1) {
                         log.debug("Pod {} is controller and there are other pods to roll", podId);

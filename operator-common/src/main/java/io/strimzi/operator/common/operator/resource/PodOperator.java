@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 /**
@@ -60,7 +61,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
         long pollingIntervalMs = 1_000;
         String namespace = pod.getMetadata().getNamespace();
         String podName = pod.getMetadata().getName();
-        Future<Void> deleteFinished = Future.future();
+        Promise<Void> deleteFinished = Promise.promise();
         log.info("{}: Rolling pod {}", logContext, podName);
 
         // Determine generation of deleted pod
@@ -88,7 +89,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
             }
             deleteFinished.handle(deleteResult);
         });
-        return deleteFinished;
+        return deleteFinished.future();
     }
 
     private static String getPodUid(Pod resource) {

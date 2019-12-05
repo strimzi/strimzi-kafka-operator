@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +36,7 @@ public class ResourceSupport {
      * @return The Future
      */
     public Future<Void> closeOnWorkerThread(Closeable closeable) {
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         vertx.executeBlocking(
             blockingFuture -> {
                 try {
@@ -48,7 +49,7 @@ public class ResourceSupport {
             },
             true,
             result);
-        return result;
+        return result.future();
     }
 
     /**
@@ -97,23 +98,23 @@ public class ResourceSupport {
                                              long timeoutMs) {
 
         return new Watcher<T>() {
-            private final Future<Watch> watchFuture;
-            private final Future<U> doneFuture;
-            private final Future<U> resultFuture;
+            private final Promise<Watch> watchFuture;
+            private final Promise<U> doneFuture;
+            private final Promise<U> resultFuture;
             private final long timerId;
 
             /* init */
             {
-                this.watchFuture = Future.future();
-                this.doneFuture = Future.future();
-                this.resultFuture = Future.future();
+                this.watchFuture = Promise.promise();
+                this.doneFuture = Promise.promise();
+                this.resultFuture = Promise.promise();
                 this.timerId = vertx.setTimer(timeoutMs, ignored -> {
                     doneFuture.tryFail(new TimeoutException());
                 });
-                CompositeFuture.join(watchFuture, doneFuture).setHandler(joinResult -> {
+                CompositeFuture.join(watchFuture.future(), doneFuture.future()).setHandler(joinResult -> {
                     Future<Void> closeFuture;
-                    if (watchFuture.succeeded()) {
-                        closeFuture = closeOnWorkerThread(watchFuture.result());
+                    if (watchFuture.future().succeeded()) {
+                        closeFuture = closeOnWorkerThread(watchFuture.future().result());
                     } else {
                         closeFuture = Future.succeededFuture();
                     }
@@ -163,6 +164,6 @@ public class ResourceSupport {
 
             }
 
-        }.resultFuture;
+        }.resultFuture.future();
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.topic.zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import org.I0Itec.zkclient.IZkChildListener;
@@ -127,7 +128,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
-        Future<Zk> result = Future.future();
+        Promise<Zk> result = Promise.promise();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -147,7 +148,7 @@ public class ZkImpl implements Zk {
                     result.fail(ar.cause());
                 }
             });
-        return result;
+        return result.future();
     }
 
     @Override
@@ -207,7 +208,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
-        Future<Zk> result = Future.future();
+        Promise<Zk> result = Promise.promise();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -227,7 +228,7 @@ public class ZkImpl implements Zk {
                     result.fail(ar.cause());
                 }
             });
-        return result;
+        return result.future();
     }
 
     @Override

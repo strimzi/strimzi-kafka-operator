@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +45,7 @@ public class K8sImpl implements K8s {
 
     @Override
     public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
-        Future<KafkaTopic> handler = Future.future();
+        Promise<KafkaTopic> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).create(topicResource);
@@ -57,12 +58,12 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
-        return handler;
+        return handler.future();
     }
 
     @Override
     public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
-        Future<KafkaTopic> handler = Future.future();
+        Promise<KafkaTopic> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
                 KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
@@ -75,7 +76,7 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
-        return handler;
+        return handler.future();
     }
 
     @Override
@@ -85,7 +86,7 @@ public class K8sImpl implements K8s {
 
     @Override
     public Future<Void> deleteResource(ResourceName resourceName) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
@@ -104,7 +105,7 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
-        return handler;
+        return handler.future();
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
@@ -126,7 +127,7 @@ public class K8sImpl implements K8s {
      */
     @Override
     public Future<Void> createEvent(Event event) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
                 try {
@@ -140,6 +141,6 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
-        return handler;
+        return handler.future();
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.common;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +24,7 @@ public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
 
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
-        Future<T> result = Future.future();
+        Promise<T> result = Promise.promise();
         vertx.executeBlocking(
             future -> {
                 try {
@@ -33,7 +34,7 @@ public class Util {
                 }
             }, result
         );
-        return result;
+        return result.future();
     }
 
     /**
@@ -45,7 +46,7 @@ public class Util {
      * @return A future that completes when the given {@code ready} indicates readiness.
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
-        Future<Void> fut = Future.future();
+        Promise<Void> fut = Promise.promise();
         LOGGER.debug("Waiting for {} to get ready", logContext);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
@@ -89,7 +90,7 @@ public class Util {
         // Call the handler ourselves the first time
         handler.handle(null);
 
-        return fut;
+        return fut.future();
     }
 
     /**

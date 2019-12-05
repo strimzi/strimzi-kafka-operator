@@ -28,6 +28,7 @@ import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -118,7 +119,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
     }
 
     private <T> Future<T> invokeAsync(Supplier<T> getter) {
-        Future<T> result = Future.future();
+        Promise<T> result = Promise.promise();
         vertx.createSharedWorkerExecutor("zookeeper-ops-pool").executeBlocking(future -> {
             try {
                 future.complete(getter.get());
@@ -128,7 +129,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
         },
             true,
             result);
-        return result;
+        return result.future();
     }
 
     /**
@@ -141,12 +142,12 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      */
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
         Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
         Secret userSecret = secretOperations.get(reconciliation.namespace(), KafkaUserModel.getSecretName(reconciliation.name()));
 
-        Future<Void> createOrUpdateFuture = Future.future();
+        Promise<Void> createOrUpdateFuture = Promise.promise();
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
@@ -157,7 +158,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
             StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
             updateStatus(resource, reconciliation, userStatus)
                     .setHandler(result -> handler.handle(Future.failedFuture(e)));
-            return handler;
+            return handler.future();
         }
 
         log.debug("{}: Updating User {} in namespace {}", reconciliation, userName, namespace);
@@ -205,10 +206,10 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                         } else {
                             createOrUpdateFuture.fail(statusResult.cause());
                         }
-                        handler.handle(createOrUpdateFuture);
+                        handler.handle(createOrUpdateFuture.future());
                     });
                 });
-        return handler;
+        return handler.future();
     }
 
     protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
@@ -231,7 +232,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      * @return
      */
     Future<Void> updateStatus(KafkaUser kafkaUserAssembly, Reconciliation reconciliation, KafkaUserStatus desiredStatus) {
-        Future<Void> updateStatusFuture = Future.future();
+        Promise<Void> updateStatusFuture = Promise.promise();
 
         resourceOperator.getAsync(kafkaUserAssembly.getMetadata().getNamespace(), kafkaUserAssembly.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -273,7 +274,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
             }
         });
 
-        return updateStatusFuture;
+        return updateStatusFuture.future();
     }
 
     /**

@@ -51,6 +51,7 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -320,7 +321,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 Reconciliation reconciliation,
                                 S desiredStatus,
                                 BiFunction<T, S, T> copyWithStatus) {
-        Future<Void> updateStatusFuture = Future.future();
+        Promise<Void> updateStatusFuture = Promise.promise();
 
         resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -364,6 +365,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
         });
 
-        return updateStatusFuture;
+        return updateStatusFuture.future();
     }
 }

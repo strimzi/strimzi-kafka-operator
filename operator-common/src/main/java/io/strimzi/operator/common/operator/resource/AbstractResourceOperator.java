@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,7 +90,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
         }
 
-        Future<ReconcileResult<T>> fut = Future.future();
+        Promise<ReconcileResult<T>> fut = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 T current = operation().inNamespace(namespace).withName(name).get();
@@ -116,7 +117,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             false,
             fut
         );
-        return fut;
+        return fut.future();
     }
 
     /**
@@ -216,14 +217,14 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * @return A Future for the result.
      */
     public Future<T> getAsync(String namespace, String name) {
-        Future<T> result = Future.future();
+        Promise<T> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 T resource = get(namespace, name);
                 future.complete(resource);
             }, true, result
         );
-        return result;
+        return result.future();
     }
 
     /**
@@ -282,7 +283,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * @return A Future with a list of matching resources.
      */
     public Future<List<T>> listAsync(String namespace, Labels selector) {
-        Future<List<T>> result = Future.future();
+        Promise<List<T>> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 List<T> resources;
@@ -296,12 +297,12 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 future.complete(resources);
             }, true, result
         );
-        return result;
+        return result.future();
     }
 
     @SuppressWarnings("unchecked")
     public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
-        Future<List<T>> result = Future.future();
+        Promise<List<T>> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> operation;
@@ -316,7 +317,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 future.complete(operation.list().getItems());
             }, true, result
         );
-        return result;
+        return result.future();
     }
 
     /**

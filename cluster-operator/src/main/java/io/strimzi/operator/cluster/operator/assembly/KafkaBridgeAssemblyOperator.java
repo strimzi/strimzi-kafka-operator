@@ -30,6 +30,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +70,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
-        Future<Void> createOrUpdateFuture = Future.future();
+        Promise<Void> createOrUpdateFuture = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaBridgeCluster bridge;
@@ -93,7 +94,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation, name, namespace);
-        Future<Void> chainFuture = Future.future();
+        Promise<Void> chainFuture = Promise.promise();
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
@@ -103,7 +104,10 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .compose(i -> chainFuture.complete(), chainFuture)
+            .compose(i -> {
+                chainFuture.complete();
+                return chainFuture.future();
+            })
             .setHandler(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
@@ -124,7 +128,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                     }
                 });
             });
-        return createOrUpdateFuture;
+        return createOrUpdateFuture.future();
     }
 
     /**
@@ -138,7 +142,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      * @return
      */
     Future<Void> updateStatus(KafkaBridge kafkaBridgeAssembly, Reconciliation reconciliation, KafkaBridgeStatus desiredStatus) {
-        Future<Void> updateStatusFuture = Future.future();
+        Promise<Void> updateStatusFuture = Promise.promise();
 
         resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -174,7 +178,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             }
         });
 
-        return updateStatusFuture;
+        return updateStatusFuture.future();
     }
 
     Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {

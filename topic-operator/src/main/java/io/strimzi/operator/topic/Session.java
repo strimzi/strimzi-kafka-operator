@@ -14,6 +14,7 @@ import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -77,7 +78,7 @@ public class Session extends AbstractVerticle {
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
-            Future<Void> f = Future.future();
+            Promise<Void> f = Promise.promise();
             Handler<Long> longHandler = new Handler<Long>() {
                 @Override
                 public void handle(Long inflightTimerId) {
@@ -94,7 +95,7 @@ public class Session extends AbstractVerticle {
                 }
             };
             longHandler.handle(null);
-            f.compose(ignored -> {
+            f.future().compose(ignored -> {
                 LOGGER.debug("Stopping kafka {}", kafka);
                 kafka.stop();
 
@@ -154,7 +155,7 @@ public class Session extends AbstractVerticle {
                 this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
             zkResult -> {
                 if (zkResult.failed()) {
-                    startupFuture.fail(zkResult.cause());
+                    ((Promise<Void>) startupFuture).fail(zkResult.cause());
                     return;
                 }
                 this.zk = zkResult.result();
@@ -174,9 +175,9 @@ public class Session extends AbstractVerticle {
                 LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
                 topicsWatcher.start(zk);
 
-                Future<Void> f = Future.future();
-                Future<Void> initReconcileFuture = Future.future();
-                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcileFuture);
+                Promise<Void> f = Promise.promise();
+                Promise<Void> initReconcileFuture = Promise.promise();
+                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcileFuture.future());
                 Thread resourceThread = new Thread(() -> {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
@@ -215,7 +216,7 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                f.setHandler(startupFuture);
+                f.future().setHandler(startupFuture);
                 LOGGER.info("Started");
             });
     }

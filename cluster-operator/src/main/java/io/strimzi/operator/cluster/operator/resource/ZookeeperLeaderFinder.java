@@ -15,6 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClientOptions;
@@ -155,7 +156,7 @@ public class ZookeeperLeaderFinder {
     }
     private Future<Integer> zookeeperLeader(String cluster, String namespace, List<Pod> pods,
                                             NetClientOptions netClientOptions) {
-        Future<Integer> result = Future.future();
+        Promise<Integer> result = Promise.promise();
         BackOff backOff = backOffSupplier.get();
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -198,7 +199,7 @@ public class ZookeeperLeaderFinder {
             }
         };
         handler.handle(null);
-        return result;
+        return result.future();
     }
 
     /**
@@ -240,7 +241,7 @@ public class ZookeeperLeaderFinder {
      */
     protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
 
-        Future<Boolean> future = Future.future();
+        Promise<Boolean> future = Promise.promise();
         String host = host(pod);
         int port = port(pod);
         log.debug("Connecting to zookeeper on {}:{}", host, port);
@@ -286,7 +287,7 @@ public class ZookeeperLeaderFinder {
                 }
 
             });
-        return future.recover(error -> {
+        return future.future().recover(error -> {
             log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });

@@ -8,6 +8,7 @@ import io.strimzi.operator.common.Util;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
@@ -218,12 +219,12 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public Future<Void> deleteTopic(TopicName topicName) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         LOGGER.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         queueWork(new UniWork<>("deleteTopic", future, handler));
-        return handler.compose(ig ->
+        return handler.future().compose(ig ->
                 Util.waitFor(vertx, "deleted sync " + topicName, Long.MAX_VALUE, 1000, () -> {
                     try {
                         return adminClient.describeTopics(Collections.singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
@@ -242,11 +243,11 @@ public class KafkaImpl implements Kafka {
     @SuppressWarnings("deprecation")
     @Override
     public Future<Void> updateTopicConfig(Topic topic) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>("updateTopicConfig", future, handler));
-        return handler;
+        return handler.future();
     }
 
     /**
@@ -255,7 +256,7 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public Future<TopicMetadata> topicMetadata(TopicName topicName) {
-        Future<TopicMetadata> handler = Future.future();
+        Promise<TopicMetadata> handler = Promise.promise();
         LOGGER.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
@@ -265,12 +266,12 @@ public class KafkaImpl implements Kafka {
         queueWork(new MetadataWork(descriptionFuture,
             configFuture,
             result -> handler.handle(result)));
-        return handler;
+        return handler.future();
     }
 
     @Override
     public Future<Set<String>> listTopics() {
-        Future<Set<String>> handler = Future.future();
+        Promise<Set<String>> handler = Promise.promise();
         LOGGER.debug("Listing topics");
 
         ListTopicsOptions listOptions = new ListTopicsOptions();
@@ -278,18 +279,18 @@ public class KafkaImpl implements Kafka {
 
         ListTopicsResult future = adminClient.listTopics(listOptions);
         queueWork(new UniWork<>("listTopics", future.names(), handler));
-        return handler;
+        return handler.future();
     }
 
 
     @Override
     public Future<Void> increasePartitions(Topic topic) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
         final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
         KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName().toString());
         queueWork(new UniWork<>("increasePartitions", future, handler));
-        return handler;
+        return handler.future();
     }
 
     /**
@@ -298,14 +299,14 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public Future<Void> createTopic(Topic topic) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
 
         LOGGER.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
         queueWork(new UniWork<>("createTopic", future, handler));
-        return handler;
+        return handler.future();
     }
 
 }

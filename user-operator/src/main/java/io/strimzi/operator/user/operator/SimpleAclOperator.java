@@ -10,6 +10,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import kafka.security.auth.Acl;
 import kafka.security.auth.Resource;
@@ -63,7 +64,7 @@ public class SimpleAclOperator {
      * @return
      */
     Future<ReconcileResult<Set<SimpleAclRule>>> reconcile(String username, Set<SimpleAclRule> desired) {
-        Future<ReconcileResult<Set<SimpleAclRule>>> fut = Future.future();
+        Promise<ReconcileResult<Set<SimpleAclRule>>> fut = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 Set<SimpleAclRule> current;
@@ -97,7 +98,7 @@ public class SimpleAclOperator {
             false,
             fut
         );
-        return fut;
+        return fut.future();
     }
 
     /**
@@ -135,7 +136,7 @@ public class SimpleAclOperator {
         updates.add(internalDelete(username, toBeDeleted));
         updates.add(internalCreate(username, toBeAdded));
 
-        Future<ReconcileResult<Set<SimpleAclRule>>> fut = Future.future();
+        Promise<ReconcileResult<Set<SimpleAclRule>>> fut = Promise.promise();
 
         CompositeFuture.all(updates).setHandler(res -> {
             if (res.succeeded())    {
@@ -146,7 +147,7 @@ public class SimpleAclOperator {
             }
         });
 
-        return fut;
+        return fut.future();
     }
 
     protected HashMap<Resource, Set<Acl>> getResourceAclsMap(String username, Set<SimpleAclRule> aclRules) {
