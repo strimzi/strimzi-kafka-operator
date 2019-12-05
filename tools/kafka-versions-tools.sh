@@ -9,6 +9,7 @@ function get_default_kafka_version {
 
     finished=0
     counter=0
+    default_kafka_version="null"
     while [ $finished -lt 1 ] 
     do
         version="$(yq read $VERSIONS_FILE [${counter}].version)"
@@ -19,8 +20,16 @@ function get_default_kafka_version {
         else
             if [ "$(yq read $VERSIONS_FILE [${counter}].default)" = "true" ]
             then
-                default_kafka_version=$version
-                finished=1
+                if [ "$default_kafka_version" = "null" ]
+                then
+                    default_kafka_version=$version
+                    finished=1
+                else
+                    # We have multiple defaults so there is an error in the versions file
+                    >&2 echo "ERROR: There are multiple Kafka versions set as default"
+                    unset default_kafka_version
+                    exit 1
+                fi
             fi
             counter=$((counter+1))
         fi
