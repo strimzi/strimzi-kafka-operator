@@ -17,11 +17,15 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaConnectS2IResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.io.File;
 import java.util.HashMap;
@@ -47,11 +51,11 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testDeployS2IWithMongoDBPlugin() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
-        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
@@ -76,7 +80,7 @@ class ConnectS2IST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -97,11 +101,11 @@ class ConnectS2IST extends AbstractST {
         final String userName = "user-example-one";
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()
@@ -125,7 +129,7 @@ class ConnectS2IST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
 
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
@@ -147,13 +151,13 @@ class ConnectS2IST extends AbstractST {
     @Test
     void testCustomAndUpdatedValues() {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-3";
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
 
-        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
@@ -195,14 +199,14 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testJvmAndResources() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-4";
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        KafkaConnectS2I kafkaConnectS2i = testMethodResources().kafkaConnectS2IWithoutWait(testMethodResources().defaultKafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2I kafkaConnectS2i = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -225,7 +229,7 @@ class ConnectS2IST extends AbstractST {
                     .withServer(true)
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
-            .endSpec().build());
+            .endSpec().done());
 
         StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
 
@@ -257,28 +261,16 @@ class ConnectS2IST extends AbstractST {
         assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
-        testMethodResources().deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
-    }
-
-
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() {
-        deleteTestMethodResources();
+        KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2i);
     }
 
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT,  Constants.RECONCILIATION_INTERVAL).done();
     }
 }

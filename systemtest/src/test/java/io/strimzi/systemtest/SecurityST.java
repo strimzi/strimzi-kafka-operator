@@ -23,9 +23,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -76,7 +83,7 @@ class SecurityST extends MessagingBaseST {
     @Test
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 2)
                 .editSpec().editZookeeper().withReplicas(2).endZookeeper().endSpec().done();
         String commandForKafkaBootstrap = "echo -n | openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts" +
                 " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
@@ -185,7 +192,7 @@ class SecurityST extends MessagingBaseST {
             boolean eoShouldRoll) throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
-        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
@@ -239,7 +246,7 @@ class SecurityST extends MessagingBaseST {
 
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, bobUserName).done();
         StUtils.waitForSecretReady(bobUserName);
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE, CLUSTER_NAME);
@@ -301,7 +308,7 @@ class SecurityST extends MessagingBaseST {
                                             boolean eoShouldRoll) throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
-        testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret(aliceUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -370,7 +377,7 @@ class SecurityST extends MessagingBaseST {
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret(bobUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -420,7 +427,7 @@ class SecurityST extends MessagingBaseST {
 
     private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -456,7 +463,7 @@ class SecurityST extends MessagingBaseST {
         // 2. Now create a cluster
         createClusterWithExternalRoute();
         String userName = "alice";
-        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         // Check if user exists
         StUtils.waitForSecretReady(userName);
 
@@ -555,7 +562,7 @@ class SecurityST extends MessagingBaseST {
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
-        testMethodResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -597,7 +604,7 @@ class SecurityST extends MessagingBaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testCertRegeneratedAfterInternalCAisDeleted() throws Exception {
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -611,7 +618,7 @@ class SecurityST extends MessagingBaseST {
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         String userName = "user-example";
-        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
 
         List<Secret> secrets = kubeClient().listSecrets().stream()
@@ -652,7 +659,7 @@ class SecurityST extends MessagingBaseST {
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -677,20 +684,20 @@ class SecurityST extends MessagingBaseST {
         String topic1 = "topic-example-1";
 
         String userName = "user-example";
-        KafkaUser kafkaUser = testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().topic(CLUSTER_NAME, topic0).done();
-        testMethodResources().topic(CLUSTER_NAME, topic1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
 
-        testMethodResources().deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
         availabilityTest(50, CLUSTER_NAME, false, topic0, kafkaUser, kafkaClientsPodName);
 
-        testMethodResources().deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-new", kafkaUser).done();
 
         String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
 
@@ -714,7 +721,7 @@ class SecurityST extends MessagingBaseST {
         Map<String, String> matchLabelsForTls = new HashMap<>();
         matchLabelsForTls.put("app", CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -735,21 +742,21 @@ class SecurityST extends MessagingBaseST {
 
         String topic0 = "topic-example-0";
         String topic1 = "topic-example-1";
-        testMethodResources().topic(CLUSTER_NAME, topic0).done();
-        testMethodResources().topic(CLUSTER_NAME, topic1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
 
         String userName = "user-example";
-        KafkaUser kafkaUser = testMethodResources().scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that {} pod is able to exchange messages", kafkaClientsPodName);
         availabilityTest(50, CLUSTER_NAME, true, topic0, kafkaUser, kafkaClientsPodName);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-kafka-clients-new", kafkaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-kafka-clients-new", kafkaUser).done();
 
         String kafkaClientsNewPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(1).getMetadata().getName();
 
@@ -759,14 +766,14 @@ class SecurityST extends MessagingBaseST {
 
     @Test
     void testTlsHostnameVerificationWithKafkaConnect() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
         LOGGER.info("Getting IP of the bootstrap service");
 
         String ipOfBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME)).getSpec().getClusterIP();
 
         LOGGER.info("Kafka connect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnect kafkaConnect = testMethodResources().kafkaConnectWithoutWait(testMethodResources().defaultKafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -779,7 +786,7 @@ class SecurityST extends MessagingBaseST {
                     .endTls()
                     .withBootstrapServers(ipOfBootstrapService + ":9093")
                 .endSpec()
-                .build());
+                .done());
 
         StUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
@@ -797,14 +804,14 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Kafka connect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         TestUtils.waitFor("Waiting till kafka connect status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus()
+            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus()
                         .getConditions().get(0).getType().equals("Ready"));
 
-        KafkaConnectStatus kafkaStatus = testMethodResources().kafkaConnect().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaConnectStatus kafkaStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat("Kafka connect status should be " + "Ready", kafkaStatus.getConditions().get(0).getType(), is("Ready"));
 
-        testMethodResources().deleteKafkaConnectWithoutWait(kafkaConnect);
+        KafkaConnectResource.deleteKafkaConnectWithoutWait(kafkaConnect);
     }
 
     @Test
@@ -812,8 +819,8 @@ class SecurityST extends MessagingBaseST {
         String sourceKafkaCluster = CLUSTER_NAME + "-source";
         String targetKafkaCluster = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(sourceKafkaCluster, 1, 1).done();
-        testMethodResources().kafkaEphemeral(targetKafkaCluster, 1, 1).done();
+        KafkaResource.kafkaEphemeral(sourceKafkaCluster, 1, 1).done();
+        KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1).done();
 
         LOGGER.info("Getting IP of the source bootstrap service for consumer");
         String ipOfSourceBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
@@ -824,7 +831,7 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("Mirror maker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        KafkaMirrorMaker kafkaMirrorMaker = testMethodResources().kafkaMirrorMakerWithoutWait(testMethodResources().defaultMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
+        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
                 "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
                 .editMetadata()
                     .addToLabels("type", "kafka-mirror-maker")
@@ -849,7 +856,7 @@ class SecurityST extends MessagingBaseST {
                         .withBootstrapServers(ipOfTargetBootstrapService + ":9093")
                     .endProducer()
                 .endSpec()
-                .build());
+                .done());
 
         StUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 
@@ -870,15 +877,15 @@ class SecurityST extends MessagingBaseST {
         });
 
         TestUtils.waitFor("Waiting till kafka mirror maker status will be 'Ready'", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("Ready"));
+            () -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0).getType().equals("Ready"));
 
-        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = testMethodResources().kafkaMirrorMaker().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat("Kafka mirror maker status should be " + "Ready", kafkaMirrorMakerStatus.getConditions().get(0).getType(), is("Ready"));
 
         LOGGER.info("Mirror maker connect to the kafka broker...");
 
-        testMethodResources().deleteMirrorMakerWithoutWait(kafkaMirrorMaker);
+        KafkaMirrorMakerResource.deleteKafkaMirrorMakerWithoutWait(kafkaMirrorMaker);
     }
 
     @Test
@@ -889,7 +896,7 @@ class SecurityST extends MessagingBaseST {
         final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME,  3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-ephemeral")
             .endMetadata()
@@ -907,9 +914,9 @@ class SecurityST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        testMethodResources().tlsUser(CLUSTER_NAME, kafkaUserWrite)
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserWrite)
                 .editSpec()
                     .withNewKafkaUserAuthorizationSimple()
                         .addNewAcl()
@@ -936,7 +943,7 @@ class SecurityST extends MessagingBaseST {
 
         assertThrows(ExecutionException.class, () -> receiveMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserWrite, consumerGroupName));
 
-        testMethodResources().tlsUser(CLUSTER_NAME, kafkaUserRead)
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
                 .editSpec()
                     .withNewKafkaUserAuthorizationSimple()
                         .addNewAcl()
@@ -969,26 +976,13 @@ class SecurityST extends MessagingBaseST {
         assertThrows(ExecutionException.class, () -> sendMessagesExternalTls(NAMESPACE, topicName, numberOfMessages, kafkaUserRead));
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
-    }
-
 }

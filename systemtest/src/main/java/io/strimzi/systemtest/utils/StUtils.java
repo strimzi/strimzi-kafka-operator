@@ -26,6 +26,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import resources.crd.KafkaUserResource;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -482,8 +483,8 @@ public class StUtils {
                 if (kubeClient().getDeployment(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("Deployment {} is not deleted!", name);
-                    kubeClient().deleteDeployment(name);
+                    LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("deployment", name);
                     return false;
                 }
             });
@@ -540,7 +541,7 @@ public class StUtils {
 
     public static void waitForConnectorReady(String name) {
         LOGGER.info("Waiting for Kafka Connector {}", name);
-        TestUtils.waitFor("Test " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor(" Kafka Connector " + name + " is ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> Crds.kafkaConnectorOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(name).get().getStatus().getConditions().get(0).getType().equals("Ready"));
         LOGGER.info("Kafka Connector {} is ready", name);
     }
@@ -556,8 +557,8 @@ public class StUtils {
                 if (kubeClient().getDeploymentConfig(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("Deployment {} is not deleted!", name);
-                    kubeClient().deleteDeploymentConfig(name);
+                    LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("deploymentconfig", name);
                     return false;
                 }
             });
@@ -575,8 +576,8 @@ public class StUtils {
                 if (kubeClient().getStatefulSet(name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("StatefulSet {} is not deleted!", name);
-                    kubeClient().deleteStatefulSet(name);
+                    LOGGER.warn("StatefulSet {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    cmdKubeClient().deleteByName("statefulset", name);
                     return false;
                 }
             });
@@ -606,8 +607,8 @@ public class StUtils {
                     return true;
                 } else {
                     String rsName = kubeClient().getReplicaSetNameByPrefix(name);
-                    LOGGER.warn("ReplicaSet {} is not deleted yet!", rsName);
-                    kubeClient().deleteReplicaSet(rsName);
+                    LOGGER.warn("ReplicaSet {} is not deleted yet! Triggering force delete by cmd client!", rsName);
+                    cmdKubeClient().deleteByName("replicaset", rsName);
                     return false;
                 }
             });
@@ -643,12 +644,50 @@ public class StUtils {
         LOGGER.info("Kafka user secret {} created", secretName);
     }
 
+    public static void waitForClusterSecretsDeletion(String clusterName) {
+        LOGGER.info("Waiting for Kafka cluster {} secrets deletion", clusterName);
+        TestUtils.waitFor("Expected secrets for Kafka cluster " + clusterName + " will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            () -> {
+                List<Secret> secretList = kubeClient().listSecrets("strimzi.io/cluster", clusterName);
+                if (secretList.isEmpty()) {
+                    return true;
+                } else {
+                    for (Secret secret : secretList) {
+                        LOGGER.warn("Secret {} is not deleted yet! Triggering force delete by cmd client!", secret.getMetadata().getName());
+                        cmdKubeClient().deleteByName("secret", secret.getMetadata().getName());
+                    }
+                    return false;
+                }
+            });
+        LOGGER.info("Kafka cluster {} secrets deleted", clusterName);
+    }
+
+    public static void waitForKafkaUserCreation(String userName) {
+        LOGGER.info("Waiting for Kafka user creation {}", userName);
+        waitForSecretReady(userName);
+        TestUtils.waitFor("Waits for Kafka user creation " + userName,
+                Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> KafkaUserResource.kafkaUserClient()
+                    .inNamespace(kubeClient().getNamespace())
+                    .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready")
+        );
+        LOGGER.info("Kafka user {} created", userName);
+    }
+
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName,
+                Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
         LOGGER.info("Kafka user {} deleted", userName);
+    }
+
+    public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
+        TestUtils.waitFor("Wait until increase observation generation from " + observation + " for user " + userName,
+                Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            () -> observation < KafkaUserResource.kafkaUserClient()
+                    .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
     public static void waitForKafkaUserCreationError(String userName, String eoPodName) {

@@ -21,12 +21,16 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -57,20 +61,20 @@ public class MirrorMakerST extends MessagingBaseST {
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // Deploy source kafka
-        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
         // Deploy target kafka
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Deploy Topic
-        testMethodResources().topic(kafkaClusterSourceName, topicSourceName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName);
         availabilityTest(messagesCount, kafkaClusterTargetName);
 
         // Deploy Mirror Maker
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
                 editSpec()
                 .withResources(new ResourceRequirementsBuilder()
                         .addToLimits("memory", new Quantity("400M"))
@@ -126,37 +130,37 @@ public class MirrorMakerST extends MessagingBaseST {
         listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterSourceName, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withTls(listenerTls)
-                .withNewTls()
-                .endTls()
-                .endListeners()
+                    .withNewListeners()
+                        .withTls(listenerTls)
+                            .withNewTls()
+                        .endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().build()).done();
+            .endSpec().done();
 
         // Deploy target kafka with tls listener and mutual tls auth
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterTargetName, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withTls(listenerTls)
-                .withNewTls()
-                .endTls()
-                .endListeners()
+                    .withNewListeners()
+                        .withTls(listenerTls)
+                            .withNewTls()
+                        .endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().build()).done();
+            .endSpec().done();
 
         // Deploy topic
-        testMethodResources().topic(kafkaClusterSourceName, topicSourceName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName).done();
 
         // Create Kafka user
-        KafkaUser userSource = testMethodResources().tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
+        KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
         StUtils.waitForSecretReady(kafkaSourceUserName);
 
-        KafkaUser userTarget = testMethodResources().tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
+        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
         StUtils.waitForSecretReady(kafkaUserTargetName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -169,14 +173,14 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
         availabilityTest(messagesCount, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
                 .editSpec()
                 .editConsumer()
                 .withNewTls()
@@ -214,31 +218,31 @@ public class MirrorMakerST extends MessagingBaseST {
         String kafkaUserTarget = "my-user-target";
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterSourceName, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                .endListeners()
+                    .withNewListeners()
+                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().build()).done();
+            .endSpec().done();
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        testMethodResources().kafka(testMethodResources().defaultKafka(kafkaClusterTargetName, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                .endListeners()
+                    .withNewListeners()
+                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().build()).done();
+            .endSpec().done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = testMethodResources().scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
+        KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
         StUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = testMethodResources().scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
+        KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
         StUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
@@ -262,37 +266,37 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
         availabilityTest(messagesCount, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with TLS and ScramSha512
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
-                .editSpec()
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+            .editSpec()
                 .editConsumer()
-                .withNewKafkaClientAuthenticationScramSha512()
-                .withUsername(kafkaUserSource)
-                .withPasswordSecret(passwordSecretSource)
-                .endKafkaClientAuthenticationScramSha512()
-                .withNewTls()
-                .withTrustedCertificates(certSecretSource)
-                .endTls()
+                    .withNewKafkaClientAuthenticationScramSha512()
+                        .withUsername(kafkaUserSource)
+                        .withPasswordSecret(passwordSecretSource)
+                    .endKafkaClientAuthenticationScramSha512()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretSource)
+                    .endTls()
                 .endConsumer()
                 .editProducer()
-                .withNewKafkaClientAuthenticationScramSha512()
-                .withUsername(kafkaUserTarget)
-                .withPasswordSecret(passwordSecretTarget)
-                .endKafkaClientAuthenticationScramSha512()
-                .withNewTls()
-                .withTrustedCertificates(certSecretTarget)
-                .endTls()
+                    .withNewKafkaClientAuthenticationScramSha512()
+                        .withUsername(kafkaUserTarget)
+                        .withPasswordSecret(passwordSecretTarget)
+                    .endKafkaClientAuthenticationScramSha512()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretTarget)
+                    .endTls()
                 .endProducer()
-                .endSpec().done();
+            .endSpec().done();
 
         // Deploy topic
-        testMethodResources().topic(kafkaClusterSourceName, topicName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
 
         TimeMeasuringSystem.stopOperation(getOperationID());
 
@@ -317,24 +321,24 @@ public class MirrorMakerST extends MessagingBaseST {
         String topicNotInWhitelist = "topic-example-2";
 
         LOGGER.info("Creating kafka source cluster {}", kafkaClusterSourceName);
-        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
 
         LOGGER.info("Creating kafka target cluster {}", kafkaClusterTargetName);
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
 
-        testMethodResources().topic(kafkaClusterSourceName, topicName).done();
-        testMethodResources().topic(kafkaClusterSourceName, topicNotInWhitelist).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, topicNotInWhitelist).done();
 
         StUtils.waitForKafkaTopicCreation(topicName);
         StUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, kafkaClusterSourceName);
         availabilityTest(messagesCount, kafkaClusterTargetName);
 
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
                     .withNewWhitelist(topicName)
                 .endSpec()
@@ -359,7 +363,7 @@ public class MirrorMakerST extends MessagingBaseST {
 
     @Test
     void testCustomAndUpdatedValues() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .withNewEntityOperator()
                 .endEntityOperator()
@@ -398,35 +402,35 @@ public class MirrorMakerST extends MessagingBaseST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
-                .editSpec()
-                    .editProducer()
-                        .withConfig(producerConfig)
-                    .endProducer()
-                    .editConsumer()
-                        .withConfig(consumerConfig)
-                    .endConsumer()
-                    .withNewTemplate()
-                        .withNewMirrorMakerContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endMirrorMakerContainer()
-                    .endTemplate()
-                    .withNewReadinessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endReadinessProbe()
-                    .withNewLivenessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endLivenessProbe()
-                .endSpec()
-                .done();
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
+            .editSpec()
+                .editProducer()
+                    .withConfig(producerConfig)
+                .endProducer()
+                .editConsumer()
+                    .withConfig(consumerConfig)
+                .endConsumer()
+                .withNewTemplate()
+                    .withNewMirrorMakerContainer()
+                        .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                    .endMirrorMakerContainer()
+                .endTemplate()
+                .withNewReadinessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endReadinessProbe()
+                .withNewLivenessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endLivenessProbe()
+            .endSpec()
+            .done();
 
         Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
 
@@ -465,42 +469,23 @@ public class MirrorMakerST extends MessagingBaseST {
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", updatedProducerConfig);
         checkComponentConfiguration(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", updatedConsumerConfig);
     }
-
-    @BeforeEach
-    void createTestResources() throws Exception {
-        createTestMethodResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
-    }
-
+    
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE)
-                .editSpec()
-                    .editTemplate()
-                        .editSpec()
-                            .editFirstContainer()
-                                .addToEnv(new EnvVarBuilder().withName("TEST_ENV_3").withValue("test.value").build())
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec().done();
+        KubernetesResource.clusterOperator(NAMESPACE)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(new EnvVarBuilder().withName("TEST_ENV_3").withValue("test.value").build())
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec().done();
     }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources().deleteResources();
-        teardownEnvForOperator();
-    }
-
 }

@@ -18,10 +18,13 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaConnectResource;
 
 import java.util.concurrent.ExecutionException;
 
-import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -101,7 +104,7 @@ public class OauthTlsST extends OauthBaseST {
         deployProducerWithOauthTls();
         deployConsumerWithOauthTls(TOPIC_NAME);
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                 .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -149,7 +152,7 @@ public class OauthTlsST extends OauthBaseST {
         deployProducerWithOauthTls();
         deployConsumerWithOauthTls(TOPIC_NAME);
 
-        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, HTTP_BRIDGE_DEFAULT_PORT)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
                 .withNewTls()
                 .withTrustedCertificates(
@@ -173,8 +176,8 @@ public class OauthTlsST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        Service bridgeService = testMethodResources().deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
-        testMethodResources().createServiceResource(bridgeService, NAMESPACE);
+        Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
+        KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
 
         StUtils.waitForNodePortService(bridgeService.getMetadata().getName());
 
@@ -215,7 +218,7 @@ public class OauthTlsST extends OauthBaseST {
     }
 
     private void deployProducerWithOauthTls() {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                 .editSpec()
                 .editTemplate()
                 .editSpec()
@@ -255,7 +258,7 @@ public class OauthTlsST extends OauthBaseST {
     }
 
     private void deployConsumerWithOauthTls(String topicName) {
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, topicName, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, topicName, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                 .editSpec()
                 .editTemplate()
                 .editSpec()
@@ -295,7 +298,7 @@ public class OauthTlsST extends OauthBaseST {
     }
 
     private void deployKafkaStreamsOauthTls() {
-        testMethodResources().kafkaStreamsWithOauth(oauthTokenEndpointUri, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        KafkaClientsResource.kafkaStreamsWithOauth(oauthTokenEndpointUri, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
                 .editSpec()
                 .editTemplate()
                 .editSpec()

@@ -17,12 +17,17 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
 
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -39,8 +44,8 @@ public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumer() {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
         String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
@@ -67,9 +72,9 @@ public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumerStreams() {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, "my-topic-reversed", KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().kafkaStreamsWithOauth(oauthTokenEndpointUri, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, "my-topic-reversed", KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.kafkaStreamsWithOauth(oauthTokenEndpointUri, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
         String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
@@ -96,10 +101,10 @@ public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumerConnect() {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -137,12 +142,12 @@ public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumerMirrorMaker() {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         String targetKafkaCluster = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(targetKafkaCluster, 3, 1)
+        KafkaResource.kafkaEphemeral(targetKafkaCluster, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -196,7 +201,7 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
                 "my-group" +  new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
                     .editConsumer()
@@ -232,7 +237,7 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        testMethodResources().consumerWithOauth("hello-world-consumer-target", oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(targetKafkaCluster)).done();
+        KafkaClientsResource.consumerWithOauth("hello-world-consumer-target", oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(targetKafkaCluster)).done();
 
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-target-").get(0).getMetadata().getName();
         String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
@@ -248,10 +253,10 @@ public class OauthPlainST extends OauthBaseST {
 
     @Test
     void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
-        testMethodResources().producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithOauth(oauthTokenEndpointUri, TOPIC_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
-        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, HTTP_BRIDGE_DEFAULT_PORT)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
                     .withNewKafkaClientAuthenticationOAuth()
                         .withTokenEndpointUri(oauthTokenEndpointUri)
@@ -269,8 +274,8 @@ public class OauthPlainST extends OauthBaseST {
                 .endSpec()
                 .done();
 
-        Service bridgeService = testMethodResources().deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE);
-        testMethodResources().createServiceResource(bridgeService, NAMESPACE);
+        Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
+        KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
 
         StUtils.waitForNodePortService(bridgeService.getMetadata().getName());
 

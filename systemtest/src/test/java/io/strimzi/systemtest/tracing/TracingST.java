@@ -29,6 +29,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaConnectS2IResource;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
@@ -42,7 +51,6 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
-
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
@@ -90,7 +98,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -108,14 +116,14 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
@@ -139,7 +147,7 @@ public class TracingST extends AbstractST {
         configOfKafka.put("transaction.state.log.replication.factor", "1");
         configOfKafka.put("transaction.state.log.min.isr", "1");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -171,7 +179,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -230,7 +238,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -248,21 +256,21 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
@@ -270,7 +278,7 @@ public class TracingST extends AbstractST {
 
         verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
 
-        testMethodResources().kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
 
@@ -312,7 +320,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -330,14 +338,14 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
@@ -345,7 +353,7 @@ public class TracingST extends AbstractST {
 
         verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
 
-        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
 
@@ -369,7 +377,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -387,7 +395,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -395,14 +403,14 @@ public class TracingST extends AbstractST {
                 .done();
 
 
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE);
 
@@ -410,7 +418,7 @@ public class TracingST extends AbstractST {
 
         verifyServiceIsPresent(JAEGER_PRODUCER_SERVICE);
 
-        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_CONSUMER_SERVICE);
 
@@ -418,7 +426,7 @@ public class TracingST extends AbstractST {
 
         verifyServiceIsPresent(JAEGER_CONSUMER_SERVICE);
 
-        testMethodResources().kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_STREAMS_SERVICE);
 
@@ -447,7 +455,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -465,7 +473,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -483,7 +491,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -514,14 +522,14 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(kafkaClusterSourceName, TOPIC_NAME)
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -530,11 +538,11 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
-        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_MIRROR_MAKER_SERVICE);
@@ -565,7 +573,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        testMethodResources().kafkaEphemeral(kafkaClusterSourceName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
@@ -575,7 +583,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaEphemeral(kafkaClusterTargetName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
@@ -585,7 +593,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -616,23 +624,23 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(kafkaClusterSourceName, TOPIC_NAME)
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
-        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
-        testMethodResources().kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
+        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
@@ -643,7 +651,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        testMethodResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -709,7 +717,7 @@ public class TracingST extends AbstractST {
 
     @Test
     void testConnectS2IService() throws Exception {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -721,8 +729,8 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testMethodResources().producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        testMethodResources().consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
@@ -730,7 +738,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
         configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
 
-        testMethodResources().kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect-s2i")
                 .endMetadata()
@@ -788,48 +796,48 @@ public class TracingST extends AbstractST {
     void testKafkaBridgeService(Vertx vertx) throws Exception {
         WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
-        .editSpec()
-            .editKafka()
-                .editListeners()
-                    .withNewKafkaListenerExternalNodePort()
-                        .withTls(false)
-                    .endKafkaListenerExternalNodePort()
-                .endListeners()
-            .endKafka()
-        .endSpec()
-        .done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         // Deploy http bridge
-        testMethodResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
-                .editSpec()
-                    .withNewJaegerTracing()
-                    .endJaegerTracing()
-                        .withNewTemplate()
-                            .withNewBridgeContainer()
-                                .addNewEnv()
-                                    .withName("JAEGER_SERVICE_NAME")
-                                    .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_AGENT_HOST")
-                                    .withValue(JAEGER_AGENT_NAME)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_TYPE")
-                                    .withValue(JAEGER_SAMPLER_TYPE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_PARAM")
-                                    .withValue(JAEGER_SAMPLER_PARAM)
-                                .endEnv()
-                            .endBridgeContainer()
-                        .endTemplate()
-                .endSpec()
-                .done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editSpec()
+                .withNewJaegerTracing()
+                .endJaegerTracing()
+                    .withNewTemplate()
+                        .withNewBridgeContainer()
+                            .addNewEnv()
+                                .withName("JAEGER_SERVICE_NAME")
+                                .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_NAME)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                        .endBridgeContainer()
+                    .endTemplate()
+            .endSpec()
+            .done();
 
         Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
-        testMethodResources().createServiceResource(service, NAMESPACE).done();
+        KubernetesResource.createServiceResource(service, NAMESPACE).done();
         StUtils.waitForNodePortService(BRIDGE_EXTERNAL_SERVICE);
 
         int bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
@@ -838,7 +846,7 @@ public class TracingST extends AbstractST {
         int messageCount = 50;
         String topicName = "topic-simple-send";
 
-        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
@@ -939,8 +947,6 @@ public class TracingST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createTestMethodResources();
-
         // deployment of the jaeger
         deployJaeger();
 
@@ -956,14 +962,12 @@ public class TracingST extends AbstractST {
     }
 
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
-
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

@@ -14,9 +14,14 @@ import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaClientsResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -76,27 +81,21 @@ public class OauthBaseST extends MessagingBaseST {
         return reverse;
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() throws InterruptedException {
-        LOGGER.info("Creating resources before the test class");
+    void setup() throws InterruptedException {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
 
         LOGGER.info("Deploying keycloak...");
-        testClassResources().deployKeycloak().done();
+        KafkaClientsResource.deployKeycloak().done();
 
-        Service keycloakService = testClassResources().deployKeycloakNodePortService(NAMESPACE);
+        Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
 
-        testClassResources().createServiceResource(keycloakService, NAMESPACE);
+        KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
         StUtils.waitForNodePortService(keycloakService.getMetadata().getName());
 
         clusterHost = kubeClient(NAMESPACE).getNodeAddress();
@@ -118,7 +117,7 @@ public class OauthBaseST extends MessagingBaseST {
 
         StUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -172,14 +171,14 @@ public class OauthBaseST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        testClassResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-        testClassResources().topic(CLUSTER_NAME, REVERSE_TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, REVERSE_TOPIC_NAME).done();
 
         createSecretsForDeployments();
 
-        testClassResources().tlsUser(CLUSTER_NAME, PRODUCER_USER_NAME).done();
-        testClassResources().tlsUser(CLUSTER_NAME, CONSUMER_USER_NAME).done();
-        testClassResources().tlsUser(CLUSTER_NAME, STREAMS_USER_NAME).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, PRODUCER_USER_NAME).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, CONSUMER_USER_NAME).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, STREAMS_USER_NAME).done();
     }
 
     private void createSecretsForDeployments() {

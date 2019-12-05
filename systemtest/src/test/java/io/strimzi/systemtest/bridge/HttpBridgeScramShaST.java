@@ -7,13 +7,11 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.HttpBridgeBaseST;
 import io.strimzi.systemtest.utils.BridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -27,6 +25,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import resources.KubernetesResource;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
+import resources.crd.KafkaUserResource;
 
 import java.util.Random;
 
@@ -54,7 +57,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
@@ -67,7 +70,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         int messageCount = 50;
         String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        testClassResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // Send messages to Kafka
         sendMessagesExternalScramSha(NAMESPACE, topicName, messageCount, userName);
 
@@ -101,7 +104,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
     }
 
     @BeforeAll
-    void createClassResources() throws InterruptedException {
+    void setup() throws InterruptedException {
         LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
@@ -109,21 +112,21 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         listenerTls.setAuth(auth);
 
         // Deploy kafka
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
-                .editSpec()
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withNewKafkaListenerExternalNodePort()
-                .withTls(true)
-                .withAuth(new KafkaListenerAuthenticationScramSha512())
-                .endKafkaListenerExternalNodePort()
-                .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
-                .endListeners()
+                    .withNewListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .endKafkaListenerExternalNodePort()
+                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                    .endListeners()
                 .endKafka()
-                .endSpec().done();
+            .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = testClassResources().scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
         StUtils.waitForSecretReady(userName);
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
@@ -137,7 +140,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
 
         // Deploy http bridge
-        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
             .withNewKafkaClientAuthenticationScramSha512()
                 .withNewUsername(userName)
@@ -149,7 +152,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
             .endSpec().done();
 
         Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
-        testClassResources().createServiceResource(service, NAMESPACE).done();
+        KubernetesResource.createServiceResource(service, NAMESPACE).done();
         StUtils.waitForNodePortService(bridgeExternalService);
 
         bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);

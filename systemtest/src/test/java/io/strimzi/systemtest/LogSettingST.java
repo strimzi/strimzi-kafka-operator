@@ -22,6 +22,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaConnectResource;
+import resources.crd.KafkaMirrorMakerResource;
+import resources.crd.KafkaResource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -266,18 +271,17 @@ class LogSettingST extends AbstractST {
     }
 
     @BeforeAll
-    void createClassResources() {
-        LOGGER.info("Create resources for the tests");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE).done();
 
         setOperationID(startDeploymentMeasuring());
 
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -316,30 +320,30 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources().kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
-                .editSpec()
-                    .editKafka()
+        KafkaResource.kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endKafka()
+                .editZookeeper()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endZookeeper()
+                .editEntityOperator()
+                    .editTopicOperator()
                         .withNewJvmOptions()
                         .endJvmOptions()
-                    .endKafka()
-                    .editZookeeper()
+                    .endTopicOperator()
+                    .editUserOperator()
                         .withNewJvmOptions()
                         .endJvmOptions()
-                    .endZookeeper()
-                    .editEntityOperator()
-                        .editTopicOperator()
-                            .withNewJvmOptions()
-                            .endJvmOptions()
-                        .endTopicOperator()
-                        .editUserOperator()
-                            .withNewJvmOptions()
-                            .endJvmOptions()
-                        .endUserOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .done();
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
 
-        testClassResources().kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -349,7 +353,7 @@ class LogSettingST extends AbstractST {
                 .endJvmOptions()
             .endSpec().done();
 
-        testClassResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)

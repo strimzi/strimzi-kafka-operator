@@ -60,6 +60,12 @@ public interface Constants {
     int HTTP_KEYCLOAK_DEFAULT_PORT = 8080;
     int HTTPS_KEYCLOAK_DEFAULT_PORT = 8443;
 
+    String DEPLOYMENT = "Deployment";
+    String SERVICE = "Service";
+    String INGRESS = "Ingress";
+    String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    String ROLE_BINDING = "RoleBinding";
+
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
      */

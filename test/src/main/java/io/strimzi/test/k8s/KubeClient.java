@@ -382,6 +382,14 @@ public class KubeClient {
         return client.secrets().inNamespace(getNamespace()).list().getItems();
     }
 
+    public List<Secret> listSecrets(String labelKey, String labelValue) {
+        return listSecrets().stream()
+            .filter(secret -> secret.getMetadata().getLabels() != null)
+            .filter(secret -> secret.getMetadata().getLabels().containsKey(labelKey))
+            .filter(secret -> secret.getMetadata().getLabels().containsValue(labelValue))
+            .collect(Collectors.toList());
+    }
+
     public Service getService(String serviceName) {
         return client.services().inNamespace(getNamespace()).withName(serviceName).get();
     }

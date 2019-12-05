@@ -49,8 +49,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import resources.ResourceManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,11 +123,10 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
-
-    protected Resources testMethodResources;
-    private static Resources testClassResources;
     private static String operationID;
+    protected String testClass;
+    protected String testName;
+
     Random rng = new Random();
 
     protected HelmClient helmClient() {
@@ -377,41 +380,12 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
                 .findFirst().get().getImage();
     }
 
-    public  void createTestMethodResources() {
-        LOGGER.info("Creating resources before the test");
-        testMethodResources = new Resources(kubeClient());
-    }
-
-    public  static void createTestClassResources() {
-        LOGGER.info("Creating test class resources");
-        testClassResources = new Resources(kubeClient());
-    }
-
-    public  void deleteTestMethodResources() {
-        if (testMethodResources != null) {
-            testMethodResources.deleteResources();
-            testMethodResources = null;
-        }
-    }
-
-    public Resources testMethodResources() {
-        return testMethodResources;
-    }
-
-    public static Resources testClassResources() {
-        return testClassResources;
-    }
-
     public static String getOperationID() {
         return operationID;
     }
 
     public static void setOperationID(String operationID) {
         AbstractST.operationID = operationID;
-    }
-
-    public static void setTestClassResources(Resources testClassResources) {
-        AbstractST.testClassResources = testClassResources;
     }
 
     String startTimeMeasuring(Operation operation) {
@@ -634,74 +608,6 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
             );
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) {
-        testClassResources.deleteResources();
-
-        cluster.deleteClusterOperatorInstallFiles();
-        cluster.deleteNamespaces();
-
-        cluster.createNamespaces(coNamespace, bindingsNamespaces);
-        cluster.applyClusterOperatorInstallFiles();
-
-        setTestClassResources(new Resources(kubeClient()));
-
-        applyRoleBindings(coNamespace, bindingsNamespaces);
-        // 050-Deployment
-        testClassResources().clusterOperator(coNamespace).done();
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
-     */
-    public  static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
-        for (String bindingsNamespace : bindingsNamespaces) {
-            // 020-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 021-ClusterRoleBinding
-            testClassResources.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 030-ClusterRoleBinding
-            testClassResources.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
-            // 031-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
-            // 032-RoleBinding
-            testClassResources.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
-        }
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     */
-    public static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, Collections.singletonList(namespace));
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
-     */
-    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
-        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
     }
 
     /**
@@ -964,24 +870,51 @@ public abstract class AbstractST extends BaseST implements TestSeparator {
     }
 
     protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
+        ResourceManager.deleteMethodResources();
     }
 
     protected void tearDownEnvironmentAfterAll() {
-        testClassResources.deleteResources();
+        ResourceManager.deleteClassResources();
+    }
+
+    @BeforeEach
+    void createTestResources(TestInfo testInfo) {
+        if (testInfo.getTestMethod().isPresent()) {
+            testName = testInfo.getTestMethod().get().getName();
+        }
+        ResourceManager.setMethodResources();
+    }
+
+    @BeforeAll
+    void setTestClassName(TestInfo testInfo) {
+        if (testInfo.getTestClass().isPresent()) {
+            testClass = testInfo.getTestClass().get().getName();
+        }
     }
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
-        assertNoCoErrorsLogged(0);
+        boolean logError = false;
+        AssertionError assertionError = new AssertionError();
+        try {
+            assertNoCoErrorsLogged(0);
+        } catch (AssertionError e) {
+            LOGGER.error("Cluster Operator contains unexpected errors!");
+            logError = true;
+            assertionError = e;
+        }
+
         if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent()) {
+            if (context.getExecutionException().isPresent() || logError) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
-                context.getExecutionException().get().printStackTrace();
                 recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
                 LOGGER.info("Env recreated.");
             }
             tearDownEnvironmentAfterEach();
+        }
+
+        if (logError) {
+            throw assertionError;
         }
     }
 

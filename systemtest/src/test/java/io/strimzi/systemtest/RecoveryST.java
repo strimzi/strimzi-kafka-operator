@@ -14,6 +14,10 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaBridgeResource;
+import resources.crd.KafkaResource;
 
 import java.util.List;
 
@@ -221,21 +225,19 @@ class RecoveryST extends AbstractST {
     }
 
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE).done();
-
+        KubernetesResource.clusterOperator(NAMESPACE).done();
         deployTestSpecificResources();
     }
 
     void deployTestSpecificResources() {
-        testClassResources().kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
     }
 
     @Override

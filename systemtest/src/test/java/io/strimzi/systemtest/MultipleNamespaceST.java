@@ -9,12 +9,14 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaResource;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -63,20 +65,17 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources() {
-        LOGGER.info("Creating resources before the test class");
+        ResourceManager.setClassResources();
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE));
-        createTestClassResources();
 
         applyRoleBindings(CO_NAMESPACE);
         applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
-
-        LOGGER.info("Deploying CO to watch multiple namespaces");
-        testClassResources().clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
+        // 050-Deployment
+        KubernetesResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
         cluster.setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
 
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()

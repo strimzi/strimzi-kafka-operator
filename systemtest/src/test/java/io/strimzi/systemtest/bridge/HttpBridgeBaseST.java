@@ -2,9 +2,14 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.bridge;
 
+import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -13,12 +18,19 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import resources.KubernetesResource;
+import resources.ResourceManager;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Base for test classes where HTTP Bridge is used.
@@ -77,6 +89,33 @@ public class HttpBridgeBaseST extends MessagingBaseST {
         return future.get(1, TimeUnit.MINUTES);
     }
 
+    protected void deployBridgeNodePortService() throws InterruptedException {
+        Map<String, String> map = new HashMap<>();
+        map.put("strimzi.io/cluster", CLUSTER_NAME);
+        map.put("strimzi.io/kind", "KafkaBridge");
+        map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
+
+        // Create node port service for expose bridge outside openshift
+        Service service = KubernetesResource.getSystemtestsServiceResource(bridgeExternalService, Constants.HTTP_BRIDGE_DEFAULT_PORT, getBridgeNamespace())
+                .editSpec()
+                .withType("NodePort")
+                .withSelector(map)
+                .endSpec().build();
+        KubernetesResource.createServiceResource(service, getBridgeNamespace()).done();
+        StUtils.waitForNodePortService(bridgeExternalService);
+    }
+
+    protected void checkSendResponse(JsonObject response, int messageCount) {
+        JsonArray offsets = response.getJsonArray("offsets");
+        assertThat(offsets.size(), is(messageCount));
+        for (int i = 0; i < messageCount; i++) {
+            JsonObject metadata = offsets.getJsonObject(i);
+            assertThat(metadata.getInteger("partition"), is(0));
+            assertThat(metadata.getInteger("offset"), is(i));
+            LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
+        }
+    }
+
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("Skipping env recreation after each test - deployment should be same for whole test class!");
@@ -88,12 +127,11 @@ public class HttpBridgeBaseST extends MessagingBaseST {
 
     @BeforeAll
     void deployClusterOperator() {
-        LOGGER.info("Creating resources before the test class");
+        ResourceManager.setClassResources();
         prepareEnvForOperator(getBridgeNamespace());
 
-        createTestClassResources();
         applyRoleBindings(getBridgeNamespace());
         // 050-Deployment
-        testClassResources().clusterOperator(getBridgeNamespace()).done();
+        KubernetesResource.clusterOperator(getBridgeNamespace()).done();
     }
 }

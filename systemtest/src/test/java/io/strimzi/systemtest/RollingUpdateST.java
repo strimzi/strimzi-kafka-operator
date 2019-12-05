@@ -13,16 +13,17 @@ import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.KubernetesResource;
+import resources.ResourceManager;
+import resources.crd.KafkaResource;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,7 +44,7 @@ class RollingUpdateST extends AbstractST {
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
         String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         LOGGER.info("Update resources for pods");
 
@@ -80,7 +81,7 @@ class RollingUpdateST extends AbstractST {
         String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
         String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
 
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         LOGGER.info("Update resources for pods");
 
@@ -132,25 +133,13 @@ class RollingUpdateST extends AbstractST {
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+    void setup() {
+        ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources().clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
+        KubernetesResource.clusterOperator(NAMESPACE).done();
     }
 }

@@ -9,9 +9,10 @@ import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import resources.crd.KafkaResource;
+import resources.crd.KafkaTopicResource;
 
 import java.util.List;
 
@@ -28,28 +29,17 @@ class HelmChartST extends AbstractST {
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
-        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
         StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createTestMethodResources();
-    }
-
     @BeforeAll
-    void setupEnvironment() {
+    void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
         deployClusterOperatorViaHelmChart();
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @Override

@@ -28,6 +28,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -194,12 +196,12 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(topic, is(notNullValue()));
         assertThat(topic.getSpec(), is(notNullValue()));
         assertThat(topic.getSpec().getTopicName(), is(nullValue()));
-        assertThat(topic.getSpec().getPartitions(), is(Integer.valueOf(10)));
-        assertThat(topic.getSpec().getReplicas(), is(Integer.valueOf(2)));
+        assertThat(topic.getSpec().getPartitions(), is(10));
+        assertThat(topic.getSpec().getReplicas(), is(2));
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources("../examples/templates/cluster-operator",
@@ -215,5 +217,10 @@ public class OpenShiftTemplatesST extends AbstractST {
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info("Skipping env recreation after each test - resources should be same for whole test class!");
     }
 }
