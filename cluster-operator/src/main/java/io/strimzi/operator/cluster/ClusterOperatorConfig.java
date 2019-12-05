@@ -102,7 +102,7 @@ public class ClusterOperatorConfig {
      * @param lookup KafkaVersion.Lookup instance with the supported Kafka version information
      * @return  Cluster Operator configuration instance
      */
-    static ClusterOperatorConfig fromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
+    public static ClusterOperatorConfig fromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
         Set<String> namespaces = parseNamespaceList(map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE));
         long reconciliationInterval = parseReconciliationInerval(map.get(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
         long operationTimeout = parseOperationTimeout(map.get(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS));
