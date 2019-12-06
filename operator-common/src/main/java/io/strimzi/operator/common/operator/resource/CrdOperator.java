@@ -90,7 +90,7 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     public Future<T> updateStatusAsync(T resource) {
-        Promise<T> blockingFuture = Promise.promise();
+        Promise<T> blockingPromise = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             try {
@@ -145,8 +145,8 @@ public class CrdOperator<C extends KubernetesClient,
                 log.debug("Updating status failed", e);
                 future.fail(e);
             }
-        }, true, blockingFuture);
+        }, true, blockingPromise);
 
-        return blockingFuture.future();
+        return blockingPromise.future();
     }
 }

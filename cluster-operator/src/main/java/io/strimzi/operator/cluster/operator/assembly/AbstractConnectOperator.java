@@ -321,7 +321,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 Reconciliation reconciliation,
                                 S desiredStatus,
                                 BiFunction<T, S, T> copyWithStatus) {
-        Promise<Void> updateStatusFuture = Promise.promise();
+        Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -332,7 +332,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                             && StatusUtils.isResourceV1alpha1(fetchedResource)) {
                         log.warn("{}: {} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
                                 reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
-                        updateStatusFuture.complete();
+                        updateStatusPromise.complete();
                     } else {
                         S currentStatus = fetchedResource.getStatus();
 
@@ -344,27 +344,27 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                             resourceOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusFuture.complete();
+                                    updateStatusPromise.complete();
                                 } else {
                                     log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusFuture.fail(updateRes.cause());
+                                    updateStatusPromise.fail(updateRes.cause());
                                 }
                             });
                         } else {
                             log.debug("{}: Status did not change", reconciliation);
-                            updateStatusFuture.complete();
+                            updateStatusPromise.complete();
                         }
                     }
                 } else {
                     log.error("{}: Current Kafka Connect resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka Connect resource not found");
+                    updateStatusPromise.fail("Current Kafka Connect resource not found");
                 }
             } else {
                 log.error("{}: Failed to get the current Kafka Connect resource and its status", reconciliation, getRes.cause());
-                updateStatusFuture.fail(getRes.cause());
+                updateStatusPromise.fail(getRes.cause());
             }
         });
 
-        return updateStatusFuture.future();
+        return updateStatusPromise.future();
     }
 }

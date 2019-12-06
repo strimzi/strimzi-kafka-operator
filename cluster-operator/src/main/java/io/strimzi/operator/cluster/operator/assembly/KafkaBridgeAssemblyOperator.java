@@ -70,7 +70,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
-        Promise<Void> createOrUpdateFuture = Promise.promise();
+        Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaBridgeCluster bridge;
@@ -94,7 +94,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation, name, namespace);
-        Promise<Void> chainFuture = Promise.promise();
+        Promise<Void> chainPromise = Promise.promise();
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
@@ -105,8 +105,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> {
-                chainFuture.complete();
-                return chainFuture.future();
+                chainPromise.complete();
+                return chainPromise.future();
             })
             .setHandler(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
@@ -120,15 +120,15 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                     // If both features succeeded, createOrUpdate succeeded as well
                     // If one or both of them failed, we prefer the reconciliation failure as the main error
                     if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                        createOrUpdateFuture.complete();
+                        createOrUpdatePromise.complete();
                     } else if (reconciliationResult.failed()) {
-                        createOrUpdateFuture.fail(reconciliationResult.cause());
+                        createOrUpdatePromise.fail(reconciliationResult.cause());
                     } else {
-                        createOrUpdateFuture.fail(statusResult.cause());
+                        createOrUpdatePromise.fail(statusResult.cause());
                     }
                 });
             });
-        return createOrUpdateFuture.future();
+        return createOrUpdatePromise.future();
     }
 
     /**
@@ -142,7 +142,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      * @return
      */
     Future<Void> updateStatus(KafkaBridge kafkaBridgeAssembly, Reconciliation reconciliation, KafkaBridgeStatus desiredStatus) {
-        Promise<Void> updateStatusFuture = Promise.promise();
+        Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -158,27 +158,27 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                         ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                             if (updateRes.succeeded()) {
                                 log.debug("{}: Completed status update", reconciliation);
-                                updateStatusFuture.complete();
+                                updateStatusPromise.complete();
                             } else {
                                 log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                updateStatusFuture.fail(updateRes.cause());
+                                updateStatusPromise.fail(updateRes.cause());
                             }
                         });
                     } else {
                         log.debug("{}: Status did not change", reconciliation);
-                        updateStatusFuture.complete();
+                        updateStatusPromise.complete();
                     }
                 } else {
                     log.error("{}: Current Kafka Bridge resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka Bridge resource not found");
+                    updateStatusPromise.fail("Current Kafka Bridge resource not found");
                 }
             } else {
                 log.error("{}: Failed to get the current Kafka Bridge resource and its status", reconciliation, getRes.cause());
-                updateStatusFuture.fail(getRes.cause());
+                updateStatusPromise.fail(getRes.cause());
             }
         });
 
-        return updateStatusFuture.future();
+        return updateStatusPromise.future();
     }
 
     Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {

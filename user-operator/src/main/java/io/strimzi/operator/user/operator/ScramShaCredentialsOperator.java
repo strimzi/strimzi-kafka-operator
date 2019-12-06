@@ -23,7 +23,7 @@ public class ScramShaCredentialsOperator {
     }
 
     Future<ReconcileResult<Void>> reconcile(String username, String password) {
-        Promise<ReconcileResult<Void>> fut = Promise.promise();
+        Promise<ReconcileResult<Void>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 boolean exists = credsManager.exists(username);
@@ -40,8 +40,8 @@ public class ScramShaCredentialsOperator {
                 }
             },
             false,
-            fut);
-        return fut.future();
+            promise);
+        return promise.future();
     }
 
     public List<String> list() {

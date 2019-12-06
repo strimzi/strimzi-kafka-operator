@@ -64,7 +64,7 @@ public class SimpleAclOperator {
      * @return
      */
     Future<ReconcileResult<Set<SimpleAclRule>>> reconcile(String username, Set<SimpleAclRule> desired) {
-        Promise<ReconcileResult<Set<SimpleAclRule>>> fut = Promise.promise();
+        Promise<ReconcileResult<Set<SimpleAclRule>>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 Set<SimpleAclRule> current;
@@ -96,9 +96,9 @@ public class SimpleAclOperator {
                 }
             },
             false,
-            fut
+            promise
         );
-        return fut.future();
+        return promise.future();
     }
 
     /**
@@ -136,18 +136,18 @@ public class SimpleAclOperator {
         updates.add(internalDelete(username, toBeDeleted));
         updates.add(internalCreate(username, toBeAdded));
 
-        Promise<ReconcileResult<Set<SimpleAclRule>>> fut = Promise.promise();
+        Promise<ReconcileResult<Set<SimpleAclRule>>> promise = Promise.promise();
 
         CompositeFuture.all(updates).setHandler(res -> {
             if (res.succeeded())    {
-                fut.complete(ReconcileResult.patched(desired));
+                promise.complete(ReconcileResult.patched(desired));
             } else  {
                 log.error("Updating Acl rules for user {} failed", username, res.cause());
-                fut.fail(res.cause());
+                promise.fail(res.cause());
             }
         });
 
-        return fut.future();
+        return promise.future();
     }
 
     protected HashMap<Resource, Set<Acl>> getResourceAclsMap(String username, Set<SimpleAclRule> aclRules) {

@@ -90,7 +90,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
         }
 
-        Promise<ReconcileResult<T>> fut = Promise.promise();
+        Promise<ReconcileResult<T>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 T current = operation().inNamespace(namespace).withName(name).get();
@@ -115,9 +115,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
             },
             false,
-            fut
+            promise
         );
-        return fut.future();
+        return promise.future();
     }
 
     /**

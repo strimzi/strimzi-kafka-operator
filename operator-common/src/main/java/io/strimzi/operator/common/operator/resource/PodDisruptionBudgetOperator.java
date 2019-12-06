@@ -27,21 +27,21 @@ public class PodDisruptionBudgetOperator extends AbstractResourceOperator<Kubern
 
     @Override
     protected Future<ReconcileResult<PodDisruptionBudget>> internalPatch(String namespace, String name, PodDisruptionBudget current, PodDisruptionBudget desired, boolean cascading) {
-        Promise<ReconcileResult<PodDisruptionBudget>> fut = Promise.promise();
+        Promise<ReconcileResult<PodDisruptionBudget>> promise = Promise.promise();
         internalDelete(namespace, name).setHandler(delRes -> {
             if (delRes.succeeded())    {
                 internalCreate(namespace, name, desired).setHandler(createRes -> {
                     if (createRes.succeeded())  {
-                        fut.complete(createRes.result());
+                        promise.complete(createRes.result());
                     } else {
-                        fut.fail(createRes.cause());
+                        promise.fail(createRes.cause());
                     }
                 });
             } else {
-                fut.fail(delRes.cause());
+                promise.fail(delRes.cause());
             }
         });
 
-        return fut.future();
+        return promise.future();
     }
 }

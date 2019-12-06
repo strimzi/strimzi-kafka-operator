@@ -78,16 +78,16 @@ public class Session extends AbstractVerticle {
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
-            Promise<Void> f = Promise.promise();
+            Promise<Void> promise = Promise.promise();
             Handler<Long> longHandler = new Handler<Long>() {
                 @Override
                 public void handle(Long inflightTimerId) {
                     if (!topicOperator.isWorkInflight()) {
                         LOGGER.debug("Inflight work has finished");
-                        f.complete();
+                        promise.complete();
                     } else if (System.currentTimeMillis() > deadline) {
                         LOGGER.error("Timeout waiting for inflight work to finish");
-                        f.complete();
+                        promise.complete();
                     } else {
                         LOGGER.debug("Waiting for inflight work to finish");
                         vertx.setTimer(1_000, this);
@@ -95,7 +95,7 @@ public class Session extends AbstractVerticle {
                 }
             };
             longHandler.handle(null);
-            f.future().compose(ignored -> {
+            promise.future().compose(ignored -> {
                 LOGGER.debug("Stopping kafka {}", kafka);
                 kafka.stop();
 
@@ -175,9 +175,9 @@ public class Session extends AbstractVerticle {
                 LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
                 topicsWatcher.start(zk);
 
-                Promise<Void> f = Promise.promise();
-                Promise<Void> initReconcileFuture = Promise.promise();
-                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcileFuture.future());
+                Promise<Void> promise = Promise.promise();
+                Promise<Void> initReconcilePromise = Promise.promise();
+                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future());
                 Thread resourceThread = new Thread(() -> {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
@@ -188,9 +188,9 @@ public class Session extends AbstractVerticle {
 
                         // start the HTTP server for healthchecks
                         healthServer = this.startHealthServer();
-                        f.complete();
+                        promise.complete();
                     } catch (Throwable t) {
-                        f.fail(t);
+                        promise.fail(t);
                     }
 
                 }, "resource-watcher");
@@ -206,7 +206,7 @@ public class Session extends AbstractVerticle {
                             boolean isInitialReconcile = oldTimerId == null;
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").setHandler(result -> {
                                 if (isInitialReconcile) {
-                                    initReconcileFuture.complete();
+                                    initReconcilePromise.complete();
                                 }
                                 if (!stopped) {
                                     timerId = vertx.setTimer(interval, this);
@@ -216,7 +216,7 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                f.future().setHandler(startupFuture);
+                promise.future().setHandler(startupFuture);
                 LOGGER.info("Started");
             });
     }

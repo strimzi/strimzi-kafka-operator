@@ -241,7 +241,7 @@ public class ZookeeperLeaderFinder {
      */
     protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
 
-        Promise<Boolean> future = Promise.promise();
+        Promise<Boolean> promise = Promise.promise();
         String host = host(pod);
         int port = port(pod);
         log.debug("Connecting to zookeeper on {}:{}", host, port);
@@ -249,12 +249,12 @@ public class ZookeeperLeaderFinder {
             .connect(port, host, ar -> {
                 if (ar.failed()) {
                     log.warn("ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
-                    future.fail(ar.cause());
+                    promise.fail(ar.cause());
                 } else {
                     log.debug("ZK {}:{}: connected", host, port);
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
-                        if (!future.tryFail(ex)) {
+                        if (!promise.tryFail(ex)) {
                             log.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
                                     host, port, pod.getMetadata().getName(), ex);
                         }
@@ -272,7 +272,7 @@ public class ZookeeperLeaderFinder {
                         Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
                         boolean isLeader = matcher.find();
                         log.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
-                        if (!future.tryComplete(isLeader)) {
+                        if (!promise.tryComplete(isLeader)) {
                             log.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
                                     host, port);
                         }
@@ -287,7 +287,7 @@ public class ZookeeperLeaderFinder {
                 }
 
             });
-        return future.future().recover(error -> {
+        return promise.future().recover(error -> {
             log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });

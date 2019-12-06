@@ -31,7 +31,7 @@ public class PlatformFeaturesAvailability {
     private KubernetesVersion kubernetesVersion;
 
     public static Future<PlatformFeaturesAvailability> create(Vertx vertx, KubernetesClient client) {
-        Promise<PlatformFeaturesAvailability> pfaFuture = Promise.promise();
+        Promise<PlatformFeaturesAvailability> pfaPromise = Promise.promise();
         OkHttpClient httpClient = getOkHttpClient(client);
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability();
@@ -55,11 +55,11 @@ public class PlatformFeaturesAvailability {
             return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "image.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setImages(supported);
-            pfaFuture.complete(pfa);
-            return pfaFuture.future();
+            pfaPromise.complete(pfa);
+            return pfaPromise.future();
         });
 
-        return pfaFuture.future();
+        return pfaPromise.future();
     }
 
     private static OkHttpClient getOkHttpClient(KubernetesClient client)   {
@@ -115,7 +115,7 @@ public class PlatformFeaturesAvailability {
     }
 
     private static Future<VersionInfo> getVersionInfoFromKubernetes(Vertx vertx, KubernetesClient client)   {
-        Promise<VersionInfo> fut = Promise.promise();
+        Promise<VersionInfo> promise = Promise.promise();
 
         vertx.executeBlocking(request -> {
             try {
@@ -124,13 +124,13 @@ public class PlatformFeaturesAvailability {
                 log.error("Detection of Kuberetes version failed.", e);
                 request.fail(e);
             }
-        }, fut);
+        }, promise);
 
-        return fut.future();
+        return promise.future();
     }
 
     private static Future<Boolean> checkApiAvailability(Vertx vertx, OkHttpClient httpClient, String masterUrl, String api, String version)   {
-        Promise<Boolean> fut = Promise.promise();
+        Promise<Boolean> promise = Promise.promise();
 
         vertx.executeBlocking(request -> {
             try {
@@ -151,9 +151,9 @@ public class PlatformFeaturesAvailability {
                 log.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
                 request.complete(false);
             }
-        }, fut);
+        }, promise);
 
-        return fut.future();
+        return promise.future();
     }
 
     private PlatformFeaturesAvailability() {}

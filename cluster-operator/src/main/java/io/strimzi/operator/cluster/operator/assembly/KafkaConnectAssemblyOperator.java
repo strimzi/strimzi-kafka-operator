@@ -72,7 +72,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect) {
-        Promise<Void> createOrUpdateFuture = Promise.promise();
+        Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaConnectCluster connect;
@@ -100,7 +100,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        Promise<Void> chainFuture = Promise.promise();
+        Promise<Void> chainPromise = Promise.promise();
         connectServiceAccount(namespace, connect)
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -112,8 +112,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect))
                 .compose(i -> {
-                    chainFuture.complete();
-                    return chainFuture.future();
+                    chainPromise.complete();
+                    return chainPromise.future();
                 })
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
@@ -124,15 +124,15 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             // If both features succeeded, createOrUpdate succeeded as well
                             // If one or both of them failed, we prefer the reconciliation failure as the main error
                             if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdateFuture.complete();
+                                createOrUpdatePromise.complete();
                             } else if (reconciliationResult.failed()) {
-                                createOrUpdateFuture.fail(reconciliationResult.cause());
+                                createOrUpdatePromise.fail(reconciliationResult.cause());
                             } else {
-                                createOrUpdateFuture.fail(statusResult.cause());
+                                createOrUpdatePromise.fail(statusResult.cause());
                             }
                         });
                 });
-        return createOrUpdateFuture.future();
+        return createOrUpdatePromise.future();
     }
 
     private Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {

@@ -72,7 +72,7 @@ public class Main {
                 config.getLabels(),
                 secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
 
-        Promise<String> fut = Promise.promise();
+        Promise<String> promise = Promise.promise();
         UserOperator operator = new UserOperator(config.getNamespace(),
                 config,
                 client,
@@ -85,10 +85,10 @@ public class Main {
                     log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                     System.exit(1);
                 }
-                fut.handle(res);
+                promise.handle(res);
             });
 
-        return fut.future();
+        return promise.future();
     }
 
     private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {

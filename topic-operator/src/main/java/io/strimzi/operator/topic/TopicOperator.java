@@ -586,10 +586,10 @@ class TopicOperator {
         } else {
             // Just use kafka version, but also create a warning event
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins", logContext);
-            Promise<Void> eventFuture = Promise.promise();
+            Promise<Void> eventPromise = Promise.promise();
             enqueue(new Event(involvedObject, "KafkaTopic is incompatible with the topic metadata. " +
-                    "The topic metadata will be treated as canonical.", EventType.INFO, eventFuture));
-            reconciliationResultHandler = eventFuture.future()
+                    "The topic metadata will be treated as canonical.", EventType.INFO, eventPromise));
+            reconciliationResultHandler = eventPromise.future()
                 .compose(ignored ->
                     updateResource(logContext, kafkaTopic))
                 .compose(updatedResource -> {
@@ -676,16 +676,16 @@ class TopicOperator {
                             if (partitionsDelta > 0
                                     // Kafka throws an error if we attempt a noop change #partitions
                                     && result.getNumPartitions() > kafkaTopic.getNumPartitions()) {
-                                Promise<Void> partitionsFuture = Promise.promise();
-                                enqueue(new IncreaseKafkaPartitions(logContext, result, involvedObject, partitionsFuture));
-                                return partitionsFuture.future();
+                                Promise<Void> partitionsPromise = Promise.promise();
+                                enqueue(new IncreaseKafkaPartitions(logContext, result, involvedObject, partitionsPromise));
+                                return partitionsPromise.future();
                             } else {
                                 return Future.succeededFuture();
                             }
                         }).compose(ignored -> {
-                            Promise<Void> topicStoreFuture = Promise.promise();
-                            enqueue(new UpdateInTopicStore(logContext, result, involvedObject, topicStoreFuture));
-                            return topicStoreFuture.future();
+                            Promise<Void> topicStorePromise = Promise.promise();
+                            enqueue(new UpdateInTopicStore(logContext, result, involvedObject, topicStorePromise));
+                            return topicStorePromise.future();
                         });
                 }
             }
@@ -737,7 +737,7 @@ class TopicOperator {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
-                Promise<Void> fut = Promise.promise();
+                Promise<Void> promise = Promise.promise();
                 // getting topic information from the private store
                 topicStore.read(topicName).setHandler(topicResult -> {
 
@@ -755,14 +755,14 @@ class TopicOperator {
                                     } else {
                                         LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
                                         reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
-                                            .setHandler(fut);
+                                            .setHandler(promise);
                                     }
 
                                 } else {
-                                    fut.fail(metadataResult.cause());
+                                    promise.fail(metadataResult.cause());
                                 }
                             } catch (Throwable t) {
-                                fut.fail(t);
+                                promise.fail(t);
                             }
                         }
 
@@ -771,12 +771,12 @@ class TopicOperator {
                             // it's possible that the watched znode for partitions changes, is changed
                             // due to a reassignment if we don't observe a partition count change within the backoff
                             // no need for failing the future in this case
-                            fut.complete();
+                            promise.complete();
                         }
                     };
                     kafka.topicMetadata(topicName).setHandler(handler);
                 });
-                return fut.future();
+                return promise.future();
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -807,7 +807,7 @@ class TopicOperator {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
-                Promise<Void> fut = Promise.promise();
+                Promise<Void> promise = Promise.promise();
                 TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
 
                     @Override
@@ -824,20 +824,20 @@ class TopicOperator {
                                 // resource...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
                                 reconcileOnTopicChange(logContext, topicName, kafkaTopic, self)
-                                        .setHandler(fut);
+                                        .setHandler(promise);
                             }
                         } else {
-                            fut.fail(metadataResult.cause());
+                            promise.fail(metadataResult.cause());
                         }
                     }
 
                     @Override
                     public void onMaxAttemptsExceeded(MaxAttemptsExceededException e) {
-                        fut.fail(e);
+                        promise.fail(e);
                     }
                 };
                 kafka.topicMetadata(topicName).setHandler(handler);
-                return fut.future();
+                return promise.future();
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);
@@ -1289,7 +1289,7 @@ class TopicOperator {
     private Future<Void> getKafkaAndReconcile(Reconciliation reconciliation, LogContext logContext, TopicName topicName,
                                               Topic privateTopic, KafkaTopic kafkaTopicResource) {
         logContext.withKubeTopic(kafkaTopicResource);
-        Promise<Void> topicFuture = Promise.promise();
+        Promise<Void> topicPromise = Promise.promise();
         try {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
             kafka.topicMetadata(topicName)
@@ -1303,16 +1303,16 @@ class TopicOperator {
                     } else {
                         LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
                     }
-                    topicFuture.handle(ar);
+                    topicPromise.handle(ar);
                 });
         } catch (InvalidTopicException e) {
             LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
-            topicFuture.fail(e);
+            topicPromise.fail(e);
         } catch (OperatorException e) {
             LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
-            topicFuture.fail(e);
+            topicPromise.fail(e);
         }
-        return topicFuture.future();
+        return topicPromise.future();
     }
 
     Future<Topic> getFromKafka(TopicName topicName) {

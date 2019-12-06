@@ -110,8 +110,8 @@ public class Main {
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
-            Promise<String> fut = Promise.promise();
-            futures.add(fut.future());
+            Promise<String> prom = Promise.promise();
+            futures.add(prom.future());
             ClusterOperator operator = new ClusterOperator(namespace,
                     config.getReconciliationIntervalMs(),
                     client,
@@ -128,7 +128,7 @@ public class Main {
                         log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
-                    fut.handle(res);
+                    prom.handle(res);
                 });
         }
         return CompositeFuture.join(futures);
@@ -166,16 +166,16 @@ public class Main {
 
             }
 
-            Promise<Void> returnFuture = Promise.promise();
+            Promise<Void> returnPromise = Promise.promise();
             CompositeFuture.all(futures).setHandler(res -> {
                 if (res.succeeded())    {
-                    returnFuture.complete();
+                    returnPromise.complete();
                 } else  {
-                    returnFuture.fail("Failed to create Cluster Roles.");
+                    returnPromise.fail("Failed to create Cluster Roles.");
                 }
             });
 
-            return returnFuture.future();
+            return returnPromise.future();
         } else {
             return Future.succeededFuture();
         }

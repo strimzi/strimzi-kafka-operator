@@ -46,7 +46,7 @@ public class Util {
      * @return A future that completes when the given {@code ready} indicates readiness.
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
-        Promise<Void> fut = Promise.promise();
+        Promise<Void> promise = Promise.promise();
         LOGGER.debug("Waiting for {} to get ready", logContext);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
@@ -70,13 +70,13 @@ public class Util {
                     res -> {
                         if (res.succeeded()) {
                             LOGGER.debug("{} is ready", logContext);
-                            fut.complete();
+                            promise.complete();
                         } else {
                             long timeLeft = deadline - System.currentTimeMillis();
                             if (timeLeft <= 0) {
                                 String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be ready", timeoutMs, logContext);
                                 LOGGER.error(exceptionMessage);
-                                fut.fail(new TimeoutException(exceptionMessage));
+                                promise.fail(new TimeoutException(exceptionMessage));
                             } else {
                                 // Schedule ourselves to run again
                                 vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
@@ -90,7 +90,7 @@ public class Util {
         // Call the handler ourselves the first time
         handler.handle(null);
 
-        return fut.future();
+        return promise.future();
     }
 
     /**

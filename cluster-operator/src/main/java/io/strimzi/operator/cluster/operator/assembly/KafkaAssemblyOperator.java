@@ -175,7 +175,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        Promise<Void> createOrUpdateFuture = Promise.promise();
+        Promise<Void> createOrUpdatePromise = Promise.promise();
 
         if (kafkaAssembly.getSpec() == null) {
             log.error("{} spec cannot be null", kafkaAssembly.getMetadata().getName());
@@ -218,20 +218,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // If both features succeeded, createOrUpdate succeeded as well
                 // If one or both of them failed, we prefer the reconciliation failure as the main error
                 if (reconcileResult.succeeded() && statusResult.succeeded())    {
-                    createOrUpdateFuture.complete();
+                    createOrUpdatePromise.complete();
                 } else if (reconcileResult.failed())    {
-                    createOrUpdateFuture.fail(reconcileResult.cause());
+                    createOrUpdatePromise.fail(reconcileResult.cause());
                 } else {
-                    createOrUpdateFuture.fail(statusResult.cause());
+                    createOrUpdatePromise.fail(statusResult.cause());
                 }
             });
         });
 
-        return createOrUpdateFuture.future();
+        return createOrUpdatePromise.future();
     }
 
     Future<Void> reconcile(ReconciliationState reconcileState)  {
-        Promise<Void> chainFuture = Promise.promise();
+        Promise<Void> chainPromise = Promise.promise();
 
         reconcileState.reconcileCas(this::dateSupplier)
                 .compose(state -> state.clusterOperatorSecret())
@@ -317,11 +317,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaExporterReady())
 
                 .compose(state -> {
-                    chainFuture.complete();
-                    return chainFuture.future();
+                    chainPromise.complete();
+                    return chainPromise.future();
                 });
 
-        return chainFuture.future();
+        return chainPromise.future();
     }
 
     ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
@@ -394,7 +394,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<Void> updateStatus(KafkaStatus desiredStatus) {
-            Promise<Void> updateStatusFuture = Promise.promise();
+            Promise<Void> updateStatusPromise = Promise.promise();
 
             crdOperator.getAsync(namespace, name).setHandler(getRes -> {
                 if (getRes.succeeded())    {
@@ -403,7 +403,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (kafka != null) {
                         if ("kafka.strimzi.io/v1alpha1".equals(kafka.getApiVersion()))   {
                             log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafka.getApiVersion());
-                            updateStatusFuture.complete();
+                            updateStatusPromise.complete();
                         } else {
                             KafkaStatus currentStatus = kafka.getStatus();
 
@@ -415,28 +415,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 crdOperator.updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                                     if (updateRes.succeeded()) {
                                         log.debug("{}: Completed status update", reconciliation);
-                                        updateStatusFuture.complete();
+                                        updateStatusPromise.complete();
                                     } else {
                                         log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                        updateStatusFuture.fail(updateRes.cause());
+                                        updateStatusPromise.fail(updateRes.cause());
                                     }
                                 });
                             } else {
                                 log.debug("{}: Status did not change", reconciliation);
-                                updateStatusFuture.complete();
+                                updateStatusPromise.complete();
                             }
                         }
                     } else {
                         log.error("{}: Current Kafka resource not found", reconciliation);
-                        updateStatusFuture.fail("Current Kafka resource not found");
+                        updateStatusPromise.fail("Current Kafka resource not found");
                     }
                 } else {
                     log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
-                    updateStatusFuture.fail(getRes.cause());
+                    updateStatusPromise.fail(getRes.cause());
                 }
             });
 
-            return updateStatusFuture.future();
+            return updateStatusPromise.future();
         }
 
         /**
@@ -454,7 +454,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withKubernetesName()
                     .withKubernetesInstance(reconciliation.name())
                     .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
-            Promise<ReconciliationState> result = Promise.promise();
+            Promise<ReconciliationState> resultPromise = Promise.promise();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
@@ -544,9 +544,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         future.fail(e);
                     }
                 }, true,
-                result
+                resultPromise
             );
-            return result.future();
+            return resultPromise.future();
         }
 
         /**
@@ -1044,7 +1044,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getZookeeperDescription() {
-            Promise<ReconciliationState> fut = Promise.promise();
+            Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -1069,14 +1069,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }, true,
                 res -> {
                     if (res.succeeded()) {
-                        fut.complete((ReconciliationState) res.result());
+                        promise.complete((ReconciliationState) res.result());
                     } else {
-                        fut.fail(res.cause());
+                        promise.fail(res.cause());
                     }
                 }
             );
 
-            return fut.future();
+            return promise.future();
         }
 
         Future<ReconciliationState> withZkDiff(Future<ReconcileResult<StatefulSet>> r) {
@@ -1109,7 +1109,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getReconciliationStateOfConfigMap(AbstractModel cluster, ConfigMap configMap, BiFunction<Boolean, Future<ReconcileResult<ConfigMap>>, Future<ReconciliationState>> function) {
-            Promise<ReconciliationState> result = Promise.promise();
+            Promise<ReconciliationState> resultPromise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<Boolean>executeBlocking(
                 future -> {
@@ -1121,16 +1121,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         boolean onlyMetricsSettingChanged = res.result();
                         function.apply(onlyMetricsSettingChanged, configMapOperations.reconcile(namespace, cluster.getAncillaryConfigName(), configMap)).setHandler(res2 -> {
                             if (res2.succeeded()) {
-                                result.complete(res2.result());
+                                resultPromise.complete(res2.result());
                             } else {
-                                result.fail(res2.cause());
+                                resultPromise.fail(res2.cause());
                             }
                         });
                     } else {
-                        result.fail(res.cause());
+                        resultPromise.fail(res.cause());
                     }
                 });
-            return result.future();
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> zkAncillaryCm() {
@@ -1216,7 +1216,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private Future<ReconciliationState> getKafkaClusterDescription() {
-            Promise<ReconciliationState> fut = Promise.promise();
+            Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
@@ -1241,13 +1241,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }, true,
                 res -> {
                     if (res.succeeded()) {
-                        fut.complete(res.result());
+                        promise.complete(res.result());
                     } else {
-                        fut.fail(res.cause());
+                        promise.fail(res.cause());
                     }
                 }
             );
-            return fut.future();
+            return promise.future();
         }
 
         Future<ReconciliationState> withKafkaDiff(Future<ReconcileResult<StatefulSet>> r) {
@@ -1711,7 +1711,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaGenerateCertificates() {
-            Promise<ReconciliationState> result = Promise.promise();
+            Promise<ReconciliationState> resultPromise = Promise.promise();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
@@ -1723,8 +1723,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                 },
                 true,
-                result);
-            return result.future();
+                resultPromise);
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
@@ -1766,7 +1766,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             List<Future> futures = new ArrayList<>(pvcs.size());
 
             for (PersistentVolumeClaim desiredPvc : pvcs)  {
-                Promise<Void> result = Promise.promise();
+                Promise<Void> resultPromise = Promise.promise();
 
                 pvcOperations.getAsync(namespace, desiredPvc.getMetadata().getName()).setHandler(res -> {
                     if (res.succeeded())    {
@@ -1776,17 +1776,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             // This branch handles the following conditions:
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound and we should reconcile it
-                            reconcilePvc(desiredPvc).setHandler(result);
+                            reconcilePvc(desiredPvc).setHandler(resultPromise);
                         } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
                             // The PVC is Bound but it is already resizing => Nothing to do, we should let it resize
                             log.debug("{}: The PVC {} is resizing, nothing to do", reconciliation, desiredPvc.getMetadata().getName());
-                            result.complete();
+                            resultPromise.complete();
                         } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
                             // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
                             String podName = cluster.getPodName(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
                             fsResizingRestartRequest.add(podName);
                             log.info("{}: The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", reconciliation, desiredPvc.getMetadata().getName(), podName);
-                            result.complete();
+                            resultPromise.complete();
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
                             Long currentSize = StorageUtils.parseMemory(currentPvc.getSpec().getResources().getRequests().get("storage"));
@@ -1794,39 +1794,39 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             if (!currentSize.equals(desiredSize))   {
                                 // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
-                                resizePvc(currentPvc, desiredPvc).setHandler(result);
+                                resizePvc(currentPvc, desiredPvc).setHandler(resultPromise);
                             } else  {
                                 // size didn't changed, just reconcile
-                                reconcilePvc(desiredPvc).setHandler(result);
+                                reconcilePvc(desiredPvc).setHandler(resultPromise);
                             }
                         }
                     } else {
-                        result.fail(res.cause());
+                        resultPromise.fail(res.cause());
                     }
                 });
 
-                futures.add(result.future());
+                futures.add(resultPromise.future());
             }
 
             return withVoid(CompositeFuture.all(futures));
         }
 
         Future<Void> reconcilePvc(PersistentVolumeClaim desired)  {
-            Promise<Void> result = Promise.promise();
+            Promise<Void> resultPromise = Promise.promise();
 
             pvcOperations.reconcile(namespace, desired.getMetadata().getName(), desired).setHandler(pvcRes -> {
                 if (pvcRes.succeeded()) {
-                    result.complete();
+                    resultPromise.complete();
                 } else {
-                    result.fail(pvcRes.cause());
+                    resultPromise.fail(pvcRes.cause());
                 }
             });
 
-            return result.future();
+            return resultPromise.future();
         }
 
         Future<Void> resizePvc(PersistentVolumeClaim current, PersistentVolumeClaim desired)  {
-            Promise<Void> result = Promise.promise();
+            Promise<Void> resultPromise = Promise.promise();
 
             String storageClassName = current.getSpec().getStorageClassName();
 
@@ -1837,33 +1837,33 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         if (sc == null) {
                             log.warn("{}: Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, storageClassName, desired.getMetadata().getName());
-                            result.complete();
+                            resultPromise.complete();
                         } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
                             // Resizing not suported in SC => do nothing
                             log.warn("{}: Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, storageClassName, desired.getMetadata().getName());
-                            result.complete();
+                            resultPromise.complete();
                         } else  {
                             // Resizing supported by SC => We can reconcile the PVC to have it resized
                             log.info("{}: Resizing PVC {} from {} to {}.", reconciliation, desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
                             pvcOperations.reconcile(namespace, desired.getMetadata().getName(), desired).setHandler(pvcRes -> {
                                 if (pvcRes.succeeded()) {
-                                    result.complete();
+                                    resultPromise.complete();
                                 } else {
-                                    result.fail(pvcRes.cause());
+                                    resultPromise.fail(pvcRes.cause());
                                 }
                             });
                         }
                     } else {
                         log.error("{}: Storage Class {} not found. PVC {} cannot be resized.", reconciliation, storageClassName, desired.getMetadata().getName(), scRes.cause());
-                        result.fail(scRes.cause());
+                        resultPromise.fail(scRes.cause());
                     }
                 });
             } else {
                 log.warn("{}: PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, desired.getMetadata().getName());
-                result.complete();
+                resultPromise.complete();
             }
 
-            return result.future();
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> zkPvcs() {
@@ -1937,20 +1937,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkManualPodCleaning() {
             String stsName = ZookeeperCluster.zookeeperClusterName(name);
             Future<StatefulSet> futureSts = zkSetOperations.getAsync(namespace, stsName);
-            Promise<Void> resultFuture = Promise.promise();
+            Promise<Void> resultPromise = Promise.promise();
 
             futureSts.setHandler(res -> {
                 if (res.succeeded())    {
                     List<PersistentVolumeClaim> desiredPvcs = zkCluster.generatePersistentVolumeClaims();
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(zkSetOperations, res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultFuture);
+                    maybeCleanPodAndPvc(zkSetOperations, res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultPromise);
                 } else {
-                    resultFuture.fail(res.cause());
+                    resultPromise.fail(res.cause());
                 }
             });
 
-            return withVoid(resultFuture.future());
+            return withVoid(resultPromise.future());
         }
 
         /**
@@ -1961,7 +1961,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaManualPodCleaning() {
             String stsName = KafkaCluster.kafkaClusterName(name);
             Future<StatefulSet> futureSts = kafkaSetOperations.getAsync(namespace, stsName);
-            Promise<Void> resultFuture = Promise.promise();
+            Promise<Void> resultPromise = Promise.promise();
 
             futureSts.setHandler(res -> {
                 if (res.succeeded())    {
@@ -1974,13 +1974,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(kafkaSetOperations, sts, desiredPvcs, existingPvcsFuture).setHandler(resultFuture);
+                    maybeCleanPodAndPvc(kafkaSetOperations, sts, desiredPvcs, existingPvcsFuture).setHandler(resultPromise);
                 } else {
-                    resultFuture.fail(res.cause());
+                    resultPromise.fail(res.cause());
                 }
             });
 
-            return withVoid(resultFuture.future());
+            return withVoid(resultPromise.future());
         }
 
         /**
@@ -2164,7 +2164,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> zkPersistentClaimDeletion() {
-            Promise<ReconciliationState> futureResult = Promise.promise();
+            Promise<ReconciliationState> resultPromise = Promise.promise();
             Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
 
             futurePvcs.setHandler(res -> {
@@ -2172,13 +2172,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     List<String> maybeDeletePvcs = res.result().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     List<String> desiredPvcs = zkCluster.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
 
-                    persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(futureResult);
+                    persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(resultPromise);
                 } else {
-                    futureResult.fail(res.cause());
+                    resultPromise.fail(res.cause());
                 }
             });
 
-            return futureResult.future();
+            return resultPromise.future();
         }
 
         /**
@@ -2192,7 +2192,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> kafkaPersistentClaimDeletion() {
-            Promise<ReconciliationState> futureResult = Promise.promise();
+            Promise<ReconciliationState> resultPromise = Promise.promise();
             Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
 
             futurePvcs.setHandler(res -> {
@@ -2200,13 +2200,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     List<String> maybeDeletePvcs = res.result().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     List<String> desiredPvcs = kafkaCluster.generatePersistentVolumeClaims(kafkaCluster.getStorage()).stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
 
-                    persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(futureResult);
+                    persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(resultPromise);
                 } else {
-                    futureResult.fail(res.cause());
+                    resultPromise.fail(res.cause());
                 }
             });
 
-            return futureResult.future();
+            return resultPromise.future();
         }
 
         /**
@@ -2236,7 +2236,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         @SuppressWarnings("deprecation")
         private final Future<ReconciliationState> getTopicOperatorDescription() {
-            Promise<ReconciliationState> fut = Promise.promise();
+            Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
@@ -2265,13 +2265,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }, true,
                 res -> {
                     if (res.succeeded()) {
-                        fut.complete(res.result());
+                        promise.complete(res.result());
                     } else {
-                        fut.fail(res.cause());
+                        promise.fail(res.cause());
                     }
                 }
             );
-            return fut.future();
+            return promise.future();
         }
 
         @SuppressWarnings("deprecation")
@@ -2703,7 +2703,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
-            Promise<ReconciliationState> fut = Promise.promise();
+            Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
@@ -2718,13 +2718,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }, true,
                 res -> {
                     if (res.succeeded()) {
-                        fut.complete(res.result());
+                        promise.complete(res.result());
                     } else {
-                        fut.fail(res.cause());
+                        promise.fail(res.cause());
                     }
                 }
             );
-            return fut.future();
+            return promise.future();
         }
 
         Future<ReconciliationState> kafkaExporterServiceAccount() {

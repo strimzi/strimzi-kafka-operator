@@ -98,23 +98,23 @@ public class ResourceSupport {
                                              long timeoutMs) {
 
         return new Watcher<T>() {
-            private final Promise<Watch> watchFuture;
-            private final Promise<U> doneFuture;
-            private final Promise<U> resultFuture;
+            private final Promise<Watch> watchPromise;
+            private final Promise<U> donePromise;
+            private final Promise<U> resultPromise;
             private final long timerId;
 
             /* init */
             {
-                this.watchFuture = Promise.promise();
-                this.doneFuture = Promise.promise();
-                this.resultFuture = Promise.promise();
+                this.watchPromise = Promise.promise();
+                this.donePromise = Promise.promise();
+                this.resultPromise = Promise.promise();
                 this.timerId = vertx.setTimer(timeoutMs, ignored -> {
-                    doneFuture.tryFail(new TimeoutException());
+                    donePromise.tryFail(new TimeoutException());
                 });
-                CompositeFuture.join(watchFuture.future(), doneFuture.future()).setHandler(joinResult -> {
+                CompositeFuture.join(watchPromise.future(), donePromise.future()).setHandler(joinResult -> {
                     Future<Void> closeFuture;
-                    if (watchFuture.future().succeeded()) {
-                        closeFuture = closeOnWorkerThread(watchFuture.future().result());
+                    if (watchPromise.future().succeeded()) {
+                        closeFuture = closeOnWorkerThread(watchPromise.future().result());
                     } else {
                         closeFuture = Future.succeededFuture();
                     }
@@ -122,16 +122,16 @@ public class ResourceSupport {
                         vertx.runOnContext(ignored2 -> {
                             LOGGER.warn("Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {
-                                resultFuture.complete(joinResult.result().resultAt(1));
+                                resultPromise.complete(joinResult.result().resultAt(1));
                             } else {
-                                resultFuture.fail(collectCauses(joinResult, closeResult));
+                                resultPromise.fail(collectCauses(joinResult, closeResult));
                             }
                         });
                     });
                 });
                 Watch watch = watchable.watch(this);
                 LOGGER.debug("Opened watch {}", watch);
-                watchFuture.complete(watch);
+                watchPromise.complete(watch);
             }
 
             @Override
@@ -155,7 +155,7 @@ public class ResourceSupport {
                     },
                     true,
                     ar -> {
-                        doneFuture.handle(ar);
+                        donePromise.handle(ar);
                     });
             }
 
@@ -164,6 +164,6 @@ public class ResourceSupport {
 
             }
 
-        }.resultFuture.future();
+        }.resultPromise.future();
     }
 }

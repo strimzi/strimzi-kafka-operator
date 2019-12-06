@@ -89,7 +89,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                     + desired.getMetadata().getName());
         }
 
-        Promise<ReconcileResult<T>> fut = Promise.promise();
+        Promise<ReconcileResult<T>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 T current = operation().withName(name).get();
@@ -114,9 +114,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
             },
             false,
-            fut
+            promise
         );
-        return fut.future();
+        return promise.future();
     }
 
 
@@ -144,7 +144,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     }
 
     private Future<Void> deleteAsync(String name) {
-        Promise<Void> deleteFuture = Promise.promise();
+        Promise<Void> deletePromise = Promise.promise();
         vertx.executeBlocking(
             f -> {
                 try {
@@ -159,8 +159,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 }
             },
             true,
-            deleteFuture);
-        return deleteFuture.future();
+            deletePromise);
+        return deletePromise.future();
     }
 
     /**
