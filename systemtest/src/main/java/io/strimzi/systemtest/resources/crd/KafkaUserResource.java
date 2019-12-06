@@ -77,4 +77,16 @@ public class KafkaUserResource {
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {
         return ResourceManager.deleteLater(kafkaUserClient(), kafkaUser);
     }
+
+    public static DoneableKafkaUser userWithQuota(String clusterName, String userName, Integer prodRate, Integer consRate, Integer requestPerc) {
+        return user(defaultUser(clusterName, userName)
+                .editSpec()
+                    .withNewQuotas()
+                        .withConsumerByteRate(consRate)
+                        .withProducerByteRate(prodRate)
+                        .withRequestPercentage(requestPerc)
+                    .endQuotas()
+                .endSpec()
+                .build());
+    }
 }

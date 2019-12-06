@@ -157,7 +157,7 @@ class UserST extends AbstractST {
         Integer reqPerc = 42;
 
         // Create user with correct name
-        testMethodResources().userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
+        KafkaUserResource.userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
         StUtils.waitForSecretReady(userName);
 
         String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
