@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -34,9 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static io.strimzi.test.k8s.cmdClient.BaseCmdKubeClient.STATEFUL_SET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,6 +51,7 @@ class LogSettingST extends AbstractST {
     private static final String UO_MAP = String.format("%s-%s", CLUSTER_NAME, "entity-user-operator-config");
     private static final String CONNECT_MAP = String.format("%s-%s", CLUSTER_NAME, "connect-config");
     private static final String MM_MAP = String.format("%s-%s", CLUSTER_NAME, "mirror-maker-config");
+    private static final String BRIDGE_MAP = String.format("%s-%s", CLUSTER_NAME, "bridge-config");
 
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
@@ -66,6 +66,7 @@ class LogSettingST extends AbstractST {
     private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
         {
             put("kafka.root.logger.level", INFO);
+            put("test.kafka.logger.level", INFO);
             put("log4j.logger.org.I0Itec.zkclient.ZkClient", ERROR);
             put("log4j.logger.org.apache.zookeeper", WARN);
             put("log4j.logger.kafka", TRACE);
@@ -84,12 +85,14 @@ class LogSettingST extends AbstractST {
     private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<String, String>() {
         {
             put("zookeeper.root.logger", OFF);
+            put("test.zookeeper.logger.level", DEBUG);
         }
     };
 
     private static final Map<String, String> CONNECT_LOGGERS = new HashMap<String, String>() {
         {
             put("connect.root.logger.level", INFO);
+            put("test.connect.logger.level", DEBUG);
             put("log4j.logger.org.I0Itec.zkclient", ERROR);
             put("log4j.logger.org.reflections", WARN);
         }
@@ -98,59 +101,82 @@ class LogSettingST extends AbstractST {
     private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<String, String>() {
         {
             put("rootLogger.level", DEBUG);
+            put("test.operator.logger.level", DEBUG);
         }
     };
 
     private static final Map<String, String> MIRROR_MAKER_LOGGERS = new HashMap<String, String>() {
         {
             put("mirrormaker.root.logger", TRACE);
+            put("test.mirrormaker.logger.level", TRACE);
+        }
+    };
+
+    private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<String, String>() {
+        {
+            put("log4j.logger.http.openapi.operation.createConsumer", INFO);
+            put("log4j.logger.http.openapi.operation.deleteConsumer", DEBUG);
+            put("log4j.logger.http.openapi.operation.subscribe", TRACE);
+            put("log4j.logger.http.openapi.operation.unsubscribe", DEBUG);
+            put("log4j.logger.http.openapi.operation.poll", INFO);
+            put("log4j.logger.http.openapi.operation.assign", TRACE);
+            put("log4j.logger.http.openapi.operation.commit", DEBUG);
+            put("log4j.logger.http.openapi.operation.send", ERROR);
+            put("log4j.logger.http.openapi.operation.sendToPartition", TRACE);
+            put("log4j.logger.http.openapi.operation.seekToBeginning", DEBUG);
+            put("log4j.logger.http.openapi.operation.seekToEnd", WARN);
+            put("log4j.logger.http.openapi.operation.seek", INFO);
+            put("log4j.logger.http.openapi.operation.healthy", ERROR);
+            put("log4j.logger.http.openapi.operation.ready", WARN);
+            put("log4j.logger.http.openapi.operation.openapi", TRACE);
+            put("test.bridge.logger.level", ERROR);
         }
     };
 
     @Test
     @Order(1)
     void testLoggersKafka() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, duration, KAFKA_MAP), is(true));
+        assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, KAFKA_MAP), is(true));
     }
 
     @Test
     @Order(2)
     void testLoggersZookeeper() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(ZOOKEEPER_LOGGERS, duration, ZOOKEEPER_MAP), is(true));
+        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(ZOOKEEPER_LOGGERS, ZOOKEEPER_MAP), is(true));
     }
 
     @Test
     @Order(3)
     void testLoggersTO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Topic operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, TO_MAP), is(true));
+        assertThat("Topic operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, TO_MAP), is(true));
     }
 
     @Test
     @Order(4)
     void testLoggersUO() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("User operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, duration, UO_MAP), is(true));
+        assertThat("User operator's log level is set properly", checkLoggersLevel(OPERATORS_LOGGERS, UO_MAP), is(true));
     }
 
     @Test
     @Order(5)
     void testLoggersKafkaConnect() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Kafka connect's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, duration, CONNECT_MAP), is(true));
+        assertThat("Kafka connect's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, CONNECT_MAP), is(true));
     }
 
     @Test
     @Order(6)
     void testLoggersMirrorMaker() {
-        int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, getOperationID());
-        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), is(true));
+        assertThat("Mirror maker's log level is set properly", checkLoggersLevel(MIRROR_MAKER_LOGGERS, MM_MAP), is(true));
     }
 
     @Test
     @Order(7)
+    void testLoggersBridge() {
+        assertThat("Bridge's log level is set properly", checkLoggersLevel(BRIDGE_LOGGERS, BRIDGE_MAP), is(true));
+    }
+
+    @Test
+    @Order(8)
     void testGcLoggingNonSetDisabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(GC_LOGGING_SET_NAME)), is(false));
@@ -160,7 +186,7 @@ class LogSettingST extends AbstractST {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void testGcLoggingSetEnabled() {
         assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(true));
         assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(true));
@@ -173,7 +199,7 @@ class LogSettingST extends AbstractST {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void testGcLoggingSetDisabled() {
         String connectName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
         String mmName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
@@ -219,17 +245,17 @@ class LogSettingST extends AbstractST {
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME)), is(false));
     }
 
-    private boolean checkLoggersLevel(Map<String, String> loggers, int since, String configMapName) {
+    private boolean checkLoggersLevel(Map<String, String> loggers, String configMapName) {
         boolean result = false;
+        String configMap = kubeClient().getConfigMap(configMapName).getData().get(configMapName.contains("operator") ? "log4j2.properties" : "log4j.properties");
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
-            LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = cmdKubeClient().get("configMap", configMapName);
+            LOGGER.info("Check log level setting for logger: {} Expected: {}", entry.getKey(), entry.getValue());
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
-            if (result) {
-                String log = cmdKubeClient().searchInLog(STATEFUL_SET, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), since, ERROR);
-                result = log.isEmpty();
+            // Validation failed
+            if (!result) {
+                break;
             }
         }
 
@@ -363,6 +389,13 @@ class LogSettingST extends AbstractST {
                 .endJvmOptions()
             .endSpec()
             .done();
+
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editSpec()
+                .withNewInlineLogging()
+                    .withLoggers(BRIDGE_LOGGERS)
+                .endInlineLogging()
+            .endSpec().done();
     }
 
     private String startDeploymentMeasuring() {
