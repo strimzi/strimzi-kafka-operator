@@ -249,6 +249,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         setGeneration(desired, INIT_GENERATION);
         Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(namespace, name, desired);
 
+        if (crt.failed()) {
+            return crt;
+        }
         // ... then wait for the STS to be ready...
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready

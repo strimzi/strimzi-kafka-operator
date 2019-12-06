@@ -195,8 +195,8 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).setHandler(ar -> {
-            assertThat(ar.failed(), is(true));
-            assertThat(ar.cause(), is(ex));
+            context.verify(() -> assertThat(ar.failed(), is(true)));
+            context.verify(() -> assertThat(ar.cause(), is(ex)));
             async.flag();
         });
     }
