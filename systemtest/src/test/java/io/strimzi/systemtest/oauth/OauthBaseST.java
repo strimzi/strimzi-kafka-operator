@@ -7,7 +7,8 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.MessagingBaseST;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.executor.Exec;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
@@ -96,7 +97,7 @@ public class OauthBaseST extends MessagingBaseST {
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
 
         KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
-        StUtils.waitForNodePortService(keycloakService.getMetadata().getName());
+        ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
 
         clusterHost = kubeClient(NAMESPACE).getNodeAddress();
 
@@ -115,7 +116,7 @@ public class OauthBaseST extends MessagingBaseST {
         String pubKey = cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
                 "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
 
-        StUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
+        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
@@ -182,12 +183,12 @@ public class OauthBaseST extends MessagingBaseST {
     }
 
     private void createSecretsForDeployments() {
-        StUtils.createSecret(PRODUCER_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
-        StUtils.createSecret(CONSUMER_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtY29uc3VtZXItc2VjcmV0");
-        StUtils.createSecret(STREAMS_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
-        StUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
-        StUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
-        StUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
+        SecretUtils.createSecret(PRODUCER_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
+        SecretUtils.createSecret(CONSUMER_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtY29uc3VtZXItc2VjcmV0");
+        SecretUtils.createSecret(STREAMS_OAUTH_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
+        SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
+        SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
+        SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
     }
 }
 

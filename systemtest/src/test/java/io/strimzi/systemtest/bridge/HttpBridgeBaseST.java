@@ -7,7 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.MessagingBaseST;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -102,7 +102,7 @@ public class HttpBridgeBaseST extends MessagingBaseST {
                 .withSelector(map)
                 .endSpec().build();
         KubernetesResource.createServiceResource(service, getBridgeNamespace()).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
+        ServiceUtils.waitForNodePortService(bridgeExternalService);
     }
 
     protected void checkSendResponse(JsonObject response, int messageCount) {

@@ -5,7 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,8 +31,8 @@ class HelmChartST extends AbstractST {
     void testDeployKafkaClusterViaHelmChart() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
     }
 
     @BeforeAll

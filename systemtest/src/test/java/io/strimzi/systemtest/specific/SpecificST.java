@@ -12,7 +12,8 @@ import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.MessagingBaseST;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -121,9 +122,9 @@ public class SpecificST extends MessagingBaseST {
             .endSpec().done();
 
         LOGGER.info("Wait until Zookeeper stateful set is ready");
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
 
-        StUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
 
         Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
 

@@ -7,9 +7,11 @@ package io.strimzi.systemtest.oauth;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.BridgeUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -49,7 +51,7 @@ public class OauthTlsST extends OauthBaseST {
 
         LOGGER.info("Waiting for:" + producerMessage);
 
-        StUtils.waitUntilMessageIsInPodLogs(podName, producerMessage);
+        PodUtils.waitUntilMessageIsInPodLogs(podName, producerMessage);
 
         String producerLogs = kubeClient().logs(podName);
 
@@ -60,7 +62,7 @@ public class OauthTlsST extends OauthBaseST {
         String consumerPodName = kubeClient().listPodsByPrefixInName("hello-world-consumer-").get(0).getMetadata().getName();
         String consumerMessage = "value: \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
-        StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
+        PodUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
@@ -78,7 +80,7 @@ public class OauthTlsST extends OauthBaseST {
         String producerPodName = kubeClient().listPodsByPrefixInName("hello-world-producer-").get(0).getMetadata().getName();
         String producerMessage = "Sending messages \"Hello world - " + END_MESSAGE_OFFSET + "\"";
 
-        StUtils.waitUntilMessageIsInPodLogs(producerPodName, producerMessage);
+        PodUtils.waitUntilMessageIsInPodLogs(producerPodName, producerMessage);
 
         String producerLogs = kubeClient().logs(producerPodName);
 
@@ -90,7 +92,7 @@ public class OauthTlsST extends OauthBaseST {
 
         String consumerMessage = "value: \"" + reverseNumber(END_MESSAGE_OFFSET) + " - dlrow olleH\"";
 
-        StUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
+        PodUtils.waitUntilMessageIsInPodLogs(consumerPodName, consumerMessage);
 
         String consumerLogs = kubeClient().logs(consumerPodName);
 
@@ -137,11 +139,11 @@ public class OauthTlsST extends OauthBaseST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
-        StUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
 
         String message = "Hello world - " + END_MESSAGE_OFFSET;
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, message);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, message);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString(message));
@@ -179,7 +181,7 @@ public class OauthTlsST extends OauthBaseST {
         Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
         KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
 
-        StUtils.waitForNodePortService(bridgeService.getMetadata().getName());
+        ServiceUtils.waitForNodePortService(bridgeService.getMetadata().getName());
 
         client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
 
@@ -205,7 +207,7 @@ public class OauthTlsST extends OauthBaseST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(root, clusterHost, BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(root, clusterHost, KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {

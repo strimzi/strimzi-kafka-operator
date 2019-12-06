@@ -13,9 +13,11 @@ import io.restassured.response.Response;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.BridgeUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -137,7 +139,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
     }
 
     @Test
@@ -228,7 +230,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
     }
 
     @Test
@@ -306,11 +308,11 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
     @Test
@@ -367,7 +369,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
     }
 
     @Test
@@ -438,11 +440,11 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
     @Test
@@ -556,11 +558,11 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
     @Test
@@ -704,15 +706,15 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
     }
 
     @Test
@@ -772,11 +774,11 @@ public class TracingST extends AbstractST {
         String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect in Pod:{}", kafkaConnectS2IPodName);
-        StUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, TEST_TOPIC_NAME);
 
         waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, TEST_TOPIC_NAME, 10);
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE,
                 JAEGER_KAFKA_CONNECT_S2I_SERVICE);
@@ -789,7 +791,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
     }
 
     @Test
@@ -836,11 +838,11 @@ public class TracingST extends AbstractST {
             .endSpec()
             .done();
 
-        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
+        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        StUtils.waitForNodePortService(BRIDGE_EXTERNAL_SERVICE);
+        ServiceUtils.waitForNodePortService(BRIDGE_EXTERNAL_SERVICE);
 
-        int bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
+        int bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         String bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
 
         int messageCount = 50;
@@ -850,7 +852,7 @@ public class TracingST extends AbstractST {
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
 
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        BridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
 
         HttpUtils.waitUntilServiceWithNameIsReady(RestAssured.baseURI, JAEGER_KAFKA_BRIDGE_SERVICE);

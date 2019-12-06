@@ -12,6 +12,11 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,7 +84,7 @@ class ConnectST extends AbstractST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
-        String podName = StUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
@@ -138,15 +143,15 @@ class ConnectST extends AbstractST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
-        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
         waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -192,7 +197,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Deleting topic {} from CR", topicName);
         cmdKubeClient().deleteByName("kafkatopic", topicName);
-        StUtils.waitForKafkaTopicDeletion(topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
     }
 
 
@@ -223,7 +228,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String podName = StUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         assertResources(NAMESPACE, podName, KafkaConnectResources.deploymentName(CLUSTER_NAME),
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName, KafkaConnectResources.deploymentName(CLUSTER_NAME),
@@ -244,11 +249,11 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
-        StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
         for (String pod : connectPods) {
-            StUtils.waitForPod(pod);
+            PodUtils.waitForPod(pod);
             String uid = kubeClient().getPodUid(pod);
             List<Event> events = kubeClient().listEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
@@ -294,7 +299,7 @@ class ConnectST extends AbstractST {
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
@@ -330,18 +335,18 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
-        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString("0\n1\n"));
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -368,7 +373,7 @@ class ConnectST extends AbstractST {
 
         KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editMetadata()
@@ -403,18 +408,18 @@ class ConnectST extends AbstractST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectPodName, CONNECT_TOPIC_NAME);
-        StUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
         waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString("0\n1\n"));
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
-        StUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -470,7 +475,7 @@ class ConnectST extends AbstractST {
                 .endLivenessProbe()
             .endSpec().done();
 
-        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -495,7 +500,7 @@ class ConnectST extends AbstractST {
             kc.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        StUtils.waitTillDepHasRolled(KafkaConnectResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaConnectResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(KafkaConnectResources.deploymentName(CLUSTER_NAME), KafkaConnectResources.deploymentName(CLUSTER_NAME), updatedInitialDelaySeconds, updatedTimeoutSeconds,

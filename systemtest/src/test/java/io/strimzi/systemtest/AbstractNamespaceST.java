@@ -6,7 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +58,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
+        DeploymentUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
         cluster.setNamespace(previousNamespace);
     }
 

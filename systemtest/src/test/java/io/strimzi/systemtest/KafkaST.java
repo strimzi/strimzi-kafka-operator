@@ -32,6 +32,16 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ReplicaSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
@@ -110,9 +120,9 @@ class KafkaST extends MessagingBaseST {
         Oc oc = (Oc) cmdKubeClient();
         String clusterName = "openshift-my-cluster";
         oc.newApp(appName, map("CLUSTER_NAME", clusterName));
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
-        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
@@ -127,11 +137,11 @@ class KafkaST extends MessagingBaseST {
         oc.waitForResourceDeletion("Kafka", clusterName);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-            .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+            .forEach(p -> PodUtils.waitForPodDeletion(p.getMetadata().getName()));
 
-        StUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
-        StUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
-        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
+        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
+        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
+        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
         cluster.deleteCustomResources("../examples/templates/cluster-operator");
     }
 
@@ -177,9 +187,9 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStsName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
         LOGGER.info("Scaled up to {}", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
@@ -198,7 +208,7 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
         LOGGER.info("Scaled down to {}", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -236,8 +246,8 @@ class KafkaST extends MessagingBaseST {
         });
 
         // Wait when EO(UO + TO) will be removed
-        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForPodDeletion(pod.getMetadata().getName());
+        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        PodUtils.waitForPodDeletion(pod.getMetadata().getName());
 
         LOGGER.info("Entity operator was deleted");
     }
@@ -278,7 +288,7 @@ class KafkaST extends MessagingBaseST {
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         for (String name : newZkPodNames) {
-            StUtils.waitForPodDeletion(name);
+            PodUtils.waitForPodDeletion(name);
         }
 
         // Wait for one zk pods will became leader and others follower state
@@ -476,9 +486,9 @@ class KafkaST extends MessagingBaseST {
                 .endSpec()
             .done();
 
-        Map<String, String> kafkaSnapshot = StUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> zkSnapshot = StUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verify values before update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds,
@@ -582,10 +592,10 @@ class KafkaST extends MessagingBaseST {
             entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
-        StUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
-        StUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
-        StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
-        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 2, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 2, zkSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -656,7 +666,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-        StUtils.waitForSecretReady(kafkaUser);
+        SecretUtils.waitForSecretReady(kafkaUser);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
         availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
@@ -686,7 +696,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        StUtils.waitForSecretReady(kafkaUser);
+        SecretUtils.waitForSecretReady(kafkaUser);
         String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -727,7 +737,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        StUtils.waitForSecretReady(kafkaUser);
+        SecretUtils.waitForSecretReady(kafkaUser);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
         availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
@@ -794,9 +804,9 @@ class KafkaST extends MessagingBaseST {
         String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
         String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        Map<String, String> zkPods = StUtils.ssSnapshot(zkStsName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStsName);
-        Map<String, String> eoPods = StUtils.depSnapshot(eoDepName);
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDepName);
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "1536Mi", "1", "1Gi", "500m");
@@ -822,9 +832,9 @@ class KafkaST extends MessagingBaseST {
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        assertThat(StUtils.ssHasRolled(zkStsName, zkPods), is(false));
-        assertThat(StUtils.ssHasRolled(kafkaStsName, kafkaPods), is(false));
-        assertThat(StUtils.depHasRolled(eoDepName, eoPods), is(false));
+        assertThat(StatefulSetUtils.ssHasRolled(zkStsName, zkPods), is(false));
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStsName, kafkaPods), is(false));
+        assertThat(DeploymentUtils.depHasRolled(eoDepName, eoPods), is(false));
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
 
@@ -848,7 +858,7 @@ class KafkaST extends MessagingBaseST {
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
 
-        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
@@ -862,7 +872,7 @@ class KafkaST extends MessagingBaseST {
             topic.getSpec().setPartitions(2);
         });
 
-        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
@@ -876,7 +886,7 @@ class KafkaST extends MessagingBaseST {
 
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
-        StUtils.waitForKafkaTopicDeletion("my-topic");
+        KafkaTopicUtils.waitForKafkaTopicDeletion("my-topic");
 
         //Checking all topics were deleted
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
@@ -894,9 +904,9 @@ class KafkaST extends MessagingBaseST {
 
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(null));
         //Waiting when EO pod will be recreated without TO
-        StUtils.waitForPodDeletion(eoPodName);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
-        StUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
+        PodUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that TO was removed
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -910,8 +920,8 @@ class KafkaST extends MessagingBaseST {
 
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()));
         //Waiting when EO pod will be recreated with TO
-        StUtils.waitForPodDeletion(eoPodName);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        PodUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that TO was created
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -936,9 +946,9 @@ class KafkaST extends MessagingBaseST {
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(null));
 
         //Waiting when EO pod will be recreated without UO
-        StUtils.waitForPodDeletion(eoPodName);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
-        StUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
+        PodUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        PodUtils.waitUntilPodContainersCount(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 2);
 
         //Checking that UO was removed
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -952,8 +962,8 @@ class KafkaST extends MessagingBaseST {
 
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
         //Waiting when EO pod will be recreated with UO
-        StUtils.waitForPodDeletion(eoPodName);
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        PodUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
         //Checking that UO was created
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -987,9 +997,9 @@ class KafkaST extends MessagingBaseST {
         });
 
         //Waiting when EO pod will be deleted
-        StUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
-        StUtils.waitForPodDeletion(eoPodName);
+        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        ReplicaSetUtils.waitForReplicaSetDeletion(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        PodUtils.waitForPodDeletion(eoPodName);
 
         //Checking that EO was removed
         assertThat(kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).size(), is(0));
@@ -1000,7 +1010,7 @@ class KafkaST extends MessagingBaseST {
             entityOperatorSpec.setUserOperator(new EntityUserOperatorSpec());
             k.getSpec().setEntityOperator(entityOperatorSpec);
         });
-        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         //Checking that EO was created
         kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).forEach(pod -> {
@@ -1107,7 +1117,7 @@ class KafkaST extends MessagingBaseST {
 
         //Deleting topic
         cmdKubeClient().deleteByName("kafkatopic", "topic-without-labels");
-        StUtils.waitForKafkaTopicDeletion("topic-without-labels");
+        KafkaTopicUtils.waitForKafkaTopicDeletion("topic-without-labels");
 
         //Checking all topics were deleted
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
@@ -1164,8 +1174,8 @@ class KafkaST extends MessagingBaseST {
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaName);
-        Map<String, String> zkPods = StUtils.ssSnapshot(zkName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
         // rolling update for kafka
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
@@ -1186,7 +1196,7 @@ class KafkaST extends MessagingBaseST {
                 || !getAnnotationsForSTS(kafkaName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
-        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
@@ -1207,7 +1217,7 @@ class KafkaST extends MessagingBaseST {
                 || !getAnnotationsForSTS(zkName).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
-        StUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
     }
 
     @Test
@@ -1313,7 +1323,7 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        StUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         waitForClusterAvailability(NAMESPACE);
     }
@@ -1340,7 +1350,7 @@ class KafkaST extends MessagingBaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        StUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
     }
@@ -1353,9 +1363,9 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+        zkPods[0] = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             if (!zkSameAsLast) {
                 LOGGER.info("ZK Cluster not stable");
@@ -1383,7 +1393,7 @@ class KafkaST extends MessagingBaseST {
 
     void waitForZkPods(List<String> newZkPodNames) {
         for (String name : newZkPodNames) {
-            StUtils.waitForPod(name);
+            PodUtils.waitForPod(name);
             LOGGER.info("Pod {} is ready", name);
         }
         waitForZkRollUp();
@@ -1424,7 +1434,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Deleting Kafka cluster {}", CLUSTER_NAME);
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
         LOGGER.info("Waiting for Kafka pods deletion");
-        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        PodUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
@@ -1444,7 +1454,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("Kafka", CLUSTER_NAME);
         LOGGER.info("Waiting for Kafka pods deletion");
-        StUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
+        PodUtils.waitForKafkaClusterPodsDeletion(CLUSTER_NAME);
         verifyPVCDeletion(kafkaReplicas, jbodStorage);
     }
 
@@ -1624,10 +1634,10 @@ class KafkaST extends MessagingBaseST {
                 .endMetadata()
                 .done();
 
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
+        StatefulSetUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
 
         LOGGER.info("Getting labels from stateful set resource");
         StatefulSet statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1658,7 +1668,7 @@ class KafkaST extends MessagingBaseST {
         labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        StUtils.waitForKafkaServiceLabelsChange(brokerServiceName, labels);
+        ServiceUtils.waitForKafkaServiceLabelsChange(brokerServiceName, labels);
 
         LOGGER.info("Verifying kafka labels via services");
         Service service = kubeClient().getService(brokerServiceName);
@@ -1666,7 +1676,7 @@ class KafkaST extends MessagingBaseST {
         verifyPresentLabels(labels, service);
 
         LOGGER.info("Waiting for kafka config map labels changed {}", labels);
-        StUtils.waitForKafkaConfigMapLabelsChange(configMapName, labels);
+        ConfigMapUtils.waitForKafkaConfigMapLabelsChange(configMapName, labels);
 
         LOGGER.info("Verifying kafka labels via config maps");
         ConfigMap configMap = kubeClient().getConfigMap(configMapName);
@@ -1674,7 +1684,7 @@ class KafkaST extends MessagingBaseST {
         verifyPresentLabels(labels, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
+        StatefulSetUtils.waitForKafkaStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1682,7 +1692,7 @@ class KafkaST extends MessagingBaseST {
         verifyPresentLabels(labels, statefulSet);
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
@@ -1704,7 +1714,7 @@ class KafkaST extends MessagingBaseST {
         labels.remove(labelKeys[2]);
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        StUtils.waitForKafkaServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForKafkaServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
         service = kubeClient().getService(brokerServiceName);
@@ -1712,7 +1722,7 @@ class KafkaST extends MessagingBaseST {
         verifyNullLabels(labelKeys, service);
 
         LOGGER.info("Verifying kafka labels via config maps");
-        StUtils.waitForKafkaConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ConfigMapUtils.waitForKafkaConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         configMap = kubeClient().getConfigMap(configMapName);
 
@@ -1720,7 +1730,7 @@ class KafkaST extends MessagingBaseST {
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         String statefulSetName = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getName();
-        StUtils.waitForKafkaStatefulSetLabelsDeletion(statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        StatefulSetUtils.waitForKafkaStatefulSetLabelsDeletion(statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -1728,10 +1738,10 @@ class KafkaST extends MessagingBaseST {
         verifyNullLabels(labelKeys, statefulSet);
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
-        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
-        StUtils.waitUntilKafkaPodLabelsDeletion(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
+        PodUtils.waitUntilPodLabelsDeletion(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         labels = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).getMetadata().getLabels();
 
@@ -1859,7 +1869,7 @@ class KafkaST extends MessagingBaseST {
         KafkaResource.kafkaEphemeral(secondClusterName, 3, 1).done();
 
         KafkaUserResource.tlsUser(firstClusterName, userName).done();
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
@@ -1890,7 +1900,7 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        Map<String, String> kafkaPodsSnapshot = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME, 1, 1).done();
 
@@ -1929,7 +1939,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         LOGGER.info("Wait for kafka to rolling restart ...");
-        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaPodsSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaPodsSnapshot);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c",
@@ -2056,9 +2066,9 @@ class KafkaST extends MessagingBaseST {
             kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
         });
 
-        StUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
-        StUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
-        StUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
+        PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(pvcLabel, labelAnnotationKey);
+        PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(pvcAnnotation, labelAnnotationKey);
+        KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
         pvcs = kubeClient().listPersistentVolumeClaims();
 

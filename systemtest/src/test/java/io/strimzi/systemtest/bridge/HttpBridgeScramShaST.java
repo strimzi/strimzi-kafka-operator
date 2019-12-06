@@ -12,9 +12,10 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.BridgeUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -61,7 +62,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        BridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, messageCount);
         receiveMessagesExternalScramSha(NAMESPACE, topicName, messageCount, userName);
     }
 
@@ -127,7 +128,7 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
         // Create Kafka user
         KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
@@ -151,11 +152,11 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .endTls()
             .endSpec().done();
 
-        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
+        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
+        ServiceUtils.waitForNodePortService(bridgeExternalService);
 
-        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
+        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 }

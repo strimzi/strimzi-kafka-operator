@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.utils;
+package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -48,7 +48,6 @@ public class MetricsUtils {
         synchronized (LOCK) {
             LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
         }
-
         return exec.out();
     }
 
@@ -88,7 +87,6 @@ public class MetricsUtils {
                 values.add(Double.parseDouble(t.group(1)));
             }
         }
-
         return values;
     }
 
@@ -116,7 +114,6 @@ public class MetricsUtils {
                 throw new RuntimeException(e);
             }
         });
-
         return  map;
     }
 }

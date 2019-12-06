@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,7 +90,7 @@ public class KafkaConnectS2IResource {
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka ConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForConnectS2IStatus(kafkaConnectS2I.getMetadata().getName(), "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2I.getMetadata().getName(), "Ready");
         LOGGER.info("Kafka ConnectS2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }

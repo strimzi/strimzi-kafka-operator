@@ -6,7 +6,10 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -44,8 +47,8 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteDeployment(entityOperatorDeploymentName);
 
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
-        StUtils.waitForDeploymentRecovery(entityOperatorDeploymentName, entityOperatorDeploymentUid);
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName, 1);
+        DeploymentUtils.waitForDeploymentRecovery(entityOperatorDeploymentName, entityOperatorDeploymentUid);
+        DeploymentUtils.waitForDeploymentReady(entityOperatorDeploymentName, 1);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -63,8 +66,8 @@ class RecoveryST extends AbstractST {
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
-        StUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
-        StUtils.waitForAllStatefulSetPodsReady(kafkaStatefulSetName, 3);
+        StatefulSetUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStatefulSetName, 3);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -82,8 +85,8 @@ class RecoveryST extends AbstractST {
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
-        StUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
-        StUtils.waitForAllStatefulSetPodsReady(zookeeperStatefulSetName, 1);
+        StatefulSetUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(zookeeperStatefulSetName, 1);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -98,7 +101,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteService(kafkaServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
-        StUtils.waitForServiceRecovery(kafkaServiceName, kafkaServiceUid);
+        ServiceUtils.waitForServiceRecovery(kafkaServiceName, kafkaServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -113,7 +116,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteService(zookeeperServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
-        StUtils.waitForServiceRecovery(zookeeperServiceName, zookeeperServiceUid);
+        ServiceUtils.waitForServiceRecovery(zookeeperServiceName, zookeeperServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -128,7 +131,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteService(kafkaHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
-        StUtils.waitForServiceRecovery(kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
+        ServiceUtils.waitForServiceRecovery(kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -143,7 +146,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteService(zookeeperHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
-        StUtils.waitForServiceRecovery(zookeeperHeadlessServiceName, zookeeperHeadlessServiceUid);
+        ServiceUtils.waitForServiceRecovery(zookeeperHeadlessServiceName, zookeeperHeadlessServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -158,7 +161,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteConfigMap(kafkaMetricsConfigName);
 
         LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
-        StUtils.waitForConfigMapRecovery(kafkaMetricsConfigName, kafkaMetricsConfigUid);
+        ConfigMapUtils.waitForConfigMapRecovery(kafkaMetricsConfigName, kafkaMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -173,7 +176,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteConfigMap(zookeeperMetricsConfigName);
 
         LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
-        StUtils.waitForConfigMapRecovery(zookeeperMetricsConfigName, zookeeperMetricsConfigUid);
+        ConfigMapUtils.waitForConfigMapRecovery(zookeeperMetricsConfigName, zookeeperMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -189,7 +192,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteDeployment(kafkaBridgeDeploymentName);
 
         LOGGER.info("Waiting for deployment {} recovery", kafkaBridgeDeploymentName);
-        StUtils.waitForDeploymentRecovery(kafkaBridgeDeploymentName, kafkaBridgeDeploymentUid);
+        DeploymentUtils.waitForDeploymentRecovery(kafkaBridgeDeploymentName, kafkaBridgeDeploymentUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -204,7 +207,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteService(kafkaBridgeServiceName);
 
         LOGGER.info("Waiting for service {} recovery", kafkaBridgeServiceName);
-        StUtils.waitForServiceRecovery(kafkaBridgeServiceName, kafkaBridgeServiceUid);
+        ServiceUtils.waitForServiceRecovery(kafkaBridgeServiceName, kafkaBridgeServiceUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }
@@ -219,7 +222,7 @@ class RecoveryST extends AbstractST {
         kubeClient().deleteConfigMap(kafkaBridgeMetricsConfigName);
 
         LOGGER.info("Waiting for metric config {} re-creation", kafkaBridgeMetricsConfigName);
-        StUtils.waitForConfigMapRecovery(kafkaBridgeMetricsConfigName, kafkaBridgeMetricsConfigUid);
+        ConfigMapUtils.waitForConfigMapRecovery(kafkaBridgeMetricsConfigName, kafkaBridgeMetricsConfigUid);
 
         TimeMeasuringSystem.stopOperation(getOperationID());
     }

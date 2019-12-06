@@ -8,9 +8,10 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.BridgeUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -57,7 +58,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        BridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, messageCount);
         receiveMessagesExternalTls(NAMESPACE, topicName, messageCount, userName);
     }
 
@@ -118,7 +119,7 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
 
         // Create Kafka user
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
@@ -133,11 +134,11 @@ class HttpBridgeTlsST extends HttpBridgeBaseST {
             .endTls()
             .endSpec().done();
 
-        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
+        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
+        ServiceUtils.waitForNodePortService(bridgeExternalService);
 
-        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
+        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 }
