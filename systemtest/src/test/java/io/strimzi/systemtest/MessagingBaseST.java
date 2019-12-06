@@ -136,7 +136,11 @@ public class MessagingBaseST extends AbstractST {
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         consumerArguments.put(ClientArgument.GROUP_ID, "my-group" + rng.nextInt(Integer.MAX_VALUE));
-        if (allowParameter("2.3.0")) {
+
+        String image = kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
+        String clientVersion = image.substring(image.length() - 5);
+
+        if (allowParameter("2.3.0", clientVersion)) {
             consumerArguments.put(ClientArgument.GROUP_INSTANCE_ID, "instance" + rng.nextInt(Integer.MAX_VALUE));
         }
         consumerArguments.put(ClientArgument.VERBOSE, "");
@@ -174,9 +178,9 @@ public class MessagingBaseST extends AbstractST {
                 sent == received);
     }
 
-    private boolean allowParameter(String minimalVersion) {
+    private boolean allowParameter(String minimalVersion, String clientVersion) {
         Pattern pattern = Pattern.compile("(?<major>[0-9]).(?<minor>[0-9]).(?<micro>[0-9])");
-        Matcher current = pattern.matcher(Environment.ST_KAFKA_VERSION);
+        Matcher current = pattern.matcher(clientVersion);
         Matcher minimal = pattern.matcher(minimalVersion);
         if (current.find() && minimal.find()) {
             return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
