@@ -54,7 +54,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.io.File;
 import java.io.IOException;

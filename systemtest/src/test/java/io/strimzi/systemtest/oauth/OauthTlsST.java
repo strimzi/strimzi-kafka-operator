@@ -18,10 +18,10 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import resources.KubernetesResource;
-import resources.crd.KafkaBridgeResource;
-import resources.crd.KafkaClientsResource;
-import resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 import java.util.concurrent.ExecutionException;
 

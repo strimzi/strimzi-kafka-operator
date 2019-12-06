@@ -29,15 +29,15 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import resources.KubernetesResource;
-import resources.ResourceManager;
-import resources.crd.KafkaBridgeResource;
-import resources.crd.KafkaConnectResource;
-import resources.crd.KafkaConnectS2IResource;
-import resources.crd.KafkaMirrorMakerResource;
-import resources.crd.KafkaResource;
-import resources.crd.KafkaTopicResource;
-import resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.List;
 

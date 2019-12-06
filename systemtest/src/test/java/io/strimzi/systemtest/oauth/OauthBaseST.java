@@ -16,12 +16,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
-import resources.KubernetesResource;
-import resources.ResourceManager;
-import resources.crd.KafkaClientsResource;
-import resources.crd.KafkaResource;
-import resources.crd.KafkaTopicResource;
-import resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
