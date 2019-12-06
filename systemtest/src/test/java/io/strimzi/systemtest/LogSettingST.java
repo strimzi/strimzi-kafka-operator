@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -34,11 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static io.strimzi.test.k8s.cmdClient.BaseCmdKubeClient.STATEFUL_SET;
-import static io.strimzi.test.k8s.BaseCmdKubeClient.DEPLOYMENT;
-import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -393,7 +390,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources().kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(BRIDGE_LOGGERS)
