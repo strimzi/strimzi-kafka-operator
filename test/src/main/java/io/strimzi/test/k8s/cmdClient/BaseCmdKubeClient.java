@@ -362,7 +362,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             return Exec.exec("bash", "-c", join(" ", namespacedCommand("logs", resourceType + "/" + resourceName, "-c " + resourceContainer, "--since=" + sinceSeconds + "s",
                     "|", "grep", " -e " + join(" -e ", grepPattern), "-B", "1"))).out();
         } catch (KubeClusterException e) {
-            if (e.result != null && e.result.exitStatus() == 1) {
+            if (e.result != null && e.result.exitStatus()) {
                 LOGGER.info("{} not found", grepPattern);
             } else {
                 LOGGER.error("Caught exception while searching {} in logs", grepPattern);
