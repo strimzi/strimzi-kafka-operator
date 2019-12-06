@@ -26,7 +26,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.io.BufferedReader;
 import java.io.File;

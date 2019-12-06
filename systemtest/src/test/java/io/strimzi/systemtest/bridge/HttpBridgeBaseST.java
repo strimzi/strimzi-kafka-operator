@@ -18,8 +18,8 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import resources.KubernetesResource;
-import resources.ResourceManager;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
 import java.util.List;

@@ -10,8 +10,8 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import resources.crd.KafkaMirrorMakerResource;
-import resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.io.File;
 import java.util.List;

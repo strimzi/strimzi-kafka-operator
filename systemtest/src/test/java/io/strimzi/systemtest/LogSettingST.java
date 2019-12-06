@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import resources.KubernetesResource;
-import resources.ResourceManager;
-import resources.crd.KafkaConnectResource;
-import resources.crd.KafkaMirrorMakerResource;
-import resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.util.HashMap;
 import java.util.List;

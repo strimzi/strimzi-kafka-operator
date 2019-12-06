@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import resources.KubernetesResource;
+import io.strimzi.systemtest.resources.KubernetesResource;
 
 import java.util.HashMap;
 import java.util.Map;

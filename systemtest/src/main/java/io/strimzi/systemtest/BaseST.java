@@ -6,8 +6,8 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.TestInstance;
-import resources.KubernetesResource;
-import resources.ResourceManager;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.Arrays;
 import java.util.Collections;

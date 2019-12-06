@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package resources.crd;
+package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -17,7 +17,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 
 public class KafkaBridgeResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeResource.class);
