@@ -35,7 +35,8 @@ public class TlsListenerConfiguration implements Serializable, UnknownPropertyPr
     private CertAndKeySecretSource brokerCertAndKey;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Reference to the `Secret` which holds the certificate and private key pair.")
+    @Description("Reference to the `Secret` which holds the certificate and private key pair. " +
+            "The certificate can optionally contain the whole chain.")
     public CertAndKeySecretSource getBrokerCertAndKey() {
         return brokerCertAndKey;
     }

@@ -331,7 +331,7 @@ Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 [options="header"]
 |====
 |Property                 |Description
-|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 
@@ -435,7 +435,7 @@ Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExt
 [options="header"]
 |====
 |Property                 |Description
-|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 
@@ -637,7 +637,7 @@ Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternal
 |xref:type-IngressListenerBootstrapConfiguration-{context}[`IngressListenerBootstrapConfiguration`]
 |brokers           1.2+<.<|External broker ingress configuration.
 |xref:type-IngressListenerBrokerConfiguration-{context}[`IngressListenerBrokerConfiguration`] array
-|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair.
+|brokerCertAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |====
 
