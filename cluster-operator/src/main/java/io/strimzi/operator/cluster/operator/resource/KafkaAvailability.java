@@ -147,19 +147,19 @@ class KafkaAvailability {
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        Promise<Map<String, Config>> f = Promise.promise();
+        Promise<Map<String, Config>> promise = Promise.promise();
         ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
             if (error != null) {
-                f.fail(error);
+                promise.fail(error);
             } else {
                 log.debug("Got topic configs for {} topics", topicNames.size());
-                f.complete(topicNameToConfig.entrySet().stream()
+                promise.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
                             entry -> entry.getValue())));
             }
         });
-        return f.future();
+        return promise.future();
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
@@ -178,30 +178,30 @@ class KafkaAvailability {
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        Promise<Collection<TopicDescription>> descFuture = Promise.promise();
+        Promise<Collection<TopicDescription>> descPromise = Promise.promise();
         ac.describeTopics(names).all()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
-                        descFuture.fail(error);
+                        descPromise.fail(error);
                     } else {
                         log.debug("Got topic descriptions for {} topics", tds.size());
-                        descFuture.complete(tds.values());
+                        descPromise.complete(tds.values());
                     }
                 });
-        return descFuture.future();
+        return descPromise.future();
     }
 
     protected Future<Set<String>> topicNames() {
-        Promise<Set<String>> namesFuture = Promise.promise();
+        Promise<Set<String>> namesPromise = Promise.promise();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {
                     if (error != null) {
-                        namesFuture.fail(error);
+                        namesPromise.fail(error);
                     } else {
                         log.debug("Got {} topic names", names.size());
-                        namesFuture.complete(names);
+                        namesPromise.complete(names);
                     }
                 });
-        return namesFuture.future();
+        return namesPromise.future();
     }
 }

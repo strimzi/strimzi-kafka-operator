@@ -159,10 +159,10 @@ public class KafkaRoller {
     }
 
     private static class RestartContext {
-        final Promise<Void> future;
+        final Promise<Void> promise;
         final BackOff backOff;
         RestartContext(Supplier<BackOff> backOffSupplier) {
-            future = Promise.promise();
+            promise = Promise.promise();
             backOff = backOffSupplier.get();
             backOff.delayMs();
         }
@@ -170,7 +170,7 @@ public class KafkaRoller {
         @Override
         public String toString() {
             return "RestartContext{" +
-                    "future=" + future +
+                    "future=" + promise +
                     ", backOff=" + backOff +
                     '}';
         }
@@ -193,23 +193,23 @@ public class KafkaRoller {
             log.debug("Considering restart of pod {} after delay of {} {}", podId, delay, unit);
             try {
                 restartIfNecessary(podId, ctx.backOff.done());
-                ctx.future.complete();
+                ctx.promise.complete();
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
             } catch (FatalProblem e) {
                 log.info("Could not restart pod {}, giving up after {} attempts/{}ms",
                         podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
-                ctx.future.fail(e);
+                ctx.promise.fail(e);
                 singleExecutor.shutdownNow();
                 podToContext.forEachValue(Integer.MAX_VALUE, f -> {
-                    f.future.tryFail(e);
+                    f.promise.tryFail(e);
                 });
             } catch (Exception e) {
                 if (ctx.backOff.done()) {
                     log.info("Could not roll pod {}, giving up after {} attempts/{}ms",
                             podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
-                    ctx.future.fail(e instanceof TimeoutException ?
+                    ctx.promise.fail(e instanceof TimeoutException ?
                             new io.strimzi.operator.common.operator.resource.TimeoutException() :
                             e);
                 } else {
@@ -220,7 +220,7 @@ public class KafkaRoller {
                 }
             }
         }, delay, unit);
-        return ctx.future.future();
+        return ctx.promise.future();
     }
 
     /**
@@ -248,7 +248,7 @@ public class KafkaRoller {
                 try {
                     adminClient = adminClient(podId);
                     Integer controller = controller(podId, adminClient, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                    int stillRunning = podToContext.reduceValuesToInt(100, v -> v.future.future().isComplete() ? 0 : 1,
+                    int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
                             0, Integer::sum);
                     if (controller == podId && stillRunning > 1) {
                         log.debug("Pod {} is controller and there are other pods to roll", podId);

@@ -1280,23 +1280,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future<ReconcileResult<ClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
                     KafkaCluster.initContainerClusterRoleBindingName(namespace, name), desired);
 
-            Promise replacementFut = Promise.promise();
+            Promise replacementPromise = Promise.promise();
 
             fut.setHandler(res -> {
                 if (res.failed()) {
                     if (desired == null && res.cause() != null && res.cause().getMessage() != null &&
                             res.cause().getMessage().contains("Message: Forbidden!")) {
                         log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
-                        replacementFut.complete();
+                        replacementPromise.complete();
                     } else {
-                        replacementFut.fail(res.cause());
+                        replacementPromise.fail(res.cause());
                     }
                 } else {
-                    replacementFut.complete();
+                    replacementPromise.complete();
                 }
             });
 
-            return withVoid(replacementFut.future());
+            return withVoid(replacementPromise.future());
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
@@ -1419,7 +1419,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
             }
 
-            Promise blockingFuture = Promise.promise();
+            Promise blockingPromise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -1475,13 +1475,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
                 }, res -> {
                     if (res.succeeded()) {
-                        blockingFuture.complete();
+                        blockingPromise.complete();
                     } else {
-                        blockingFuture.fail(res.cause());
+                        blockingPromise.fail(res.cause());
                     }
                 });
 
-            return withVoid(blockingFuture.future());
+            return withVoid(blockingPromise.future());
         }
 
         Future<ReconciliationState> kafkaReplicaServicesReady() {
@@ -1489,7 +1489,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            Promise blockingFuture = Promise.promise();
+            Promise blockingPromise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -1498,7 +1498,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     for (int i = 0; i < replicas; i++) {
                         String serviceName = KafkaCluster.externalServiceName(name, i);
-                        Promise serviceFuture = Promise.promise();
+                        Promise servicePromise = Promise.promise();
 
                         Future<Void> address = null;
                         Set<String> dnsNames = new HashSet<>();
@@ -1556,19 +1556,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 this.kafkaExternalDnsNames.put(podNumber, dnsNames);
 
-                                serviceFuture.complete();
+                                servicePromise.complete();
                             } else {
                                 if (kafkaCluster.isExposedWithNodePort()) {
                                     log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
-                                    serviceFuture.fail("Node port was not assigned for Service " + serviceName + ".");
+                                    servicePromise.fail("Node port was not assigned for Service " + serviceName + ".");
                                 } else {
                                     log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
-                                    serviceFuture.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                                    servicePromise.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
                                 }
                             }
                         });
 
-                        serviceFutures.add(serviceFuture.future());
+                        serviceFutures.add(servicePromise.future());
                     }
 
                     CompositeFuture.join(serviceFutures).setHandler(res -> {
@@ -1580,13 +1580,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
                 }, res -> {
                     if (res.succeeded()) {
-                        blockingFuture.complete();
+                        blockingPromise.complete();
                     } else {
-                        blockingFuture.fail(res.cause());
+                        blockingPromise.fail(res.cause());
                     }
                 });
 
-            return withVoid(blockingFuture.future());
+            return withVoid(blockingPromise.future());
         }
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
@@ -1599,7 +1599,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
             }
 
-            Promise blockingFuture = Promise.promise();
+            Promise blockingPromise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -1629,13 +1629,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
                 }, res -> {
                     if (res.succeeded()) {
-                        blockingFuture.complete();
+                        blockingPromise.complete();
                     } else {
-                        blockingFuture.fail(res.cause());
+                        blockingPromise.fail(res.cause());
                     }
                 });
 
-            return withVoid(blockingFuture.future());
+            return withVoid(blockingPromise.future());
         }
 
         Future<ReconciliationState> kafkaReplicaRoutesReady() {
@@ -1643,7 +1643,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            Promise blockingFuture = Promise.promise();
+            Promise blockingPromise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -1652,7 +1652,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     for (int i = 0; i < replicas; i++) {
                         String routeName = KafkaCluster.externalServiceName(name, i);
-                        Promise routeFuture = Promise.promise();
+                        Promise routePromise = Promise.promise();
                         Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
                         int podNumber = i;
 
@@ -1682,14 +1682,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 this.kafkaExternalDnsNames.put(podNumber, dnsNames);
 
-                                routeFuture.complete();
+                                routePromise.complete();
                             } else {
                                 log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
-                                routeFuture.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
+                                routePromise.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
                             }
                         });
 
-                        routeFutures.add(routeFuture.future());
+                        routeFutures.add(routePromise.future());
                     }
 
                     CompositeFuture.join(routeFutures).setHandler(res -> {
@@ -1701,13 +1701,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
                 }, res -> {
                     if (res.succeeded()) {
-                        blockingFuture.complete();
+                        blockingPromise.complete();
                     } else {
-                        blockingFuture.fail(res.cause());
+                        blockingPromise.fail(res.cause());
                     }
                 });
 
-            return withVoid(blockingFuture.future());
+            return withVoid(blockingPromise.future());
         }
 
         Future<ReconciliationState> kafkaGenerateCertificates() {

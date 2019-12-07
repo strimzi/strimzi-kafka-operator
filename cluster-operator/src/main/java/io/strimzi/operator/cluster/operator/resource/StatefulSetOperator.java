@@ -120,16 +120,16 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
-        Promise<Void> f = Promise.promise();
+        Promise<Void> promise = Promise.promise();
         Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
         r.setHandler(h -> {
             if (h.succeeded()) {
-                f.complete();
+                promise.complete();
             } else {
-                f.fail(h.cause());
+                promise.fail(h.cause());
             }
         });
-        return f.future();
+        return promise.future();
     }
 
     /**
@@ -323,7 +323,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      */
     protected Future<ReconcileResult<StatefulSet>> internalReplace(String namespace, String name, StatefulSet current, StatefulSet desired, boolean cascading) {
         try {
-            Promise<ReconcileResult<StatefulSet>> fut = Promise.promise();
+            Promise<ReconcileResult<StatefulSet>> promise = Promise.promise();
 
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
@@ -340,13 +340,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 if (res.succeeded())    {
                     StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
                     log.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);
-                    fut.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+                    promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {
-                    fut.fail(res.cause());
+                    promise.fail(res.cause());
                 }
             });
 
-            return fut.future();
+            return promise.future();
         } catch (Exception e) {
             log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
