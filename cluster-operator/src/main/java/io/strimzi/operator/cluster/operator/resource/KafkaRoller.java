@@ -170,7 +170,7 @@ public class KafkaRoller {
         @Override
         public String toString() {
             return "RestartContext{" +
-                    "future=" + promise +
+                    "promise=" + promise +
                     ", backOff=" + backOff +
                     '}';
         }
