@@ -14,7 +14,6 @@ import io.strimzi.systemtest.logs.LogCollector;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.LogCollector;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
