@@ -63,7 +63,7 @@
       "logMessageVersion": "2.2"
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.11.4-kafka-2.1.0",
+      "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
       "afterKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1"
     },
     "supportedK8sVersion": {

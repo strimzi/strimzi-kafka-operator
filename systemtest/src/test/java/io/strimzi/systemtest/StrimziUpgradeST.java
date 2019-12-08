@@ -105,7 +105,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
             Thread.sleep(10000);
 
             // Deploy clients and exchange messages
-            KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get();
+            KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
             deployClients(parameters.getJsonObject("client").getString("beforeKafkaUpdate"), kafkaUser);
 
             final String defaultKafkaClientsPodName =
