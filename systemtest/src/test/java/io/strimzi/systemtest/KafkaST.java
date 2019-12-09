@@ -1823,7 +1823,7 @@ class KafkaST extends MessagingBaseST {
         // Wait for kafka broker deployment to finish
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
         LOGGER.info("Deployment of initial Kafka version (" + initialVersion.version() + ") complete");
 
         String zkVersionCommand = "ls libs | grep -Po 'zookeeper-\\K\\d+.\\d+.\\d+' | head -1";
@@ -1835,8 +1835,6 @@ class KafkaST extends MessagingBaseST {
         String kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
         LOGGER.debug("Pre-change Kafka version query returned: " + kafkaResult);
-
-        // TODO: We could add functionality testing here? Add topics and messages to check they persist across the update?
 
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1885,9 +1883,6 @@ class KafkaST extends MessagingBaseST {
 
         assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
                 " was expected", kafkaResult, is(newVersion.version()));
-
-        // TODO: If we added functionality tests, we could repeat them here to confirm the update resulted in a
-        //  functioning system and no data was lost?
 
     }
 

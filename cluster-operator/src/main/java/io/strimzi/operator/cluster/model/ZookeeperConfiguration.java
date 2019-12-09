@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 /**
  * Class for handling Zookeeper configuration passed by the user
@@ -43,7 +44,19 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public ZookeeperConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
+        this(configuration, FORBIDDEN_OPTIONS);
+    }
+
+    /**
+     * Constructor used to instantiate this class from String configuration and validated against the supplied forbidden
+     * options.
+     *
+     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
+     *                      pairs.
+     * @param forbiddenOptions List of option names that are not allowed to be set.
+     */
+    public ZookeeperConfiguration(String configuration, List<String> forbiddenOptions) {
+        super(configuration, forbiddenOptions, DEFAULTS);
     }
 
     /**
@@ -55,4 +68,14 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
+
+    /**
+     * Returns a ZookeeperConfiguration created without forbidden option filtering.
+     * @param string A string representation of the Properties
+     * @return The ZookeeperConfiguration
+     */
+    public static ZookeeperConfiguration unvalidated(String string) {
+        return new ZookeeperConfiguration(string, emptyList());
+    }
+
 }

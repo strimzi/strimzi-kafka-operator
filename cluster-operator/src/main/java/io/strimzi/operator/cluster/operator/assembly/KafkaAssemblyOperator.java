@@ -59,12 +59,13 @@ import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaExporter;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.model.ZookeeperConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -123,6 +124,7 @@ import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_CONFI
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
+import static io.strimzi.operator.cluster.model .ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -780,19 +782,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
         }
 
-        private Future<Void> updateZkStatefulSet(StatefulSet zookeeperSs, Kafka kafkaAssembly, KafkaVersionChange versionChange) {
+        private Future<Void> updateZkStatefulSet(StatefulSet zookeeperSts, Kafka kafkaAssembly, KafkaVersionChange versionChange) {
 
-            return waitForQuiescence(zookeeperSs).compose(v -> {
+            return waitForQuiescence(zookeeperSts).compose(v -> {
                 // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                 String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
 
+                // Get the current ZK configuration and set the trust data dir conf to true so that the new ZK will
+                // start without snapshots having to be present.
+                // This is set back to false (the default) during the next ZK roll.
+                Map<String, String> env = ModelUtils.getContainerEnv(zookeeperSts, "zookeeper");
+                String confString = env.getOrDefault(ENV_VAR_ZOOKEEPER_CONFIGURATION, "");
+                log.debug("Current Zookeeper config {}", confString);
+                ZookeeperConfiguration currentZkConfig = ZookeeperConfiguration.unvalidated(confString);
+                currentZkConfig.setConfigOption("zookeeper.snapshot.trust.empty", "true");
+                env.put(ENV_VAR_ZOOKEEPER_CONFIGURATION, currentZkConfig.getConfiguration());
+
                 // update the Zookeeper stateful set
-                StatefulSet newZookeeperSs = new StatefulSetBuilder(zookeeperSs)
+                StatefulSet newZookeeperSs = new StatefulSetBuilder(zookeeperSts)
                         .editSpec()
                             .editTemplate()
                                 .editSpec()
                                     .editMatchingContainer(container -> container.getName().equals("zookeeper"))
                                         .withImage(newZkImage)
+                                        .withEnv(ModelUtils.envAsList(env))
                                     .endContainer()
                                 .endSpec()
                             .endTemplate()
@@ -916,7 +929,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: {}, phase 1", reconciliation, versionChange);
 
             Map<String, String> annotations = Annotations.annotations(sts);
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
+            Map<String, String> env = ModelUtils.getContainerEnv(sts, "kafka");
             String string = env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, "");
             log.debug("Current config {}", string);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(string);
@@ -1026,7 +1039,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             annotations.remove(ANNO_STRIMZI_IO_TO_VERSION);
 
             // Remove inter.broker.protocol.version (so the new version's default is used)
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
+            Map<String, String> env = ModelUtils.getContainerEnv(sts, "kafka");
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.get(ENV_VAR_KAFKA_CONFIGURATION));
 
             log.info("{}: Upgrade: Removing Kafka config {}, will default to {}",
@@ -1078,7 +1091,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: {}, phase 1", reconciliation, versionChange);
 
             Map<String, String> annotations = Annotations.annotations(sts);
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
+            Map<String, String> env = ModelUtils.getContainerEnv(sts, "kafka");
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, ""));
 
             String oldMessageFormat = currentKafkaConfig.getConfigOption(LOG_MESSAGE_FORMAT_VERSION);
@@ -1170,7 +1183,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, versionChange.to().version());
 
             // Remove inter.broker.protocol.version (so the new version's default is used)
-            Map<String, String> env = ModelUtils.getKafkaContainerEnv(sts);
+            Map<String, String> env = ModelUtils.getContainerEnv(sts, "kafka");
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, ""));
             log.info("{}: Upgrade: Removing Kafka config {}, will default to {}",
                     reconciliation, INTERBROKER_PROTOCOL_VERSION, versionChange.to().protocolVersion());

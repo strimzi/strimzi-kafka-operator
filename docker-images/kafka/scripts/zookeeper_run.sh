@@ -22,7 +22,8 @@ export ZOOKEEPER_DATA_DIR=$ZOOKEEPER_VOLUME$ZOOKEEPER_DATA_BASE_NAME
 mkdir -p $ZOOKEEPER_DATA_DIR
 
 # Create myid file
-echo $ZOOKEEPER_ID > $ZOOKEEPER_DATA_DIR/myid
+echo "$ZOOKEEPER_ID" > $ZOOKEEPER_DATA_DIR/myid
+
 
 # Generate and print the config file
 echo "Starting Zookeeper with configuration:"
@@ -35,7 +36,8 @@ fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
@@ -50,6 +52,35 @@ if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
 fi
 
 . ./set_kafka_gc_options.sh
+
+############ ZK Upgrade Start ############
+# ZK 3.4.x -> 3.5.x upgrade adds snapshot checks that can cause ZK pods with persistent storage to fail on startup
+# The section below disables the snapshot checks until the servers have created a snapshot.
+
+# If this is a 3.4.x server then place an indicator file in the data directory so this persists over multiple restarts
+flag_file=${ZOOKEEPER_DATA_DIR}/zk_upgrade_from_3_4
+if [[ $(ls libs | grep -Po 'zookeeper-\K3.4.\d+' | head -1) ]]; then
+    touch ${flag_file}
+fi
+
+# If this server is attached to a disk that was once used by a 3.4.x server then we may need to disable snapshot checks
+if [[ -f ${flag_file} ]]; then
+    # If the version-2 folder does not exist then this is first start up of a 3.4.x server therefore this is not an upgrade so we can skip
+    if [[ -d ${ZOOKEEPER_DATA_DIR}/version-2 ]]; then
+        # If the 3.4 flag is there and the data directory is present this might be an upgrade so check for snapshots
+        if [[ $(find ${ZOOKEEPER_DATA_DIR}/version-2 -maxdepth 1 -name "snapshot.*") ]]; then
+            # If there are snapshot files then we will have a stable server after the upgrade and can remove the flag file
+            rm ${flag_file}
+        else
+            # If there are no snapshot files and we started from a 3.4.x server then disable the snapshot checks for this boot
+            KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.snapshot.trust.empty=true"
+            export KAFKA_OPTS
+        fi
+    fi
+fi
+
+# This section should be removed once Strimzi no longer supports Kafka brokers using ZK 3.4.x.
+############ ZK Upgrade End ############
 
 # starting Zookeeper with final configuration
 exec /usr/bin/tini -w -e 143 -- sh -c "${KAFKA_HOME}/bin/zookeeper-server-start.sh /tmp/zookeeper.properties"
