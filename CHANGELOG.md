@@ -6,6 +6,10 @@
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
 * Expose JMX port on Kafka brokers via an internal service
+* Add support for user quotas
+* Add support for Istio protocol selection in service port names  
+Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
+(e.g clientstls -> tcp-clientstls)
 
 ## 0.15.0
 
@@ -19,9 +23,6 @@
 * Garbage Collection (GC) logging disabled by default
 * Providing PKCS12 truststore and password in the cluster and clients CA certificates Secrets
 * Providing PKCS12 keystore and password in the TLS based KafkaUser related Secret
-* Add support for Istio protocol selection in service port names  
-Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
-(e.g clientstls -> tcp-clientstls)
 
 ## 0.14.0
 
