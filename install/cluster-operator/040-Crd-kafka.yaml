@@ -280,7 +280,7 @@ spec:
                         configuration:
                           type: object
                           properties:
-                            brokerCertAndKey:
+                            brokerCertChainAndKey:
                               type: object
                               properties:
                                 certificate:
@@ -430,7 +430,7 @@ spec:
                                     type: object
                                 required:
                                 - host
-                            brokerCertAndKey:
+                            brokerCertChainAndKey:
                               type: object
                               properties:
                                 certificate:

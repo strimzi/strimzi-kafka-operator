@@ -518,31 +518,31 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getExternal() != null) {
                 if (result.isExposedWithIngress()) {
                     if (((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration() != null) {
-                        result.setSecretSourceExternal(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
+                        result.setSecretSourceExternal(((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration().getBrokerCertChainAndKey());
                     }
                 }
 
                 if (result.isExposedWithNodePort()) {
                     if (((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration() != null) {
-                        result.setSecretSourceExternal(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
+                        result.setSecretSourceExternal(((KafkaListenerExternalNodePort) listeners.getExternal()).getConfiguration().getBrokerCertChainAndKey());
                     }
                 }
 
                 if (result.isExposedWithLoadBalancer()) {
                     if (((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration() != null) {
-                        result.setSecretSourceExternal(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
+                        result.setSecretSourceExternal(((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getConfiguration().getBrokerCertChainAndKey());
                     }
                 }
 
                 if (result.isExposedWithRoute()) {
                     if (((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration() != null) {
-                        result.setSecretSourceExternal(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getBrokerCertAndKey());
+                        result.setSecretSourceExternal(((KafkaListenerExternalRoute) listeners.getExternal()).getConfiguration().getBrokerCertChainAndKey());
                     }
                 }
             }
 
             if (listeners.getTls() != null && listeners.getTls().getConfiguration() != null) {
-                result.setSecretSourceTls(listeners.getTls().getConfiguration().getBrokerCertAndKey());
+                result.setSecretSourceTls(listeners.getTls().getConfiguration().getBrokerCertChainAndKey());
             }
         }
 

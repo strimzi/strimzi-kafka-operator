@@ -22,7 +22,7 @@ import static java.util.Collections.emptyMap;
  * Configures External listeners
  */
 
-@JsonPropertyOrder({"brokerCertAndKey"})
+@JsonPropertyOrder({"brokerCertChainAndKey"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -33,17 +33,17 @@ import static java.util.Collections.emptyMap;
 public class KafkaListenerExternalConfiguration implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private CertAndKeySecretSource brokerCertAndKey;
+    private CertAndKeySecretSource brokerCertChainAndKey;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair. " +
             "The certificate can optionally contain the whole chain.")
-    public CertAndKeySecretSource getBrokerCertAndKey() {
-        return brokerCertAndKey;
+    public CertAndKeySecretSource getBrokerCertChainAndKey() {
+        return brokerCertChainAndKey;
     }
 
-    public void setBrokerCertAndKey(CertAndKeySecretSource brokerCertAndKey) {
-        this.brokerCertAndKey = brokerCertAndKey;
+    public void setBrokerCertChainAndKey(CertAndKeySecretSource brokerCertChainAndKey) {
+        this.brokerCertChainAndKey = brokerCertChainAndKey;
     }
 
     @Override
