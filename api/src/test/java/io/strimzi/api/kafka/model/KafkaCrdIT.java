@@ -155,9 +155,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-invalid-jmx-authentication.yaml");
             });
         String expectedMsg1 = "spec.kafka.jmxOptions.authentication.type in body should be one of [password]";
+
         assertThat(exception.getMessage(), containsStringIgnoringCase(expectedMsg1));
-
-
     }
 
     @BeforeAll

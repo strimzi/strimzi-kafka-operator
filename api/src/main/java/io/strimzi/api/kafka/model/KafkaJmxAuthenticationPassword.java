@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaJmxOptionsAuthenticationPassword extends KafkaJmxOptionsAuthentication {
+public class KafkaJmxAuthenticationPassword extends KafkaJmxAuthentication {
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_PASSWORD = "password";

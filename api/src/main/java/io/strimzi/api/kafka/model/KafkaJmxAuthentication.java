@@ -23,9 +23,9 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = KafkaJmxOptionsAuthenticationPassword.TYPE_PASSWORD, value = KafkaJmxOptionsAuthenticationPassword.class)
+        @JsonSubTypes.Type(name = KafkaJmxAuthenticationPassword.TYPE_PASSWORD, value = KafkaJmxAuthenticationPassword.class)
 })
-public abstract class KafkaJmxOptionsAuthentication implements UnknownPropertyPreserving, Serializable {
+public abstract class KafkaJmxAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

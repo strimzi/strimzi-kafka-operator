@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthentication;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthenticationPassword;
+import io.strimzi.api.kafka.model.KafkaJmxAuthentication;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
@@ -238,13 +238,13 @@ public class AuthenticationUtils {
      * @param authentication the Authentication Configuration for the Kafka Jmx Port
      * @param kafkaCluster the current state of the kafka Cluster CR
      */
-    public static void configureKafkaJmxOptions(KafkaJmxOptionsAuthentication authentication, KafkaCluster kafkaCluster)   {
+    public static void configureKafkaJmxOptions(KafkaJmxAuthentication authentication, KafkaCluster kafkaCluster)   {
         if (authentication != null) {
-            if (authentication instanceof KafkaJmxOptionsAuthenticationPassword) {
-                kafkaCluster.setAuthenticatedJmx(true);
+            if (authentication instanceof KafkaJmxAuthenticationPassword) {
+                kafkaCluster.setJmxAuthenticated(true);
             }
         } else {
-            kafkaCluster.setAuthenticatedJmx(false);
+            kafkaCluster.setJmxAuthenticated(false);
         }
     }
 

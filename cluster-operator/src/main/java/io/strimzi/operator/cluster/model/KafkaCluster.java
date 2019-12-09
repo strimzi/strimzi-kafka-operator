@@ -213,7 +213,7 @@ public class KafkaCluster extends AbstractModel {
     private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
     private boolean isJmxEnabled;
-    private boolean isAuthenticatedJmx;
+    private boolean isJmxAuthenticated;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -1553,7 +1553,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (isJmxEnabled) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
-                if (isAuthenticatedJmx) {
+                if (isJmxAuthenticated) {
                     varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
                     varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
                 }
@@ -2122,11 +2122,11 @@ public class KafkaCluster extends AbstractModel {
         return (KafkaConfiguration) configuration;
     }
 
-    public boolean isAuthenticatedJmx() {
-        return isAuthenticatedJmx;
+    public boolean isJmxAuthenticated() {
+        return isJmxAuthenticated;
     }
 
-    public void setAuthenticatedJmx(boolean authenticatedJmx) {
-        isAuthenticatedJmx = authenticatedJmx;
+    public void setJmxAuthenticated(boolean jmxAuthenticated) {
+        isJmxAuthenticated = jmxAuthenticated;
     }
 }

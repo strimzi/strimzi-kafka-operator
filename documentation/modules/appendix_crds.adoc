@@ -706,17 +706,17 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |====
 |Property               |Description
 |authentication  1.2+<.<|Authentication configuration for connecting to the Kafka JMX port. The type depends on the value of the `authentication.type` property within the given object, which must be one of [password].
-|xref:type-KafkaJmxOptionsAuthenticationPassword-{context}[`KafkaJmxOptionsAuthenticationPassword`]
+|xref:type-KafkaJmxAuthenticationPassword-{context}[`KafkaJmxAuthenticationPassword`]
 |====
 
-[id='type-KafkaJmxOptionsAuthenticationPassword-{context}']
-### `KafkaJmxOptionsAuthenticationPassword` schema reference
+[id='type-KafkaJmxAuthenticationPassword-{context}']
+### `KafkaJmxAuthenticationPassword` schema reference
 
 Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaJmxOptionsAuthenticationPassword` from other subtypes which may be added in the future.
-It must have the value `password` for the type `KafkaJmxOptionsAuthenticationPassword`.
+The `type` property is a discriminator that distinguishes the use of the type `KafkaJmxAuthenticationPassword` from other subtypes which may be added in the future.
+It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [options="header"]
 |====
 |Property     |Description

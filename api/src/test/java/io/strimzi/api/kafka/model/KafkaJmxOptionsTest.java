@@ -25,7 +25,7 @@ public class KafkaJmxOptionsTest {
                 "}", KafkaJmxOptions.class);
 
         assertThat(opts.getAuthentication(),  is(notNullValue()));
-        assertThat(opts.getAuthentication().getType(),  is(KafkaJmxOptionsAuthenticationPassword.TYPE_PASSWORD));
+        assertThat(opts.getAuthentication().getType(),  is(KafkaJmxAuthenticationPassword.TYPE_PASSWORD));
     }
 
     @Test
@@ -35,6 +35,4 @@ public class KafkaJmxOptionsTest {
         assertThat(opts.getAuthentication(),  is(nullValue()));
         assertThat(opts.getAdditionalProperties(),  is(Collections.emptyMap()));
     }
-
-
 }

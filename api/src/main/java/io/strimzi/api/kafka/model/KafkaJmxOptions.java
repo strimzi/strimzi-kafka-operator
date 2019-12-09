@@ -23,17 +23,17 @@ import java.util.Map;
 @EqualsAndHashCode
 public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    private KafkaJmxOptionsAuthentication authentication;
+    private KafkaJmxAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication configuration for connecting to the Kafka JMX port")
     @JsonProperty("authentication")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaJmxOptionsAuthentication getAuthentication() {
+    public KafkaJmxAuthentication getAuthentication() {
         return authentication;
     }
 
-    public void setAuthentication(KafkaJmxOptionsAuthentication authentication) {
+    public void setAuthentication(KafkaJmxAuthentication authentication) {
         this.authentication = authentication;
     }
 

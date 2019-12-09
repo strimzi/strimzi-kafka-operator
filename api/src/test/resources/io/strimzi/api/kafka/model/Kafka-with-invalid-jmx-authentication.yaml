@@ -18,6 +18,3 @@ spec:
     replicas: 3
     storage:
       type: ephemeral
-  maintenanceTimeWindows:
-    - first window
-    - second window

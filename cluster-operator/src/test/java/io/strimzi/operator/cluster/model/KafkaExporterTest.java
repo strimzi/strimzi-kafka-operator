@@ -268,7 +268,7 @@ public class KafkaExporterTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm,  kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, null, kafkaLogJson, zooLogJson, exporterSpec);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 

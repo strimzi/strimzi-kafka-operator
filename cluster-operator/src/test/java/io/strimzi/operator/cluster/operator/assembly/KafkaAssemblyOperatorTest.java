@@ -25,8 +25,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
@@ -299,7 +299,7 @@ public class KafkaAssemblyOperatorTest {
         return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
     }
 
-    public static void  setFields(Params params) {
+    public static void setFields(Params params) {
         openShift = params.openShift;
         metrics = params.metrics;
         kafkaListeners = params.kafkaListeners;
@@ -328,7 +328,7 @@ public class KafkaAssemblyOperatorTest {
     public void testCreateCluster(Params params, VertxTestContext context) {
         setFields(params);
         createCluster(context, getKafkaAssembly("foo"),
-                emptyList()); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
+                emptyList());
     }
 
     @ParameterizedTest
@@ -337,7 +337,7 @@ public class KafkaAssemblyOperatorTest {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
         kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
-            .withAuthentication(new KafkaJmxOptionsAuthenticationPasswordBuilder().build())
+            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
             .build());
         createCluster(context, kafka,
                 Collections.singletonList(new SecretBuilder()
@@ -479,7 +479,6 @@ public class KafkaAssemblyOperatorTest {
         if (metrics)    {
             expectedSecrets.add(KafkaExporter.secretName(clusterCmName));
         }
-
 
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (toConfig != null) {
@@ -756,7 +755,7 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateClusterAuthenticationTrue(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
-                 new KafkaJmxOptionsAuthenticationPasswordBuilder().build())
+                 new KafkaJmxAuthenticationPasswordBuilder().build())
                 .build();
         kafkaAssembly.getSpec().getKafka().setJmxOptions(kafkaJmxOptions);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
