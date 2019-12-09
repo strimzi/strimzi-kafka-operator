@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -24,6 +25,9 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptions;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -241,31 +245,31 @@ public class KafkaAssemblyOperatorTest {
                                         if (shift) {
                                             listeners = new KafkaListenersBuilder()
                                                     .withNewPlain()
-                                                        .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                                        .endKafkaListenerAuthenticationScramSha512Auth()
+                                                    .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                                    .endKafkaListenerAuthenticationScramSha512Auth()
                                                     .endPlain()
                                                     .withNewTls()
-                                                        .withNewKafkaListenerAuthenticationTlsAuth()
-                                                        .endKafkaListenerAuthenticationTlsAuth()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
                                                     .endTls()
                                                     .withNewKafkaListenerExternalRoute()
-                                                        .withNewKafkaListenerAuthenticationTlsAuth()
-                                                        .endKafkaListenerAuthenticationTlsAuth()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerExternalRoute()
                                                     .build();
                                         } else {
                                             listeners = new KafkaListenersBuilder()
                                                     .withNewPlain()
-                                                        .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                                        .endKafkaListenerAuthenticationScramSha512Auth()
+                                                    .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                                    .endKafkaListenerAuthenticationScramSha512Auth()
                                                     .endPlain()
                                                     .withNewTls()
-                                                        .withNewKafkaListenerAuthenticationTlsAuth()
-                                                        .endKafkaListenerAuthenticationTlsAuth()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
                                                     .endTls()
                                                     .withNewKafkaListenerExternalNodePort()
-                                                        .withNewKafkaListenerAuthenticationTlsAuth()
-                                                        .endKafkaListenerAuthenticationTlsAuth()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerExternalNodePort()
                                                     .build();
                                         }
@@ -324,7 +328,26 @@ public class KafkaAssemblyOperatorTest {
     public void testCreateCluster(Params params, VertxTestContext context) {
         setFields(params);
         createCluster(context, getKafkaAssembly("foo"),
-                emptyList()); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
+                emptyList());
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testCreateClusterWithJmxEnabled(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafka = getKafkaAssembly("foo");
+        kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
+            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
+            .build());
+        createCluster(context, kafka,
+                Collections.singletonList(new SecretBuilder()
+                        .withNewMetadata()
+                        .withName(KafkaCluster.jmxSecretName("foo"))
+                        .withNamespace("test")
+                        .endMetadata()
+                        .withData(Collections.singletonMap("foo", "bar"))
+                        .build()
+                )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
     private Map<String, PersistentVolumeClaim> createPvcs(String namespace, Storage storage, int replicas,
@@ -495,6 +518,10 @@ public class KafkaAssemblyOperatorTest {
 
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 secrets
+        );
+        // Getting JMX Secret
+        when(mockSecretOps.getAsync(anyString(), eq(kafkaCluster.jmxSecretName(clusterCmName)))).thenReturn(
+                Future.succeededFuture(null)
         );
         Set<String> createdOrUpdatedSecrets = new HashSet<>();
         when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -725,6 +752,17 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    public void testUpdateClusterAuthenticationTrue(Params params, VertxTestContext context) {
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
+        KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
+                 new KafkaJmxAuthenticationPasswordBuilder().build())
+                .build();
+        kafkaAssembly.getSpec().getKafka().setJmxOptions(kafkaJmxOptions);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
     public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
@@ -912,6 +950,9 @@ public class KafkaAssemblyOperatorTest {
         // Mock Secret gets
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 emptyList()
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
+                Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
         );
 
         // Mock NetworkPolicy get

@@ -147,6 +147,18 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
     }
 
+    @Test
+    public void testKafkaWithInvalidJmxAuthentication() {
+        Throwable exception = assertThrows(
+            KubeClusterException.InvalidResource.class,
+            () -> {
+                createDelete(Kafka.class, "Kafka-with-invalid-jmx-authentication.yaml");
+            });
+        String expectedMsg1 = "spec.kafka.jmxOptions.authentication.type in body should be one of [password]";
+
+        assertThat(exception.getMessage(), containsStringIgnoringCase(expectedMsg1));
+    }
+
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);

@@ -1,9 +1,11 @@
+
 # CHANGELOG
 
 ## 0.16.0
 
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
+* Expose JMX port on Kafka brokers via an internal service
 
 ## 0.15.0
 

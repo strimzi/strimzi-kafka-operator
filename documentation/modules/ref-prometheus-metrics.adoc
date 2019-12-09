@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-metrics.adoc
+// assembly-prometheus-metrics.adoc
 
 [id='ref-metrics-{context}']
 = Metrics configuration

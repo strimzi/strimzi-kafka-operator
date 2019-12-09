@@ -35,7 +35,7 @@ include::../modules/con-kafka-connect-s2i-logging.adoc[leveloffset=+1]
 
 include::assembly-healthchecks.adoc[leveloffset=+1]
 
-include::assembly-metrics.adoc[leveloffset=+1]
+include::assembly-prometheus-metrics.adoc[leveloffset=+1]
 
 include::assembly-jvm-options.adoc[leveloffset=+1]
 

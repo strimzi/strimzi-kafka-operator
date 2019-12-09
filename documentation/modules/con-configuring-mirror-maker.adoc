@@ -32,7 +32,7 @@ include::con-kafka-mirror-maker-logging.adoc[leveloffset=+1]
 
 include::con-healthchecks.adoc[leveloffset=+1]
 
-include::con-metrics.adoc[leveloffset=+1]
+include::con-prometheus-metrics.adoc[leveloffset=+1]
 
 include::con-jvm-options.adoc[leveloffset=+1]
 

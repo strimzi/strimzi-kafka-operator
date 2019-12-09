@@ -123,8 +123,11 @@ public abstract class AbstractModel {
     protected String name;
 
     protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "metrics";
+    protected static final String METRICS_PORT_NAME = "prometheus";
     protected boolean isMetricsEnabled;
+
+    protected static final int JMX_PORT = 9999;
+    protected static final String JMX_PORT_NAME = "jmx";
 
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;

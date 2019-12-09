@@ -28,7 +28,7 @@ The following resources will created by the Cluster Operator in the Kubernetes c
 `_cluster-name_-entity-operator`:: Deployment with Topic and User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
 `_cluster-name_-entity-topic-operator-config`:: Configmap with ancillary configuration for Topic Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
 `_cluster-name_-entity-user-operator-config`:: Configmap with ancillary configuration for User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
-`_cluster-name_-entity-operator-certs`:: Secret with Entitiy operators keys for communication with Kafka and ZooKeeper. This resource will be created only if Cluster Operator deployed Entity Operator.
+`_cluster-name_-entity-operator-certs`:: Secret with Entity operators keys for communication with Kafka and ZooKeeper. This resource will be created only if Cluster Operator deployed Entity Operator.
 `_cluster-name_-entity-operator`:: Service account used by the Entity Operator.
 `strimzi-_cluster-name_-topic-operator`:: Role binding used by the Entity Operator.
 `strimzi-_cluster-name_-user-operator`:: Role binding used by the Entity Operator.
@@ -40,3 +40,4 @@ The following resources will created by the Cluster Operator in the Kubernetes c
 `data-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
 `data-_id_-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume `_id_` used for storing data for the Kafka broker pod `_idx_`. This resource is only created if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
 `data-_cluster-name_-zookeeper-_idx_`:: Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
+`_cluster-name_-jmx`:: Secret with JMX username and password used to secure the Kafka broker port.

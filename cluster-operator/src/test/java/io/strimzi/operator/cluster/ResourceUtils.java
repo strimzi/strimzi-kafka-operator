@@ -373,6 +373,7 @@ public class ResourceUtils {
         if (metricsCm != null) {
             kafkaClusterSpec.setMetrics(metricsCm);
         }
+
         if (kafkaConfiguration != null) {
             kafkaClusterSpec.setConfig(kafkaConfiguration);
         }
