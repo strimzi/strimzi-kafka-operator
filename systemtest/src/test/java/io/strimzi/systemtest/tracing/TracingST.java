@@ -322,7 +322,7 @@ public class TracingST extends MessagingBaseST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)

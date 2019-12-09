@@ -95,6 +95,7 @@ public class KubeClusterResource {
     public void applyClusterOperatorInstallFiles() {
         timeMeasuringSystem.setTestName(testClass, testClass);
         timeMeasuringSystem.startOperation(Operation.CO_CREATION);
+        clusterOperatorConfigs.clear();
         Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
@@ -232,6 +233,7 @@ public class KubeClusterResource {
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
+        bindingsNamespaces.clear();
         LOGGER.info("Using namespace {}", testNamespace);
         setNamespace(testNamespace);
     }
