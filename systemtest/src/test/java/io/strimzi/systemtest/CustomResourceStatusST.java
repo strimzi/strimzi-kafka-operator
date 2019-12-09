@@ -22,7 +22,8 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,7 +87,7 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaUserStatus() {
         String userName = "status-user-test";
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
         LOGGER.info("Checking status of deployed kafka user");
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("Kafka User Status: {}", kafkaCondition.getStatus());
@@ -102,7 +103,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
         String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        StUtils.waitForKafkaUserCreationError(userName, eoPodName);
+        KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
 
         LOGGER.info("Checking status of deployed Kafka User {}", userName);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);

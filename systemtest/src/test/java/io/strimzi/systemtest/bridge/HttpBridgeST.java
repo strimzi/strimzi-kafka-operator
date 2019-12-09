@@ -8,9 +8,11 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.BridgeUtils;
-import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
+import io.strimzi.systemtest.utils.HttpUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
@@ -58,7 +60,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
 
         JsonObject records = HttpUtils.generateHttpMessages(messageCount);
         JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        BridgeUtils.checkSendResponse(response, messageCount);
+        KafkaBridgeUtils.checkSendResponse(response, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
 
         // Checking labels for Kafka Bridge
@@ -159,7 +161,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
                 .endLivenessProbe()
             .endSpec().done();
 
-        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -185,7 +187,7 @@ class HttpBridgeST extends HttpBridgeBaseST {
             kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        StUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -213,11 +215,11 @@ class HttpBridgeST extends HttpBridgeBaseST {
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
 
-        Service service = BridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
+        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        StUtils.waitForNodePortService(bridgeExternalService);
+        ServiceUtils.waitForNodePortService(bridgeExternalService);
 
-        bridgePort = BridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
+        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
         bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 }

@@ -5,7 +5,8 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +53,7 @@ public class TopicST extends MessagingBaseST {
         String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
         String errorMessage = "Replication factor: 5 larger than available brokers: 3";
 
-        StUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);
+        PodUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);
 
         String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
 
@@ -60,7 +61,7 @@ public class TopicST extends MessagingBaseST {
 
         LOGGER.info("Delete topic {}", topicName);
         cmdKubeClient().deleteByName("kafkatopic", topicName);
-        StUtils.waitForKafkaTopicDeletion(topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
 
         topicReplicationFactor = 3;
 
@@ -77,7 +78,7 @@ public class TopicST extends MessagingBaseST {
 
         LOGGER.info("Delete topic {}", newTopicName);
         cmdKubeClient().deleteByName("kafkatopic", newTopicName);
-        StUtils.waitForKafkaTopicDeletion(newTopicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(newTopicName);
     }
 
     @Tag(SCALABILITY)
@@ -113,7 +114,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             LOGGER.info("Waiting for kafka topic {} will change partitions to {}", currentTopic, topicPartitions);
-            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
             verifyTopicViaKafka(currentTopic, topicPartitions);
         }
 
@@ -121,7 +122,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            StUtils.waitForKafkaTopicDeletion(currentTopic);
+            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
         }
     }
 
@@ -143,7 +144,7 @@ public class TopicST extends MessagingBaseST {
 
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
-            StUtils.waitForKafkaTopicCreation(currentTopic);
+            KafkaTopicUtils.waitForKafkaTopicCreation(currentTopic);
             KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(currentTopic).get();
             verifyTopicViaKafkaTopicCRK8s(kafkaTopic, currentTopic, topicPartitions);
         }
@@ -158,7 +159,7 @@ public class TopicST extends MessagingBaseST {
 
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
-            StUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
+            KafkaTopicUtils.waitForKafkaTopicPartitionChange(currentTopic, topicPartitions);
             verifyTopicViaKafka(currentTopic, topicPartitions);
         }
 
@@ -166,7 +167,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             cmdKubeClient().deleteByName("kafkatopic", currentTopic);
-            StUtils.waitForKafkaTopicDeletion(currentTopic);
+            KafkaTopicUtils.waitForKafkaTopicDeletion(currentTopic);
         }
     }
 
@@ -199,7 +200,7 @@ public class TopicST extends MessagingBaseST {
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
         cmdKubeClient().deleteByName("kafkatopic", topicName);
-        StUtils.waitForKafkaTopicDeletion(topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
     }
 
     @Test
@@ -217,21 +218,21 @@ public class TopicST extends MessagingBaseST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        StUtils.waitForKafkaTopicCreation(topicName);
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} was created", topicName);
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
         int sent = sendMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
 
-        String topicUid = StUtils.topicSnapshot(topicName);
+        String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
         KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
-        StUtils.waitTopicHasRolled(topicName, topicUid);
+        KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
 
         LOGGER.info("Wait topic {} recreation", topicName);
-        StUtils.waitForKafkaTopicCreation(topicName);
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} recreated", topicName);
 
         int received = receiveMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);

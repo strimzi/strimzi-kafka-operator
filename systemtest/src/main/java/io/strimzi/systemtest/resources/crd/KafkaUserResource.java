@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +69,7 @@ public class KafkaUserResource {
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
         LOGGER.info("Waiting for Kafka User {}", kafkaUser.getMetadata().getName());
-        StUtils.waitForSecretReady(kafkaUser.getMetadata().getName());
+        SecretUtils.waitForSecretReady(kafkaUser.getMetadata().getName());
         LOGGER.info("Kafka User {} is ready", kafkaUser.getMetadata().getName());
         return kafkaUser;
     }

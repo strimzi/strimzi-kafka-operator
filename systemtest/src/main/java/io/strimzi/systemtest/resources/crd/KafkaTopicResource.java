@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,7 +67,7 @@ public class KafkaTopicResource {
 
     private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
         LOGGER.info("Waiting for Kafka Topic {}", kafkaTopic.getMetadata().getName());
-        StUtils.waitForKafkaTopicCreation(kafkaTopic.getMetadata().getName());
+        KafkaTopicUtils.waitForKafkaTopicCreation(kafkaTopic.getMetadata().getName());
         LOGGER.info("Kafka Topic {} is ready", kafkaTopic.getMetadata().getName());
         return kafkaTopic;
     }

@@ -12,7 +12,8 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -206,11 +207,11 @@ class LogSettingST extends AbstractST {
         String eoName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        Map<String, String> connectPods = StUtils.depSnapshot(connectName);
-        Map<String, String> mmPods = StUtils.depSnapshot(mmName);
-        Map<String, String> eoPods = StUtils.depSnapshot(eoName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaName);
-        Map<String, String> zkPods = StUtils.ssSnapshot(zkName);
+        Map<String, String> connectPods = DeploymentUtils.depSnapshot(connectName);
+        Map<String, String> mmPods = DeploymentUtils.depSnapshot(mmName);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
@@ -225,15 +226,15 @@ class LogSettingST extends AbstractST {
             k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
         });
 
-        StUtils.waitTillSsHasRolled(zkName, 3, zkPods);
-        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
-        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
+        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(eoName, 1, eoPods);
 
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-        StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
+        DeploymentUtils.waitTillDepHasRolled(connectName, 1, connectPods);
 
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-        StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
+        DeploymentUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
         assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
         assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(false));

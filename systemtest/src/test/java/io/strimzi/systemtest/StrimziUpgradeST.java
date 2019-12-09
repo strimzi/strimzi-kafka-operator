@@ -10,8 +10,11 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.LogCollector;
+import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import net.joshka.junit.json.params.JsonFileSource;
@@ -68,7 +71,7 @@ public class StrimziUpgradeST extends AbstractST {
 
         try {
             String url = parameters.getString("urlFrom");
-            File dir = StUtils.downloadAndUnzip(url);
+            File dir = FileUtils.downloadAndUnzip(url);
 
             coDir = new File(dir, parameters.getString("fromExamples") + "/install/cluster-operator/");
 
@@ -76,7 +79,7 @@ public class StrimziUpgradeST extends AbstractST {
             copyModifyApply(coDir);
 
             LOGGER.info("Waiting for CO deployment");
-            StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+            DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
 
             // Deploy a Kafka cluster
             kafkaEphemeralYaml = new File(dir, parameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
@@ -103,7 +106,7 @@ public class StrimziUpgradeST extends AbstractST {
                 upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
             } else {
                 url = parameters.getString("urlTo");
-                dir = StUtils.downloadAndUnzip(url);
+                dir = FileUtils.downloadAndUnzip(url);
                 coDir = new File(dir, parameters.getString("toExamples") + "/install/cluster-operator/");
                 upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
             }
@@ -146,7 +149,7 @@ public class StrimziUpgradeST extends AbstractST {
     private void upgradeClusterOperator(File coInstallDir, JsonObject images) {
         copyModifyApply(coInstallDir);
         LOGGER.info("Waiting for CO deployment");
-        StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
+        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         waitForRollingUpdate();
         checkAllImages(images);
     }
@@ -178,27 +181,27 @@ public class StrimziUpgradeST extends AbstractST {
     private void waitForClusterReadiness() {
         // Wait for readiness
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper", 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper", 3);
         LOGGER.info("Waiting for Kafka StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
         LOGGER.info("Waiting for EO Deployment");
-        StUtils.waitForDeploymentReady("my-cluster-entity-operator", 1);
+        DeploymentUtils.waitForDeploymentReady("my-cluster-entity-operator", 1);
     }
 
     private void waitForRollingUpdate() {
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        StUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        StUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
+        DeploymentUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
     }
 
     private void makeSnapshots() {
-        zkPods = StUtils.ssSnapshot(zkStsName);
-        kafkaPods = StUtils.ssSnapshot(kafkaStsName);
-        eoPods = StUtils.depSnapshot(eoDepName);
+        zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
+        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
+        eoPods = DeploymentUtils.depSnapshot(eoDepName);
     }
 
     private Kafka getKafka(String resourceName) {
@@ -250,7 +253,7 @@ public class StrimziUpgradeST extends AbstractST {
                 replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 if (!kafkaVersion.equals("2.0.0")) {
-                    StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+                    StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 }
                 makeSnapshots();
             }
@@ -260,7 +263,7 @@ public class StrimziUpgradeST extends AbstractST {
                 LOGGER.info("Going to set log message format version to " + logMessageVersion);
                 replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
-                StUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+                StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 makeSnapshots();
             }
         }

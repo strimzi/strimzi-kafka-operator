@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,7 +98,7 @@ public class KafkaConnectResource {
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect", kafkaConnect.getSpec().getReplicas());
+        DeploymentUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect", kafkaConnect.getSpec().getReplicas());
         LOGGER.info("Kafka Connect {} is ready", kafkaConnect.getMetadata().getName());
         return kafkaConnect;
     }

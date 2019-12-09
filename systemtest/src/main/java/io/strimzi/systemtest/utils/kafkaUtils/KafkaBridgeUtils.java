@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.utils;
+package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.Constants;
@@ -19,9 +19,11 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class BridgeUtils {
+public class KafkaBridgeUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(BridgeUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeUtils.class);
+
+    private KafkaBridgeUtils() {}
 
     public static int getBridgeNodePort(String namespace, String bridgeExternalService) {
         Service extBootstrapService = kubeClient(namespace).getClient().services()

@@ -13,7 +13,13 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,14 +67,14 @@ class ConnectS2IST extends AbstractST {
             .endMetadata()
             .done();
 
-        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
 
-        File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
+        File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
 
         // Start a new image build using the plugins directory
         cmdKubeClient().execInCurrentNamespace("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "--from-dir", dir.getAbsolutePath());
         // Wait for rolling update connect pods
-        StUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
+        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
         String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
@@ -103,7 +109,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
-        StUtils.waitForSecretReady(userName);
+        SecretUtils.waitForSecretReady(userName);
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
                 .editMetadata()
@@ -138,11 +144,11 @@ class ConnectS2IST extends AbstractST {
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector in pod {} with topic {}", kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
-        StUtils.createFileSinkConnector(kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
+        KafkaConnectUtils.createFileSinkConnector(kafkaConnectS2IPodName, CONNECT_S2I_TOPIC_NAME);
 
         waitForClusterAvailabilityScramSha(userName, NAMESPACE, CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME, 2);
 
-        StUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName);
 
         assertThat(cmdKubeClient().execInPod(kafkaConnectS2IPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out(),
                 containsString("0\n1\n"));
@@ -174,7 +180,7 @@ class ConnectS2IST extends AbstractST {
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
         envVarUpdated.put("TEST_ENV_3", "test.env.three");
 
-        Map<String, String> connectSnapshot = StUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
+        Map<String, String> connectSnapshot = DeploymentUtils.depConfigSnapshot(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
 
         LOGGER.info("Verify values before update");
 
@@ -188,7 +194,7 @@ class ConnectS2IST extends AbstractST {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
-        StUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
+        DeploymentUtils.waitTillDepConfigHasRolled(kafkaConnectS2IName, connectSnapshot);
 
         deploymentConfigSelector = new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName))).build();
         connectPodName = kubeClient().listPods(deploymentConfigSelector).get(0).getMetadata().getName();
@@ -231,7 +237,7 @@ class ConnectS2IST extends AbstractST {
                 .endJvmOptions()
             .endSpec().done());
 
-        StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "NotReady");
 
         TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
@@ -252,9 +258,9 @@ class ConnectS2IST extends AbstractST {
 
         cmdKubeClient().exec("oc", "start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
 
-        StUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
+        KafkaConnectS2IUtils.waitForConnectS2IStatus(kafkaConnectS2IName, "Ready");
 
-        String podName = StUtils.getPodNameByPrefix(kafkaConnectS2IName);
+        String podName = PodUtils.getPodNameByPrefix(kafkaConnectS2IName);
 
         assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
                 "400M", "2", "300M", "1");

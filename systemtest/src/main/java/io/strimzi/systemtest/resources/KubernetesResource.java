@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -298,7 +299,7 @@ public class KubernetesResource {
 
     private static Deployment waitFor(Deployment deployment) {
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
-        StUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
+        DeploymentUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
         LOGGER.info("Deployment {} is ready", deployment.getMetadata().getName());
         return deployment;
     }

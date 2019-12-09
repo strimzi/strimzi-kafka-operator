@@ -16,6 +16,9 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -158,10 +161,10 @@ public class MirrorMakerST extends MessagingBaseST {
 
         // Create Kafka user
         KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
-        StUtils.waitForSecretReady(kafkaSourceUserName);
+        SecretUtils.waitForSecretReady(kafkaSourceUserName);
 
         KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
-        StUtils.waitForSecretReady(kafkaUserTargetName);
+        SecretUtils.waitForSecretReady(kafkaUserTargetName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -239,11 +242,11 @@ public class MirrorMakerST extends MessagingBaseST {
 
         // Create Kafka user for source cluster
         KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
-        StUtils.waitForSecretReady(kafkaUserSource);
+        SecretUtils.waitForSecretReady(kafkaUserSource);
 
         // Create Kafka user for target cluster
         KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
-        StUtils.waitForSecretReady(kafkaUserTarget);
+        SecretUtils.waitForSecretReady(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
@@ -329,8 +332,8 @@ public class MirrorMakerST extends MessagingBaseST {
         KafkaTopicResource.topic(kafkaClusterSourceName, topicName).done();
         KafkaTopicResource.topic(kafkaClusterSourceName, topicNotInWhitelist).done();
 
-        StUtils.waitForKafkaTopicCreation(topicName);
-        StUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
+        KafkaTopicUtils.waitForKafkaTopicCreation(topicNotInWhitelist);
 
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -432,7 +435,7 @@ public class MirrorMakerST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        Map<String, String> connectSnapshot = StUtils.depSnapshot(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -460,7 +463,7 @@ public class MirrorMakerST extends MessagingBaseST {
             kmm.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        StUtils.waitTillDepHasRolled(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), updatedInitialDelaySeconds, updatedTimeoutSeconds,

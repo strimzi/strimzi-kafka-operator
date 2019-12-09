@@ -9,7 +9,8 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -79,7 +80,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         // Deploy Kafka Connect in other namespace than CO
         KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
-        StUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(SECOND_CLUSTER_NAME), 1);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -90,7 +91,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         // Check that UO created a secret for new user
-        StUtils.waitForSecretReady(USER_NAME);
+        SecretUtils.waitForSecretReady(USER_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -100,7 +101,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        StUtils.waitForSecretReady(USER_NAME);
+        SecretUtils.waitForSecretReady(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME).get()
                 .getStatus().getConditions().get(0);
         LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());

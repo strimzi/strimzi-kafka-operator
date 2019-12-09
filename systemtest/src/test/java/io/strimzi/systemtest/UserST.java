@@ -8,7 +8,8 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,9 +50,9 @@ class UserST extends AbstractST {
 
         // Create user with correct name
         KafkaUserResource.tlsUser(CLUSTER_NAME, userWithCorrectName).done();
-        StUtils.waitForSecretReady(userWithCorrectName);
+        SecretUtils.waitForSecretReady(userWithCorrectName);
 
-        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
+        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
         LOGGER.info(condition.getMessage() != null);
@@ -63,7 +64,7 @@ class UserST extends AbstractST {
         // Create sasl user with long name
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
 
-        StUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
+        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
 
         condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(saslUserWithLongName).get().getStatus().getConditions().get(0);
 
@@ -75,7 +76,7 @@ class UserST extends AbstractST {
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, userWithLongName).done();
 
-        StUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
+        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithLongName);
 
         condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
@@ -92,7 +93,7 @@ class UserST extends AbstractST {
         String kafkaUser = "test-user";
 
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-        StUtils.waitForSecretReady(kafkaUser);
+        SecretUtils.waitForSecretReady(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -116,8 +117,8 @@ class UserST extends AbstractST {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
-        StUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, kafkaUser);
-        StUtils.waitForKafkaUserCreation(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, kafkaUser);
+        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser);
 
         kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
@@ -129,7 +130,7 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
         Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).delete(kUser);
-        StUtils.waitForKafkaUserDeletion(kafkaUser);
+        KafkaUserUtils.waitForKafkaUserDeletion(kafkaUser);
     }
 
     @Tag(SCALABILITY)
@@ -157,7 +158,7 @@ class UserST extends AbstractST {
             } else {
                 KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
             }
-            StUtils.waitForSecretReady(userName);
+            SecretUtils.waitForSecretReady(userName);
             LOGGER.info("Checking status of deployed Kafka User {}", userName);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
                     .getStatus().getConditions().get(0);

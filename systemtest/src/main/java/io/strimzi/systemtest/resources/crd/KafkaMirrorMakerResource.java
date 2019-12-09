@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -100,7 +100,7 @@ public class KafkaMirrorMakerResource {
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting for Kafka MirrorMaker {}", kafkaMirrorMaker.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker", kafkaMirrorMaker.getSpec().getReplicas());
+        DeploymentUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker", kafkaMirrorMaker.getSpec().getReplicas());
         LOGGER.info("Kafka MirrorMaker {} is ready", kafkaMirrorMaker.getMetadata().getName());
         return kafkaMirrorMaker;
     }
