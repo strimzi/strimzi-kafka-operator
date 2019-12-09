@@ -15,6 +15,7 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
+import io.strimzi.operator.user.operator.KafkaUserQuotasOperator;
 import io.strimzi.operator.user.operator.ScramShaCredentials;
 import io.strimzi.operator.user.operator.ScramShaCredentialsOperator;
 import io.strimzi.operator.user.operator.SimpleAclOperator;
@@ -63,11 +64,12 @@ public class Main {
         SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
         ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
         ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
+        KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
                 certManager, crdOperations,
                 config.getLabels(),
-                secretOperations, scramShaCredentialsOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
+                secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
 
         Future<String> fut = Future.future();
         UserOperator operator = new UserOperator(config.getNamespace(),

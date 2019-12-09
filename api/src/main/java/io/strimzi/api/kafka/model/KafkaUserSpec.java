@@ -22,7 +22,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "authentication", "authorization" })
+@JsonPropertyOrder({ "authentication", "authorization", "quotas" })
 @EqualsAndHashCode
 public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
@@ -30,6 +30,7 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
+    private KafkaUserQuotas quotas;
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
@@ -50,6 +51,18 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     public void setAuthorization(KafkaUserAuthorization authorization) {
         this.authorization = authorization;
+    }
+
+    @Description("Quotas on requests to control the broker resources used by clients. " +
+            "Network bandwidth and request rate quotas can be enforced." +
+            "Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaUserQuotas getQuotas() {
+        return quotas;
+    }
+
+    public void setQuotas(KafkaUserQuotas kafkaUserQuotas) {
+        this.quotas = kafkaUserQuotas;
     }
 
     @Override

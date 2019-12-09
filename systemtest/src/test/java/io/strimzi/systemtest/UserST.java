@@ -5,12 +5,14 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,6 +30,7 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -145,6 +148,33 @@ class UserST extends AbstractST {
     @Test
     void testBigAmountOfTlsUsers() {
         createBigAmountOfUsers("TLS");
+    }
+
+    @Test
+    void testUserWithQuotas() {
+        String userName = "arnost";
+        Integer prodRate = 1111;
+        Integer consRate = 2222;
+        Integer reqPerc = 42;
+
+        // Create user with correct name
+        KafkaUserResource.userWithQuota(CLUSTER_NAME, userName, prodRate, consRate, reqPerc).done();
+        StUtils.waitForSecretReady(userName);
+
+        String messageUserWasAdded = "User " + userName + " in namespace " + NAMESPACE + " was ADDED";
+
+        // Checking UO logs
+        String entityOperatorPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
+        assertThat(uOlogs.contains(messageUserWasAdded), is(true));
+
+        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users --entity-name " + userName;
+        LOGGER.debug("Command for kafka-configs.sh {}", command);
+
+        ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
+        assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
+        assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
     }
 
     void createBigAmountOfUsers(String typeOfUser) {

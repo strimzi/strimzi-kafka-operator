@@ -1755,6 +1755,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
+|quotas          1.2+<.<|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
+|xref:type-KafkaUserQuotas-{context}[`KafkaUserQuotas`]
 |====
 
 [id='type-KafkaUserTlsClientAuthentication-{context}']
@@ -1893,6 +1895,24 @@ It must have the value `transactionalId` for the type `AclRuleTransactionalIdRes
 |string
 |patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
+|====
+
+[id='type-KafkaUserQuotas-{context}']
+### `KafkaUserQuotas` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property                  |Description
+|consumerByteRate   1.2+<.<|A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.
+|integer
+|producerByteRate   1.2+<.<|A quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.
+|integer
+|requestPercentage  1.2+<.<|A quota on the maximum CPU utilization of each client group as a percentage of network and I/O threads.
+|integer
 |====
 
 [id='type-KafkaUserStatus-{context}']

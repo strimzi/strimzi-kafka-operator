@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
@@ -63,6 +64,8 @@ public class KafkaUserModel {
     private String ownerApiVersion;
     private String ownerKind;
     private String ownerUid;
+
+    private KafkaUserQuotas quotas;
 
     /**
      * Constructor
@@ -117,6 +120,7 @@ public class KafkaUserModel {
             KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
             result.setSimpleAclRules(simple.getAcls());
         }
+        result.setQuotas(kafkaUser.getSpec().getQuotas());
 
         return result;
     }
@@ -388,6 +392,24 @@ public class KafkaUserModel {
      */
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    /**
+     * Sets the quotas to the user.
+     *
+     * @param quotas KafkaUserQuotas to be set.
+     */
+    public void setQuotas(KafkaUserQuotas quotas) {
+        this.quotas = quotas;
+    }
+
+    /**
+     * Gets the quotas.
+     *
+     * @return User Quotas.
+     */
+    public KafkaUserQuotas getQuotas()    {
+        return quotas;
     }
 
     /**

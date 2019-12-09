@@ -23,7 +23,7 @@ import java.util.List;
  * Utility class for managing Scram credentials
  */
 public class ScramShaCredentials {
-    private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
+    private static final Logger log = LogManager.getLogger(ScramShaCredentials.class.getName());
 
     private final static int ITERATIONS = 4096;
     private final static int CONNECTION_TIMEOUT = 30_000;

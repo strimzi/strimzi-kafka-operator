@@ -1,0 +1,24 @@
+Kafka allows the user to enforce certain quotas to control usage of resources by clients.
+We can divide quotas to two groups:
+
+* network usage quotas, which as are defined as the byte rate threshold for each group of clients sharing a quota
+* CPU utilization quotas, which are defined as the percentage of time a client can utilize on request handler I/O threads and network threads of each broker within a quota window
+
+There are several reasons why using quotas for the Kafka clients might be reasonable.
+Consider a wrongly configured Kafka producer which is sending requests at too high a rate.
+This is misconfiguration can cause a denial of service to other clients and the misconfigured client ought to be blocked.
+Using a network limiting quota it is possible to prevent this from significantly impacting other clients.
+
+Strimzi supports user-level quotas, but not client-level quotas.
+
+.An example Kafka user quotas
+[source,yaml,subs=attributes+]
+----
+spec:
+  quotas:
+    producerByteRate: 1048576
+    consumerByteRate: 2097152
+    requestPercentage: 55
+----
+
+For more info about Kafka user quotas visit http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].
