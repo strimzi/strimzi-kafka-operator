@@ -18,6 +18,8 @@ public class KafkaUserUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
 
+    private KafkaUserUtils() {}
+
     public static void waitForKafkaUserCreation(String userName) {
         LOGGER.info("Waiting for Kafka user creation {}", userName);
         SecretUtils.waitForSecretReady(userName);

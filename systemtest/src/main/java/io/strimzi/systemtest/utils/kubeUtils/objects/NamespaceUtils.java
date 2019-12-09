@@ -15,6 +15,8 @@ public class NamespaceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceUtils.class);
 
+    private NamespaceUtils() { }
+
     public static void waitForNamespaceDeletion(String name) {
         LOGGER.info("Waiting when Namespace {} to be deleted", name);
 

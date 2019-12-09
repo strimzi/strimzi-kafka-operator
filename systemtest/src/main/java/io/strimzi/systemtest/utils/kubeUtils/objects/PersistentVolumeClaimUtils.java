@@ -16,7 +16,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class PersistentVolumeClaimUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(NamespaceUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
+
+    private PersistentVolumeClaimUtils() { }
 
     public static void waitUntilPVCLabelsChange(Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Waiting till PVC labels will change {}", newLabels.toString());

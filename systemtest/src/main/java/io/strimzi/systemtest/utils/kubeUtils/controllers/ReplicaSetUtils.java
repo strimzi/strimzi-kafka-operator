@@ -16,6 +16,8 @@ public class ReplicaSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplicaSetUtils.class);
 
+    private ReplicaSetUtils() { }
+
     /**
      * Wait until the given ReplicaSet has been deleted.
      * @param name The name of the ReplicaSet

@@ -14,7 +14,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
+
+    private KafkaUtils() {}
 
     public static void waitUntilKafkaCRIsReady(String clusterName) {
         LOGGER.info("Waiting till Kafka CR will be ready");

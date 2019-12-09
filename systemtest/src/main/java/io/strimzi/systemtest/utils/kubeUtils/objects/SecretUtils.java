@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +25,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SecretUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
+
+    private SecretUtils() { }
 
     public static void waitForSecretReady(String secretName) {
         LOGGER.info("Waiting for Kafka user secret {}", secretName);

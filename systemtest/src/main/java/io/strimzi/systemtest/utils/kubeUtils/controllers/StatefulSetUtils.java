@@ -22,7 +22,7 @@ public class StatefulSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
 
-    private StatefulSetUtils() {}
+    private StatefulSetUtils() { }
 
     /**
      * Returns a map of pod name to resource version for the pods currently in the given statefulset.

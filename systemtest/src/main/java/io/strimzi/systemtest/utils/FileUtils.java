@@ -26,6 +26,8 @@ public class FileUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(FileUtils.class);
 
+    private FileUtils() { }
+
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public static File downloadAndUnzip(String url) {
         File dir = null;

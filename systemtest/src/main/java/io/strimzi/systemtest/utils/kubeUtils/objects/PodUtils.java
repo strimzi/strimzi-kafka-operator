@@ -26,6 +26,8 @@ public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
 
+    private PodUtils() { }
+
     /**
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
      * matching the given {@code selector}.

@@ -26,6 +26,8 @@ public class DeploymentUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentUtils.class);
 
+    private DeploymentUtils() { }
+
     /**
      * Returns a map of pod name to resource version for the pods currently in the given deployment.
      * @param name The Deployment name.

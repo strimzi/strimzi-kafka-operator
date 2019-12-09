@@ -17,7 +17,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ServiceUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(ServiceUtils.class);
+
+    private ServiceUtils() { }
 
     public static void waitForKafkaServiceLabelsChange(String serviceName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {

@@ -23,6 +23,8 @@ public class KafkaBridgeUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeUtils.class);
 
+    private KafkaBridgeUtils() {}
+
     public static int getBridgeNodePort(String namespace, String bridgeExternalService) {
         Service extBootstrapService = kubeClient(namespace).getClient().services()
                 .inNamespace(namespace)

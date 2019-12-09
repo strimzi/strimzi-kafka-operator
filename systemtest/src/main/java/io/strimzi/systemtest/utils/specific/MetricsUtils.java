@@ -30,6 +30,8 @@ public class MetricsUtils {
     private static final Logger LOGGER = LogManager.getLogger(MetricsUtils.class);
     private static final Object LOCK = new Object();
 
+    private MetricsUtils() { }
+
     /**
      * Collect metrics from specific pod
      * @param podName pod name
