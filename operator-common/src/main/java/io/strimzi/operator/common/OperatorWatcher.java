@@ -31,6 +31,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     @Override
     public void eventReceived(Action action, T resource) {
         String name = resource.getMetadata().getName();
+        String namespace = resource.getMetadata().getNamespace();
         switch (action) {
             case ADDED:
             case DELETED:
