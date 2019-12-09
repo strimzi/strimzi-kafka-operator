@@ -2,13 +2,14 @@
 image=$1 #strimzi/kafka:latest-kafka-2.2.1
 image_jar_dir=$2 #/opt/kafka/libs
 whilelist_file=$3
+DOCKER=${DOCKER:-docker}
 
 jars_dir=`mktemp -d`
 trap "[ -e $jars_dir ] && rm -rf $jars_dir" EXIT
 
-docker run --name temp-container-name "$image" /bin/true || exit 2
-docker cp "temp-container-name:$image_jar_dir" "$jars_dir"
-docker rm temp-container-name > /dev/null
+${DOCKER} run --name temp-container-name "$image" /bin/true || exit 2
+${DOCKER} cp "temp-container-name:$image_jar_dir" "$jars_dir"
+${DOCKER} rm temp-container-name > /dev/null
 
 classes_root=`mktemp -d`
 trap "[ -e $classes_root ] && rm -rf $classes_root" EXIT
