@@ -233,7 +233,7 @@ public class KubeClusterResource {
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
-        bindingsNamespaces.clear();
+        bindingsNamespaces = null;
         LOGGER.info("Using namespace {}", testNamespace);
         setNamespace(testNamespace);
     }
