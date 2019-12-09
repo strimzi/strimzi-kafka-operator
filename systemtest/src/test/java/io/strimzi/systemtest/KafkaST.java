@@ -148,6 +148,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
+    // TODO move to RollingUpdateST
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_UP));
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
@@ -180,6 +181,8 @@ class KafkaST extends MessagingBaseST {
                 .endSpec()
             .done();
 
+        // TODO send messages
+
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
@@ -196,6 +199,7 @@ class KafkaST extends MessagingBaseST {
         String uid = kubeClient().getPodUid(newPodName);
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+        // TODO only receive messages here
         waitForClusterAvailability(NAMESPACE, firstTopicName);
         LOGGER.info("Could produce/consume with topic {}", firstTopicName);
         //Test that CO doesn't have any exceptions in log
@@ -223,6 +227,7 @@ class KafkaST extends MessagingBaseST {
 
         String secondTopicName = "test-topic-2";
         KafkaTopicResource.topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
+        // TODO only receive messages here
         waitForClusterAvailability(NAMESPACE, secondTopicName);
         LOGGER.info("Could produce/consume with topic {}", secondTopicName);
     }
@@ -253,6 +258,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    // TODO move to RollingUpdateST
     void testZookeeperScaleUpScaleDown() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_UP));
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
@@ -1168,8 +1174,11 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    // TODO move to RollingUpdateST
     void testManualTriggeringRollingUpdate() {
         String coPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
+        // TODO Kafka persistent
+        // TODO add some messaging?
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3).done();
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);

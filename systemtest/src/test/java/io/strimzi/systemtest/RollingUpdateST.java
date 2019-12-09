@@ -43,7 +43,10 @@ class RollingUpdateST extends BaseST {
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
         String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
 
+        // TODO persistent kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // TODO send messages
 
         LOGGER.info("Update resources for pods");
 
@@ -70,6 +73,7 @@ class RollingUpdateST extends BaseST {
 
         timeMeasuringSystem.stopOperation(rollingUpdateOperation);
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+        // TODO receive messages
     }
 
     @Test
@@ -80,7 +84,10 @@ class RollingUpdateST extends BaseST {
         String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
         String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
 
+        // TODO persistent kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // TODO send messages
 
         LOGGER.info("Update resources for pods");
 
@@ -114,11 +121,13 @@ class RollingUpdateST extends BaseST {
                 .filter(p -> p.getMetadata().getName().startsWith(rolledComponent))
                 .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 
+        // TODO update reason
         assertThat(rolledComponent + " is fine", podStatuses.contains("Pending"));
 
         Map<String, Long> statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         LOGGER.info("{} pods statutes: {}", rolledComponent, statusCount);
 
+        // TODO remove reason
         assertThat("", statusCount.get("Pending"), is(1L));
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size() - 1)));
 
