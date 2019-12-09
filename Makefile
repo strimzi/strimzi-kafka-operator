@@ -6,7 +6,7 @@ GITHUB_VERSION ?= master
 RELEASE_VERSION ?= latest
 CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
-DOCKER ?= docker
+DOCKER_CMD ?= docker
 
 ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
