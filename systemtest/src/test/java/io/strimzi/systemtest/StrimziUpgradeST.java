@@ -12,6 +12,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.logs.LogCollector;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -43,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
-public class StrimziUpgradeST extends AbstractST {
+public class StrimziUpgradeST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
@@ -68,6 +70,9 @@ public class StrimziUpgradeST extends AbstractST {
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
+        String kafkaClusterName = "my-cluster";
+        String topicName = "my-topic";
+        String userName = "my-user";
 
         try {
             String url = parameters.getString("urlFrom");
@@ -93,6 +98,20 @@ public class StrimziUpgradeST extends AbstractST {
             kafkaUserYaml = new File(dir, parameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
             cmdKubeClient().create(kafkaUserYaml);
 
+            // Wait until user will be created
+            // We cannot use utils wait for that, because in older version there were no status field for CRs
+            Thread.sleep(10000);
+
+            // Deploy clients and exchange messages
+            KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
+            deployClients(parameters.getJsonObject("client").getString("beforeKafkaUpdate"), kafkaUser);
+
+            final String defaultKafkaClientsPodName =
+                    kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            int sent = sendMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+            int received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+            assertSentAndReceivedMessages(sent, received);
+
             makeSnapshots();
             logPodImages();
             // Execution of required procedures before upgrading CO
@@ -100,8 +119,8 @@ public class StrimziUpgradeST extends AbstractST {
 
             // Upgrade the CO
             // Modify + apply installation files
+            LOGGER.info("Going to update CO from {} to {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
             if ("HEAD" .equals(parameters.getString("toVersion"))) {
-                LOGGER.info("Updating");
                 coDir = new File("../install/cluster-operator");
                 upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
             } else {
@@ -119,18 +138,38 @@ public class StrimziUpgradeST extends AbstractST {
             logPodImages();
             checkAllImages(parameters.getJsonObject("imagesAfterKafkaUpdate"));
 
+            // Delete old clients
+            kubeClient().deleteDeployment(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
+            DeploymentUtils.waitForDeploymentDeletion(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
+
+            deployClients(parameters.getJsonObject("client").getString("afterKafkaUpdate"), kafkaUser);
+
+            final String afterUpgradeKafkaClientsPodName =
+                    kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
+            assertSentAndReceivedMessages(sent, received);
+
             // Check errors in CO log
             assertNoCoErrorsLogged(0);
 
             // Tidy up
         } catch (KubeClusterException e) {
-            if (kafkaEphemeralYaml != null) {
-                cmdKubeClient().delete(kafkaEphemeralYaml);
-            }
-            if (coDir != null) {
-                cmdKubeClient().delete(coDir);
-            }
             e.printStackTrace();
+            try {
+                if (kafkaEphemeralYaml != null) {
+                    cmdKubeClient().delete(kafkaEphemeralYaml);
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to delete resources: {}", kafkaEphemeralYaml.getName());
+            }
+            try {
+                if (coDir != null) {
+                    cmdKubeClient().delete(coDir);
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to delete resources: {}", coDir.getName());
+            }
+
             throw e;
         } finally {
             // Get current date to create a unique folder
@@ -148,7 +187,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     private void upgradeClusterOperator(File coInstallDir, JsonObject images) {
         copyModifyApply(coInstallDir);
-        LOGGER.info("Waiting for CO deployment");
+        LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         waitForRollingUpdate();
         checkAllImages(images);
@@ -169,10 +208,14 @@ public class StrimziUpgradeST extends AbstractST {
     private void deleteInstalledYamls(File root) {
         if (root != null) {
             Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
-                if (f.getName().matches(".*RoleBinding.*")) {
-                    cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-                } else {
-                    cmdKubeClient().delete(f);
+                try {
+                    if (f.getName().matches(".*RoleBinding.*")) {
+                        cmdKubeClient().deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+                    } else {
+                        cmdKubeClient().delete(f);
+                    }
+                } catch (Exception ex) {
+                    LOGGER.warn("Failed to delete resources: {}", f.getName());
                 }
             });
         }
@@ -239,8 +282,8 @@ public class StrimziUpgradeST extends AbstractST {
         List<Pod> pods1 = kubeClient().listPods(matchLabels);
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
-                LOGGER.debug("Expected image: {} \nCurrent image: {}", image, pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image is not valid!", pod.getSpec().getContainers().get(container).getImage(), is(image));
+                LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), is(image));
             }
         }
     }
@@ -283,6 +326,20 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
         }
+    }
+
+    void deployClients(String image, KafkaUser kafkaUser) {
+        // Deploy new clients
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .withImage(image)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec().done();
     }
 
     @BeforeEach
