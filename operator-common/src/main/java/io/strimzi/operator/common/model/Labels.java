@@ -57,8 +57,6 @@ public class Labels {
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
-    public static final String KUBERNETES_PART_OF_LABEL = KUBERNETES_DOMAIN + "part-of";
-    public static final String KUBERNETES_COMPONENT_LABEL = KUBERNETES_DOMAIN + "component";
 
     public static final String KUBERNETES_NAME = "strimzi";
 
@@ -274,24 +272,6 @@ public class Labels {
      */
     public Labels withKubernetesManagedBy(String operatorName) {
         return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
-    }
-
-    /**
-     * Adds a {@code app.kubernetes.io/component} label with the {@code componentName} value.
-     * @param componentName The name of the operator managing this resource.
-     * @return A new instance with the given operator that is managing this resourse.
-     */
-    public Labels withKubernetesComponent(String componentName) {
-        return with(Labels.KUBERNETES_COMPONENT_LABEL, componentName);
-    }
-
-    /**
-     * Adds a {@code app.kubernetes.io/part-of} label with the {@code partOf} value.
-     * @param partOf The name of the operator managing this resource.
-     * @return A new instance with the given operator that is managing this resourse.
-     */
-    public Labels withKubernetesPartOf(String partOf) {
-        return with(Labels.KUBERNETES_PART_OF_LABEL, partOf);
     }
 
     /**

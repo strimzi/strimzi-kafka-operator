@@ -53,8 +53,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         assertThat(model.authentication.getType(), is(KafkaUserTlsClientAuthentication.TYPE_TLS));
 
@@ -72,8 +70,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
         assertThat(model.getQuotas().getConsumerByteRate(), is(quotas.getConsumerByteRate()));
@@ -92,8 +88,6 @@ public class KafkaUserModelTest {
                 .withKind(KafkaUser.RESOURCE_KIND)
                 .withKubernetesName("kafka-user")
                 .withKubernetesInstance(ResourceUtils.NAME)
-                .withKubernetesComponent("user")
-                .withKubernetesPartOf("kafka")
                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUserWithNulls.getSpec().getQuotas();
         assertThat(model.getQuotas().getConsumerByteRate(), is(quotas.getConsumerByteRate()));
@@ -115,8 +109,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         // Check owner reference
@@ -226,8 +218,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
@@ -252,8 +242,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
@@ -276,8 +264,6 @@ public class KafkaUserModelTest {
                         .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName("kafka-user")
                         .withKubernetesInstance(ResourceUtils.NAME)
-                        .withKubernetesComponent("user")
-                        .withKubernetesPartOf("kafka")
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
