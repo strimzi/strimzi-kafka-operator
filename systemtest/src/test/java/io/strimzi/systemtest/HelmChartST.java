@@ -19,7 +19,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.HELM;
 
 @Tag(HELM)
-class HelmChartST extends AbstractST {
+class HelmChartST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -70,7 +71,7 @@ public class TopicST extends MessagingBaseST {
         kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
 
         TestUtils.waitFor("Waiting for " + newTopicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () -> listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(newTopicName)
+            () -> KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(newTopicName)
         );
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
@@ -108,7 +109,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
 
-            replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
+            KafkaTopicResource.replaceTopicResource(currentTopic, topic -> topic.getSpec().setPartitions(5));
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -139,7 +140,7 @@ public class TopicST extends MessagingBaseST {
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
             LOGGER.info("Creating topic {} with {} replicas and {} partitions", currentTopic, 3, topicPartitions);
-            createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
+            KafkaCmdClient.createTopicUsingPodCLI(CLUSTER_NAME, 0, currentTopic, 3, topicPartitions);
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -154,7 +155,7 @@ public class TopicST extends MessagingBaseST {
 
         for (int i = 0; i < numberOfTopics; i++) {
             currentTopic = topicName + i;
-            updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
+            KafkaCmdClient.updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, currentTopic, topicPartitions);
         }
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -187,7 +188,7 @@ public class TopicST extends MessagingBaseST {
             () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
         );
 
-        replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
+        KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
 
         String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 2 and then the replication should be changed directly in Kafka.";
 
@@ -241,7 +242,7 @@ public class TopicST extends MessagingBaseST {
 
     boolean hasTopicInKafka(String topicName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
-        return listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(topicName);
+        return KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0).contains(topicName);
     }
 
     boolean hasTopicInCRK8s(KafkaTopic kafkaTopic, String topicName) {
@@ -250,15 +251,15 @@ public class TopicST extends MessagingBaseST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        LOGGER.info("Checking topic in Kafka {}", describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName));
-        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
+        LOGGER.info("Checking topic in Kafka {}", KafkaCmdClient.describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName));
+        assertThat(KafkaCmdClient.describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
                 hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
     }
 
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions) {
         LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
         assertThat(kafkaTopic, is(notNullValue()));
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
         assertThat(kafkaTopic.getMetadata().getName(), is(topicName));
         assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
     }

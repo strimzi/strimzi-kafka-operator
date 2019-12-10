@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-class RollingUpdateST extends AbstractST {
+class RollingUpdateST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
@@ -39,7 +38,7 @@ class RollingUpdateST extends AbstractST {
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() {
         // @TODO add send-recv messages during this test
-        setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
         String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
@@ -48,7 +47,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for pods");
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
@@ -56,27 +55,27 @@ class RollingUpdateST extends AbstractST {
                         .build());
         });
 
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, getOperationID());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, timeMeasuringSystem.getOperationID());
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Second part
-        String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
+        String rollingUpdateOperation = timeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
         StUtils.waitForRollingUpdateTimeout(testClass, testName, logZkPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        TimeMeasuringSystem.stopOperation(rollingUpdateOperation);
-        TimeMeasuringSystem.stopOperation(getOperationID());
+        timeMeasuringSystem.stopOperation(rollingUpdateOperation);
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }
 
     @Test
     void testRecoveryDuringKafkaRollingUpdate() {
         // @TODO add send-recv messages during this test
-        setOperationID(startTimeMeasuring(Operation.CLUSTER_RECOVERY));
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
         String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
         String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
@@ -85,7 +84,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for pods");
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
                 .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
@@ -93,21 +92,21 @@ class RollingUpdateST extends AbstractST {
                         .build());
         });
 
-        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, getOperationID());
+        StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, timeMeasuringSystem.getOperationID());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
 
         // Second part
-        String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
+        String rollingUpdateOperation = timeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
         StUtils.waitForRollingUpdateTimeout(testClass, testName, logKafkaPattern, rollingUpdateOperation);
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
-        TimeMeasuringSystem.stopOperation(rollingUpdateOperation);
-        TimeMeasuringSystem.stopOperation(getOperationID());
+        timeMeasuringSystem.stopOperation(rollingUpdateOperation);
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }
 
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {

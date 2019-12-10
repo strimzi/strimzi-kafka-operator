@@ -11,8 +11,8 @@ import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.MessagingBaseST;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -67,7 +67,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @Tag(REGRESSION)
 @Tag(TRACING)
 @ExtendWith(VertxExtension.class)
-public class TracingST extends AbstractST {
+public class TracingST extends MessagingBaseST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);

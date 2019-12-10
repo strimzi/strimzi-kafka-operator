@@ -17,6 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaTopicResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicResource.class);
 
@@ -74,5 +76,9 @@ public class KafkaTopicResource {
 
     private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {
         return ResourceManager.deleteLater(kafkaTopicClient(), kafkaTopic);
+    }
+
+    public static void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
+        ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
     }
 }

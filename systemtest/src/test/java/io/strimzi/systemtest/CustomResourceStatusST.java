@@ -50,7 +50,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-class CustomResourceStatusST extends AbstractST {
+class CustomResourceStatusST extends MessagingBaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String TOPIC_NAME = "status-topic";
@@ -64,7 +64,7 @@ class CustomResourceStatusST extends AbstractST {
         waitForClusterAvailability(NAMESPACE, TOPIC_NAME);
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
@@ -74,7 +74,7 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaStatus("NotReady");
 
         LOGGER.info("Recovery cluster to Ready state ...");
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("10m"))
                     .build());
@@ -122,12 +122,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pod
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaMirrorMakerStatus("Ready");
@@ -140,10 +140,10 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
         waitForKafkaMirrorMakerStatus("NotReady");
         // Restore Mirror Maker pods
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)));
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)));
         waitForKafkaMirrorMakerStatus("Ready");
         assertKafkaMirrorMakerStatus(3);
     }
@@ -155,12 +155,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaBridgeStatus("Ready");
         assertKafkaBridgeStatus(1, bridgeUrl);
 
-        replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaBridgeStatus("NotReady");
 
-        replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaBridgeStatus("Ready");
@@ -174,12 +174,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaConnectStatus("Ready");
         assertKafkaConnectStatus(1, connectUrl);
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaConnectStatus("NotReady");
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
@@ -194,12 +194,12 @@ class CustomResourceStatusST extends AbstractST {
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
 
-        replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaConnectS2IStatus("NotReady");
 
-        replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");

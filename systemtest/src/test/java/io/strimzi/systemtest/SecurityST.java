@@ -801,7 +801,7 @@ class SecurityST extends MessagingBaseST {
         assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses()
                 .get(0).getState().getWaiting().getReason()));
 
-        replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
         });
 
@@ -875,7 +875,7 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
         LOGGER.info("Adding configuration {} to the mirror maker...", "ssl.endpoint.identification.algorithm");
-        replaceMirrorMakerResource(CLUSTER_NAME, mm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> {
             mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
             mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
         });

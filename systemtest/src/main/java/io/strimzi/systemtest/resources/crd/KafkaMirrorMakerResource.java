@@ -23,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaMirrorMakerResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerResource.class);
 
@@ -109,4 +111,7 @@ public class KafkaMirrorMakerResource {
         return ResourceManager.deleteLater(kafkaMirrorMakerClient(), kafkaMirrorMaker);
     }
 
+    public static void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
+        ResourceManager.replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
+    }
 }

@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.clients.lib.KafkaClient;
+import io.strimzi.systemtest.kafkaClients.lib.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.not;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
-class ConnectST extends AbstractST {
+class ConnectST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
     public static final String NAMESPACE = "connect-cluster-test";
@@ -72,7 +72,7 @@ class ConnectST extends AbstractST {
 
     @Test
     void testDeployUndeploy() {
-        Map<String, Object> exceptedConfig = loadProperties("group.id=connect-cluster\n" +
+        Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=connect-cluster\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
                 "config.storage.topic=connect-cluster-configs\n" +
@@ -87,9 +87,9 @@ class ConnectST extends AbstractST {
         String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
-        assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
+        assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))));
-        assertThat(getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
+        assertThat(StUtils.getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
         testDockerImagesForKafkaConnect();
 
         verifyLabelsOnPods(CLUSTER_NAME, "connect", null, "KafkaConnect");
@@ -102,7 +102,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Verifying docker image names");
         Map<String, String> imgFromDeplConf = getImagesFromConfig();
         //Verifying docker image for kafka connect
-        String connectImageName = getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
+        String connectImageName = PodUtils.getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
                 get(0).getMetadata().getName());
 
         String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getVersion();
@@ -248,7 +248,7 @@ class ConnectST extends AbstractST {
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
         DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
@@ -261,7 +261,7 @@ class ConnectST extends AbstractST {
         }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
-        replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
         while (kubeClient().listPods("strimzi.io/kind", "KafkaConnect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
@@ -487,7 +487,7 @@ class ConnectST extends AbstractST {
         StUtils.checkCOlogForUsedVariable(usedVariable);
 
         LOGGER.info("Updating values in MirrorMaker container");
-        replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kc.getSpec().setConfig(connectConfig);
             kc.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);

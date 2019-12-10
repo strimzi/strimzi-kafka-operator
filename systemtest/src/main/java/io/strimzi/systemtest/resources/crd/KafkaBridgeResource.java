@@ -19,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaBridgeResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeResource.class);
 
@@ -94,4 +96,7 @@ public class KafkaBridgeResource {
         return ResourceManager.deleteLater(kafkaBridgeClient(), kafkaBridge);
     }
 
+    public static void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
+        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
+    }
 }
