@@ -139,7 +139,7 @@ public class OauthTlsST extends OauthBaseST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
-        StUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
         KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
 
