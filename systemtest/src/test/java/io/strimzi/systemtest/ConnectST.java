@@ -143,6 +143,8 @@ class ConnectST extends AbstractST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+
         KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, CONNECT_TOPIC_NAME);
 
         waitForClusterAvailability(NAMESPACE, CLUSTER_NAME, CONNECT_TOPIC_NAME, 2);
@@ -329,6 +331,8 @@ class ConnectST extends AbstractST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
+
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
         LOGGER.info("Verifying that in kafka connect logs are everything fine");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));

@@ -132,6 +132,8 @@ public class OauthPlainST extends OauthBaseST {
 
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
 
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+
         KafkaConnectUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME);
 
         String message = "Hello world - " + END_MESSAGE_OFFSET;

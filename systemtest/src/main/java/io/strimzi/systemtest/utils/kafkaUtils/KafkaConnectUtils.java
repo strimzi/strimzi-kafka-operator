@@ -35,6 +35,13 @@ public class KafkaConnectUtils {
         LOGGER.info("Kafka Connector {} is ready", name);
     }
 
+    public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
+        LOGGER.info("Waiting until kafka connect service is present");
+        TestUtils.waitFor("Waiting until kafka connect service is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> cmdKubeClient().execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
+        LOGGER.info("Kafka connect service is present");
+    }
+
     public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String message) {
         LOGGER.info("Waiting for messages in file sink");
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
