@@ -100,7 +100,7 @@ public class TracingST extends MessagingBaseST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -149,7 +149,7 @@ public class TracingST extends MessagingBaseST {
         configOfKafka.put("transaction.state.log.replication.factor", "1");
         configOfKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -240,7 +240,7 @@ public class TracingST extends MessagingBaseST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -379,7 +379,7 @@ public class TracingST extends MessagingBaseST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -457,7 +457,7 @@ public class TracingST extends MessagingBaseST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -475,7 +475,7 @@ public class TracingST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfKafka)
@@ -575,7 +575,7 @@ public class TracingST extends MessagingBaseST {
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
@@ -585,7 +585,7 @@ public class TracingST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).editSpec().editKafka()
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).editSpec().editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)

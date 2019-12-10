@@ -46,7 +46,7 @@ public class KafkaUserResource {
             .build());
     }
 
-    private static KafkaUserBuilder defaultUser(String clusterName, String name) {
+    public static KafkaUserBuilder defaultUser(String clusterName, String name) {
         KafkaUser kafkaUser = getKafkaUserFromYaml(PATH_TO_KAFKA_USER_CONFIG);
         return new KafkaUserBuilder(kafkaUser)
             .withNewMetadata()
@@ -63,6 +63,11 @@ public class KafkaUserResource {
             LOGGER.info("Created KafkaUser {}", ku.getMetadata().getName());
             return waitFor(deleteLater(ku));
         });
+    }
+
+    public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
+        kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
+        return user;
     }
 
     private static KafkaUser getKafkaUserFromYaml(String yamlPath) {

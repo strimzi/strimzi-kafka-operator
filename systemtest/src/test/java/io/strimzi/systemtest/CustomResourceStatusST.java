@@ -100,7 +100,7 @@ class CustomResourceStatusST extends MessagingBaseST {
     void testKafkaUserStatusNotReady() {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
         String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
@@ -215,7 +215,7 @@ class CustomResourceStatusST extends MessagingBaseST {
     @Test
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 10).done();
+        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
     }

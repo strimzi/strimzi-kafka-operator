@@ -83,6 +83,11 @@ public class KafkaResource {
             .build());
     }
 
+    public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
+    }
+
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
         String tOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
