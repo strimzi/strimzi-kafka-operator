@@ -92,15 +92,20 @@ To configure the `docker_tag` and `docker_push` targets you can set following en
 
 When building the Docker images you can use an alternative JRE or use an alternate base image.
 
-#### Alternate Docker image JRE
+#### Alternative Docker image JRE
 
-The docker images can be built with an alternate java version by setting the environment variable `JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use `JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
+The docker images can be built with an alternative java version by setting the environment variable `JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use `JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
 
 If `JAVA_VERSION` environment variable is set, a profile in the parent pom.xml will set the `maven.compiler.source` and `maven.compiler.target` properties.
 
-#### Alternate Docker base image
+#### Alternative `docker` command
 
-The docker images can be built with an alternate container OS version by adding the environment variable `ALTERNATE_BASE`.  When this environment variable is set, for each component the build will look for a Dockerfile in the subdirectory named by `ALTERNATE_BASE`.  For example, to build docker images based on alpine, use `ALTERNATE_BASE=alpine make docker_build`.  Alternate docker images are an experimental feature not supported by the core Strimzi team.
+The build assumes the `docker` command is available on your `$PATH`. You can set the `DOCKER_CMD` environment variable to use a different `docker` binary or an alternative implementation such as [`podman`](https://podman.io/).
+
+#### Alternative Docker base image
+
+The docker images can be built with an alternative container OS version by adding the environment variable `ALTERNATE_BASE`.  When this environment variable is set, for each component the build will look for a Dockerfile in the subdirectory named by `ALTERNATE_BASE`.  For example, to build docker images based on alpine, use `ALTERNATE_BASE=alpine make docker_build`.  Alternative docker images are an experimental feature not supported by the core Strimzi team.
+
 
 ## Building Strimzi
 
