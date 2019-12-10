@@ -203,10 +203,14 @@ public class StrimziUpgradeST extends MessagingBaseST {
         JsonReader jsonReader = Json.createReader(inputStream);
         JsonArray parameters = jsonReader.readArray();
 
+        int produceMessagesCount = 50;
+        int consumedMessagesCount = 50;
+
         try {
             for (JsonValue testParameters : parameters) {
+                consumedMessagesCount = consumedMessagesCount + produceMessagesCount;
                 if (StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("supportedK8sVersion").getString("version"))) {
-                    performUpgrade(testParameters.asJsonObject());
+                    performUpgrade(testParameters.asJsonObject(), produceMessagesCount, consumedMessagesCount);
                 } else {
                     LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", testParameters.asJsonObject().getString("fromVersion"), testParameters.asJsonObject().getString("toVersion"));
                 }
@@ -243,7 +247,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
         }
     }
 
-    private void performUpgrade(JsonObject testParameters) throws Exception {
+    private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws Exception {
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -259,18 +263,18 @@ public class StrimziUpgradeST extends MessagingBaseST {
         DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         LOGGER.info("CO ready");
 
-        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get() != null) {
+        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get() == null) {
             // Deploy a Kafka cluster
             kafkaEphemeralYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
             cmdKubeClient().create(kafkaEphemeralYaml);
             // Wait for readiness
             waitForClusterReadiness();
         }
-        if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() != null) {
+        if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
             kafkaUserYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
             cmdKubeClient().create(kafkaUserYaml);
         }
-        if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get() != null) {
+        if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get() == null) {
             kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
             cmdKubeClient().create(kafkaTopicYaml);
         }
@@ -285,8 +289,8 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         final String defaultKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        int sent = sendMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
-        int received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+        int sent = sendMessages(produceMessagesCount, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+        int received = receiveMessages(consumeMessagesCount, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
         assertSentAndReceivedMessages(sent, received);
 
         makeSnapshots();
@@ -322,7 +326,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         final String afterUpgradeKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
+        received = receiveMessages(consumeMessagesCount, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
         assertSentAndReceivedMessages(sent, received);
 
         // Check errors in CO log
