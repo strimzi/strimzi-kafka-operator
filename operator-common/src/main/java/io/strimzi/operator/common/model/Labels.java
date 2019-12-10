@@ -55,11 +55,12 @@ public class Labels {
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     public static final String KUBERNETES_NAME_LABEL = KUBERNETES_DOMAIN + "name";
-    public static final String KUBERNETES_NAME = "strimzi";
-
     public static final String KUBERNETES_INSTANCE_LABEL = KUBERNETES_DOMAIN + "instance";
-
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
+    public static final String KUBERNETES_PART_OF_LABEL = KUBERNETES_DOMAIN + "part-of";
+    public static final String KUBERNETES_COMPONENT_LABEL = KUBERNETES_DOMAIN + "component";
+
+    public static final String KUBERNETES_NAME = "strimzi";
 
     /**
      * Used to identify individual pods
@@ -214,12 +215,56 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but with the application name {@code strimzi} for the {@code app.kubernetes.io/name} key.
+     *
+     * @param name Name of the application
+     *
+     * @return A new instance with the given kubernetes application name added.
+     */
+    public Labels withKubernetesName(String name) {
+        return with(Labels.KUBERNETES_NAME_LABEL, name);
+    }
+
+    /**
      * The same labels as this instance, but with the given {@code instance} for the {@code app.kubernetes.io/instance} key.
      * @param instance The instance to add.
      * @return A new instance with the given kubernetes application instance added.
      */
     public Labels withKubernetesInstance(String instance) {
-        return with(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+        return with(Labels.KUBERNETES_INSTANCE_LABEL, getOrValidInstanceLabelValue(instance));
+    }
+
+    /**
+     * Validates the instance name and if needed modifies it to make it a valid Label value:
+     *   - (([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?
+     *   - 63 characters max
+     * This method is written to handle instance names which are valid resource names, since they are derived from a
+     * custom resource. It does not modify arbitrary names as label values.
+     *
+     *
+     * @param instance Theoriginal name of the instance
+     * @return Either the original instance name or a modified version to match label value criteria
+     */
+    /*test*/ static String getOrValidInstanceLabelValue(String instance) {
+        if (instance == null)   {
+            return "";
+        }
+
+        String labelValue = instance.substring(0, Math.min(instance.length(), 63));
+
+        int i = labelValue.length();
+        while (i > 0)   {
+            char lastChar = labelValue.charAt(i - 1);
+
+            if (lastChar == '.' || lastChar == '-') {
+                labelValue = labelValue.substring(0, i - 1);
+                i--;
+            } else {
+                break;
+            }
+        }
+
+        return labelValue;
     }
 
     /**
@@ -229,6 +274,24 @@ public class Labels {
      */
     public Labels withKubernetesManagedBy(String operatorName) {
         return with(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
+    }
+
+    /**
+     * Adds a {@code app.kubernetes.io/component} label with the {@code componentName} value.
+     * @param componentName The name of the operator managing this resource.
+     * @return A new instance with the given operator that is managing this resourse.
+     */
+    public Labels withKubernetesComponent(String componentName) {
+        return with(Labels.KUBERNETES_COMPONENT_LABEL, componentName);
+    }
+
+    /**
+     * Adds a {@code app.kubernetes.io/part-of} label with the {@code partOf} value.
+     * @param partOf The name of the operator managing this resource.
+     * @return A new instance with the given operator that is managing this resourse.
+     */
+    public Labels withKubernetesPartOf(String partOf) {
+        return with(Labels.KUBERNETES_PART_OF_LABEL, partOf);
     }
 
     /**

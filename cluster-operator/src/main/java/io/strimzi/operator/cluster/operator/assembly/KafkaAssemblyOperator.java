@@ -448,6 +448,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withKind(reconciliation.kind())
                     .withCluster(reconciliation.name())
                     .withKubernetesName()
+                    .withKubernetesComponent("kafka")
+                    .withKubernetesPartOf("kafka")
                     .withKubernetesInstance(reconciliation.name())
                     .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
             Future<ReconciliationState> result = Future.future();
@@ -2601,6 +2603,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withKind(reconciliation.kind())
                     .withCluster(reconciliation.name())
                     .withKubernetesName()
+                    .withKubernetesComponent("kafka")
+                    .withKubernetesPartOf("kafka")
                     .withKubernetesInstance(reconciliation.name())
                     .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
 

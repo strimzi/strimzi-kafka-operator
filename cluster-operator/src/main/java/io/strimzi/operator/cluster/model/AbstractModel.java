@@ -190,6 +190,8 @@ public abstract class AbstractModel {
         this.namespace = namespace;
         this.labels = labels.withCluster(cluster)
                             .withKubernetesName()
+                            .withKubernetesComponent("kafka")
+                            .withKubernetesPartOf("kafka")
                             .withKubernetesInstance(cluster)
                             .withKubernetesManagedBy(STRIMZI_CLUSTER_OPERATOR_NAME);
     }
