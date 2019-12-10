@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
@@ -62,6 +61,7 @@ import io.strimzi.operator.cluster.model.KafkaUpgrade;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -1785,10 +1785,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             result.complete();
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
-                            Quantity currentSize = currentPvc.getSpec().getResources().getRequests().get("storage");
-                            Quantity desiredSize = desiredPvc.getSpec().getResources().getRequests().get("storage");
+                            Long currentSize = StorageUtils.parseMemory(currentPvc.getSpec().getResources().getRequests().get("storage"));
+                            Long desiredSize = StorageUtils.parseMemory(desiredPvc.getSpec().getResources().getRequests().get("storage"));
 
-                            if (!desiredSize.equals(currentSize))   {
+                            if (!currentSize.equals(desiredSize))   {
                                 // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
                                 resizePvc(currentPvc, desiredPvc).setHandler(result);
                             } else  {

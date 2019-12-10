@@ -237,21 +237,4 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(jbod, jbod2).shrinkSize(), is(false));
         assertThat(new StorageDiff(jbod, jbod3).shrinkSize(), is(true));
     }
-
-    @Test
-    public void testSizeConversion() {
-        assertThat(StorageDiff.parseMemory("100Gi"), is(100L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageDiff.parseMemory("100G"), is(100L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageDiff.parseMemory("100000Mi"), is(100_000L * 1_024L * 1_024L));
-        assertThat(StorageDiff.parseMemory("100000M"), is(100L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageDiff.parseMemory("100Ti"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageDiff.parseMemory("100T"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageDiff.parseMemory("100Pi"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageDiff.parseMemory("100P"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
-
-        assertThat(StorageDiff.parseMemory("100Gi") == StorageDiff.parseMemory("100Gi"), is(true));
-        assertThat(StorageDiff.parseMemory("1000Gi") > StorageDiff.parseMemory("100Gi"), is(true));
-        assertThat(StorageDiff.parseMemory("1000000Mi") > StorageDiff.parseMemory("100Gi"), is(true));
-        assertThat(StorageDiff.parseMemory("100Pi") > StorageDiff.parseMemory("100Gi"), is(true));
-    }
 }
