@@ -3690,4 +3690,159 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("second-certificate/tls.crt"));
     }
+
+    @Test
+    public void testExternalCertificateIngress() {
+
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                        .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                    .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
+    }
+
+    @Test
+    public void testExternalCertificateNodePort() {
+
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                        .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                    .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
+    }
+
+    @Test
+    public void testExternalCertificateRoute() {
+
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalRoute()
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                    .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                        .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                            .endKafkaListenerExternalRoute()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
+    }
+
+    @Test
+    public void testExternalCertificateLoadBalancer() {
+
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                                    .withNewConfiguration()
+                                        .withNewBrokerCertChainAndKey()
+                                            .withCertificate(cert)
+                                            .withKey(key)
+                                            .withSecretName(secret)
+                                        .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(k.getSecretSourceExternal().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceExternal().getKey(), is(key));
+        assertThat(k.getSecretSourceExternal().getCertificate(), is(cert));
+    }
+
+    @Test
+    public void testCustomCertificateTls() {
+
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewTls()
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                        .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                    .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(k.getSecretSourceTls().getSecretName(), is(secret));
+        assertThat(k.getSecretSourceTls().getKey(), is(key));
+        assertThat(k.getSecretSourceTls().getCertificate(), is(cert));
+    }
 }

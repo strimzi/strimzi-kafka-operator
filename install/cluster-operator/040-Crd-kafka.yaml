@@ -277,6 +277,22 @@ spec:
                               type: string
                           required:
                           - type
+                        configuration:
+                          type: object
+                          properties:
+                            brokerCertChainAndKey:
+                              type: object
+                              properties:
+                                certificate:
+                                  type: string
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - certificate
+                              - key
+                              - secretName
                         networkPolicyPeers:
                           type: array
                           items:
@@ -414,6 +430,19 @@ spec:
                                     type: object
                                 required:
                                 - host
+                            brokerCertChainAndKey:
+                              type: object
+                              properties:
+                                certificate:
+                                  type: string
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - certificate
+                              - key
+                              - secretName
                         networkPolicyPeers:
                           type: array
                           items:

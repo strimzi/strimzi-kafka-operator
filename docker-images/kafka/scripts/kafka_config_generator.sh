@@ -69,9 +69,15 @@ if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
     LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="none"
   fi
 
+  if [ -n "$KAFKA_CUSTOM_TLS_CERT" ] && [ -n "$KAFKA_CUSTOM_TLS_KEY" ]; then
+    LISTENER_NAME_CLIENTTLS_SSL_KEYSTORE_LOCATION="/tmp/kafka/custom.keystore.p12"
+  else
+    LISTENER_NAME_CLIENTTLS_SSL_KEYSTORE_LOCATION="/tmp/kafka/cluster.keystore.p12"
+  fi
+
   CLIENTTLS_LISTENER=$(cat <<EOF
 # TLS interface configuration
-listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+listener.name.clienttls.ssl.keystore.location=${LISTENER_NAME_CLIENTTLS_SSL_KEYSTORE_LOCATION}
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
 # CLIENTTLS listener authentication
 listener.name.clienttls.ssl.client.auth=${LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH}
@@ -150,9 +156,15 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
       LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="none"
     fi
 
+    if [ -n "$KAFKA_CUSTOM_EXTERNAL_CERT" ] && [ -n "$KAFKA_CUSTOM_EXTERNAL_KEY" ]; then
+      LISTENER_NAME_EXTERNAL_SSL_KEYSTORE_LOCATION="/tmp/kafka/custom.keystore.p12"
+    else
+      LISTENER_NAME_EXTERNAL_SSL_KEYSTORE_LOCATION="/tmp/kafka/cluster.keystore.p12"
+    fi
+
     EXTERNAL_LISTENER=$(cat <<EOF
 # EXTERNAL interface configuration
-listener.name.external.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+listener.name.external.ssl.keystore.location=${LISTENER_NAME_EXTERNAL_SSL_KEYSTORE_LOCATION}
 listener.name.external.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
 # EXTERNAL listener authentication
 listener.name.external.ssl.client.auth=${LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH}

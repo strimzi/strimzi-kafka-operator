@@ -71,7 +71,7 @@ public class KafkaListenerExternalIngress extends KafkaListenerExternal {
         this.networkPolicyPeers = networkPolicyPeers;
     }
 
-    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
+    @Description("External listener configuration")
     public IngressListenerConfiguration getConfiguration() {
         return configuration;
     }

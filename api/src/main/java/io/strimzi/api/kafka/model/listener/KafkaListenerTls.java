@@ -36,6 +36,7 @@ public class KafkaListenerTls implements UnknownPropertyPreserving, Serializable
     private KafkaListenerAuthentication auth;
     private Map<String, Object> additionalProperties;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private TlsListenerConfiguration configuration;
 
     @Description("Authentication configuration for this listener.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -61,6 +62,15 @@ public class KafkaListenerTls implements UnknownPropertyPreserving, Serializable
 
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("Configuration of TLS listener")
+    public TlsListenerConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(TlsListenerConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     @Override

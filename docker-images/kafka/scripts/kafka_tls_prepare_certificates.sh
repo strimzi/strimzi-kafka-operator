@@ -20,6 +20,16 @@ function create_keystore {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name $6 -password pass:$2 -out $1
 }
 
+# Parameters:
+# $1: Path to the new keystore
+# $2: Truststore password
+# $3: Public key to be imported
+# $4: Private key to be imported
+# $5: Alias of the certificate
+function create_keystore_without_ca_file {
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $5 -password pass:$2 -out $1
+}
+
 # Searches the directory with the CAs and finds the CA matching our key.
 # This is useful during certificate renewals
 #
@@ -62,6 +72,22 @@ create_keystore /tmp/kafka/cluster.keystore.p12 $CERTS_STORE_PASSWORD \
     $CA \
     $HOSTNAME
 echo "Preparing keystore for replication and clienttls listener is complete"
+
+if [ -n "$KAFKA_CUSTOM_TLS_CERT" ] && [ -n "$KAFKA_CUSTOM_TLS_KEY" ]; then
+    echo "Preparing keystore for external listener"
+
+    create_keystore_without_ca_file /tmp/kafka/custom.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_CERT} /opt/kafka/custom-certs/${KAFKA_CUSTOM_TLS_KEY} ${KAFKA_CUSTOM_TLS_CERT}
+
+    echo "Preparing keystore for external listener is complete"
+fi
+
+if [ -n "$KAFKA_CUSTOM_EXTERNAL_CERT" ] && [ -n "$KAFKA_CUSTOM_EXTERNAL_KEY" ]; then
+    echo "Preparing keystore for external listener"
+
+    create_keystore_without_ca_file /tmp/kafka/custom.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/custom-certs/${KAFKA_CUSTOM_EXTERNAL_CERT} /opt/kafka/custom-certs/${KAFKA_CUSTOM_EXTERNAL_KEY} ${KAFKA_CUSTOM_EXTERNAL_CERT}
+
+    echo "Preparing keystore for external listener is complete"
+fi
 
 echo "Preparing truststore for clienttls listener"
 # Add each certificate to the trust store
