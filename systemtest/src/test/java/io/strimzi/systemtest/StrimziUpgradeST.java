@@ -72,6 +72,10 @@ public class StrimziUpgradeST extends MessagingBaseST {
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
 
+    private final String kafkaClusterName = "my-cluster";
+    private final String topicName = "my-topic";
+    private final String userName = "my-user";
+
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
     void upgradeStrimziVersion(JsonObject parameters) throws Exception {
@@ -80,10 +84,6 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
-
-        String kafkaClusterName = "my-cluster";
-        String topicName = "my-topic";
-        String userName = "my-user";
 
         try {
             String url = parameters.getString("urlFrom");
@@ -197,7 +197,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
     }
 
     @Test
-    void strimziChainUpgrade() {
+    void strimziChainUpgrade() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
         JsonReader jsonReader = Json.createReader(inputStream);
@@ -212,13 +212,22 @@ public class StrimziUpgradeST extends MessagingBaseST {
                 }
             }
         } catch (KubeClusterException e) {
-            if (kafkaEphemeralYaml != null) {
-                cmdKubeClient().delete(kafkaEphemeralYaml);
-            }
-            if (coDir != null) {
-                cmdKubeClient().delete(coDir);
-            }
             e.printStackTrace();
+            try {
+                if (kafkaEphemeralYaml != null) {
+                    cmdKubeClient().delete(kafkaEphemeralYaml);
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to delete resources: {}", kafkaEphemeralYaml.getName());
+            }
+            try {
+                if (coDir != null) {
+                    cmdKubeClient().delete(coDir);
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to delete resources: {}", coDir.getName());
+            }
+
             throw e;
         } finally {
             // Get current date to create a unique folder
@@ -234,7 +243,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
         }
     }
 
-    private void performUpgrade(JsonObject testParameters) {
+    private void performUpgrade(JsonObject testParameters) throws Exception {
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -250,21 +259,35 @@ public class StrimziUpgradeST extends MessagingBaseST {
         DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         LOGGER.info("CO ready");
 
-        // Deploy a Kafka cluster
-        kafkaEphemeralYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName("my-cluster").get() != null) {
+        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get() != null) {
+            // Deploy a Kafka cluster
+            kafkaEphemeralYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
             cmdKubeClient().create(kafkaEphemeralYaml);
             // Wait for readiness
             waitForClusterReadiness();
         }
-        if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName("my-user").get() != null) {
+        if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() != null) {
             kafkaUserYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
             cmdKubeClient().create(kafkaUserYaml);
         }
-        if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName("my-topic").get() != null) {
+        if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get() != null) {
             kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
             cmdKubeClient().create(kafkaTopicYaml);
         }
+
+        // Wait until user will be created
+        // We cannot use utils wait for that, because in older version there were no status field for CRs
+        Thread.sleep(10000);
+
+        // Deploy clients and exchange messages
+        KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
+        deployClients(testParameters.getJsonObject("client").getString("beforeKafkaUpdate"), kafkaUser);
+
+        final String defaultKafkaClientsPodName =
+                kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        int sent = sendMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+        int received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
+        assertSentAndReceivedMessages(sent, received);
 
         makeSnapshots();
         logPodImages();
@@ -273,16 +296,15 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         // Upgrade the CO
         // Modify + apply installation files
+        LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         if ("HEAD".equals(testParameters.getString("toVersion"))) {
-            LOGGER.info("Updating");
             coDir = new File("../install/cluster-operator");
-            upgradeClusterOperator(coDir, testParameters.getJsonObject("imagesBeforeKafkaUpdate"));
         } else {
             url = testParameters.getString("urlTo");
             dir = FileUtils.downloadAndUnzip(url);
             coDir = new File(dir, testParameters.getString("toExamples") + "/install/cluster-operator/");
-            upgradeClusterOperator(coDir, testParameters.getJsonObject("imagesBeforeKafkaUpdate"));
         }
+        upgradeClusterOperator(coDir, testParameters.getJsonObject("imagesBeforeKafkaUpdate"));
 
         // Make snapshots of all pods
         makeSnapshots();
@@ -291,6 +313,17 @@ public class StrimziUpgradeST extends MessagingBaseST {
         changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"));
         logPodImages();
         checkAllImages(testParameters.getJsonObject("imagesAfterKafkaUpdate"));
+
+        // Delete old clients
+        kubeClient().deleteDeployment(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
+        DeploymentUtils.waitForDeploymentDeletion(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
+
+        deployClients(testParameters.getJsonObject("client").getString("afterKafkaUpdate"), kafkaUser);
+
+        final String afterUpgradeKafkaClientsPodName =
+                kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
+        assertSentAndReceivedMessages(sent, received);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -317,6 +350,15 @@ public class StrimziUpgradeST extends MessagingBaseST {
     }
 
     private void deleteInstalledYamls(File root) {
+        if (kafkaUserYaml != null) {
+            cmdKubeClient().delete(kafkaUserYaml);
+        }
+        if (kafkaTopicYaml != null) {
+            cmdKubeClient().delete(kafkaTopicYaml);
+        }
+        if (kafkaEphemeralYaml != null) {
+            cmdKubeClient().delete(kafkaEphemeralYaml);
+        }
         if (root != null) {
             Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
                 try {
@@ -329,15 +371,6 @@ public class StrimziUpgradeST extends MessagingBaseST {
                     LOGGER.warn("Failed to delete resources: {}", f.getName());
                 }
             });
-        }
-        if (kafkaTopicYaml != null) {
-            cmdKubeClient().delete(kafkaTopicYaml);
-        }
-        if (kafkaTopicYaml != null) {
-            cmdKubeClient().delete(kafkaTopicYaml);
-        }
-        if (kafkaEphemeralYaml != null) {
-            cmdKubeClient().delete(kafkaEphemeralYaml);
         }
     }
 
