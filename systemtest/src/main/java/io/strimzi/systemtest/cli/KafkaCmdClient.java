@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.cli;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.test.k8s.KubeClusterResource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,8 +12,6 @@ import java.util.List;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaCmdClient {
-
-    protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
     public KafkaCmdClient() { }
 
@@ -53,6 +50,4 @@ public class KafkaCmdClient {
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
-
-
 }
