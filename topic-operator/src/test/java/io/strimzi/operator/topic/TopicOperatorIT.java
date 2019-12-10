@@ -287,7 +287,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid(), is(uid));
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size(), is(1));
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"), is("groot"));
-        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(5));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(2));
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"), is("root"));
 
         // edit kafka topic
@@ -309,7 +309,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         topicResource = TopicSerialization.toTopicResource(topic3, labels);
         createKafkaTopicResource(topicResource);
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid(), is(uid));
-        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(6));
+        assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size(), is(3));
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"), is("lee"));
         assertThat(operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"), is("root"));
     }
