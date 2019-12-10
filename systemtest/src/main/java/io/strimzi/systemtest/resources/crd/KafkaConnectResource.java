@@ -58,7 +58,7 @@ public class KafkaConnectResource {
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)

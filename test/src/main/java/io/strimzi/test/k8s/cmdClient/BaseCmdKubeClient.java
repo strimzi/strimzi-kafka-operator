@@ -233,8 +233,8 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public List<String> execInCurrentNamespace(String... commands) {
-        return namespacedCommand(commands);
+    public ExecResult execInCurrentNamespace(String... commands) {
+        return Exec.exec(namespacedCommand(commands));
     }
 
     enum ExType {
