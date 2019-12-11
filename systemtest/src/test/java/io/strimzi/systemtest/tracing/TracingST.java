@@ -182,11 +182,12 @@ public class TracingST extends MessagingBaseST {
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
-                .editSpec()
+                .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withReplicas(1)
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()

@@ -209,7 +209,8 @@ class CustomResourceStatusST extends MessagingBaseST {
     @Test
     void testKafkaTopicStatus() {
         waitForKafkaTopic("Ready", TOPIC_NAME);
-        assertKafkaTopicStatus(1, TOPIC_NAME);
+        // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
+        assertKafkaTopicStatus(2, TOPIC_NAME);
     }
 
     @Test
@@ -225,10 +226,6 @@ class CustomResourceStatusST extends MessagingBaseST {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
-
         deployTestSpecificResources();
     }
 
@@ -239,6 +236,10 @@ class CustomResourceStatusST extends MessagingBaseST {
     }
 
     void deployTestSpecificResources() {
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
