@@ -46,13 +46,13 @@ Modules worth mentioning are:
 * **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
 * **utils** — a lot of actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
 * **resources** — heart of the systemtest package. In classes from this package, you can find all methods needed for deploy Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and all other useful resources. 
-The current mechanism will ensure that all resources created within these class will be deleted after tests.
+The current mechanism will ensure that all resources created within these classesurce deleto will be deleted after tests.
 
 And classes: 
 
 * **Environment** — singleton class, which loads the test environment variables (see following section), which are used in the tests.
 * **Constants** — simple interface holding all constants used in the tests. 
-* **resources/ResourceManager** - singleton class which store info about deployed resources and take care about proper resource deleton.  
+* **resources/ResourceManager** - singleton class which store info about deployed resources and take care about proper resource deletion.  
 
 ## Test Phases
 
