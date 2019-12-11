@@ -51,7 +51,7 @@ public class KafkaUserModelTest {
         assertThat(model.name, is(ResourceUtils.NAME));
         assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         assertThat(model.authentication.getType(), is(KafkaUserTlsClientAuthentication.TYPE_TLS));
@@ -68,7 +68,7 @@ public class KafkaUserModelTest {
         assertThat(model.name, is(ResourceUtils.NAME));
         assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUser.getSpec().getQuotas();
@@ -86,7 +86,7 @@ public class KafkaUserModelTest {
         assertThat(model.name, is(ResourceUtils.NAME));
         assertThat(model.labels, is(Labels.userLabels(ResourceUtils.LABELS)
                 .withKind(KafkaUser.RESOURCE_KIND)
-                .withKubernetesName("kafka-user")
+                .withKubernetesName()
                 .withKubernetesInstance(ResourceUtils.NAME)
                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
         KafkaUserQuotas quotas = quotasUserWithNulls.getSpec().getQuotas();
@@ -107,7 +107,7 @@ public class KafkaUserModelTest {
         assertThat(generated.getMetadata().getLabels(),
                 is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
@@ -216,7 +216,7 @@ public class KafkaUserModelTest {
         assertThat(generated.getMetadata().getLabels(),
                 is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
@@ -240,7 +240,7 @@ public class KafkaUserModelTest {
         assertThat(generated.getMetadata().getLabels(),
                 is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
@@ -262,7 +262,7 @@ public class KafkaUserModelTest {
         assertThat(generated.getMetadata().getLabels(),
                 is(Labels.userLabels(ResourceUtils.LABELS)
                         .withKind(KafkaUser.RESOURCE_KIND)
-                        .withKubernetesName("kafka-user")
+                        .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
