@@ -151,6 +151,3 @@
 
 //Latest Strimzi version
 :ProductVersion: 0.14.x
-
-//overview intro text
-:intro-text: {ProductName} is a messaging broker that simplifies the process of running Apache Kafka in a Kubernetes cluster, allowing microservices and other applications to share data with extremely high throughput and low latency.

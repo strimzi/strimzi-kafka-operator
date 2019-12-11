@@ -5,13 +5,20 @@
 [id="key-features-kafka_{context}"]
 = Kafka capabilities
 
-A {ProductName} distribution provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
-
 The underlying data stream-processing capabilities and component architecture of Kafka can deliver:
 
+* Allows microservices and other applications to share data with extremely high throughput and low latency
 * Message ordering guarantees
 * Message rewind/replay from data storage to reconstruct an application state
 * Message compaction to remove old records when using a key-value log
 * Horizontal scalability in a cluster configuration
 * Replication of data to control fault tolerance
 * Retention of high volumes of data for immediate access
+
+= Kafka use cases
+
+Kafka's capabilities make it suitable for:
+
+* Stream processing so that applications can respond to data in real time
+* Integration of microservices through an event-driven publish-subscribe architecture
+* Streaming of analytics and activity tracking through metrics and log collection

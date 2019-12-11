@@ -12,7 +12,8 @@ You can configure a Kafka cluster to run with multiple broker nodes across _rack
 Storage::
 Kafka and ZooKeeper store data on disks.
 +
-{ProductName} requires block storage.
+{ProductName} requires block storage provisioned through `StorageClass`.
+The file system format for storage must be _XFS_ or _EXT4_.
 Three types of data storage are supported:
 +
 --
@@ -21,7 +22,7 @@ Persistent:: Persistent storage relates to long-term data storage independent of
 JBOD (Just a Bunch of Disks, suitable for Kafka only):: JBOD allows you to use multiple disks to store commit logs in each broker.
 --
 +
-The persistent storage capacity used by an existing Kafka cluster can be increased.
+The disk capacity used by an existing Kafka cluster can be increased if supported by the infrastructure.
 
 Listeners:: Listeners configure how clients connect to a Kafka cluster.
 +

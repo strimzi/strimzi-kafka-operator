@@ -9,7 +9,7 @@ A secure deployment of {ProductName} can encompass:
 
 * Encryption for data exchange
 * Authentication to prove identity
-* Authorization to verify the identity of users
+* Authorization to allow or decline actions executed by users
 
 //key points on encryption
 include::../../modules/overview/con-security-configuration-encryption.adoc[leveloffset=+1]

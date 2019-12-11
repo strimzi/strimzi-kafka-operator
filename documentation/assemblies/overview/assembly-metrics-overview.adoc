@@ -5,7 +5,7 @@
 [id="metrics-overview_{context}"]
 = Monitoring
 
-Metrics data allows you to monitor the performance and health of {ProductName}.
+Monitoring data allows you to monitor the performance and health of {ProductName}.
 You can configure your deployment to capture metrics data for analysis and notifications.
 
 Metrics data is useful when investigating issues with connectivity and data delivery.
