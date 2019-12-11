@@ -31,7 +31,7 @@ Distributed tracing complements the gathering of metrics data by providing a fac
 * {GrafanaHome}
 * {JaegerHome}
 
-include::../../modules/overview/con-metrics-overview-prometheus.adoc[leveloffset=+1]
-include::../../modules/overview/con-metrics-overview-grafana.adoc[leveloffset=+1]
-include::../../modules/overview/con-metrics-overview-exporter.adoc[leveloffset=+1]
-include::../../modules/overview/con-metrics-overview-tracing.adoc[leveloffset=+1]
+include::modules/con-metrics-overview-prometheus.adoc[leveloffset=+1]
+include::modules/con-metrics-overview-grafana.adoc[leveloffset=+1]
+include::modules/con-metrics-overview-exporter.adoc[leveloffset=+1]
+include::modules/con-metrics-overview-tracing.adoc[leveloffset=+1]

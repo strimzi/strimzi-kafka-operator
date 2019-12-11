@@ -15,19 +15,19 @@ Example YAML files are provided with the {ProductName} distribution.
 In this chapter we look at how Kafka components are configured through custom resources, starting with common configuration points and then important configuration considerations specific to components.
 
 //Intro to custom resources
-include::../../modules/overview/con-configuration-points-resources.adoc[leveloffset=+1]
+include::modules/con-configuration-points-resources.adoc[leveloffset=+1]
 
 //Common component configuration points
-include::../../modules/overview/con-configuration-points-common.adoc[leveloffset=+1]
+include::modules/con-configuration-points-common.adoc[leveloffset=+1]
 
 //Kafka/broker configuration points
-include::../../modules/overview/con-configuration-points-broker.adoc[leveloffset=+1]
+include::modules/con-configuration-points-broker.adoc[leveloffset=+1]
 
 //MirrorMaker configuration points
-include::../../modules/overview/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
+include::modules/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
 
 //Kafka Connect configuration points
-include::../../modules/overview/con-configuration-points-connect.adoc[leveloffset=+1]
+include::modules/con-configuration-points-connect.adoc[leveloffset=+1]
 
 //Kafka Bridge configuration points
-include::../../modules/overview/con-configuration-points-bridge.adoc[leveloffset=+1]
+include::modules/con-configuration-points-bridge.adoc[leveloffset=+1]

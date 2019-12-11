@@ -13,13 +13,13 @@ By implementing knowledge of Kafka operations in code, Kafka administration task
 
 //description of Operators
 [discrete]
-include::../../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
+include::modules/con-overview-components-operators.adoc[leveloffset=+1]
 
 //description of Cluster Operator
-include::../../modules/overview/con-overview-components-cluster-operator.adoc[leveloffset=+1]
+include::modules/con-overview-components-cluster-operator.adoc[leveloffset=+1]
 
 //description of Topic Operator
-include::../../modules/overview/con-overview-components-topic-operator.adoc[leveloffset=+1]
+include::modules/con-overview-components-topic-operator.adoc[leveloffset=+1]
 
 //description of User Operator
-include::../../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
+include::modules/con-overview-components-user-operator.adoc[leveloffset=+1]

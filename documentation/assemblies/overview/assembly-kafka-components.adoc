@@ -18,8 +18,9 @@ A typical deployment incorporating Kafka components might include:
 * *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
 
 Not all of these components are mandatory, though you need Kafka and ZooKeeper as a minimum.
+Some components can be deployed without Kafka, such as MirrorMaker or Kafka Connect.
 
-include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]
+include::modules/con-kafka-concepts-components.adoc[leveloffset=+1]
 //description of kafka bridge
-include::../../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
-include::../../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]
+include::modules/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
+include::modules/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]
