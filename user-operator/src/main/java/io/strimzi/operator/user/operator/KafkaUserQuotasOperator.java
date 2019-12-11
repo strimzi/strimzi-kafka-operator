@@ -10,6 +10,7 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.I0Itec.zkclient.ZkClient;
@@ -35,7 +36,8 @@ public class KafkaUserQuotasOperator {
     }
 
     Future<ReconcileResult<Void>> reconcile(String username, KafkaUserQuotas quotas) {
-        Future<ReconcileResult<Void>> fut = Future.future();
+        Promise<ReconcileResult<Void>> prom = Promise.promise();
+        
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -52,12 +54,13 @@ public class KafkaUserQuotasOperator {
                         }
                     }
                 } catch (Throwable t) {
-                    fut.fail(t);
+                    prom.fail(t);
                 }
             },
             false,
-            fut);
-        return fut;
+            prom);
+
+        return prom.future();
     }
 
     /**
