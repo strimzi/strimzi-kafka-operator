@@ -118,7 +118,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
     }
 
     @Test
-    void strimziChainUpgrade() throws Exception {
+    void testChainUpgrade() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
         JsonReader jsonReader = Json.createReader(inputStream);
