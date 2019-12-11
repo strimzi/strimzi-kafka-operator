@@ -27,6 +27,8 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
         FORBIDDEN_OPTIONS = asList(
                 ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
 
+        FORBIDDEN_OPTIONS.add("4lw.commands.whitelist");
+
         Map<String, String> config = new HashMap<>();
         config.put("tickTime", "2000");
         config.put("initLimit", "5");

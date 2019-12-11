@@ -65,7 +65,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.model.ZookeeperConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -124,7 +123,6 @@ import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_CONFI
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
-import static io.strimzi.operator.cluster.model .ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -788,16 +786,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                 String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
 
-                // Get the current ZK configuration and set the trust data dir conf to true so that the new ZK will
-                // start without snapshots having to be present.
-                // This is set back to false (the default) during the next ZK roll.
-                Map<String, String> env = ModelUtils.getContainerEnv(zookeeperSts, "zookeeper");
-                String confString = env.getOrDefault(ENV_VAR_ZOOKEEPER_CONFIGURATION, "");
-                log.debug("Current Zookeeper config {}", confString);
-                ZookeeperConfiguration currentZkConfig = ZookeeperConfiguration.unvalidated(confString);
-                currentZkConfig.setConfigOption("zookeeper.snapshot.trust.empty", "true");
-                env.put(ENV_VAR_ZOOKEEPER_CONFIGURATION, currentZkConfig.getConfiguration());
-
                 // update the Zookeeper stateful set
                 StatefulSet newZookeeperSs = new StatefulSetBuilder(zookeeperSts)
                         .editSpec()
@@ -805,7 +793,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .editSpec()
                                     .editMatchingContainer(container -> container.getName().equals("zookeeper"))
                                         .withImage(newZkImage)
-                                        .withEnv(ModelUtils.envAsList(env))
                                     .endContainer()
                                 .endSpec()
                             .endTemplate()

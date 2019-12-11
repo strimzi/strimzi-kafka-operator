@@ -24,7 +24,6 @@ mkdir -p $ZOOKEEPER_DATA_DIR
 # Create myid file
 echo "$ZOOKEEPER_ID" > $ZOOKEEPER_DATA_DIR/myid
 
-
 # Generate and print the config file
 echo "Starting Zookeeper with configuration:"
 ./zookeeper_config_generator.sh | tee /tmp/zookeeper.properties
@@ -36,8 +35,7 @@ fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
-  KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
-  export KAFKA_OPTS
+  export KAFKA_OPTS="-javaagent:$(ls $KAFKA_HOME/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
@@ -60,6 +58,7 @@ fi
 # If this is a 3.4.x server then place an indicator file in the data directory so this persists over multiple restarts
 flag_file=${ZOOKEEPER_DATA_DIR}/zk_upgrade_from_3_4
 if [[ $(ls libs | grep -Po 'zookeeper-\K3.4.\d+' | head -1) ]]; then
+    echo "Detected 3.4.x server, creating flag file for snapshot checks after future upgrade to 3.5.6"
     touch ${flag_file}
 fi
 
@@ -71,10 +70,12 @@ if [[ -f ${flag_file} ]]; then
         if [[ $(find ${ZOOKEEPER_DATA_DIR}/version-2 -maxdepth 1 -name "snapshot.*") ]]; then
             # If there are snapshot files then we will have a stable server after the upgrade and can remove the flag file
             rm ${flag_file}
+            echo "Snapshots now present in data directory, enabling snapshot integrity checks"
         else
             # If there are no snapshot files and we started from a 3.4.x server then disable the snapshot checks for this boot
             KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.snapshot.trust.empty=true"
             export KAFKA_OPTS
+            echo "No snapshots present in data directory, disabling snapshot integrity checks for this start up"
         fi
     fi
 fi
