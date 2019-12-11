@@ -77,7 +77,7 @@ public class KafkaUserModel {
     protected KafkaUserModel(String namespace, String name, Labels labels) {
         this.namespace = namespace;
         this.name = name;
-        this.labels = labels.withKubernetesName("kafka-user")
+        this.labels = labels.withKubernetesName()
             .withKubernetesInstance(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
     }
