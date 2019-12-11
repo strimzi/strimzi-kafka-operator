@@ -55,23 +55,15 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
             });
 
-        String expectedMsg1a = "spec.consumer.bootstrapServers in body is required";
-        String expectedMsg1b = "spec.producer in body is required";
-        String expectedMsg1c = "spec.whitelist in body is required";
-
-        String expectedMsg2a = "spec.consumer.bootstrapServers: Required value";
-        String expectedMSg2b = "spec.whitelist: Required value";
-        String expectedMsg2c = "spec.producer: Required value";
-
         assertThat(exception.getMessage(), anyOf(
                 allOf(
-                        containsStringIgnoringCase(expectedMsg1a),
-                        containsStringIgnoringCase(expectedMsg1b),
-                        containsStringIgnoringCase(expectedMsg1c)),
+                        containsStringIgnoringCase("spec.consumer.bootstrapServers in body is required"),
+                        containsStringIgnoringCase("spec.producer in body is required"),
+                        containsStringIgnoringCase("spec.whitelist in body is required")),
                 allOf(
-                        containsStringIgnoringCase(expectedMsg2a),
-                        containsStringIgnoringCase(expectedMSg2b),
-                        containsStringIgnoringCase(expectedMsg2c))
+                        containsStringIgnoringCase("spec.consumer.bootstrapServers: Required value"),
+                        containsStringIgnoringCase("spec.whitelist: Required value"),
+                        containsStringIgnoringCase("spec.producer: Required value"))
                 ));
     }
 
@@ -93,21 +85,14 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
                 createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
             });
 
-        String expectedMsg1a = "spec.producer.authentication.certificateAndKey.certificate in body is required";
-        String expectedMsg1b = "spec.producer.authentication.certificateAndKey.key in body is required";
-
-        String expectedMsg2a = "spec.producer.authentication.certificateAndKey.certificate: Required value";
-        String expectedMSg2b = "spec.producer.authentication.certificateAndKey.key: Required value";
-        String expectedMsg2c = "spec.whitelist: Required value";
-
         assertThat(exception.getMessage(), anyOf(
                 allOf(
-                        containsStringIgnoringCase(expectedMsg1a),
-                        containsStringIgnoringCase(expectedMsg1b)),
+                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.certificate in body is required"),
+                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.key in body is required")),
                 allOf(
-                        containsStringIgnoringCase(expectedMsg2a),
-                        containsStringIgnoringCase(expectedMSg2b),
-                        containsStringIgnoringCase(expectedMsg2c))
+                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.certificate: Required value"),
+                        containsStringIgnoringCase("spec.producer.authentication.certificateAndKey.key: Required value"),
+                        containsStringIgnoringCase("spec.whitelist: Required value"))
         ));
     }
 

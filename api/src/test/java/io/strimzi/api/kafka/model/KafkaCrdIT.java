@@ -56,15 +56,13 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
             });
 
-        String expectedMsg1a = "spec.zookeeper in body is required";
-        String expectedMsg1b = "spec.kafka in body is required";
-
-        String expectedMsg2a = "spec.kafka: Required value";
-        String expectedMsg2b = "spec.zookeeper: Required value";
-
         assertThat(exception.getMessage(), anyOf(
-                allOf(containsStringIgnoringCase(expectedMsg1a), containsStringIgnoringCase(expectedMsg1b)),
-                allOf(containsStringIgnoringCase(expectedMsg2a), containsStringIgnoringCase(expectedMsg2b))));
+                allOf(
+                        containsStringIgnoringCase("spec.zookeeper in body is required"),
+                        containsStringIgnoringCase("spec.kafka in body is required")),
+                allOf(
+                        containsStringIgnoringCase("spec.kafka: Required value"),
+                        containsStringIgnoringCase("spec.zookeeper: Required value"))));
     }
 
     @Test
@@ -85,9 +83,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-null-maintenance.yaml");
             });
 
-        String expectedMsg1 = "spec.maintenanceTimeWindows in body must be of type string: \"null\"";
-
-        assertThat(exception.getMessage(), containsStringIgnoringCase(expectedMsg1));
+        assertThat(exception.getMessage(),
+                containsStringIgnoringCase("spec.maintenanceTimeWindows in body must be of type string: \"null\""));
     }
 
     @Test
@@ -108,10 +105,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-tls-sidecar-invalid-loglevel.yaml");
             });
 
-        String expectedMsg1 = "spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]";
-        String expectedMsg2 = "spec.kafka.tlsSidecar.logLevel: Unsupported value: \"invalid\": supported values: \"emerg\", \"alert\", \"crit\", \"err\", \"warning\", \"notice\", \"info\", \"debug\"";
-
-        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"),
+                containsStringIgnoringCase("spec.kafka.tlsSidecar.logLevel: Unsupported value: \"invalid\": supported values: \"emerg\", \"alert\", \"crit\", \"err\", \"warning\", \"notice\", \"info\", \"debug\"")));
     }
 
     @Test
@@ -127,10 +123,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-jbod-storage-on-zookeeper.yaml");
             });
 
-        String expectedMsg1 = "spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]";
-        String expectedMsg2 = "spec.zookeeper.storage.type: Unsupported value: \"jbod\": supported values: \"ephemeral\", \"persistent-claim\"";
-
-        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"),
+                containsStringIgnoringCase("spec.zookeeper.storage.type: Unsupported value: \"jbod\": supported values: \"ephemeral\", \"persistent-claim\"")));
     }
 
     @Test
@@ -141,10 +136,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "Kafka-with-invalid-storage.yaml");
             });
 
-        String expectedMsg1 = "spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]";
-        String expectedMsg2 = "spec.kafka.storage.type: Unsupported value: \"foobar\": supported values: \"ephemeral\", \"persistent-claim\", \"jbod\"";
-
-        assertThat(exception.getMessage(), anyOf(containsStringIgnoringCase(expectedMsg1), containsStringIgnoringCase(expectedMsg2)));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"),
+                containsStringIgnoringCase("spec.kafka.storage.type: Unsupported value: \"foobar\": supported values: \"ephemeral\", \"persistent-claim\", \"jbod\"")));
     }
 
     @Test
@@ -154,9 +148,10 @@ public class KafkaCrdIT extends AbstractCrdIT {
             () -> {
                 createDelete(Kafka.class, "Kafka-with-invalid-jmx-authentication.yaml");
             });
-        String expectedMsg1 = "spec.kafka.jmxOptions.authentication.type in body should be one of [password]";
 
-        assertThat(exception.getMessage(), containsStringIgnoringCase(expectedMsg1));
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.kafka.jmxOptions.authentication.type in body should be one of [password]"),
+                containsStringIgnoringCase("spec.kafka.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\"")));
     }
 
     @BeforeAll
