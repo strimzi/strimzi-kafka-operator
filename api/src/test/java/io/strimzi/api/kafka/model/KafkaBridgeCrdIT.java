@@ -27,7 +27,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkabridge-crd-it";
 
     @Test
-    void testKafkaMirrorMakerV1alpha1() {
+    void testKafkaBridgeV1alpha1() {
         assumeKube1_11Plus();
         createDelete(KafkaBridge.class, "KafkaBridgeV1alpha1.yaml");
     }
