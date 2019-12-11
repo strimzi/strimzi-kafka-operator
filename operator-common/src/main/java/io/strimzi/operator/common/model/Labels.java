@@ -237,21 +237,19 @@ public class Labels {
             return "";
         }
 
-        String labelValue = instance.substring(0, Math.min(instance.length(), 63));
+        int i = Math.min(instance.length(), 63);
 
-        int i = labelValue.length();
         while (i > 0)   {
-            char lastChar = labelValue.charAt(i - 1);
+            char lastChar = instance.charAt(i - 1);
 
             if (lastChar == '.' || lastChar == '-') {
-                labelValue = labelValue.substring(0, i - 1);
                 i--;
             } else {
                 break;
             }
         }
 
-        return labelValue;
+        return instance.substring(0, i);
     }
 
     /**

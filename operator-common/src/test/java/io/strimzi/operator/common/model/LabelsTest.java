@@ -220,6 +220,8 @@ public class LabelsTest {
 
     @Test
     public void testValidInstanceNamesAsLabelValues()   {
+        assertThat(Labels.getOrValidInstanceLabelValue(null), is(""));
+        assertThat(Labels.getOrValidInstanceLabelValue(""), is(""));
         assertThat(Labels.getOrValidInstanceLabelValue("valid-label-value"), is("valid-label-value"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-012345678901234567890123456789012345678901234567890123456789"), is("too-long-012345678901234567890123456789012345678901234567890123"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789012-456789"), is("too-long-01234567890123456789012345678901234567890123456789012"));
