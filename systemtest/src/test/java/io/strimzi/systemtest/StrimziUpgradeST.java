@@ -68,7 +68,7 @@ public class StrimziUpgradeST extends MessagingBaseST {
     private Map<String, String> eoPods;
 
     private File coDir = null;
-    private File kafkaEphemeralYaml = null;
+    private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
 
@@ -82,96 +82,17 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
 
-        LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
-        cluster.setNamespace(NAMESPACE);
-
         try {
-            String url = parameters.getString("urlFrom");
-            File dir = FileUtils.downloadAndUnzip(url);
-
-            coDir = new File(dir, parameters.getString("fromExamples") + "/install/cluster-operator/");
-
-            // Modify + apply installation files
-            copyModifyApply(coDir);
-
-            LOGGER.info("Waiting for CO deployment");
-            DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
-
-            // Deploy a Kafka cluster
-            kafkaEphemeralYaml = new File(dir, parameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-            cmdKubeClient().create(kafkaEphemeralYaml);
-            // Wait for readiness
-            waitForClusterReadiness();
-
-            // And a topic and a user
-            kafkaTopicYaml = new File(dir, parameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
-            cmdKubeClient().create(kafkaTopicYaml);
-            kafkaUserYaml = new File(dir, parameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
-            cmdKubeClient().create(kafkaUserYaml);
-
-            // Wait until user will be created
-            // We cannot use utils wait for that, because in older version there were no status field for CRs
-            Thread.sleep(10000);
-
-            // Deploy clients and exchange messages
-            KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
-            deployClients(parameters.getJsonObject("client").getString("beforeKafkaUpdate"), kafkaUser);
-
-            final String defaultKafkaClientsPodName =
-                    kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-            int sent = sendMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
-            int received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, defaultKafkaClientsPodName);
-            assertSentAndReceivedMessages(sent, received);
-
-            makeSnapshots();
-            logPodImages();
-            // Execution of required procedures before upgrading CO
-            changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresBefore"));
-
-            // Upgrade the CO
-            // Modify + apply installation files
-            LOGGER.info("Going to update CO from {} to {}", parameters.getString("fromVersion"), parameters.getString("toVersion"));
-            if ("HEAD" .equals(parameters.getString("toVersion"))) {
-                coDir = new File("../install/cluster-operator");
-                upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
-            } else {
-                url = parameters.getString("urlTo");
-                dir = FileUtils.downloadAndUnzip(url);
-                coDir = new File(dir, parameters.getString("toExamples") + "/install/cluster-operator/");
-                upgradeClusterOperator(coDir, parameters.getJsonObject("imagesBeforeKafkaUpdate"));
-            }
-
-            // Make snapshots of all pods
-            makeSnapshots();
-            logPodImages();
-            //  Upgrade kafka
-            changeKafkaAndLogFormatVersion(parameters.getJsonObject("proceduresAfter"));
-            logPodImages();
-            checkAllImages(parameters.getJsonObject("imagesAfterKafkaUpdate"));
-
-            // Delete old clients
-            kubeClient().deleteDeployment(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
-            DeploymentUtils.waitForDeploymentDeletion(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS);
-
-            deployClients(parameters.getJsonObject("client").getString("afterKafkaUpdate"), kafkaUser);
-
-            final String afterUpgradeKafkaClientsPodName =
-                    kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-            received = receiveMessages(50, kafkaClusterName, true, topicName, kafkaUser, afterUpgradeKafkaClientsPodName);
-            assertSentAndReceivedMessages(sent, received);
-
-            // Check errors in CO log
-            assertNoCoErrorsLogged(0);
-
+            performUpgrade(parameters, 50, 50);
             // Tidy up
         } catch (KubeClusterException e) {
             e.printStackTrace();
             try {
-                if (kafkaEphemeralYaml != null) {
-                    cmdKubeClient().delete(kafkaEphemeralYaml);
+                if (kafkaYaml != null) {
+                    cmdKubeClient().delete(kafkaYaml);
                 }
             } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", kafkaEphemeralYaml.getName());
+                LOGGER.warn("Failed to delete resources: {}", kafkaYaml.getName());
             }
             try {
                 if (coDir != null) {
@@ -218,11 +139,11 @@ public class StrimziUpgradeST extends MessagingBaseST {
         } catch (KubeClusterException e) {
             e.printStackTrace();
             try {
-                if (kafkaEphemeralYaml != null) {
-                    cmdKubeClient().delete(kafkaEphemeralYaml);
+                if (kafkaYaml != null) {
+                    cmdKubeClient().delete(kafkaYaml);
                 }
             } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", kafkaEphemeralYaml.getName());
+                LOGGER.warn("Failed to delete resources: {}", kafkaYaml.getName());
             }
             try {
                 if (coDir != null) {
@@ -263,17 +184,20 @@ public class StrimziUpgradeST extends MessagingBaseST {
         DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         LOGGER.info("CO ready");
 
+        // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get() == null) {
             // Deploy a Kafka cluster
-            kafkaEphemeralYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-            cmdKubeClient().create(kafkaEphemeralYaml);
+            kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
+            cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
             waitForClusterReadiness();
         }
+        // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
             kafkaUserYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
             cmdKubeClient().create(kafkaUserYaml);
         }
+        // We don't need to update KafkaTopic during chain upgrade this way
         if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get() == null) {
             kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
             cmdKubeClient().create(kafkaTopicYaml);
@@ -360,8 +284,8 @@ public class StrimziUpgradeST extends MessagingBaseST {
         if (kafkaTopicYaml != null) {
             cmdKubeClient().delete(kafkaTopicYaml);
         }
-        if (kafkaEphemeralYaml != null) {
-            cmdKubeClient().delete(kafkaEphemeralYaml);
+        if (kafkaYaml != null) {
+            cmdKubeClient().delete(kafkaYaml);
         }
         if (root != null) {
             Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
