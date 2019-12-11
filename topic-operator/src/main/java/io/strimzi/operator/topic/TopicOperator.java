@@ -352,8 +352,6 @@ class TopicOperator {
         }
     }
 
-    protected static final String KAFKA_TOPIC_OPERATOR_NAME = "strimzi-kafka-topic-operator";
-
     public TopicOperator(Vertx vertx, Kafka kafka,
                          K8s k8s,
                          TopicStore topicStore,

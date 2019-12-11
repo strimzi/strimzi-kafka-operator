@@ -131,12 +131,6 @@ class TopicSerialization {
         ObjectMeta om = topic.getMetadata();
         Map<String, String> lbls = new HashMap<>();
         lbls.putAll(labels.labels());
-        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL,
-            io.strimzi.operator.common.model.Labels.KUBERNETES_NAME);
-        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL,
-            topic.getTopicName().toString());
-        lbls.put(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL,
-            TopicOperator.KAFKA_TOPIC_OPERATOR_NAME);
         if (om != null) {
             om.setName(resourceName.toString());
             if (topic.getMetadata().getLabels() != null)

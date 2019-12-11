@@ -49,12 +49,8 @@ public class TopicSerializationTest {
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
 
         assertThat(kafkaTopic.getMetadata().getName(), is(wroteTopic.getTopicName().toString()));
-        assertThat(kafkaTopic.getMetadata().getLabels().size(), is(4));
+        assertThat(kafkaTopic.getMetadata().getLabels().size(), is(1));
         assertThat(kafkaTopic.getMetadata().getLabels().get("app"), is("strimzi"));
-        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME_LABEL),
-                is(io.strimzi.operator.common.model.Labels.KUBERNETES_NAME));
-        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_INSTANCE_LABEL), is(topicName));
-        assertThat(kafkaTopic.getMetadata().getLabels().get(io.strimzi.operator.common.model.Labels.KUBERNETES_MANAGED_BY_LABEL), is(TopicOperator.KAFKA_TOPIC_OPERATOR_NAME));
         assertThat(kafkaTopic.getSpec().getTopicName(), is(wroteTopic.getTopicName().toString()));
         assertThat(kafkaTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
         assertThat(kafkaTopic.getSpec().getReplicas(), is(Integer.valueOf(1)));
@@ -64,6 +60,41 @@ public class TopicSerializationTest {
         assertThat(readTopic, is(wroteTopic));
     }
 
+    @Test
+    public void testResourceSerializationRoundTripWithKubernetesLabels() {
+        String topicName = "tom";
+        Topic.Builder builder = new Topic.Builder();
+        builder.withTopicName(topicName);
+        builder.withNumReplicas((short) 1);
+        builder.withNumPartitions(2);
+        builder.withConfigEntry("cleanup.policy", "bar");
+        ObjectMeta metadata = new ObjectMeta();
+        metadata.setAnnotations(new HashMap<>());
+
+        Map<String, String> kubeLabels = new HashMap<>(3);
+        kubeLabels.put("app.kubernetes.io/name", "kstreams");
+        kubeLabels.put("app.kubernetes.io/instance", "fraud-detection");
+        kubeLabels.put("app.kubernetes.io/managed-by", "helm");
+
+        metadata.setLabels(kubeLabels);
+        builder.withMetadata(metadata);
+        Topic wroteTopic = builder.build();
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
+
+        assertThat(kafkaTopic.getMetadata().getName(), is(wroteTopic.getTopicName().toString()));
+        assertThat(kafkaTopic.getMetadata().getLabels().size(), is(4));
+        assertThat(kafkaTopic.getMetadata().getLabels().get("app"), is("strimzi"));
+        assertThat(kafkaTopic.getMetadata().getLabels().get("app.kubernetes.io/name"), is("kstreams"));
+        assertThat(kafkaTopic.getMetadata().getLabels().get("app.kubernetes.io/instance"), is("fraud-detection"));
+        assertThat(kafkaTopic.getMetadata().getLabels().get("app.kubernetes.io/managed-by"), is("helm"));
+        assertThat(kafkaTopic.getSpec().getTopicName(), is(wroteTopic.getTopicName().toString()));
+        assertThat(kafkaTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
+        assertThat(kafkaTopic.getSpec().getReplicas(), is(Integer.valueOf(1)));
+        assertThat(kafkaTopic.getSpec().getConfig(), is(singletonMap("cleanup.policy", "bar")));
+
+        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);
+        assertThat(readTopic, is(wroteTopic));
+    }
 
     @Test
     public void testJsonSerializationRoundTrip() throws UnsupportedEncodingException {
