@@ -54,17 +54,13 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
                 createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
             });
 
-        String expectedMsg1a = "spec.partitions in body is required";
-        String expectedMsg1b = "spec.replicas in body is required";
-        String expectedMsg2a = "spec.partitions: Required value";
-        String expectedMsg2b = "spec.replicas: Required value";
         assertThat(exception.getMessage(), anyOf(
                 allOf(
-                        containsStringIgnoringCase(expectedMsg1a),
-                        containsStringIgnoringCase(expectedMsg1b)),
+                        containsStringIgnoringCase("spec.partitions in body is required"),
+                        containsStringIgnoringCase("spec.replicas in body is required")),
                 allOf(
-                        containsStringIgnoringCase(expectedMsg2a),
-                        containsStringIgnoringCase(expectedMsg2b))
+                        containsStringIgnoringCase("spec.partitions: Required value"),
+                        containsStringIgnoringCase("spec.replicas: Required value"))
                 ));
     }
 
