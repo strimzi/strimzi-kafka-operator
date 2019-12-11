@@ -239,10 +239,10 @@ public class KafkaUserModelTest {
         assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
         assertThat(generated.getMetadata().getLabels(),
                 is(Labels.userLabels(ResourceUtils.LABELS)
-                        .withKind(KafkaUser.RESOURCE_KIND)
                         .withKubernetesName()
                         .withKubernetesInstance(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKind(KafkaUser.RESOURCE_KIND)
                         .toMap()));
         assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
         assertThat(generated.getData().get(KafkaUserModel.KEY_PASSWORD), is(existing));
