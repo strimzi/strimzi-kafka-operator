@@ -11,6 +11,9 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents a status of the Kafka Cluster Rebalance resource
  */
@@ -27,14 +30,15 @@ public class KafkaClusterRebalanceStatus extends Status {
 
     private static final long serialVersionUID = 1L;
 
-    private String optimizationResult;
+    private Map<String, Object> optimizationResult = new HashMap<>(0);
 
-    @Description("A JSON string describing the optimization result")
-    public String getOptimizationResult() {
+    @Description("A JSON describing the optimization result")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getOptimizationResult() {
         return optimizationResult;
     }
 
-    public void setOptimizationResult(String optimizationResult) {
+    public void setOptimizationResult(Map<String, Object> optimizationResult) {
         this.optimizationResult = optimizationResult;
     }
 }

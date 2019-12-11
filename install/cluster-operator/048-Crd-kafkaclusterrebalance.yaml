@@ -53,3 +53,5 @@ spec:
                     type: string
             observedGeneration:
               type: integer
+            optimizationResult:
+              type: object
