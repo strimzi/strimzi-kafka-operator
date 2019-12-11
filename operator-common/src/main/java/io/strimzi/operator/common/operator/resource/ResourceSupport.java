@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +36,7 @@ public class ResourceSupport {
      * @return The Future
      */
     public Future<Void> closeOnWorkerThread(Closeable closeable) {
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         vertx.executeBlocking(
             blockingFuture -> {
                 try {
@@ -48,7 +49,7 @@ public class ResourceSupport {
             },
             true,
             result);
-        return result;
+        return result.future();
     }
 
     /**
@@ -97,23 +98,23 @@ public class ResourceSupport {
                                              long timeoutMs) {
 
         return new Watcher<T>() {
-            private final Future<Watch> watchFuture;
-            private final Future<U> doneFuture;
-            private final Future<U> resultFuture;
+            private final Promise<Watch> watchPromise;
+            private final Promise<U> donePromise;
+            private final Promise<U> resultPromise;
             private final long timerId;
 
             /* init */
             {
-                this.watchFuture = Future.future();
-                this.doneFuture = Future.future();
-                this.resultFuture = Future.future();
+                this.watchPromise = Promise.promise();
+                this.donePromise = Promise.promise();
+                this.resultPromise = Promise.promise();
                 this.timerId = vertx.setTimer(timeoutMs, ignored -> {
-                    doneFuture.tryFail(new TimeoutException());
+                    donePromise.tryFail(new TimeoutException());
                 });
-                CompositeFuture.join(watchFuture, doneFuture).setHandler(joinResult -> {
+                CompositeFuture.join(watchPromise.future(), donePromise.future()).setHandler(joinResult -> {
                     Future<Void> closeFuture;
-                    if (watchFuture.succeeded()) {
-                        closeFuture = closeOnWorkerThread(watchFuture.result());
+                    if (watchPromise.future().succeeded()) {
+                        closeFuture = closeOnWorkerThread(watchPromise.future().result());
                     } else {
                         closeFuture = Future.succeededFuture();
                     }
@@ -121,16 +122,16 @@ public class ResourceSupport {
                         vertx.runOnContext(ignored2 -> {
                             LOGGER.warn("Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {
-                                resultFuture.complete(joinResult.result().resultAt(1));
+                                resultPromise.complete(joinResult.result().resultAt(1));
                             } else {
-                                resultFuture.fail(collectCauses(joinResult, closeResult));
+                                resultPromise.fail(collectCauses(joinResult, closeResult));
                             }
                         });
                     });
                 });
                 Watch watch = watchable.watch(this);
                 LOGGER.debug("Opened watch {}", watch);
-                watchFuture.complete(watch);
+                watchPromise.complete(watch);
             }
 
             @Override
@@ -154,7 +155,7 @@ public class ResourceSupport {
                     },
                     true,
                     ar -> {
-                        doneFuture.handle(ar);
+                        donePromise.handle(ar);
                     });
             }
 
@@ -163,6 +164,6 @@ public class ResourceSupport {
 
             }
 
-        }.resultFuture;
+        }.resultPromise.future();
     }
 }

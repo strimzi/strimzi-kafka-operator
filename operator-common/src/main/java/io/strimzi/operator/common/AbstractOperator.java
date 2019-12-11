@@ -16,6 +16,7 @@ import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOpe
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
@@ -138,12 +139,12 @@ public abstract class AbstractOperator<
                 });
             }
         });
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         handler.setHandler(reconcileResult -> {
             handleResult(reconciliation, reconcileResult);
             result.handle(reconcileResult);
         });
-        return result;
+        return result.future();
     }
 
     /**
@@ -163,7 +164,7 @@ public abstract class AbstractOperator<
      * @return
      */
     protected final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
-        Future<T> handler = Future.future();
+        Promise<T> handler = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         final String lockName = getLockName(namespace, name);
@@ -193,7 +194,7 @@ public abstract class AbstractOperator<
                 handler.fail(new UnableToAcquireLockException());
             }
         });
-        return handler;
+        return handler.future();
     }
 
     /**

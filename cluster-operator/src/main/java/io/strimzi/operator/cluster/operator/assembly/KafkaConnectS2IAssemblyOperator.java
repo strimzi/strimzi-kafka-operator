@@ -36,6 +36,7 @@ import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -96,7 +97,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
             return Future.failedFuture("Spec cannot be null");
         }
         if (pfa.hasImages() && pfa.hasApps() && pfa.hasBuilds()) {
-            Future<Void> createOrUpdateFuture = Future.future();
+            Promise<Void> createOrUpdatePromise = Promise.promise();
             KafkaConnectS2ICluster connect;
             KafkaConnectS2Istatus kafkaConnectS2Istatus = new KafkaConnectS2Istatus();
             try {
@@ -112,7 +113,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
             HashMap<String, String> annotations = new HashMap<>();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
-            Future<Void> chainFuture = Future.future();
+            Promise<Void> chainPromise = Promise.promise();
             connectServiceAccount(namespace, connect)
                     .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -126,7 +127,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I))
-                    .compose(i -> chainFuture.complete(), chainFuture)
+                    .compose(i -> {
+                        chainPromise.complete();
+                        return chainPromise.future();
+                    })
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));
@@ -136,15 +140,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                             // If both features succeeded, createOrUpdate succeeded as well
                             // If one or both of them failed, we prefer the reconciliation failure as the main error
                             if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdateFuture.complete();
+                                createOrUpdatePromise.complete();
                             } else if (reconciliationResult.failed()) {
-                                createOrUpdateFuture.fail(reconciliationResult.cause());
+                                createOrUpdatePromise.fail(reconciliationResult.cause());
                             } else {
-                                createOrUpdateFuture.fail(statusResult.cause());
+                                createOrUpdatePromise.fail(statusResult.cause());
                             }
                         });
                     });
-            return createOrUpdateFuture;
+            return createOrUpdatePromise.future();
 
         } else {
             return Future.failedFuture("The OpenShift build, image or apps APIs are not available in this Kubernetes cluster. Kafka Connect S2I deployment cannot be enabled.");
@@ -174,7 +178,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
      * @return
      */
     Future<Void> updateStatus(KafkaConnectS2I kafkaConnectS2Iassembly, Reconciliation reconciliation, KafkaConnectS2Istatus desiredStatus) {
-        Future<Void> updateStatusFuture = Future.future();
+        Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(kafkaConnectS2Iassembly.getMetadata().getNamespace(), kafkaConnectS2Iassembly.getMetadata().getName()).setHandler(getRes -> {
             if (getRes.succeeded()) {
@@ -183,7 +187,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 if (connect != null) {
                     if (StatusUtils.isResourceV1alpha1(connect)) {
                         log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, connect.getApiVersion());
-                        updateStatusFuture.complete();
+                        updateStatusPromise.complete();
                     } else {
                         KafkaConnectS2Istatus currentStatus = connect.getStatus();
 
@@ -195,28 +199,28 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                             ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I>) resourceOperator).updateStatusAsync(resourceWithNewStatus).setHandler(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusFuture.complete();
+                                    updateStatusPromise.complete();
                                 } else {
                                     log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusFuture.fail(updateRes.cause());
+                                    updateStatusPromise.fail(updateRes.cause());
                                 }
                             });
                         } else {
                             log.debug("{}: Status did not change", reconciliation);
-                            updateStatusFuture.complete();
+                            updateStatusPromise.complete();
                         }
                     }
                 } else {
                     log.error("{}: Current Kafka ConnectS2I resource not found", reconciliation);
-                    updateStatusFuture.fail("Current Kafka ConnectS2I resource not found");
+                    updateStatusPromise.fail("Current Kafka ConnectS2I resource not found");
                 }
             } else {
                 log.error("{}: Failed to get the current Kafka ConnectS2I resource and its status", reconciliation, getRes.cause());
-                updateStatusFuture.fail(getRes.cause());
+                updateStatusPromise.fail(getRes.cause());
             }
         });
 
-        return updateStatusFuture;
+        return updateStatusPromise.future();
     }
 
     Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {

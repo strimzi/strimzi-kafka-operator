@@ -6,6 +6,7 @@ package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class ScramShaCredentialsOperator {
     }
 
     Future<ReconcileResult<Void>> reconcile(String username, String password) {
-        Future<ReconcileResult<Void>> fut = Future.future();
+        Promise<ReconcileResult<Void>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 boolean exists = credsManager.exists(username);
@@ -39,8 +40,8 @@ public class ScramShaCredentialsOperator {
                 }
             },
             false,
-            fut);
-        return fut;
+            promise);
+        return promise.future();
     }
 
     public List<String> list() {

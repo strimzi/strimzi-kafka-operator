@@ -26,6 +26,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -119,16 +120,16 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     public Future<Void> deletePvc(StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
-        Future<Void> f = Future.future();
+        Promise<Void> promise = Promise.promise();
         Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
         r.setHandler(h -> {
             if (h.succeeded()) {
-                f.complete();
+                promise.complete();
             } else {
-                f.fail(h.cause());
+                promise.fail(h.cause());
             }
         });
-        return f;
+        return promise.future();
     }
 
     /**
@@ -244,16 +245,22 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     @Override
     protected Future<ReconcileResult<StatefulSet>> internalCreate(String namespace, String name, StatefulSet desired) {
         // Create the STS...
-        Future<ReconcileResult<StatefulSet>> result = Future.future();
+        Promise<ReconcileResult<StatefulSet>> result = Promise.promise();
         setGeneration(desired, INIT_GENERATION);
         Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(namespace, name, desired);
 
+        if (crt.failed()) {
+            return crt;
+        }
         // ... then wait for the STS to be ready...
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
             .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
-            .compose(res -> result.complete(res), result);
-        return result;
+            .compose(res -> {
+                result.complete(res);
+                return result.future();
+            });
+        return result.future();
     }
 
     /**
@@ -316,7 +323,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      */
     protected Future<ReconcileResult<StatefulSet>> internalReplace(String namespace, String name, StatefulSet current, StatefulSet desired, boolean cascading) {
         try {
-            Future<ReconcileResult<StatefulSet>> fut = Future.future();
+            Promise<ReconcileResult<StatefulSet>> promise = Promise.promise();
 
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
@@ -333,13 +340,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 if (res.succeeded())    {
                     StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
                     log.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);
-                    fut.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+                    promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {
-                    fut.fail(res.cause());
+                    promise.fail(res.cause());
                 }
             });
 
-            return fut;
+            return promise.future();
         } catch (Exception e) {
             log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
@@ -356,7 +363,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @return A Future with True if the deletion succeeded and False when it failed.
      */
     public Future<Void> deleteAsync(String namespace, String name, boolean cascading) {
-        Future<Void> result = Future.future();
+        Promise<Void> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 try {
@@ -375,6 +382,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 }
             }, true, result
         );
-        return result;
+        return result.future();
     }
 }

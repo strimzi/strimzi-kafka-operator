@@ -16,6 +16,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +89,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                     + desired.getMetadata().getName());
         }
 
-        Future<ReconcileResult<T>> fut = Future.future();
+        Promise<ReconcileResult<T>> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 T current = operation().withName(name).get();
@@ -113,9 +114,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
             },
             false,
-            fut
+            promise
         );
-        return fut;
+        return promise.future();
     }
 
 
@@ -143,7 +144,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     }
 
     private Future<Void> deleteAsync(String name) {
-        Future<Void> deleteFuture = Future.future();
+        Promise<Void> deletePromise = Promise.promise();
         vertx.executeBlocking(
             f -> {
                 try {
@@ -158,8 +159,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 }
             },
             true,
-            deleteFuture);
-        return deleteFuture;
+            deletePromise);
+        return deletePromise.future();
     }
 
     /**
@@ -224,14 +225,14 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A Future for the result.
      */
     public Future<T> getAsync(String name) {
-        Future<T> result = Future.future();
+        Promise<T> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 T resource = get(name);
                 future.complete(resource);
             }, true, result
         );
-        return result;
+        return result.future();
     }
 
     /**

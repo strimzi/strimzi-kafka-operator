@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 public class PodDisruptionBudgetOperator extends AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> {
@@ -26,21 +27,21 @@ public class PodDisruptionBudgetOperator extends AbstractResourceOperator<Kubern
 
     @Override
     protected Future<ReconcileResult<PodDisruptionBudget>> internalPatch(String namespace, String name, PodDisruptionBudget current, PodDisruptionBudget desired, boolean cascading) {
-        Future<ReconcileResult<PodDisruptionBudget>> fut = Future.future();
+        Promise<ReconcileResult<PodDisruptionBudget>> promise = Promise.promise();
         internalDelete(namespace, name).setHandler(delRes -> {
             if (delRes.succeeded())    {
                 internalCreate(namespace, name, desired).setHandler(createRes -> {
                     if (createRes.succeeded())  {
-                        fut.complete(createRes.result());
+                        promise.complete(createRes.result());
                     } else {
-                        fut.fail(createRes.cause());
+                        promise.fail(createRes.cause());
                     }
                 });
             } else {
-                fut.fail(delRes.cause());
+                promise.fail(delRes.cause());
             }
         });
 
-        return fut;
+        return promise.future();
     }
 }

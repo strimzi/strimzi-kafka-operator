@@ -15,6 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClientOptions;
@@ -155,7 +156,7 @@ public class ZookeeperLeaderFinder {
     }
     private Future<Integer> zookeeperLeader(String cluster, String namespace, List<Pod> pods,
                                             NetClientOptions netClientOptions) {
-        Future<Integer> result = Future.future();
+        Promise<Integer> result = Promise.promise();
         BackOff backOff = backOffSupplier.get();
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -198,7 +199,7 @@ public class ZookeeperLeaderFinder {
             }
         };
         handler.handle(null);
-        return result;
+        return result.future();
     }
 
     /**
@@ -240,7 +241,7 @@ public class ZookeeperLeaderFinder {
      */
     protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
 
-        Future<Boolean> future = Future.future();
+        Promise<Boolean> promise = Promise.promise();
         String host = host(pod);
         int port = port(pod);
         log.debug("Connecting to zookeeper on {}:{}", host, port);
@@ -248,12 +249,12 @@ public class ZookeeperLeaderFinder {
             .connect(port, host, ar -> {
                 if (ar.failed()) {
                     log.warn("ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
-                    future.fail(ar.cause());
+                    promise.fail(ar.cause());
                 } else {
                     log.debug("ZK {}:{}: connected", host, port);
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
-                        if (!future.tryFail(ex)) {
+                        if (!promise.tryFail(ex)) {
                             log.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
                                     host, port, pod.getMetadata().getName(), ex);
                         }
@@ -271,7 +272,7 @@ public class ZookeeperLeaderFinder {
                         Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
                         boolean isLeader = matcher.find();
                         log.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
-                        if (!future.tryComplete(isLeader)) {
+                        if (!promise.tryComplete(isLeader)) {
                             log.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
                                     host, port);
                         }
@@ -286,7 +287,7 @@ public class ZookeeperLeaderFinder {
                 }
 
             });
-        return future.recover(error -> {
+        return promise.future().recover(error -> {
             log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });

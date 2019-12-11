@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -146,19 +147,19 @@ class KafkaAvailability {
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        Future<Map<String, Config>> f = Future.future();
+        Promise<Map<String, Config>> promise = Promise.promise();
         ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
             if (error != null) {
-                f.fail(error);
+                promise.fail(error);
             } else {
                 log.debug("Got topic configs for {} topics", topicNames.size());
-                f.complete(topicNameToConfig.entrySet().stream()
+                promise.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
                             entry -> entry.getValue())));
             }
         });
-        return f;
+        return promise.future();
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
@@ -177,30 +178,30 @@ class KafkaAvailability {
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        Future<Collection<TopicDescription>> descFuture = Future.future();
+        Promise<Collection<TopicDescription>> descPromise = Promise.promise();
         ac.describeTopics(names).all()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
-                        descFuture.fail(error);
+                        descPromise.fail(error);
                     } else {
                         log.debug("Got topic descriptions for {} topics", tds.size());
-                        descFuture.complete(tds.values());
+                        descPromise.complete(tds.values());
                     }
                 });
-        return descFuture;
+        return descPromise.future();
     }
 
     protected Future<Set<String>> topicNames() {
-        Future<Set<String>> namesFuture = Future.future();
+        Promise<Set<String>> namesPromise = Promise.promise();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {
                     if (error != null) {
-                        namesFuture.fail(error);
+                        namesPromise.fail(error);
                     } else {
                         log.debug("Got {} topic names", names.size());
-                        namesFuture.complete(names);
+                        namesPromise.complete(names);
                     }
                 });
-        return namesFuture;
+        return namesPromise.future();
     }
 }

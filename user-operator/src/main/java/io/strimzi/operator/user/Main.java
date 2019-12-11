@@ -20,6 +20,7 @@ import io.strimzi.operator.user.operator.ScramShaCredentials;
 import io.strimzi.operator.user.operator.ScramShaCredentialsOperator;
 import io.strimzi.operator.user.operator.SimpleAclOperator;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.logging.log4j.LogManager;
@@ -71,7 +72,7 @@ public class Main {
                 config.getLabels(),
                 secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
 
-        Future<String> fut = Future.future();
+        Promise<String> promise = Promise.promise();
         UserOperator operator = new UserOperator(config.getNamespace(),
                 config,
                 client,
@@ -84,10 +85,10 @@ public class Main {
                     log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                     System.exit(1);
                 }
-                fut.handle(res);
+                promise.handle(res);
             });
 
-        return fut;
+        return promise.future();
     }
 
     private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
@@ -18,6 +19,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -110,11 +112,15 @@ public class ClusterOperator extends AbstractVerticle {
                     });
                     return startHealthServer().map((Void) null);
                 })
-                .compose(start::complete, start);
+                .compose(i -> {
+                    ((Promise<Void>) start).complete(i);
+                    return start;
+                });
     }
 
 
     @Override
+    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
     public void stop(Future<Void> stop) {
         log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
@@ -125,8 +131,7 @@ public class ClusterOperator extends AbstractVerticle {
             // TODO remove the watch from the watchByKind
         }
         client.close();
-
-        stop.complete();
+        ((Promise<Void>) stop).complete();
     }
 
     /**
@@ -148,7 +153,7 @@ public class ClusterOperator extends AbstractVerticle {
      * Start an HTTP health server
      */
     private Future<HttpServer> startHealthServer() {
-        Future<HttpServer> result = Future.future();
+        Promise<HttpServer> result = Promise.promise();
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
 
@@ -166,7 +171,7 @@ public class ClusterOperator extends AbstractVerticle {
                     }
                     result.handle(ar);
                 });
-        return result;
+        return result.future();
     }
 
     public static String secretName(String cluster) {

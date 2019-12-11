@@ -21,6 +21,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,8 +110,8 @@ public class Main {
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
-            Future<String> fut = Future.future();
-            futures.add(fut);
+            Promise<String> prom = Promise.promise();
+            futures.add(prom.future());
             ClusterOperator operator = new ClusterOperator(namespace,
                     config.getReconciliationIntervalMs(),
                     client,
@@ -127,7 +128,7 @@ public class Main {
                         log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
-                    fut.handle(res);
+                    prom.handle(res);
                 });
         }
         return CompositeFuture.join(futures);
@@ -165,16 +166,16 @@ public class Main {
 
             }
 
-            Future<Void> returnFuture = Future.future();
+            Promise<Void> returnPromise = Promise.promise();
             CompositeFuture.all(futures).setHandler(res -> {
                 if (res.succeeded())    {
-                    returnFuture.complete();
+                    returnPromise.complete();
                 } else  {
-                    returnFuture.fail("Failed to create Cluster Roles.");
+                    returnPromise.fail("Failed to create Cluster Roles.");
                 }
             });
 
-            return returnFuture;
+            return returnPromise.future();
         } else {
             return Future.succeededFuture();
         }

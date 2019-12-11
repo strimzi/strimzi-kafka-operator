@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.user;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,10 +64,14 @@ public class UserOperator extends AbstractVerticle {
                 });
 
                 return startHealthServer().map((Void) null);
-            }).compose(start::complete, start);
+            }).compose(i -> {
+                ((Promise<Void>) start).complete(i);
+                return start;
+            });
     }
 
     @Override
+    @SuppressFBWarnings(value = "BC_UNCONFIRMED_CAST")
     public void stop(Future<Void> stop) {
         log.info("Stopping UserOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
@@ -75,7 +81,7 @@ public class UserOperator extends AbstractVerticle {
         }
 
         client.close();
-        stop.complete();
+        ((Promise<Void>) stop).complete();
     }
 
     /**
@@ -89,7 +95,7 @@ public class UserOperator extends AbstractVerticle {
      * Start an HTTP health server
      */
     private Future<HttpServer> startHealthServer() {
-        Future<HttpServer> result = Future.future();
+        Promise<HttpServer> result = Promise.promise();
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
                     if (request.path().equals("/healthy")) {
@@ -106,7 +112,7 @@ public class UserOperator extends AbstractVerticle {
                     }
                     result.handle(ar);
                 });
-        return result;
+        return result.future();
     }
 
 }
