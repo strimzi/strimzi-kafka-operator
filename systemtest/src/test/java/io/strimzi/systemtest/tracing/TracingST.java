@@ -79,7 +79,7 @@ public class TracingST extends MessagingBaseST {
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
     private static final String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
-    private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-target-connect";
+    private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
@@ -567,6 +567,7 @@ public class TracingST extends MessagingBaseST {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() throws Exception {
         Map<String, Object> configOfKafka = new HashMap<>();
         configOfKafka.put("offsets.topic.replication.factor", "1");
@@ -655,11 +656,12 @@ public class TracingST extends MessagingBaseST {
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
-                .editSpec()
+                .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+                    .withReplicas(1)
                     .withNewTemplate()
                         .withNewConnectContainer()
                             .addNewEnv()
