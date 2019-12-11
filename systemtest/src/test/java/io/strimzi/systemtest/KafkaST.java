@@ -1811,7 +1811,7 @@ class KafkaST extends MessagingBaseST {
 
         LOGGER.info("Deploying initial Kafka version (" + initialVersion.version() + ")");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, kafkaReplicas, zkReplicas)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, kafkaReplicas, zkReplicas)
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())

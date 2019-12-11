@@ -7,12 +7,13 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -24,10 +25,9 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
-                ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
-
-        FORBIDDEN_OPTIONS.add("4lw.commands.whitelist");
+        FORBIDDEN_OPTIONS = new ArrayList<>();
+        FORBIDDEN_OPTIONS.addAll(Arrays.asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *")));
+        FORBIDDEN_OPTIONS.add("zookeeper.snapshot.trust.empty");
 
         Map<String, String> config = new HashMap<>();
         config.put("tickTime", "2000");
