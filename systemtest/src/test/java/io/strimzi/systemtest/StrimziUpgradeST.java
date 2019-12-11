@@ -209,6 +209,8 @@ public class StrimziUpgradeST extends MessagingBaseST {
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
+        TestUtils.waitFor("Kafka User " + userName + "availability", 10_000L, 120_000L,
+            () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages
         KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
