@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -77,13 +76,10 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
@@ -101,7 +97,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -110,7 +105,6 @@ class KafkaST extends MessagingBaseST {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
-    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
     @OpenShiftOnly
@@ -125,7 +119,7 @@ class KafkaST extends MessagingBaseST {
         DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
-        testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
+        testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
 
         //Testing labels
         verifyLabelsForKafkaCluster(clusterName, appName);
