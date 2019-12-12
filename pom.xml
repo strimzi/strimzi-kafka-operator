@@ -852,5 +852,23 @@
                 <maven.compiler.target>${env.JAVA_VERSION}</maven.compiler.target>
             </properties>
         </profile>
+        <profile>
+            <id>jdk-8-config</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
+            </properties>
+        </profile>
+        <profile>
+            <id>jdk-11-config</id>
+            <activation>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+            </properties>
+        </profile>
     </profiles>
 </project>
