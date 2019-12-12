@@ -132,7 +132,7 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static void checkCOlogForUsedVariable(String varName) {
+    public static void checkCologForUsedVariable(String varName) {
         LOGGER.info("Check if ClusterOperator logs already defined variable occurrence");
         String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
         assertThat(coLog.contains("User defined container template environment variable " + varName + " is already in use and will be ignored"), is(true));
@@ -157,21 +157,23 @@ public class StUtils {
 
     /**
      * Get a Map of properties from an environment variable in json.
+     * @param containerName name of the container
      * @param json The json from which to extract properties
      * @param envVar The environment variable name
      * @return The properties which the variable contains
      */
-    public static Map<String, Object> getPropertiesFromJson(String json, String envVar) {
-        List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(envVar));
+    public static Map<String, Object> getPropertiesFromJson(String containerName, String json, String envVar) {
+        List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(containerName, envVar));
         return StUtils.loadProperties(array.get(0));
     }
 
     /**
      * Get a jsonPath which can be used to extract envariable variables from a spec
+     * @param containerName name of the container
      * @param envVar The environment variable name
      * @return The json path
      */
-    public static String globalVariableJsonPathBuilder(String envVar) {
-        return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
+    public static String globalVariableJsonPathBuilder(String containerName, String envVar) {
+        return "$.spec.containers[" + containerName + "].env[?(@.name=='" + envVar + "')].value";
     }
 }
