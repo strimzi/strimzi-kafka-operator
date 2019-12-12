@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
-import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -341,12 +340,6 @@ public class StrimziUpgradeST extends MessagingBaseST {
                     .endSpec()
                 .endTemplate()
             .endSpec().done();
-    }
-
-    void assertNoCoErrorsLogged(long sinceSeconds) {
-        LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
-        assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     @BeforeEach
