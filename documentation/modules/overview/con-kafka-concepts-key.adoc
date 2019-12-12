@@ -31,4 +31,4 @@ An _in-sync_ replica has the same number of messages as the leader.
 Configuration defines how many replicas must be _in-sync_ to be able to produce messages, ensuring that a message is committed only after it has been successfully copied to the replica partition.
 In this way, if the leader fails the message is not lost.
 +
-In the _Kafka brokers and topics_ diagram, we can each numbered partition has a leader and two followers in replicated topics.
+In the _Kafka brokers and topics_ diagram, we can see each numbered partition has a leader and two followers in replicated topics.

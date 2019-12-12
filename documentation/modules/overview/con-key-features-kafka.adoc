@@ -7,7 +7,7 @@
 
 The underlying data stream-processing capabilities and component architecture of Kafka can deliver:
 
-* Allows microservices and other applications to share data with extremely high throughput and low latency
+* Microservices and other applications to share data with extremely high throughput and low latency
 * Message ordering guarantees
 * Message rewind/replay from data storage to reconstruct an application state
 * Message compaction to remove old records when using a key-value log
@@ -19,6 +19,11 @@ The underlying data stream-processing capabilities and component architecture of
 
 Kafka's capabilities make it suitable for:
 
+* Event-driven architectures
+* Event sourcing to capture changes to the state of an application as a log of events
+* Message brokering
+* Website activity tracking
+* Operational monitoring through metrics
+* Log collection and aggregation
+* Commit logs for distributed systems
 * Stream processing so that applications can respond to data in real time
-* Integration of microservices through an event-driven publish-subscribe architecture
-* Streaming of analytics and activity tracking through metrics and log collection
