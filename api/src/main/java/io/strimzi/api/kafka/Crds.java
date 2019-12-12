@@ -100,6 +100,7 @@ public class Crds {
         return crd(cls, version);
     }
 
+    @SuppressWarnings("checkstyle:JavaNCSS")
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
         String scope, crdApiVersion, plural, singular, group, kind, listKind;
         CustomResourceSubresourceStatus status = null;
