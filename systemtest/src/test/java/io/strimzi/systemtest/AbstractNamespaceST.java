@@ -69,7 +69,7 @@ public abstract class AbstractNamespaceST extends MessagingBaseST {
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             cluster.setNamespace(kafkaClusterNamespace);
-            List<String> topics2 = KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            List<String> topics2 = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
             return topics2.contains(topic);
         });
     }

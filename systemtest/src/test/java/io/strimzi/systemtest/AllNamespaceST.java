@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
-class AllNamespaceST extends AbstractNamespaceST  {
+class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
@@ -48,7 +48,7 @@ class AllNamespaceST extends AbstractNamespaceST  {
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);

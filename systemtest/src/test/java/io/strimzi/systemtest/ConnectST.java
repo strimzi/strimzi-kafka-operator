@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.kafkaClients.lib.KafkaClient;
+import io.strimzi.systemtest.kafkaclients.lib.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -102,7 +102,7 @@ class ConnectST extends MessagingBaseST {
         LOGGER.info("Verifying docker image names");
         Map<String, String> imgFromDeplConf = getImagesFromConfig();
         //Verifying docker image for kafka connect
-        String connectImageName = PodUtils.getContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
+        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPods("strimzi.io/kind", "KafkaConnect").
                 get(0).getMetadata().getName());
 
         String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getVersion();

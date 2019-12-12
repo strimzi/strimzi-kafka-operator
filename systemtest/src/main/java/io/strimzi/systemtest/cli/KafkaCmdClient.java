@@ -15,14 +15,14 @@ public class KafkaCmdClient {
 
     public KafkaCmdClient() { }
 
-    public static List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
+    public static List<String> listTopicsUsingPodCli(String clusterName, int zkPodId) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
-    public static String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
+    public static String createTopicUsingPodCli(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
@@ -30,21 +30,21 @@ public class KafkaCmdClient {
                 " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
 
-    public static String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
+    public static String deleteTopicUsingPodCli(String clusterName, int zkPodId, String topic) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
-    public static List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
+    public static List<String> describeTopicUsingPodCli(String clusterName, int zkPodId, String topic) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
-    public static String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
+    public static String updateTopicPartitionsCountUsingPodCli(String clusterName, int zkPodId, String topic, int partitions) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",

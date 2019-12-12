@@ -5,10 +5,10 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.kafkaClients.api.ClientArgument;
-import io.strimzi.systemtest.kafkaClients.api.ClientArgumentMap;
-import io.strimzi.systemtest.kafkaClients.api.VerifiableClient;
-import io.strimzi.systemtest.kafkaClients.lib.KafkaClient;
+import io.strimzi.systemtest.kafkaclients.api.ClientArgument;
+import io.strimzi.systemtest.kafkaclients.api.ClientArgumentMap;
+import io.strimzi.systemtest.kafkaclients.api.VerifiableClient;
+import io.strimzi.systemtest.kafkaclients.lib.KafkaClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,8 +20,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.kafkaClients.api.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaClients.api.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static io.strimzi.systemtest.kafkaclients.api.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.api.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

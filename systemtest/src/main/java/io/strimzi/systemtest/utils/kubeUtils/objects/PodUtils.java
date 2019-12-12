@@ -40,7 +40,7 @@ public class PodUtils {
                     pod -> pod.getMetadata().getUid()));
     }
 
-    public static String getContainerImageNameFromPod(String podName) {
+    public static String getFirstContainerImageNameFromPod(String podName) {
         return kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
     }
 
@@ -51,8 +51,7 @@ public class PodUtils {
     }
 
     public static String getInitContainerImageName(String podName) {
-        return kubeClient().getPod(podName).getSpec().getInitContainers().stream()
-            .findFirst().get().getImage();
+        return kubeClient().getPod(podName).getSpec().getInitContainers().get(0).getImage();
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {

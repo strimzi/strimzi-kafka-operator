@@ -845,22 +845,22 @@ class KafkaST extends MessagingBaseST {
         //Creating topics for testing
         cmdKubeClient().create(TOPIC_CM);
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            List<String> topics = KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
 
-        assertThat(KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItem("my-topic"));
 
-        KafkaCmdClient.createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
+        KafkaCmdClient.createTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
         assertThat(cmdKubeClient().list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
         //Updating first topic using pod CLI
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, "my-topic", 2);
 
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "my-topic"), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
@@ -874,7 +874,7 @@ class KafkaST extends MessagingBaseST {
 
         KafkaUtils.waitUntilKafkaCRIsReady(CLUSTER_NAME);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopic = fromYamlString(cmdKubeClient().get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
@@ -885,12 +885,12 @@ class KafkaST extends MessagingBaseST {
         cmdKubeClient().deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
-        KafkaCmdClient.deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
+        KafkaCmdClient.deleteTopicUsingPodCli(CLUSTER_NAME, 0, "my-topic");
         KafkaTopicUtils.waitForKafkaTopicDeletion("my-topic");
 
         //Checking all topics were deleted
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
     }
@@ -1108,7 +1108,7 @@ class KafkaST extends MessagingBaseST {
         // Checking that resource was created
         assertThat(cmdKubeClient().list("kafkatopic"), hasItems("topic-without-labels"));
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        assertThat(KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
         String tOPodName = cmdKubeClient().listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
@@ -1120,7 +1120,7 @@ class KafkaST extends MessagingBaseST {
         KafkaTopicUtils.waitForKafkaTopicDeletion("topic-without-labels");
 
         //Checking all topics were deleted
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
