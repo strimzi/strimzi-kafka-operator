@@ -92,7 +92,7 @@ Cluster Operator setup example:
 
 ##### Exercise
 In this phase you specify all the steps which you need to cover some functionality. 
-If you didn't create the Kafka cluster you should do so at the begging of test using the test method resources instance of `Resources` inherited from `AbstractST`.
+If you didn't create the Kafka cluster you should do so at the begging of test using the test method resources instance of `Resources` inherited from `BaseST`.
 
 ##### Test
 
@@ -102,7 +102,7 @@ When your environment is in place from the previous phase, you can add code for 
 
 Because we have two stacks for store resources info, cluster resources deletion can be easily done in `@AfterEach` or `@AfterAll` methods. 
 Our implementation will ensure that all resources tied to a specific stack will be deleted in the correct order.
-Teardown is triggered in `@AfterAll` of `AbstractST`:
+Teardown is triggered in `@AfterAll` of `BaseST`:
 ```
     @AfterAll
     void teardownEnvironmentClass() {
@@ -129,10 +129,10 @@ For delete all resources from specific `Resources` instance you can do it like:
 ```
 
 
-Another important thing is environment recreation in the case of failure. The `recreateTestEnv()` method in `AbstractST`  is called in the case of an exception during test execution. 
+Another important thing is environment recreation in the case of failure. The `recreateTestEnv()` method in `BaseST`  is called in the case of an exception during test execution. 
 This is useful for these tests, which can break the cluster operator for subsequent test cases.
 
-Example of skip recreate environment in the case of failures. You must override the method from `AbstractST` in your test class:
+Example of skip recreate environment in the case of failures. You must override the method from `BaseST` in your test class:
 ```
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
