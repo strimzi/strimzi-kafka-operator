@@ -479,6 +479,16 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven.dependency.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <!-- Override dep to support Java 11,
+                                 can remove this once maven.dependency.version >= 3.1.2
+                                 see https://issues.apache.org/jira/browse/MDEP-613 -->
+                            <groupId>org.apache.maven.shared</groupId>
+                            <artifactId>maven-dependency-analyzer</artifactId>
+                            <version>1.11.1</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>copy-dependencies</id>
