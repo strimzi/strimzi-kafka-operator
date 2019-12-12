@@ -34,7 +34,9 @@ public class KafkaClusterRebalanceSpec implements UnknownPropertyPreserving, Ser
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("A list of goals to use in generating the proposal and executing it")
+    @Description("A list of goals to use in generating the proposal and executing it. " +
+            "The supported goals are available at https://github.com/linkedin/cruise-control#goals." +
+            "Providing empty goals means to use all of them.")
     public List<String> getGoals() {
         return goals;
     }

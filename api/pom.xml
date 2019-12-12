@@ -170,6 +170,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaClusterRebalance</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>
