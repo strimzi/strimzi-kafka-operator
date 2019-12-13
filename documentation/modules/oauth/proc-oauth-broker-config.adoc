@@ -7,21 +7,26 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use {oauth} authentication using an authorization server.
 
+{oauth} requires configuration of TLS listeners.
+Plain listeners are not recommended.
+
 If the authorization server is using certificates signed by the trusted CA and matching the {oauth} server hostname, TLS connection works using the default settings.
-Otherwise, you have two connection options for your external listener configuration when delegating token validation to the authorization server:
+Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
 
 . TLS connection to the authorization server with trusted certificates
 . Direct connection using an introspection endpoint configuration
 
-Both options are described in this procedure.
-
+Examples of the connection options are described in this procedure.
 
 .Before you start
 
-For more information on the configuration and authentication of Kafka broker listeners, see:
+For more information on the configuration of {oauth} authentication for Kafka broker listeners, see:
 
+* xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
 * xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
 * xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[Authentication and Authorization]
+
+//type-KafkaClientAuthenticationOAuth
 
 .Prerequisites
 
@@ -41,51 +46,53 @@ kubectl edit kafka my-cluster
 +
 The configuration for each type of listener does not have to be the same, as they are independent.
 +
-For example:
+The examples here show the configuration options as configured for external listeners.
 +
+--
+.Example 1: External TLS connection to the authorization server with trusted certificates
 [source,yaml,subs="+quotes,attributes"]
 ----
-#...
-   authentication:
-     type: oauth <1>
-     validIssuerUri: <__https://<authorization-server-address>/auth/realms/master__> <2>
-     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/master/protocol/openid-connect/certs__> <3>
-     userNameClaim: preferred_username <4>
-
-#external configuration
- external:
-   type: loadbalancer
-
-   //Option 1
-   authentication: <5>
-     type: oauth
-     validIssuerUri: <__https://<authorization-server-address>/auth/realms/external__>
-     jwksEndpointUri: <__https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/certs__>
-     userNameClaim: preferred_username
-     tlsTrustedCertificates: <6>
-     - secretName: oauth-server-cert
-       certificate: ca.crt
-     disableTlsHostnameVerification: true <7>
-
-   //Option 2
-   authentication: <8>
-     type: oauth
-     validIssuerUri: <__https://<authorization-server-address>/auth/realms/external__>
-     introspectionEndpointUri: <__https://<authorization-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__>
-     clientId: kafka-broker
-     clientSecret:
-       secretName: my-cluster-oauth
-       key: clientSecret
-
+external:
+  type: loadbalancer
+  authentication:
+    type: oauth <1>
+    validIssuerUri: <__https://<auth-server-address>/auth/realms/external__> <2>
+    jwksEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/certs__> <3>
+    userNameClaim: preferred_username <4>
+    tlsTrustedCertificates: <5>
+    - secretName: oauth-server-cert
+      certificate: ca.crt
+    disableTlsHostnameVerification: true <6>
+    jwksExpirySeconds: 360 <7>
+    jwksRefreshSeconds: 300 <8>
 ----
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
 <4> The user name profile claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
-<5> OPTION 1: TLS connection to the authorization server.
-<6> (Optional) Trusted certificates for TLS connection to the authorization server.
-<7> (Optional) Disable TLS hostname verification. Default is `false`.
-<8> OPTION 2: Introspection endpoint to connect directly to the authorization server.
+<5> (Optional) Trusted certificates for TLS connection to the authorization server.
+<6> (Optional) Disable TLS hostname verification. Default is `false`.
+<7> The duration the JWKs certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
+<8> The period between refreshes of JWKs certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
+
+.Example 2: External connection to the authorization server using an introspection endpoint
+[source,yaml,subs="+quotes,attributes"]
+----
+external:
+  type: loadbalancer
+  authentication:
+    type: oauth
+    validIssuerUri: <__https://<auth-server-address>/auth/realms/external__>
+    introspectionEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__> <1>
+    clientId: kafka-broker <2>
+    clientSecret: <3>
+      secretName: my-cluster-oauth
+      key: clientSecret
+----
+--
+<1> URI of the token introspection endpoint.
+<2> Client ID to identify the client.
+<3> Client Secret and client ID is used for authentication.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

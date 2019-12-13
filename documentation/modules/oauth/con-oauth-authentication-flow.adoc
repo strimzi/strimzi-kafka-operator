@@ -10,31 +10,3 @@ Support for {oauth} is based on the Kafka _SASL OAUTHBEARER_ mechanism, which is
 A Kafka client initiates a session with the Kafka broker using the _SASL OAUTHBEARER_ mechanism for credentials exchange, where credentials take the form of an access token.
 
 Kafka brokers and clients need to be configured to use {oauth}.
-
-.Kafka broker configuration
-The Kafka broker must be configured to validate the token received during session initiation.
-The recommended approach is to create a _client_ definition in an authorization server with:
-
-* Client ID of `kafka-broker`
-* Client ID and secret as the authentication mechanism
-
-.Kafka client configuration
-A Kafka client is configured with either:
-
-* Credentials required to obtain a valid access token from an authorization server
-* A valid long-lived access token, obtained using tools provided by an authorization server
-
-Credentials are never sent to the Kafka broker.
-The only information ever sent to the Kafka broker is an access token.
-When a client obtains an access token, no further communication with the authorization server is needed.
-
-The simplest mechanism, which requires no additional usage of authorization server tools, is authentication with a client ID and secret.
-Using a long-lived access token, or a long-lived refresh token, is more complex.
-
-NOTE: If you are using long-lived access tokens, you can set policy in the authorization server to increase the maximum lifetime of the token.
-
-If the Kafka client is not configured with an access token directly, the client exchanges credentials for an access token during Kafka session initiation by contacting the authorization server.
-The Kafka client uses one of two mechanisms:
-
-* Client id and secret
-* Client id, refresh token, and (optionally) a secret

@@ -1,0 +1,13 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth.adoc
+
+[id='con-oauth-strimzi-config-keycloak-{context}']
+= Keycloak authorization server
+
+You can use Keycloak as an {oauth} authorization server for {ProductName}.
+
+For more information, see:
+
+* link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using {oauth}]
+* link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Demo using Keycloak as OAuth2 authorization server]

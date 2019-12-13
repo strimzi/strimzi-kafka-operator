@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth.adoc
+
+[id='con-oauth-authentication-client-{context}']
+= {oauth} Kafka client configuration
+A Kafka client is configured with either:
+
+* The Credentials required to obtain a valid access token from an authorization server (client ID and Secret)
+* A valid long-lived access token or refresh token, obtained using tools provided by an authorization server
+
+Credentials are never sent to the Kafka broker.
+The only information ever sent to the Kafka broker is an access token.
+When a client obtains an access token, no further communication with the authorization server is needed.
+
+The simplest mechanism is authentication with a client ID and Secret.
+Using a long-lived access token, or a long-lived refresh token, adds more complexity as there is additional dependency on authorization server tools.
+
+NOTE: If you are using long-lived access tokens, you can configure the client in the authorization server to increase the maximum lifetime of the token.
+
+If the Kafka client is not configured with an access token directly, the client exchanges credentials for an access token during Kafka session initiation by contacting the authorization server.
+The Kafka client exchanges either:
+
+* Client ID and Secret
+* Client ID, refresh token, and (optionally) a Secret

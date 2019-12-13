@@ -9,11 +9,11 @@
 
 {oauth} enables standardized token based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
-{oauth} is currently only supported for authentication, with no authorization support.
+In {ProductName}, {oauth} is currently only supported for authentication, with no authorization support.
 However, {oauth} authentication can be used in conjunction with xref:simple-acl-using-uo[ACL-based Kafka authorization].
 
 Using {oauth} token based authentication, application clients can access resources on application servers (called ‘resource servers’) without exposing account credentials.
-The client passes an access token as a means of authenticating, which application servers can also use to find more information about the level of access granted.
+The client passes an access token as a means of authenticating, which application servers can also use to ascertain the level of access granted.
 The authorization server handles the granting of access and inquiries about access.
 
 In the context of {ProductName}:
@@ -21,6 +21,7 @@ In the context of {ProductName}:
 * Kafka brokers act as resource servers
 * Kafka clients act as resource clients
 
+The brokers are the servers to which the clients authenticate.
 The brokers and clients communicate with the {oauth} authorization server, as necessary, to obtain or validate access tokens.
 
 For a deployment of {ProductName}, {oauth} integration provides:
@@ -32,6 +33,9 @@ For a deployment of {ProductName}, {oauth} integration provides:
 
 * {oauth2-site}
 
-include::../modules/oauth/con-oauth-authentication-flow.adoc[leveloffset=+1]
-include::../modules/oauth/con-oauth-authentication-client-options.adoc[leveloffset=+1]
-include::../modules/oauth/con-oauth-config.adoc[leveloffset=+1]
+include::modules/con-oauth-authentication-flow.adoc[leveloffset=+1]
+include::modules/con-oauth-authentication-broker.adoc[leveloffset=+1]
+include::modules/con-oauth-authentication-client.adoc[leveloffset=+1]
+include::modules/con-oauth-authentication-client-options.adoc[leveloffset=+1]
+include::modules/con-oauth-config.adoc[leveloffset=+1]
+include::modules/con-oauth-config-keycloak.adoc[leveloffset=+1]

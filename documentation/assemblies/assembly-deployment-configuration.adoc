@@ -29,7 +29,7 @@ include::assembly-deployment-configuration-kafka-mirror-maker.adoc[leveloffset=+
 
 include::assembly-deployment-configuration-kafka-bridge.adoc[leveloffset=+1]
 
-include::assembly-oauth.adoc[leveloffset=+1]
+include::oauth/assembly-oauth.adoc[leveloffset=+1]
 
 include::assembly-customizing-deployments.adoc[leveloffset=+1]
 
