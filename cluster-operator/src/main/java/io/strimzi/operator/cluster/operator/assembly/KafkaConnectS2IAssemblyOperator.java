@@ -113,7 +113,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
             HashMap<String, String> annotations = new HashMap<>();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
-            Promise<Void> chainPromise = Promise.promise();
             connectServiceAccount(namespace, connect)
                     .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
