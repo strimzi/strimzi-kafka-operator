@@ -49,7 +49,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
-class ConnectS2IST extends AbstractST {
+class ConnectS2IST extends MessagingBaseST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
@@ -190,7 +190,7 @@ class ConnectS2IST extends AbstractST {
         checkSpecificVariablesInContainer(connectPodName, KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), envVarGeneral);
 
         LOGGER.info("Updating values in ConnectS2I container");
-        replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
+        KafkaConnectS2IResource.replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         });
 
@@ -244,7 +244,7 @@ class ConnectS2IST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").cascading(true).delete();
 
-        replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
+        KafkaConnectS2IResource.replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
             kc.getSpec().setBuildResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("1000M"))
                     .addToLimits("cpu", new Quantity("1"))

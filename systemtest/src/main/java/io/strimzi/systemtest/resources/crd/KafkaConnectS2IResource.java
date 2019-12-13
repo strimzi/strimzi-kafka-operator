@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaConnectS2IResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IResource.class);
 
@@ -99,4 +101,7 @@ public class KafkaConnectS2IResource {
         return ResourceManager.deleteLater(kafkaConnectS2IClient(), kafkaConnectS2I);
     }
 
+    public static void replaceConnectS2IResource(String resourceName, Consumer<KafkaConnectS2I> editor) {
+        ResourceManager.replaceCrdResource(KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, resourceName, editor);
+    }
 }

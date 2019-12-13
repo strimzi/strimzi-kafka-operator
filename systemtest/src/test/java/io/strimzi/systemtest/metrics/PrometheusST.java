@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -23,7 +23,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(PROMETHEUS)
-public class PrometheusST extends AbstractST {
+public class PrometheusST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
 

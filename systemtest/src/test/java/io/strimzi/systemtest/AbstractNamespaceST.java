@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +21,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public abstract class AbstractNamespaceST extends AbstractST {
+public abstract class AbstractNamespaceST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);
 
@@ -68,7 +69,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             cluster.setNamespace(kafkaClusterNamespace);
-            List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            List<String> topics2 = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
             return topics2.contains(topic);
         });
     }

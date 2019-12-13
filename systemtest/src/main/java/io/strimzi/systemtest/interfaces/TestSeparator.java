@@ -22,15 +22,15 @@ public interface TestSeparator {
 
     @BeforeEach
     default void beforeEachTest(TestInfo testInfo) {
-        TimeMeasuringSystem.setTestName(testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName());
-        TimeMeasuringSystem.startOperation(Operation.TEST_EXECUTION);
+        TimeMeasuringSystem.getInstance().setTestName(testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName());
+        TimeMeasuringSystem.getInstance().startOperation(Operation.TEST_EXECUTION);
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
         LOGGER.info(String.format("%s.%s-STARTED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
     }
 
     @AfterEach
     default void afterEachTest(TestInfo testInfo) {
-        TimeMeasuringSystem.stopOperation(Operation.TEST_EXECUTION);
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         LOGGER.info(String.format("%s.%s-FINISHED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }

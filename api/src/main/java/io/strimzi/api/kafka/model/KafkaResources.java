@@ -185,4 +185,22 @@ public class KafkaResources {
     public static String zookeeperMetricsAndLogConfigMapName(String clusterName) {
         return clusterName + "-zookeeper-config";
     }
+
+    /**
+     * Returns the name of the ZooKeeper service name for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding ZooKeeper service name.
+     */
+    public static String zookeeperServiceName(String clusterName) {
+        return clusterName + "-zookeeper-client";
+    }
+
+    /**
+     * Returns the name of the ZooKeeper headless service name for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding ZooKeeper headless service name.
+     */
+    public static String zookeeperHeadlessServiceName(String clusterName) {
+        return clusterName + "-zookeeper-nodes";
+    }
 }

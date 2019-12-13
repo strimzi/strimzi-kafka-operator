@@ -4,11 +4,16 @@
  */
 package io.strimzi.systemtest.resources;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -32,6 +37,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static io.strimzi.systemtest.Constants.CLUSTER_ROLE_BINDING;
@@ -83,6 +89,12 @@ public class ResourceManager {
         pointerResources = classResources;
     }
 
+    public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
+        Resource<T, D> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass, doneableClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
+        T resource = namedResource.get();
+        editor.accept(resource);
+        namedResource.replace(resource);
+    }
     @SuppressWarnings("unchecked")
     public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> operation, T resource) {
         LOGGER.info("Scheduled deletion of {} {} in namespace {}",

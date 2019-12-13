@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
-class UserST extends AbstractST {
+class UserST extends BaseST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
@@ -115,7 +115,7 @@ class UserST extends AbstractST {
         long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(kafkaUser).get().getStatus().getObservedGeneration();
         LOGGER.info("observation: {}", observedGeneration);
 
-        replaceUserResource(kafkaUser, ku -> {
+        KafkaUserResource.replaceUserResource(kafkaUser, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });

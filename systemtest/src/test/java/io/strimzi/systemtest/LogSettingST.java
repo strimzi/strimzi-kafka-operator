@@ -15,7 +15,6 @@ import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,7 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
-class LogSettingST extends AbstractST {
+class LogSettingST extends BaseST {
     static final String NAMESPACE = "log-setting-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
     private static final String KAFKA_MAP = String.format("%s-%s", CLUSTER_NAME, "kafka-config");
@@ -219,7 +218,7 @@ class LogSettingST extends AbstractST {
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
         entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
-        replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setJvmOptions(jvmOptions);
             k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
             k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
@@ -230,10 +229,10 @@ class LogSettingST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(eoName, 1, eoPods);
 
-        replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         DeploymentUtils.waitTillDepHasRolled(connectName, 1, connectPods);
 
-        replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         DeploymentUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
         assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(false));
@@ -306,7 +305,7 @@ class LogSettingST extends AbstractST {
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE).done();
 
-        setOperationID(startDeploymentMeasuring());
+        timeMeasuringSystem.setOperationID(startDeploymentMeasuring());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -400,8 +399,8 @@ class LogSettingST extends AbstractST {
     }
 
     private String startDeploymentMeasuring() {
-        TimeMeasuringSystem.setTestName(testClass, testClass);
-        return TimeMeasuringSystem.startOperation(Operation.CLASS_EXECUTION);
+        timeMeasuringSystem.setTestName(testClass, testClass);
+        return timeMeasuringSystem.startOperation(Operation.CLASS_EXECUTION);
     }
 
     @Override

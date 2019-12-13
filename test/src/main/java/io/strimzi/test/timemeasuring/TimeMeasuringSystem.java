@@ -48,12 +48,13 @@ public class TimeMeasuringSystem {
     private Map<String, Map<String, Map<String, MeasureRecord>>> measuringMap;
     private String testClass;
     private String testName;
+    private String operationID;
 
     private TimeMeasuringSystem() {
         measuringMap = new LinkedHashMap<>();
     }
 
-    private static synchronized TimeMeasuringSystem getInstance() {
+    public static synchronized TimeMeasuringSystem getInstance() {
         if (instance == null) {
             instance = new TimeMeasuringSystem();
         }
@@ -179,42 +180,54 @@ public class TimeMeasuringSystem {
         return measuringMap.get(testClass).get(testName).get(operationID).startTime;
     }
 
-    public static void setTestName(String testClass, String testName) {
-        TimeMeasuringSystem.getInstance().setTestName(testName);
-        TimeMeasuringSystem.getInstance().setTestClass(testClass);
+    public void setTestName(String testClass, String testName) {
+        instance.setTestName(testName);
+        instance.setTestClass(testClass);
     }
 
-    public static String startOperation(Operation operation) {
-        return TimeMeasuringSystem.getInstance().setStartTime(operation);
+    public String startTimeMeasuring(Operation operation) {
+        instance.setTestName(testClass, testName);
+        return instance.startOperation(operation);
     }
 
-    public static void stopOperation(String operationId) {
-        TimeMeasuringSystem.getInstance().setEndTime(operationId);
+    public String startOperation(Operation operation) {
+        return instance.setStartTime(operation);
     }
 
-    public static void stopOperation(Operation operationId) {
-        TimeMeasuringSystem.stopOperation(operationId.toString());
+    public void stopOperation(String operationId) {
+        instance.setEndTime(operationId);
     }
 
-    public static void printAndSaveResults(String path) {
-        TimeMeasuringSystem.getInstance().printResults();
-        TimeMeasuringSystem.getInstance().saveResults(TimeMeasuringSystem.getInstance().measuringMap, "duration_report", path);
-        TimeMeasuringSystem.getInstance().saveResults(TimeMeasuringSystem.getInstance().getSumDuration(), "duration_sum_report", path);
+    public void stopOperation(Operation operationId) {
+        instance.stopOperation(operationId.toString());
     }
 
-    public static int getDurationInSecconds(String testClass, String testName, String operationID) {
-        return (int) (TimeMeasuringSystem.getInstance().getTestDuration(testClass, testName, operationID) / 1000);
+    public void printAndSaveResults(String path) {
+        instance.printResults();
+        instance.saveResults(instance.measuringMap, "duration_report", path);
+        instance.saveResults(instance.getSumDuration(), "duration_sum_report", path);
     }
 
-    public static int getCurrentDuration(String testClass, String testName, String operationID) {
-        long duration = System.currentTimeMillis() - TimeMeasuringSystem.getInstance().getTestStartTime(testClass, testName, operationID);
+    public int getDurationInSecconds(String testClass, String testName, String operationID) {
+        return (int) (instance.getTestDuration(testClass, testName, operationID) / 1000);
+    }
+
+    public int getCurrentDuration(String testClass, String testName, String operationID) {
+        long duration = System.currentTimeMillis() - instance.getTestStartTime(testClass, testName, operationID);
         return (int) (duration / 1000) + 1;
     }
 
-    public static long getDuration(String testClass, String testName, String operationID) {
-        return TimeMeasuringSystem.getInstance().getTestDuration(testClass, testName, operationID);
+    public long getDuration(String testClass, String testName, String operationID) {
+        return instance.getTestDuration(testClass, testName, operationID);
     }
 
+    public String getOperationID() {
+        return operationID;
+    }
+
+    public void setOperationID(String operationID) {
+        this.operationID = operationID;
+    }
 
     /**
      * Test time duration class for data about each operation.
