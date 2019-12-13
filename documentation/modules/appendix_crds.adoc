@@ -1310,7 +1310,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 ### `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaClusterRebalanceStatus-{context}[`KafkaClusterRebalanceStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2Istatus-{context}[`KafkaConnectS2Istatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -2343,5 +2343,50 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
+|====
+
+[id='type-KafkaClusterRebalance-{context}']
+### `KafkaClusterRebalance` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<|The specification of the Kafka Cluster Rebalance.
+|xref:type-KafkaClusterRebalanceSpec-{context}[`KafkaClusterRebalanceSpec`]
+|status  1.2+<.<|The status of the Kafka Cluster Rebalance.
+|xref:type-KafkaClusterRebalanceStatus-{context}[`KafkaClusterRebalanceStatus`]
+|====
+
+[id='type-KafkaClusterRebalanceSpec-{context}']
+### `KafkaClusterRebalanceSpec` schema reference
+
+Used in: xref:type-KafkaClusterRebalance-{context}[`KafkaClusterRebalance`]
+
+
+[options="header"]
+|====
+|Property        |Description
+|goals    1.2+<.<|A list of goals, ordered by decreasing priority, to use in generating the proposal and executing it.The supported goals are available at https://github.com/linkedin/cruise-control#goals.Providing empty goals means to use all the ones declared in the default.goals cruise control configuration parameter.
+|string array
+|verbose  1.2+<.<|Enable the verbose mode for the JSON string describing the optimization result in the related status.
+|boolean
+|====
+
+[id='type-KafkaClusterRebalanceStatus-{context}']
+### `KafkaClusterRebalanceStatus` schema reference
+
+Used in: xref:type-KafkaClusterRebalance-{context}[`KafkaClusterRebalance`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
+|integer
+|optimizationResult  1.2+<.<|A JSON describing the optimization result.
+|map
 |====
 
