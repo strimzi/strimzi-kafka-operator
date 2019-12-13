@@ -14,7 +14,7 @@ A typical deployment incorporating Kafka components might include:
 * *ZooKeeper* cluster of replicated ZooKeeper instances
 * *Kafka Connect* cluster for external data connections
 * *Kafka MirrorMaker* cluster to mirror the Kafka cluster in a secondary cluster
-* *Kafka Exporter* to extract Kafka metrics data for monitoring
+* *Kafka Exporter* to extract additional Kafka metrics data for monitoring
 * *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
 
 Not all of these components are mandatory, though you need Kafka and ZooKeeper as a minimum.
