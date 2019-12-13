@@ -94,7 +94,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(bridge.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation, name, namespace);
-        Promise<Void> chainPromise = Promise.promise();
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
@@ -104,13 +103,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .compose(i -> {
-                chainPromise.complete();
-                return chainPromise.future();
-            }, error -> {
-                    chainPromise.fail(error);
-                    return chainPromise.future();
-                })
             .setHandler(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;

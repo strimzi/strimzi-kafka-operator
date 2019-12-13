@@ -121,7 +121,7 @@ public abstract class AbstractOperator<
                 validate(cr);
                 log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
                 return createOrUpdate(reconciliation, cr).recover(createResult -> {
-                    log.debug("{}: createOrUpdate failed", reconciliation, createResult);
+                    log.error("{}: createOrUpdate failed", reconciliation, createResult);
                     return Future.failedFuture(createResult);
                 });
             } else {
@@ -134,7 +134,7 @@ public abstract class AbstractOperator<
                     }
                     return (Void) null;
                 }).recover(deleteResult -> {
-                    log.debug("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
+                    log.error("{}: Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
                     return Future.failedFuture(deleteResult);
                 });
             }
@@ -263,9 +263,9 @@ public abstract class AbstractOperator<
         } else {
             Throwable cause = result.cause();
             if (cause instanceof InvalidConfigParameterException) {
-                log.error("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else if (!(cause instanceof UnableToAcquireLockException)) {
-                log.error("{}: Failed to reconcile", reconciliation, cause);
+                log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }
     }
