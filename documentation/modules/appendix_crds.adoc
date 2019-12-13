@@ -2367,7 +2367,7 @@ Used in: xref:type-KafkaClusterRebalance-{context}[`KafkaClusterRebalance`]
 [options="header"]
 |====
 |Property        |Description
-|goals    1.2+<.<|A list of goals to use in generating the proposal and executing it. The supported goals are available at https://github.com/linkedin/cruise-control#goals.Providing empty goals means to use all of them.
+|goals    1.2+<.<|A list of goals, ordered by decreasing priority, to use in generating the proposal and executing it.The supported goals are available at https://github.com/linkedin/cruise-control#goals.Providing empty goals means to use all the ones declared in the default.goals cruise control configuration parameter.
 |string array
 |verbose  1.2+<.<|Enable the verbose mode for the JSON string describing the optimization result in the related status.
 |boolean
