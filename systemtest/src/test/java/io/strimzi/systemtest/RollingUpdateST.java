@@ -14,6 +14,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -21,6 +22,7 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +36,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
@@ -67,10 +68,10 @@ class RollingUpdateST extends MessagingBaseST {
         int messageCount = 50;
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
-        String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
+        String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)  + ".*'";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(sent, is(messageCount));
@@ -114,10 +115,10 @@ class RollingUpdateST extends MessagingBaseST {
         int messageCount = 50;
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
-        String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
+        String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + KafkaResources.kafkaStatefulSetName(CLUSTER_NAME) + ".*'";
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
         int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(sent, is(messageCount));
@@ -157,7 +158,7 @@ class RollingUpdateST extends MessagingBaseST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(NODEPORT_SUPPORTED)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
@@ -167,9 +168,9 @@ class RollingUpdateST extends MessagingBaseST {
             .editSpec()
                 .editKafka()
                     .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                        .withNewKafkaListenerExternalNodePort()
                             .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                     .addToConfig(singletonMap("default.replication.factor", 3))
                     .addToConfig("auto.create.topics.enable", "false")
@@ -201,9 +202,9 @@ class RollingUpdateST extends MessagingBaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStsName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
         LOGGER.info("Scaling to {} finished", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
@@ -220,7 +221,7 @@ class RollingUpdateST extends MessagingBaseST {
         LOGGER.info("Scaling down");
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
         LOGGER.info("Scaling down to {} finished", initialReplicas);
 
         final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -242,6 +243,7 @@ class RollingUpdateST extends MessagingBaseST {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         setOperationID(startTimeMeasuring(Operation.SCALE_UP));
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
@@ -250,21 +252,21 @@ class RollingUpdateST extends MessagingBaseST {
         int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(sent, is(messageCount));
 
-        Map<String, String> zkSnapshot = StUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
         final int scaleZkTo = initialZkReplicas + 4;
         final List<String> newZkPodNames = new ArrayList<String>() {{
-            for (int i = initialZkReplicas; i < scaleZkTo; i++) {
-                add(KafkaResources.zookeeperPodName(CLUSTER_NAME, i));
-            }
-        }};
+                for (int i = initialZkReplicas; i < scaleZkTo; i++) {
+                    add(KafkaResources.zookeeperPodName(CLUSTER_NAME, i));
+                }
+            }};
 
         LOGGER.info("Scaling up to {}", scaleZkTo);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
         int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(received, is(sent));
 
-        zkSnapshot = StUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
+        zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), scaleZkTo, zkSnapshot);
         // check the new node is either in leader or follower state
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
         checkZkPodsLog(newZkPodNames);
@@ -283,11 +285,7 @@ class RollingUpdateST extends MessagingBaseST {
         setOperationID(startTimeMeasuring(Operation.SCALE_DOWN));
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
-        for (String name : newZkPodNames) {
-            StUtils.waitForPodDeletion(name);
-        }
-
-        StUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas, zkSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas, zkSnapshot);
 
         // Wait for one zk pods will became leader and others follower state
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
@@ -296,9 +294,6 @@ class RollingUpdateST extends MessagingBaseST {
 
         //Test that the second pod has event 'Killing'
         assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
-        //Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getStatefulSetUid(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(getOperationID());
         //Test that CO doesn't have any exceptions in log
@@ -325,8 +320,8 @@ class RollingUpdateST extends MessagingBaseST {
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaName);
-        Map<String, String> zkPods = StUtils.ssSnapshot(zkName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
         sendMessagesExternal(NAMESPACE, topicName, messageCount);
 
@@ -348,7 +343,7 @@ class RollingUpdateST extends MessagingBaseST {
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
-        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
@@ -370,7 +365,7 @@ class RollingUpdateST extends MessagingBaseST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                     || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
-        StUtils.waitTillSsHasRolled(zkName, 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
     }
 
@@ -407,6 +402,23 @@ class RollingUpdateST extends MessagingBaseST {
         }
     }
 
+    void deployTestSpecificResources() {
+        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
+        deployTestSpecificResources();
+    }
+
+    @BeforeEach
+    void setKafkaClientsPodName() {
+        // Get clients pod name
+        defaultKafkaClientsPodName =
+                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+    }
+
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
@@ -415,9 +427,6 @@ class RollingUpdateST extends MessagingBaseST {
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS);
-        // Get clients pod name
-        defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        deployTestSpecificResources();
     }
 }
