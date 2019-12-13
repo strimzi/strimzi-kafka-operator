@@ -114,7 +114,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> {
                     chainPromise.complete();
                     return chainPromise.future();
-                })
+                }, error -> {
+                        chainPromise.fail(error);
+                        return chainPromise.future();
+                    })
                 .setHandler(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
                     kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));

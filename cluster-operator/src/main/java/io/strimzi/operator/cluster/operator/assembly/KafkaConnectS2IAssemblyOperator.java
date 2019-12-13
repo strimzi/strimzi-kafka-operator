@@ -130,7 +130,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     .compose(i -> {
                         chainPromise.complete();
                         return chainPromise.future();
-                    })
+                    }, error -> {
+                            chainPromise.fail(error);
+                            return chainPromise.future();
+                        })
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));

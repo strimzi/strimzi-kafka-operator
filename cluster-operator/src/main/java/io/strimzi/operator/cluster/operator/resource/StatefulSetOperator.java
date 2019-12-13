@@ -259,7 +259,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             .compose(res -> {
                 result.complete(res);
                 return result.future();
-            });
+            }, error -> {
+                    result.fail(error);
+                    return result.future();
+                });
         return result.future();
     }
 

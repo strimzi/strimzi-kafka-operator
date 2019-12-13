@@ -110,7 +110,10 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> {
                     chainPromise.complete();
                     return chainPromise.future();
-                })
+                }, error -> {
+                        chainPromise.fail(error);
+                        return chainPromise.future();
+                    })
                 .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 

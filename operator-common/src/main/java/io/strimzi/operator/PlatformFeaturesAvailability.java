@@ -57,7 +57,10 @@ public class PlatformFeaturesAvailability {
             pfa.setImages(supported);
             pfaPromise.complete(pfa);
             return pfaPromise.future();
-        });
+        }, error -> {
+                pfaPromise.fail(error);
+                return pfaPromise.future();
+            });
 
         return pfaPromise.future();
     }

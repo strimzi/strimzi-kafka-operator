@@ -67,7 +67,10 @@ public class UserOperator extends AbstractVerticle {
             }).compose(i -> {
                 ((Promise<Void>) start).complete(i);
                 return start;
-            });
+            }, error -> {
+                    ((Promise<Void>) start).fail(error);
+                    return start;
+                });
     }
 
     @Override

@@ -319,7 +319,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> {
                     chainPromise.complete();
                     return chainPromise.future();
-                });
+                }, error -> {
+                        chainPromise.fail(error);
+                        return chainPromise.future();
+                    });
 
         return chainPromise.future();
     }
@@ -327,8 +330,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
         return new ReconciliationState(reconciliation, kafkaAssembly);
     }
-
-
 
     /**
      * Hold the mutable state during a reconciliation

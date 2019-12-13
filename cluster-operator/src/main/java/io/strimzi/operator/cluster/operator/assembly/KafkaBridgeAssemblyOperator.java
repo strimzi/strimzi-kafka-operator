@@ -107,7 +107,10 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> {
                 chainPromise.complete();
                 return chainPromise.future();
-            })
+            }, error -> {
+                    chainPromise.fail(error);
+                    return chainPromise.future();
+                })
             .setHandler(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
@@ -128,6 +131,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                     }
                 });
             });
+
         return createOrUpdatePromise.future();
     }
 
