@@ -1,0 +1,53 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+[id="configuration-points-topic_{context}"]
+= Kafka MirrorMaker configuration
+
+To set up MirrorMaker, a source and destination Kafka cluster must be running.
+
+MirrorMaker requires:
+
+* Consumer configuration to consume data from the source cluster
+* Producer configuration to output data to the target cluster
+
+Consumer and producer configuration includes any authentication and encryption settings.
+
+A _whitelist_ defines the topics to mirror from a source to a target cluster.
+
+[discrete]
+== Key Consumer configuration
+
+Consumer group identifier:: The consumer group ID for a MirrorMaker consumer so that messages consumed are assigned to a consumer group.
+Number of consumer streams:: A value to determine the number of consumers in a consumer group that consume a message in parallel.
+Offset commit interval:: An offset commit interval to set the time between consuming and committing a message.
+
+[discrete]
+== Key Producer configuration
+
+Cancel option for send failure:: You can define whether a message send failure is ignored or MirrorMaker is terminated and recreated.
+
+[discrete]
+== Example YAML showing MirrorMaker configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  consumer:
+    bootstrapServers: my-source-cluster-kafka-bootstrap:9092
+    groupId: "my-group"
+    numStreams: 2
+    offsetCommitInterval: 120000
+    # ...
+  producer:
+    # ...
+    abortOnSendFailure: false
+    # ...
+  whitelist: "my-topic|other-topic"
+  # ...
+----

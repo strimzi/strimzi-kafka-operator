@@ -9,7 +9,13 @@
 :parent-context-deploying-co: {context}
 :context: deploying-co
 
-include::../modules/con-what-the-cluster-operator-does.adoc[leveloffset=+1]
+Use the Cluster Operator to deploy a Kafka cluster and other Kafka components.
+
+For information on the deployment options available for Kafka, see xref:assembly-deployment-configuration-kafka-str[].
+
+NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provide a convenient way to add additional connectors.
+
+include::../modules/overview/con-overview-components-cluster-operator.adoc[leveloffset=+1]
 
 include::../modules/con-cluster-operator-watch-options.adoc[leveloffset=+1]
 

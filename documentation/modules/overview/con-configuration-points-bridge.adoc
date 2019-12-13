@@ -1,0 +1,34 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+[id="configuration-points-bridge_{context}"]
+= Kafka Bridge configuration
+
+A Kafka Bridge configuration requires a bootstrap server specification for the Kafka cluster it connects to, as well as any encryption and authentication options required.
+
+Kafka Bridge consumer and producer configuration is standard, as described in the {ApacheKafkaConsumerConfig} and {ApacheKafkaProducerConfig}.
+
+HTTP-related configuration options set the port connection which the server listens on.
+
+[discrete]
+== Example YAML showing Kafka Bridge configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka:9092
+  http:
+    port: 8080
+  consumer:
+    config:
+      auto.offset.reset: earliest
+  producer:
+    config:
+      delivery.timeout.ms: 300000
+  # ...
+----

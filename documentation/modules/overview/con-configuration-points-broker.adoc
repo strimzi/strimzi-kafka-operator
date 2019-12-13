@@ -1,0 +1,75 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+[id="configuration-points-broker_{context}"]
+= Kafka cluster configuration
+
+A kafka cluster comprises one or more brokers.
+For producers and consumers to be able to access topics within the brokers, Kafka configuration must define how data is stored in the cluster, and how the data is accessed.
+You can configure a Kafka cluster to run with multiple broker nodes across _racks_.
+
+Storage::
+Kafka and ZooKeeper store data on disks.
++
+{ProductName} requires block storage provisioned through `StorageClass`.
+The file system format for storage must be _XFS_ or _EXT4_.
+Three types of data storage are supported:
++
+--
+Ephemeral (Recommended for development only):: Ephemeral storage stores data for the lifetime of an instance. Data is lost when the instance is restarted.
+Persistent:: Persistent storage relates to long-term data storage independent of the lifecycle of the instance.
+JBOD (Just a Bunch of Disks, suitable for Kafka only):: JBOD allows you to use multiple disks to store commit logs in each broker.
+--
++
+The disk capacity used by an existing Kafka cluster can be increased if supported by the infrastructure.
+
+Listeners:: Listeners configure how clients connect to a Kafka cluster.
++
+The following types of listener are supported:
++
+--
+* *Plain listener* that does not use encryption
+* *TLS listener* that uses encryption
+* *External listener* for access outside of Kubernetes
+--
++
+External listeners expose Kafka by specifying a `type`:
++
+--
+* `route` to use OpenShift Routes and HAProxy router
+* `loadbalancer` to use loadbalancer services
+* `nodeport` to use ports on the Kubernetes nodes
+* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}.
+--
+
+Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
+
+[discrete]
+== Example YAML showing Kafka configuration
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    listeners:
+      tls:
+        authentication:
+          type: tls
+      external:
+        type: route
+        authentication:
+          type: tls
+    # ...
+    storage:
+      type: persistent-claim
+      size: 10000Gi
+    # ...
+    rack:
+      topologyKey: failure-domain.beta.kubernetes.io/zone
+    # ...
+----

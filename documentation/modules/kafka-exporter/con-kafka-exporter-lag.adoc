@@ -13,14 +13,16 @@ This difference is sometimes referred to as the _delta_ between the producer off
 
 Suppose a topic streams 100 messages a second. A lag of 1000 messages between the producer offset (the topic partition head) and the last offset the consumer has read means a 10-second delay.
 
-.The importance of monitoring consumer lag
+[discrete]
+== The importance of monitoring consumer lag
 
 For applications that rely on the processing of (near) real-time data, it is critical to monitor consumer lag to check that it does not become too big.
 The greater the lag becomes, the further the process moves from the real-time processing objective.
 
 Consumer lag, for example, might be a result of consuming too much old data that has not been purged, or through unplanned shutdowns.
 
-.Reducing consumer lag
+[discrete]
+== Reducing consumer lag
 
 Typical actions to reduce lag include:
 

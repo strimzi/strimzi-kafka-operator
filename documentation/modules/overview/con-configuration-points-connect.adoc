@@ -1,0 +1,58 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+[id="configuration-points-connect_{context}"]
+= Kafka Connect configuration
+
+A basic Kafka Connect configuration requires a bootstrap address to connect to a Kafka cluster, and encryption and authentication details.
+
+Kafka Connect instances are configured by default with the same:
+
+* Group ID for the Kafka Connect cluster
+* Kafka topic to store the connector offsets
+* Kafka topic to store connector and task status configurations
+* Kafka topic to store connector and task status updates
+
+If multiple different Kafka Connect instances are used, these settings must reflect each instance.
+
+[discrete]
+== Example YAML showing Kafka Connect configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+  # ...
+----
+
+[discrete]
+== Connectors
+
+Connectors are configured separately from Kafka Connect.
+The configuration describes the source input data and target output data to feed into and out of Kafka Connect.
+The external source data must reference specific topics that will store the messages.
+
+Kafka provides two built-in connectors:
+
+--
+* `FileStreamSourceConnector` streams data from an external system to Kafka, reading lines from an input source and sending each line to a Kafka topic.
+* `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
+--
+
+You can add other connectors using connector plugins, which are a set of JAR files that define the implementation required to connect to certain type of external system.
+
+You create a custom Kafka Connect image that uses new Kafka Connect plugins.
+
+To create the image, you can use:
+
+* A Kafka container image on {DockerRepository} as a base image
+* OpenShift {docs-okd} and the {docs-okd-s2i} framework to create new container images

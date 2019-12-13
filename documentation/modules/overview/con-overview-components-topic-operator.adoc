@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-overview-components.adoc
+// topic-operator.adoc
+
+[id='overview-concepts-topic-operator-{context}']
+= Topic Operator
+
+The Topic Operator provides a way of managing topics in a Kafka cluster through Kubernetes resources.
+
+.Example architecture for the Topic Operator
+
+image:topic-operator.png[Topic Operator]
+
+The role of the Topic Operator is to keep a set of `KafkaTopic` Kubernetes resources describing Kafka topics in-sync with corresponding Kafka topics.
+
+Specifically, if a `KafkaTopic` is:
+
+* Created, the Operator creates the topic
+* Deleted, the Operator deletes the topic
+* Changed, the Operator updates the topic
+
+Working in the other direction, if a topic is:
+
+* Created within the Kafka cluster, the Operator creates a `KafkaTopic`
+* Deleted from the Kafka cluster, the Operator deletes the `KafkaTopic`
+* Changed in the Kafka cluster, the Operator updates the `KafkaTopic`
+
+This allows you to declare a `KafkaTopic` as part of your application's deployment and the Topic Operator will take care of creating the topic for you.
+Your application just needs to deal with producing or consuming from the necessary topics.
+
+If the topic is reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.

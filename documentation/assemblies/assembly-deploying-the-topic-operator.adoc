@@ -12,7 +12,7 @@
 :parent-context-deploying: {context}
 :context: deploying
 
-include::../modules/con-what-the-topic-operator-does.adoc[leveloffset=+1]
+include::../modules/overview/con-overview-components-topic-operator.adoc[leveloffset=+1]
 
 include::../modules/con-topic-operator-cluster-label.adoc[leveloffset=+1]
 
