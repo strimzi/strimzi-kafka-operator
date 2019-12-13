@@ -135,7 +135,7 @@ spec:
             secretName: my-cluster-oauth
             key: clientSecret
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
-          introspectionEndpointUri: <__https://<auth-server-address>/auth/tls/external/protocol/openid-connect/token/introspect__>
+          introspectionEndpointUri: <__https://<auth-server-address>/auth/tls/protocol/openid-connect/token/introspect__>
           userNameClaim: preferred_username
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
