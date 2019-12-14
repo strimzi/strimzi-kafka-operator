@@ -77,6 +77,8 @@ public interface Constants {
     String KAFKA_BRIDGE_JSON = "application/vnd.kafka.v2+json";
 
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
+    int HTTP_JAEGER_DEFAULT_TCP_PORT = 5778;
+    int HTTP_JAEGER_DEFAULT_NODE_PORT = 32480;
 
     /**
      * Default value which allows execution of tests with any tags

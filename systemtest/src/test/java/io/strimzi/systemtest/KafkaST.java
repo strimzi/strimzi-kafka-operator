@@ -95,7 +95,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
-class KafkaST extends MessagingBaseST {
+class KafkaST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -486,7 +486,7 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    void testSendMessagesPlainAnonymous() throws Exception {
+    void testSendMessagesPlainAnonymous() throws InterruptedException {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -495,14 +495,23 @@ class KafkaST extends MessagingBaseST {
 
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
-        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, null);
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(defaultKafkaClientsPodName);
+
+        LOGGER.info("Checking produceed and consumed messages to pod:{}", externalKafkaClient.getPodName());
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount),
+            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, messagesCount, CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    void testSendMessagesTlsAuthenticated() throws Exception {
+    void testSendMessagesTlsAuthenticated() throws InterruptedException {
         String kafkaUser = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -524,7 +533,17 @@ class KafkaST extends MessagingBaseST {
         SecretUtils.waitForSecretReady(kafkaUser);
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
+        // Check brokers availability
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, user.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
@@ -532,8 +551,8 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(ACCEPTANCE)
-    void testSendMessagesPlainScramSha() throws Exception {
-        String kafkaUser = "my-user";
+    void testSendMessagesPlainScramSha() throws InterruptedException {
+        String kafkaUsername = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -550,31 +569,40 @@ class KafkaST extends MessagingBaseST {
                     .endKafka()
                 .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        SecretUtils.waitForSecretReady(kafkaUser);
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
+        SecretUtils.waitForSecretReady(kafkaUsername);
         String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
-        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
+        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
         boolean found = false;
         while (m.find()) {
             found = true;
-            LOGGER.info("Broker pod log line about user {}: {}", kafkaUser, m.group());
+            LOGGER.info("Broker pod log line about user {}: {}", kafkaUsername, m.group());
         }
         if (!found) {
-            LOGGER.warn("No broker pod log lines about user {}", kafkaUser);
+            LOGGER.warn("No broker pod log lines about user {}", kafkaUsername);
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-        availabilityTest(messagesCount, CLUSTER_NAME, false, topicName, user);
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50),
+            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), 50, CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    void testSendMessagesTlsScramSha() throws Exception {
-        String kafkaUser = "my-user";
+    void testSendMessagesTlsScramSha() throws InterruptedException {
+        String kafkaUsername = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -591,11 +619,20 @@ class KafkaST extends MessagingBaseST {
                     .endKafka()
                 .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUser).done();
-        SecretUtils.waitForSecretReady(kafkaUser);
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
+        SecretUtils.waitForSecretReady(kafkaUsername);
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-        availabilityTest(messagesCount, CLUSTER_NAME, true, topicName, user);
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+
+        final String kafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount),
+            externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, kafkaUser.getMetadata().getName(), messagesCount, CONSUMER_GROUP_NAME)
+        );
     }
 
     @Test
@@ -995,7 +1032,7 @@ class KafkaST extends MessagingBaseST {
             .endSpec()
             .done();
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1038,7 +1075,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
                 KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1063,7 +1100,7 @@ class KafkaST extends MessagingBaseST {
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
+        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test
@@ -1084,7 +1121,7 @@ class KafkaST extends MessagingBaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     @Test
@@ -1111,7 +1148,7 @@ class KafkaST extends MessagingBaseST {
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
-        waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
+        kafkaClient.sendAndRecvMessagesTls(userName, NAMESPACE, CLUSTER_NAME);
     }
 
     @Test
@@ -1272,7 +1309,7 @@ class KafkaST extends MessagingBaseST {
 
         checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
@@ -1464,7 +1501,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Verifying via kafka pods");
         verifyNullLabels(labelKeys, labels);
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
@@ -1558,7 +1595,7 @@ class KafkaST extends MessagingBaseST {
             verifyAppLabelsForSecretsAndConfigMaps(configMap.getMetadata().getLabels());
         }
 
-        waitForClusterAvailability(NAMESPACE);
+        kafkaClient.sendAndRecvMessages(NAMESPACE);
     }
 
     void verifyAppLabels(Map<String, String> labels) {
@@ -1639,7 +1676,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Topic {} is present in kafka broker {} with no data", TEST_TOPIC_NAME, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         assertThat("Topic contains data", topicData, isEmptyOrNullString());
 
-        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
+        kafkaClient.sendAndRecvMessages(NAMESPACE, TEST_TOPIC_NAME);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         topicData = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c",
@@ -1694,7 +1731,7 @@ class KafkaST extends MessagingBaseST {
 
         assertThat("Folder kafka-log0 has data in files", result.equals(""));
 
-        waitForClusterAvailability(NAMESPACE, TEST_TOPIC_NAME);
+        kafkaClient.sendAndRecvMessages(NAMESPACE, TEST_TOPIC_NAME);
 
         LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
         result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),

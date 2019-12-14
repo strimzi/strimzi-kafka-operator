@@ -21,7 +21,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public abstract class AbstractNamespaceST extends MessagingBaseST {
+public abstract class AbstractNamespaceST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);
 

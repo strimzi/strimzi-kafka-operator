@@ -45,7 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
-public class MirrorMakerST extends MessagingBaseST {
+public class MirrorMakerST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);
 
@@ -71,9 +71,20 @@ public class MirrorMakerST extends MessagingBaseST {
 
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaClusterSourceName);
-        availabilityTest(messagesCount, kafkaClusterTargetName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount),
+            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterTargetName, messagesCount),
+            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
         // Deploy Mirror Maker
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
@@ -106,14 +117,19 @@ public class MirrorMakerST extends MessagingBaseST {
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, false, topicSourceName, null, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicSourceName, null, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicSourceName, null, kafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount);
 
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicSourceName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
@@ -177,9 +193,21 @@ public class MirrorMakerST extends MessagingBaseST {
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
@@ -199,21 +227,26 @@ public class MirrorMakerST extends MessagingBaseST {
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = sendMessages(messagesCount,  kafkaClusterSourceName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicSourceName, userSource, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicSourceName, userTarget, kafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
 
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicSourceName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
     }
 
     /**
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    void testMirrorMakerTlsScramSha() throws Exception {
+    void testMirrorMakerTlsScramSha() throws InterruptedException {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT));
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaUserSource = "my-user-source";
@@ -270,9 +303,20 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy client
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
 
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-1", NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS"),
+            externalKafkaClient.receiveMessagesTls("my-topic-test-2", NAMESPACE, kafkaClusterSourceName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         // Deploy Mirror Maker with TLS and ScramSha512
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
@@ -302,23 +346,27 @@ public class MirrorMakerST extends MessagingBaseST {
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        externalKafkaClient.setPodName(kafkaClientsPodName);
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, true, topicName, userSource, kafkaClientsPodName);
+        int sent = externalKafkaClient.sendMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS");
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterSourceName, userSource.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
-            () -> sent == receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, kafkaClientsPodName));
+            () -> sent == externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME));
 
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, true, topicName, userTarget, kafkaClientsPodName);
-
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessagesTls(topicName, NAMESPACE, kafkaClusterTargetName, userTarget.getMetadata().getName(), messagesCount, "TLS", CONSUMER_GROUP_NAME)
+        );
     }
 
     @Test
-    void testWhiteList() throws Exception {
+    void testWhiteList() throws InterruptedException {
         String topicName = "topic-example-1";
         String topicNotInWhitelist = "topic-example-2";
 
@@ -337,8 +385,15 @@ public class MirrorMakerST extends MessagingBaseST {
         KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, kafkaClusterSourceName);
-        availabilityTest(messagesCount, kafkaClusterTargetName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages("topic-example-10", NAMESPACE, kafkaClusterSourceName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-example-10", NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            externalKafkaClient.sendMessages("topic-example-11", NAMESPACE, kafkaClusterTargetName, messagesCount),
+            externalKafkaClient.receiveMessages("topic-example-11", NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false)
                 .editSpec()
@@ -348,19 +403,29 @@ public class MirrorMakerST extends MessagingBaseST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        int sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, kafkaClientsPodName);
-        int receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicName, null, kafkaClientsPodName);
-        int receivedTarget = receiveMessages(messagesCount, kafkaClusterTargetName, false, topicName, null, kafkaClientsPodName);
+        externalKafkaClient.setPodName(kafkaClientsPodName);
 
-        assertSentAndReceivedMessages(sent, receivedSource);
-        assertSentAndReceivedMessages(sent, receivedTarget);
+        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, kafkaClusterSourceName, messagesCount);
 
-        sent = sendMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
-        receivedSource = receiveMessages(messagesCount, kafkaClusterSourceName, false, topicNotInWhitelist, null, kafkaClientsPodName);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicName, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
 
-        assertSentAndReceivedMessages(sent, receivedSource);
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicName, NAMESPACE, kafkaClusterTargetName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
+        sent = externalKafkaClient.sendMessages(topicNotInWhitelist, NAMESPACE, kafkaClusterSourceName, messagesCount);
+
+        externalKafkaClient.checkProducedAndConsumedMessages(
+            sent,
+            externalKafkaClient.receiveMessages(topicNotInWhitelist, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME)
+        );
+
         assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist + " is not in whitelist",
-                receiveMessages(messagesCount, kafkaClusterTargetName, false, topicNotInWhitelist, null, kafkaClientsPodName), is(0));
+            externalKafkaClient.receiveMessages(topicNotInWhitelist, NAMESPACE, kafkaClusterSourceName, messagesCount, CONSUMER_GROUP_NAME), is(0));
     }
 
     @Test

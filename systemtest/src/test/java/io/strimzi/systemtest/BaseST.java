@@ -12,6 +12,10 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.interfaces.TestSeparator;
+import io.strimzi.systemtest.kafkaclients.ClientFactory;
+import io.strimzi.systemtest.kafkaclients.EClientType;
+import io.strimzi.systemtest.kafkaclients.externalclient.ExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalclients.KafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -67,6 +71,9 @@ public abstract class BaseST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
+    protected KafkaClient kafkaClient = (KafkaClient) ClientFactory.getClient(EClientType.BASIC.getClientType());
+    protected ExternalKafkaClient externalKafkaClient = (ExternalKafkaClient) ClientFactory.getClient(EClientType.EXTERNAL.getClientType());
+
     protected static final String CLUSTER_NAME = "my-cluster";
 
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -81,6 +88,7 @@ public abstract class BaseST implements TestSeparator {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
+    protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
 
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";

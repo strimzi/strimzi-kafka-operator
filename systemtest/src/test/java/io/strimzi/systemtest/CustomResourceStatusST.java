@@ -50,7 +50,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-class CustomResourceStatusST extends MessagingBaseST {
+class CustomResourceStatusST extends BaseST {
     static final String NAMESPACE = "status-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static final String TOPIC_NAME = "status-topic";
@@ -61,7 +61,7 @@ class CustomResourceStatusST extends MessagingBaseST {
     void testKafkaStatus() throws Exception {
         LOGGER.info("Checking status of deployed kafka cluster");
         waitForKafkaStatus("Ready");
-        waitForClusterAvailability(NAMESPACE, TOPIC_NAME);
+        kafkaClient.sendAndRecvMessages(NAMESPACE, TOPIC_NAME);
         assertKafkaStatus(1, "my-cluster-kafka-bootstrap.status-cluster-test.svc");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {

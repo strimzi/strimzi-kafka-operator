@@ -118,7 +118,8 @@ class AllNamespaceST extends AbstractNamespaceST {
                 copySecret(s, THIRD_NAMESPACE, USER_NAME);
             }
         }
-        waitForClusterAvailabilityTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
+
+        kafkaClient.sendAndRecvMessagesTls(USER_NAME, THIRD_NAMESPACE, CLUSTER_NAME);
 
         cluster.setNamespace(startingNamespace);
     }

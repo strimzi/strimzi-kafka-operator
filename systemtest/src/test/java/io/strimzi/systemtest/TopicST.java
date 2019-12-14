@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
-public class TopicST extends MessagingBaseST {
+public class TopicST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
 
@@ -224,7 +224,9 @@ public class TopicST extends MessagingBaseST {
         LOGGER.info("Topic {} was created", topicName);
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-        int sent = sendMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+        externalKafkaClient.setPodName(kafkaClientsPodName);
+
+        int sent = externalKafkaClient.sendMessages(topicName, NAMESPACE, CLUSTER_NAME, 50);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
@@ -237,8 +239,9 @@ public class TopicST extends MessagingBaseST {
         KafkaTopicUtils.waitForKafkaTopicCreation(topicName);
         LOGGER.info("Topic {} recreated", topicName);
 
-        int received = receiveMessages(50, CLUSTER_NAME, false, topicName, null, kafkaClientsPodName);
+        int received = externalKafkaClient.receiveMessages(topicName, NAMESPACE, CLUSTER_NAME, 50, CONSUMER_GROUP_NAME);
         assertThat(received, is(sent));
+
     }
 
     boolean hasTopicInKafka(String topicName) {
