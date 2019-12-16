@@ -77,7 +77,7 @@ The endpoint contains the public keys used to validate signed JWT tokens, which 
 
 NOTE: All communication with the authorization server should be performed using HyperText Transfer Protocol Secure (HTTPS).
 
-You can configure a certificate truststore as a Kubernetes Secret in your {ProductName} project namespace, and use an `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
+You can configure a certificate truststore as a Kubernetes Secret in your {ProductName} project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
 
 You may want to configure a `userNameClaim` to properly extract a username from the JWT token.
 If you want to use Kafka ACL authorization, you will need to identify the user by their username during authentication.
