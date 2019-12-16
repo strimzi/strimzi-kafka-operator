@@ -1858,13 +1858,14 @@ class KafkaST extends MessagingBaseST {
         // Wait for the zk version change roll
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
         LOGGER.debug("1st Zookeeper roll (image change) is complete");
-        // Wait for the zk rolling update
-        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
-        LOGGER.debug("2nd Zookeeper roll (update) is complete");
 
         // Wait for the kafka broker version change roll
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
         LOGGER.debug("Kafka roll (image change) is complete");
+
+        // Wait for the zk rolling update
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
+        LOGGER.debug("2nd Zookeeper roll (update) is complete");
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
