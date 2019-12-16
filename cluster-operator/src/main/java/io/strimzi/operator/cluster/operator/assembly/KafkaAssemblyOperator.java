@@ -772,40 +772,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     versionChange.to().version());
 
                         }
-                        return updateZkStatefulSet(zkSts, kafkaAssembly, versionChange).map(this);
+                        // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
+                        String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
+
+                        this.zkCluster.setImage(newZkImage);
+
+                        if (versionChange.from().compareVersion("2.4.0") < 0) {
+                            log.debug("Upgrade from Zookeeper 3.4.x detected, setting upgrade env var for ZK containers");
+                            this.zkCluster.disableSnapshotChecks();
+                        }
+                        return Future.succeededFuture(this);
                     }
                 } else {
                     return Future.failedFuture("No kafka and/or ZK StatefulSet information was obtainable");
                 }
-            });
-        }
-
-        private Future<Void> updateZkStatefulSet(StatefulSet zookeeperSts, Kafka kafkaAssembly, KafkaVersionChange versionChange) {
-
-            return waitForQuiescence(zookeeperSts).compose(v -> {
-                // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
-                String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
-
-                // update the Zookeeper stateful set
-                StatefulSet newZookeeperSs = new StatefulSetBuilder(zookeeperSts)
-                        .editSpec()
-                            .editTemplate()
-                                .editSpec()
-                                    .editMatchingContainer(container -> container.getName().equals("zookeeper"))
-                                        .withImage(newZkImage)
-                                    .endContainer()
-                                .endSpec()
-                            .endTemplate()
-                        .endSpec()
-                        .build();
-
-                return zkSetOperations.maybeRollingUpdate(newZookeeperSs, pod -> {
-                        // Predicate Pod restart function that always returns true and forces the pod to be restarted
-                        log.debug("{}: Rolling Zookeeper pod {} as part of Kafka version change",
-                                reconciliation, pod.getMetadata().getName());
-                        return true;
-                    }
-                );
             });
         }
 

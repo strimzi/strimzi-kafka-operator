@@ -55,9 +55,10 @@ fi
 # ZK 3.4.x -> 3.5.x upgrade adds snapshot checks that can cause ZK pods with persistent storage to fail on startup
 # The section below disables the snapshot checks until the servers have created a snapshot.
 
-# If this is a 3.4.x server then place an indicator file in the data directory so this persists over multiple restarts
+# If the CO has indicated this is an upgrade from a 3.4.x server then place an indicator file in the data directory
+# so this persists over multiple restarts
 flag_file=${ZOOKEEPER_DATA_DIR}/zk_upgrade_from_3_4
-if [[ $(ls libs | grep -Po 'zookeeper-\K3.4.\d+' | head -1) ]]; then
+if [[ "$ZOOKEEPER_SNAPSHOT_CHECK_ENABLED" = "false" ]]; then
     echo "Detected 3.4.x server, creating flag file for snapshot checks after future upgrade to 3.5.6"
     touch ${flag_file}
 fi

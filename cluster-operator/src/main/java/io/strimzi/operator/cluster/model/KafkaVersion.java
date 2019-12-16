@@ -360,6 +360,16 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         return compareDottedVersions(this.version, o.version);
     }
 
+    /** Compares this version to a supplied version string.
+     * @param version the version string to be compared
+     * @return Zero if the supplied versions matches this version;
+     * -1 if this version is less than the supplied version;
+     * +1 if this version is greater than the supplied version.
+     */
+    public int compareVersion(String version) {
+        return compareDottedVersions(this.version, version);
+    }
+
     /**
      * Compare two decimal version strings, e.g. 1.10.1 &gt; 1.9.2
      * @param version1 The first version.
