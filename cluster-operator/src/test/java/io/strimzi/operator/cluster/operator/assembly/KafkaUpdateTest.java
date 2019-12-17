@@ -19,11 +19,9 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.KubernetesVersion;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -563,136 +561,4 @@ public class KafkaUpdateTest {
                 is(initialConfig.getOrDefault(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION))));
     }
 
-    private StatefulSet zkChange(VertxTestContext context, Kafka initialKafka, Kafka updatedKafka) {
-
-        KafkaSetOperator kso = mock(KafkaSetOperator.class);
-        ZookeeperSetOperator zkso = mock(ZookeeperSetOperator.class);
-
-        StatefulSet initialKafkaSts = KafkaCluster.fromCrd(initialKafka, VERSIONS)
-                .generateStatefulSet(false, null, null);
-
-        StatefulSet initialZookeeperSts = ZookeeperCluster.fromCrd(initialKafka, VERSIONS)
-                .generateStatefulSet(false, null, null);
-
-        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialKafkaSts));
-        when(zkso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(initialZookeeperSts));
-        when(kso.maybeRollingUpdate(any(), any())).thenAnswer(invocation -> Future.succeededFuture());
-
-        // The only way to grab the updated stateful set is to intercept it when it is given to the zookeeper set operations
-        // maybe rolling update method at the end of the zkVersionChange method.
-        List<StatefulSet> zkStatefulSets = new ArrayList<>();
-        when(zkso.maybeRollingUpdate(any(StatefulSet.class), any())).thenAnswer(invocation -> {
-            zkStatefulSets.add(invocation.getArgument(0));
-            return Future.succeededFuture();
-        });
-
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
-                new MockCertManager(),
-                null,
-                new ResourceOperatorSupplier(
-                        null,
-                        null,
-                        zkso,
-                        kso,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null),
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
-
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
-
-        Future<KafkaAssemblyOperator.ReconciliationState> future = op.new ReconciliationState(reconciliation, updatedKafka) {
-            @Override
-            public Future<Void> waitForQuiescence(StatefulSet ss) {
-                return Future.succeededFuture();
-            }
-        }.zkVersionChange();
-
-        StatefulSet changedZkSts = zkStatefulSets.get(0);
-        return changedZkSts;
-    }
-
-    @Test
-    public void zkUpgradeFromPrevToLatest(VertxTestContext context) {
-
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
-
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
-        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
-
-        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
-
-        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.verify(() -> {
-                assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
-                context.completeNow();
-            }
-        );
-
-    }
-
-    @Test
-    public void zkUpgradeFromMinorToPrev(VertxTestContext context) {
-
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
-
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION));
-        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
-
-        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
-
-        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.verify(() -> {
-                assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
-                context.completeNow();
-            }
-        );
-
-    }
-
-    @Test
-    public void zkDowngradeFromLatestToPrev(VertxTestContext context) {
-
-        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
-
-        Kafka initialKafka = initialKafka(initialKafkaVersion, (Map) map(LOG_MESSAGE_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION));
-        Kafka changedKafka = changedKafkaVersion(initialKafka, changedKafkaVersion, emptyMap());
-
-        StatefulSet changedZkSts = zkChange(context, initialKafka, changedKafka);
-
-        Container container1 = changedZkSts.getSpec().getTemplate().getSpec().getContainers().get(0);
-        context.verify(() -> {
-                assertThat(changedImage, equalToIgnoringCase(container1.getImage()));
-                context.completeNow();
-            }
-        );
-
-    }
 }

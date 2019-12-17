@@ -350,7 +350,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ ClusterCa clusterCa;
         /* test */ ClientsCa clientsCa;
 
-        private ZookeeperCluster zkCluster;
+        /* test */ ZookeeperCluster zkCluster;
         private Service zkService;
         private Service zkHeadlessService;
         private ConfigMap zkMetricsAndLogsConfigMap;
@@ -732,16 +732,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkVersionChange() {
 
-            return CompositeFuture.all(
-                    kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)),
-                    zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-            ).compose(allFutures -> {
-                if (allFutures.succeeded()) {
+            return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)).compose(kafkaSts -> {
 
-                    StatefulSet kafkaSts = allFutures.resultAt(0);
-                    StatefulSet zkSts = allFutures.resultAt(1);
-
-                    if (zkSts == null || kafkaSts == null) {
+                    if (kafkaSts == null) {
                         return Future.succeededFuture(this);
                     }
 
@@ -775,18 +768,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                         String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
 
+                        log.debug("Setting new Zookeeper image: " + newZkImage);
                         this.zkCluster.setImage(newZkImage);
 
                         if (versionChange.from().compareVersion("2.4.0") < 0) {
                             log.debug("Upgrade from Zookeeper 3.4.x detected, setting upgrade env var for ZK containers");
                             this.zkCluster.disableSnapshotChecks();
                         }
+
                         return Future.succeededFuture(this);
                     }
-                } else {
-                    return Future.failedFuture("No kafka and/or ZK StatefulSet information was obtainable");
                 }
-            });
+            );
         }
 
         /**
