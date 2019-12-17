@@ -52,7 +52,6 @@ import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
