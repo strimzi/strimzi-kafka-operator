@@ -53,7 +53,7 @@ spec:
                     type: string
             observedGeneration:
               type: integer
-            userTaskId:
+            sessionId:
               type: string
             optimizationResult:
               type: object

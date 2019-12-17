@@ -23,14 +23,14 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "userTaskId", "optimizationResult" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "sessionId", "optimizationResult" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaClusterRebalanceStatus extends Status {
 
     private static final long serialVersionUID = 1L;
 
-    private String userTaskId;
+    private String sessionId;
     private Map<String, Object> optimizationResult = new HashMap<>(0);
 
     @Description("A JSON describing the optimization result")
@@ -43,13 +43,13 @@ public class KafkaClusterRebalanceStatus extends Status {
         this.optimizationResult = optimizationResult;
     }
 
-    @Description("The identification number of the last request sent to Cruise Control")
+    @Description("The session identifier for requests to Cruise Control pertaining to this KafkaClusterRebalance resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getUserTaskId() {
-        return userTaskId;
+    public String getSessionId() {
+        return sessionId;
     }
 
-    public void setUserTaskId(String userTaskId) {
-        this.userTaskId = userTaskId;
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 }
