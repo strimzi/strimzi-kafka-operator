@@ -316,15 +316,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaExporterService())
                 .compose(state -> state.kafkaExporterReady())
 
-                .compose(state -> Future.succeededFuture())
-                .setHandler(result -> {
-                    if (result.succeeded()) {
-                        chainPromise.complete();
-                    } else {
-                        chainPromise.fail(result.cause());
-                    }
-                });
-
+                .map((Void) null)
+                .setHandler(chainPromise);
 
         return chainPromise.future();
     }
