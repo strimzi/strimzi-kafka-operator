@@ -2386,6 +2386,8 @@ Used in: xref:type-KafkaClusterRebalance-{context}[`KafkaClusterRebalance`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
+|sessionId           1.2+<.<|The session identifier for requests to Cruise Control pertaining to this KafkaClusterRebalance resource.
+|string
 |optimizationResult  1.2+<.<|A JSON describing the optimization result.
 |map
 |====

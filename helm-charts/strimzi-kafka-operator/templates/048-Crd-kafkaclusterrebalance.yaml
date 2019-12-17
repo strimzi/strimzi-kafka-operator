@@ -58,6 +58,8 @@ spec:
                     type: string
             observedGeneration:
               type: integer
+            sessionId:
+              type: string
             optimizationResult:
               type: object
 {{- end -}}
