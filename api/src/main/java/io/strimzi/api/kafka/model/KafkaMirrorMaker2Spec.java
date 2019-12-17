@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import io.strimzi.crdgenerator.annotations.Description;
@@ -24,7 +25,7 @@ import lombok.EqualsAndHashCode;
 @JsonPropertyOrder({"replicas", "config", "image",
         "livenessProbe", "readinessProbe", "jvmOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing", "template", "clusters", "mirrors"})
-@EqualsAndHashCode(doNotUseGetters = true)
+@EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaMirrorMaker2Spec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;
@@ -69,5 +70,11 @@ public class KafkaMirrorMaker2Spec extends KafkaConnectSpec {
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Bootstrap servers to connect to. This can be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
+    @JsonProperty(required = false)
+    public String getBootstrapServers() {
+        return super.getBootstrapServers();
     }
 }

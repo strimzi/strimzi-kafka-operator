@@ -64,6 +64,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public static final String MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
     public static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>();
 
+    public static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
+    public static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
+    
+
     /**
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
@@ -235,13 +239,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     private static KafkaConnectorSpec prepareMirrorMaker2Connector(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec) {
         Map<String, Object> config = connectorSpec.getConfig();
-        config.put("target.cluster.alias", mirror.getTargetCluster());
-        config.put("target.cluster.bootstrap.servers", targetCluster.getBootstrapServers());
-        config.putAll(targetCluster.getConfig());
+        config.put(TARGET_CLUSTER_PREFIX + "alias", mirror.getTargetCluster());
+        config.put(TARGET_CLUSTER_PREFIX + "bootstrap.servers", targetCluster.getBootstrapServers());
+        config.putAll(targetCluster.getConfig().entrySet().stream()
+                .collect(Collectors.toMap(entry -> TARGET_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));
         config.putAll(targetCluster.getAdditionalProperties());
-        config.put("source.cluster.alias", mirror.getSourceCluster());
-        config.put("source.cluster.bootstrap.servers", sourceCluster.getBootstrapServers());
-        config.putAll(sourceCluster.getConfig());
+
+        config.put(SOURCE_CLUSTER_PREFIX + "alias", mirror.getSourceCluster());
+        config.put(SOURCE_CLUSTER_PREFIX + "bootstrap.servers", sourceCluster.getBootstrapServers());
+        config.putAll(sourceCluster.getConfig().entrySet().stream()
+                .collect(Collectors.toMap(entry -> SOURCE_CLUSTER_PREFIX + entry.getKey(), Map.Entry::getValue)));
         config.putAll(sourceCluster.getAdditionalProperties());
 
         config.put("topics", mirror.getTopics());

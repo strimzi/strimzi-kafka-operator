@@ -1026,8 +1026,6 @@ spec:
                     - secretName
             version:
               type: string
-          required:
-          - bootstrapServers
         status:
           type: object
           properties:

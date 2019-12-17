@@ -144,12 +144,15 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaConnect.tracing = spec.getTracing();
 
-        KafkaConnectConfiguration config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+        AbstractConfiguration config = kafkaConnect.getConfiguration();
+        if (config == null) {
+            config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+            kafkaConnect.setConfiguration(config);
+        }
         if (kafkaConnect.tracing != null)   {
             config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
             config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
-        kafkaConnect.setConfiguration(config);
 
         if (kafkaConnect.getImage() == null) {
             String image = spec instanceof KafkaConnectS2ISpec ?

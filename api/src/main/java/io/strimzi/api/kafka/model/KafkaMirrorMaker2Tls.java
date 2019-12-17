@@ -17,7 +17,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Represent the TLS configuration for Kafka Mirror Maker 2
+ * Represent the TLS configuration for a Kafka cluster that MirrorMaker 2.0 communicates with
  */
 @Buildable(
         editableEnabled = false,

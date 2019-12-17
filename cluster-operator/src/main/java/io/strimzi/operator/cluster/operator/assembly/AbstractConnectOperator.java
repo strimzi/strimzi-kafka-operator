@@ -396,9 +396,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 connectorConfigJson.put(name, cf.getValue());
             }
         }
-        return connectorConfigJson
-                .put("connector.class", spec.getClassName())
-                .put("tasks.max", spec.getTasksMax());
+
+        if (spec.getTasksMax() != null) {
+            connectorConfigJson.put("tasks.max", spec.getTasksMax());
+        }
+
+        return connectorConfigJson.put("connector.class", spec.getClassName());
     }
 
     /**
