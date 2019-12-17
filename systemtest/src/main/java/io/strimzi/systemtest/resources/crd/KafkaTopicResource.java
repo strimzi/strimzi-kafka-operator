@@ -29,18 +29,22 @@ public class KafkaTopicResource {
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
+        return topic(defaultTopic(clusterName, topicName, 1, 1, 1).build());
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
-        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
+        return topic(defaultTopic(clusterName, topicName, partitions, 1, 1).build());
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
-        return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas, replicas).build());
     }
 
-    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+    public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas, minIsr).build());
+    }
+
+    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
         KafkaTopic kafkaTopic = getKafkaTopicFromYaml(PATH_TO_KAFKA_TOPIC_CONFIG);
         return new KafkaTopicBuilder(kafkaTopic)
             .withNewMetadata()
@@ -51,7 +55,7 @@ public class KafkaTopicResource {
             .editSpec()
                 .withPartitions(partitions)
                 .withReplicas(replicas)
-                .addToConfig("min.insync.replicas", replicas)
+                .addToConfig("min.insync.replicas", minIsr)
             .endSpec();
     }
 

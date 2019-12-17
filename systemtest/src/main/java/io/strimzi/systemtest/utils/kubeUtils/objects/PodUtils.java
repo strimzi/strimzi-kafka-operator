@@ -138,6 +138,8 @@ public class PodUtils {
                     return false;
                 }
             });
+
+        LOGGER.info("Pod {} deleted", name);
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {

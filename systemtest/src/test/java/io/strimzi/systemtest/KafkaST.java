@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -14,7 +13,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -46,7 +44,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
-import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -66,7 +63,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,14 +73,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
-import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Killing;
-import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Scheduled;
-import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
-import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -101,7 +89,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -110,7 +97,6 @@ class KafkaST extends MessagingBaseST {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
-    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
     @OpenShiftOnly
@@ -125,7 +111,7 @@ class KafkaST extends MessagingBaseST {
         DeploymentUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
-        testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
+        testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
 
         //Testing labels
         verifyLabelsForKafkaCluster(clusterName, appName);
@@ -143,88 +129,6 @@ class KafkaST extends MessagingBaseST {
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
         cluster.deleteCustomResources("../examples/templates/cluster-operator");
-    }
-
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(LOADBALANCER_SUPPORTED)
-    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_UP));
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                            .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                    .addToConfig(singletonMap("default.replication.factor", 3))
-                    .addToConfig("auto.create.topics.enable", "false")
-                .endKafka()
-            .endSpec().done();
-
-        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
-        // kafka cluster already deployed
-
-        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-
-        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-
-        assertEquals(3, initialReplicas);
-
-        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
-        String firstTopicName = "test-topic";
-        KafkaTopicResource.topic(CLUSTER_NAME, firstTopicName, 3, initialReplicas)
-                .editSpec()
-                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
-                .endSpec()
-            .done();
-
-        // scale up
-        final int scaleTo = initialReplicas + 1;
-        final int newPodId = initialReplicas;
-        final String newPodName = KafkaResources.kafkaPodName(CLUSTER_NAME,  newPodId);
-        LOGGER.info("Scaling up to {}", scaleTo);
-        // Create snapshot of current cluster
-        String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
-        LOGGER.info("Scaled up to {}", scaleTo);
-
-        //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient().getPodUid(newPodName);
-        List<Event> events = kubeClient().listEvents(uid);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        waitForClusterAvailability(NAMESPACE, firstTopicName);
-        LOGGER.info("Could produce/consume with topic {}", firstTopicName);
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
-
-        // scale down
-        LOGGER.info("Scaling down");
-        // Get kafka new pod uid before deletion
-        uid = kubeClient().getPodUid(newPodName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, initialReplicas, kafkaPods);
-        LOGGER.info("Scaled down to {}", initialReplicas);
-
-        final int finalReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertThat(finalReplicas, is(initialReplicas));
-
-        // Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getStatefulSetUid(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
-
-        String secondTopicName = "test-topic-2";
-        KafkaTopicResource.topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
-        waitForClusterAvailability(NAMESPACE, secondTopicName);
-        LOGGER.info("Could produce/consume with topic {}", secondTopicName);
     }
 
     @Test
@@ -250,59 +154,6 @@ class KafkaST extends MessagingBaseST {
         PodUtils.waitForPodDeletion(pod.getMetadata().getName());
 
         LOGGER.info("Entity operator was deleted");
-    }
-
-    @Test
-    void testZookeeperScaleUpScaleDown() {
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_UP));
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
-        // kafka cluster already deployed
-        LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
-        final int initialZkReplicas = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
-        assertThat(initialZkReplicas, is(3));
-
-        final int scaleZkTo = initialZkReplicas + 4;
-        final List<String> newZkPodNames = new ArrayList<String>() {{
-                for (int i = initialZkReplicas; i < scaleZkTo; i++) {
-                    add(KafkaResources.zookeeperPodName(CLUSTER_NAME, i));
-                }
-            }};
-
-        LOGGER.info("Scaling up to {}", scaleZkTo);
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
-
-        waitForZkPods(newZkPodNames);
-        // check the new node is either in leader or follower state
-        KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
-        checkZkPodsLog(newZkPodNames);
-
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
-
-        // scale down
-        LOGGER.info("Scaling down");
-        // Get zk-3 uid before deletion
-        String uid = kubeClient().getPodUid(newZkPodNames.get(3));
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
-
-        for (String name : newZkPodNames) {
-            PodUtils.waitForPodDeletion(name);
-        }
-
-        // Wait for one zk pods will became leader and others follower state
-        KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2);
-
-        //Test that the second pod has event 'Killing'
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
-        //Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getStatefulSetUid(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(SuccessfulDelete));
-        // Stop measuring
-        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
     }
 
     @Test
@@ -1124,102 +975,6 @@ class KafkaST extends MessagingBaseST {
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
-    private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
-        LOGGER.info("Verifying docker image names");
-        //Verifying docker image for cluster-operator
-
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
-
-        //Verifying docker image for zookeeper pods
-        for (int i = 0; i < zkPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
-            assertThat("Zookeeper pod " + i + " uses wrong image", imgFromDeplConf.get(ZK_IMAGE), is(imgFromPod));
-            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.zookeeperPodName(clusterName, i), "tls-sidecar");
-            assertThat("Zookeeper TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_ZOOKEEPER_IMAGE), is(imgFromPod));
-        }
-
-        //Verifying docker image for kafka pods
-        for (int i = 0; i < kafkaPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "kafka");
-            String kafkaVersion = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
-            if (kafkaVersion == null) {
-                kafkaVersion = Environment.ST_KAFKA_VERSION;
-            }
-            assertThat("Kafka pod " + i + " uses wrong image", TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), is(imgFromPod));
-            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "tls-sidecar");
-            assertThat("Kafka TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), is(imgFromPod));
-            if (rackAwareEnabled) {
-                String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
-                assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
-            }
-        }
-
-        //Verifying docker image for entity-operator
-        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
-        String imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
-        assertThat(imgFromPod, is(imgFromDeplConf.get(TO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "user-operator");
-        assertThat(imgFromPod, is(imgFromDeplConf.get(UO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
-        assertThat(imgFromPod, is(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
-
-        LOGGER.info("Docker images verified");
-    }
-
-    @Test
-    void testManualTriggeringRollingUpdate() {
-        String coPodName = kubeClient().listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3).done();
-
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
-
-        // rolling update for kafka
-        LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
-        // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(kafkaName).cascading(false).edit()
-                .editMetadata()
-                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
-                .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(kafkaName)
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
-
-        // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSTS(kafkaName) == null
-                || !getAnnotationsForSTS(kafkaName).containsKey("strimzi.io/manual-rolling-update"));
-
-        // check rolling update messages in CO log
-        StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
-
-        // rolling update for zookeeper
-        LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
-        // set annotation to trigger Zookeeper rolling update
-        kubeClient().statefulSet(zkName).cascading(false).edit()
-                .editMetadata()
-                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
-                .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient().getStatefulSet(zkName)
-                .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")), is(true));
-
-        // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSTS(zkName) == null
-                || !getAnnotationsForSTS(zkName).containsKey("strimzi.io/manual-rolling-update"));
-
-        // check rolling update messages in CO log
-        StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
-    }
-
     @Test
     @Tag(NODEPORT_SUPPORTED)
     void testNodePort() throws Exception {
@@ -1353,50 +1108,6 @@ class KafkaST extends MessagingBaseST {
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         waitForClusterAvailabilityTls(userName, NAMESPACE, CLUSTER_NAME);
-    }
-
-    private Map<String, String> getAnnotationsForSTS(String ssName) {
-        return kubeClient().getStatefulSet(ssName).getMetadata().getAnnotations();
-    }
-
-    void waitForZkRollUp() {
-        LOGGER.info("Waiting for cluster stability");
-        Map<String, String>[] zkPods = new Map[1];
-        AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
-            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
-            boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
-            if (!zkSameAsLast) {
-                LOGGER.info("ZK Cluster not stable");
-            }
-            if (zkSameAsLast) {
-                int c = count.getAndIncrement();
-                LOGGER.info("All stable for {} polls", c);
-                return c > 60;
-            }
-            zkPods[0] = zkSnapshot;
-            count.set(0);
-            return false;
-        });
-    }
-
-    void checkZkPodsLog(List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            //Test that second pod does not have errors or failures in events
-            LOGGER.info("Checking logs fro pod {}", name);
-            String uid = kubeClient().getPodUid(name);
-            List<Event> eventsForSecondPod = kubeClient().listEvents(uid);
-            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        }
-    }
-
-    void waitForZkPods(List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            PodUtils.waitForPod(name);
-            LOGGER.info("Pod {} is ready", name);
-        }
-        waitForZkRollUp();
     }
 
     @Test

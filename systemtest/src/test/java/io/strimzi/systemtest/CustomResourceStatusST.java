@@ -216,7 +216,7 @@ class CustomResourceStatusST extends MessagingBaseST {
     @Test
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
-        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10).build());
+        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
     }
