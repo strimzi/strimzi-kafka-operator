@@ -777,7 +777,7 @@ class SecurityST extends MessagingBaseST {
 
         LOGGER.info("Kafka connect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editMetadata()
                     .addToLabels("type", "kafka-connect")
                 .endMetadata()
@@ -790,7 +790,7 @@ class SecurityST extends MessagingBaseST {
                     .endTls()
                     .withBootstrapServers(ipOfBootstrapService + ":9093")
                 .endSpec()
-                .done());
+                .build());
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
@@ -835,7 +835,7 @@ class SecurityST extends MessagingBaseST {
         LOGGER.info("Mirror maker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("Mirror maker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
+        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
                 "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
                 .editMetadata()
                     .addToLabels("type", "kafka-mirror-maker")
@@ -860,7 +860,7 @@ class SecurityST extends MessagingBaseST {
                         .withBootstrapServers(ipOfTargetBootstrapService + ":9093")
                     .endProducer()
                 .endSpec()
-                .done());
+                .build());
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 

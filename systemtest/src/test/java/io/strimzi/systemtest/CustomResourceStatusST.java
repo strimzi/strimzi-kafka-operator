@@ -100,7 +100,7 @@ class CustomResourceStatusST extends MessagingBaseST {
     void testKafkaUserStatusNotReady() {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userName).build());
 
         String eoPodName = kubeClient().listPods("strimzi.io/name", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaUserUtils.waitForKafkaUserCreationError(userName, eoPodName);
@@ -209,13 +209,14 @@ class CustomResourceStatusST extends MessagingBaseST {
     @Test
     void testKafkaTopicStatus() {
         waitForKafkaTopic("Ready", TOPIC_NAME);
-        assertKafkaTopicStatus(1, TOPIC_NAME);
+        // The reason why we have there Observed Generation = 2 cause Kafka sync message.format.version when topic is created
+        assertKafkaTopicStatus(2, TOPIC_NAME);
     }
 
     @Test
     void testKafkaTopicStatusNotReady() {
         String topicName = "my-topic";
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 10).done();
+        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10).build());
         waitForKafkaTopic("NotReady", topicName);
         assertKafkaTopicStatus(1, topicName);
     }
@@ -224,10 +225,6 @@ class CustomResourceStatusST extends MessagingBaseST {
     void setup() {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
 
         deployTestSpecificResources();
     }
@@ -239,6 +236,10 @@ class CustomResourceStatusST extends MessagingBaseST {
     }
 
     void deployTestSpecificResources() {
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()

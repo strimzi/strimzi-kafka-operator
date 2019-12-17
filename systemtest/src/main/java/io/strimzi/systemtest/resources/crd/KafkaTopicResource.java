@@ -40,7 +40,7 @@ public class KafkaTopicResource {
         return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
     }
 
-    private static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
         KafkaTopic kafkaTopic = getKafkaTopicFromYaml(PATH_TO_KAFKA_TOPIC_CONFIG);
         return new KafkaTopicBuilder(kafkaTopic)
             .withNewMetadata()
@@ -61,6 +61,11 @@ public class KafkaTopicResource {
             LOGGER.info("Created KafkaTopic {}", kt.getMetadata().getName());
             return waitFor(deleteLater(kt));
         });
+    }
+
+    public static KafkaTopic topicWithoutWait(KafkaTopic kafkaTopic) {
+        kafkaTopicClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaTopic);
+        return kafkaTopic;
     }
 
     private static KafkaTopic getKafkaTopicFromYaml(String yamlPath) {

@@ -39,6 +39,16 @@ public class KafkaMirrorMakerResource {
         return deployKafkaMirrorMaker(defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
+    public static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(String name,
+                                                                  String sourceBootstrapServer,
+                                                                  String targetBootstrapServer,
+                                                                  String groupId,
+                                                                  int kafkaMirrorMakerReplicas,
+                                                                  boolean tlsListener) {
+        KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
+        return defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, kafkaMirrorMakerReplicas, tlsListener);
+    }
+
     private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker,
                                                                    String name,
                                                                    String sourceBootstrapServer,

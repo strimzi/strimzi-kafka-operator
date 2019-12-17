@@ -144,6 +144,18 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(String input, List<String> command, int timeout, boolean logToOutput) {
+        return exec(input, command, timeout, logToOutput, true);
+    }
+
+    /**
+     * Method executes external command
+     * @param command arguments for command
+     * @param timeout timeout for execution
+     * @param logToOutput log output or not
+     * @param throwErrors look for errors in output and throws exception if true
+     * @return execution results
+     */
+    public static ExecResult exec(String input, List<String> command, int timeout, boolean logToOutput, boolean throwErrors) {
         int ret = 1;
         ExecResult execResult;
         try {
@@ -159,7 +171,7 @@ public class Exec {
 
             execResult = new ExecResult(ret, executor.out(), executor.err());
 
-            if (ret != 0) {
+            if (throwErrors && ret != 0) {
                 String msg = "`" + join(" ", command) + "` got status code " + ret + " and stderr:\n------\n" + executor.stdErr + "\n------\nand stdout:\n------\n" + executor.stdOut + "\n------";
 
                 Matcher matcher = ERROR_PATTERN.matcher(executor.err());

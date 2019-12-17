@@ -139,6 +139,6 @@ class RollingUpdateST extends BaseST {
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        KubernetesResource.clusterOperator(NAMESPACE).done();
+        KubernetesResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT).done();
     }
 }

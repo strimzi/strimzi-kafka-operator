@@ -47,7 +47,7 @@ public class KafkaConnectS2IResource {
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
-                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
                 .withReplicas(kafkaConnectReplicas)
                 // Try it without TLS
                 .withNewTls()

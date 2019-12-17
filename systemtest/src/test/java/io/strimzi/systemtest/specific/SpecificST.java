@@ -114,12 +114,7 @@ public class SpecificST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withVersion("6.6.6")
-                .endKafka()
-            .endSpec().done();
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1).build());
 
         LOGGER.info("Wait until Zookeeper stateful set is ready");
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);

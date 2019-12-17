@@ -182,6 +182,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Override
     protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        teardownEnvForOperator();
         deployTestSpecificResources();
     }
 }

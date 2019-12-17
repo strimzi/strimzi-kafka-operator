@@ -65,7 +65,12 @@ class UserST extends BaseST {
                 "Ready");
 
         // Create sasl user with long name
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, saslUserWithLongName)
+            .editSpec()
+                .withNewKafkaUserScramSha512ClientAuthentication()
+                .endKafkaUserScramSha512ClientAuthentication()
+            .endSpec()
+            .build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(saslUserWithLongName);
 
