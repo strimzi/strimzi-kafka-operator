@@ -138,7 +138,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
-                    String connectName = kafkaConnector.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+                    String connectName = kafkaConnector.getMetadata().getLabels() == null ? null : kafkaConnector.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
                     String connectorNamespace = kafkaConnector.getMetadata().getNamespace();
                     String connectNamespace = connectorNamespace;
                     Future<Void> f;
