@@ -44,7 +44,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.timemeasuring.Operation;
-import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;

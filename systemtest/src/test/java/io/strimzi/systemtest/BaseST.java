@@ -9,10 +9,14 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
+import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -25,8 +29,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -642,6 +644,49 @@ public abstract class BaseST implements TestSeparator {
 
     protected void tearDownEnvironmentAfterAll() {
         ResourceManager.deleteClassResources();
+    }
+
+    protected void testDockerImagesForKafkaCluster(String clusterName, String namespace, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+        LOGGER.info("Verifying docker image names");
+        //Verifying docker image for cluster-operator
+
+        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+
+        //Verifying docker image for zookeeper pods
+        for (int i = 0; i < zkPods; i++) {
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
+            assertThat("Zookeeper pod " + i + " uses wrong image", imgFromDeplConf.get(ZK_IMAGE), is(imgFromPod));
+            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.zookeeperPodName(clusterName, i), "tls-sidecar");
+            assertThat("Zookeeper TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_ZOOKEEPER_IMAGE), is(imgFromPod));
+        }
+
+        //Verifying docker image for kafka pods
+        for (int i = 0; i < kafkaPods; i++) {
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "kafka");
+            String kafkaVersion = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getVersion();
+            if (kafkaVersion == null) {
+                kafkaVersion = Environment.ST_KAFKA_VERSION;
+            }
+            assertThat("Kafka pod " + i + " uses wrong image", TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), is(imgFromPod));
+            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "tls-sidecar");
+            assertThat("Kafka TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), is(imgFromPod));
+            if (rackAwareEnabled) {
+                String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
+                assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
+            }
+        }
+
+        //Verifying docker image for entity-operator
+        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
+                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+        String imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
+        assertThat(imgFromPod, is(imgFromDeplConf.get(TO_IMAGE)));
+        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "user-operator");
+        assertThat(imgFromPod, is(imgFromDeplConf.get(UO_IMAGE)));
+        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
+        assertThat(imgFromPod, is(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+
+        LOGGER.info("Docker images verified");
     }
 
     @BeforeEach
