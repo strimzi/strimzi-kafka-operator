@@ -76,6 +76,7 @@ else
         if [ "$BRANCH" = "master" ]; then
             make docu_pushtowebsite
         fi
-        make pushtonexus
+#        TODO vratit zpet!!!!
+#        make pushtonexus
     fi
 fi
