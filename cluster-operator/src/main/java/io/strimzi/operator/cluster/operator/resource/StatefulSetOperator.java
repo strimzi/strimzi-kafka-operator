@@ -256,10 +256,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
             .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
-            .compose(res -> {
-                result.complete(res);
-                return result.future();
-            });
+            .setHandler(result);
+
         return result.future();
     }
 

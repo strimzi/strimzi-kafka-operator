@@ -113,7 +113,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
             HashMap<String, String> annotations = new HashMap<>();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
-            Promise<Void> chainPromise = Promise.promise();
             connectServiceAccount(namespace, connect)
                     .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -127,10 +126,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                     .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I))
-                    .compose(i -> {
-                        chainPromise.complete();
-                        return chainPromise.future();
-                    })
                     .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, reconciliationResult);
                         kafkaConnectS2Istatus.setUrl(KafkaConnectS2IResources.url(connect.getCluster(), namespace, KafkaConnectS2ICluster.REST_API_PORT));

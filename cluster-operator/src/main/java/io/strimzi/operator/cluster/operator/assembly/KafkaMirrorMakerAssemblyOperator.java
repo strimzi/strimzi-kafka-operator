@@ -97,7 +97,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);
-        Promise<Void> chainPromise = Promise.promise();
         mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, KafkaMirrorMakerResources.serviceName(mirror.getCluster()), mirror.generateService()))
@@ -107,10 +106,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperations.readiness(namespace, mirror.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> {
-                    chainPromise.complete();
-                    return chainPromise.future();
-                })
                 .setHandler(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 
