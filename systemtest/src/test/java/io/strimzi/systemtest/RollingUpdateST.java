@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.kafka.common.config.TopicConfig;
@@ -48,8 +49,10 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
@@ -268,6 +271,70 @@ class RollingUpdateST extends MessagingBaseST {
 
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
     }
+
+    @Test
+    void testKafkaWontRollUp() throws Exception {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        int messageCount = 50;
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+
+        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
+        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
+        assertEquals(3, initialReplicas);
+
+        // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas)
+            .editSpec()
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
+            .endSpec()
+            .done();
+
+        int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        assertThat(sent, is(messageCount));
+
+        // scale up
+        final int scaleTo = initialReplicas + 4;
+        final int newPodId = initialReplicas;
+        final String newPodName = KafkaResources.kafkaPodName(CLUSTER_NAME,  newPodId);
+        LOGGER.info("Scaling up to {}", scaleTo);
+        // Create snapshot of current cluster
+        String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
+        LOGGER.info("Scaling to {} finished", scaleTo);
+
+        //Test that the new pod does not have errors or failures in events
+        String uid = kubeClient().getPodUid(newPodName);
+        List<Event> events = kubeClient().listEvents(uid);
+        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+
+        int received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        assertThat(received, is(sent));
+        //Test that CO doesn't have any exceptions in log
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSecconds(testClass, testName, timeMeasuringSystem.getOperationID()));
+
+        // scale down
+        LOGGER.info("Scaling down to {}", initialReplicas);
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
+
+        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 4);
+        StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
+        Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        for (Map.Entry<String, String> entry : kafkaPodsScaleDown.entrySet()) {
+            assertThat(kafkaPods, hasEntry(entry.getKey(), entry.getValue()));
+        }
+
+        received = receiveMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
+        assertThat(received, is(sent));
+    }
+
+
 
     @Test
     void testZookeeperScaleUpScaleDown() throws Exception {
