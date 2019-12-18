@@ -50,8 +50,12 @@ The Cluster Operator is not aware of the client applications using the Kafka clu
 When connecting to the cluster, and to ensure they operate correctly, client applications must:
 
 * Trust the cluster CA certificate published in the _<cluster>_-cluster-ca-cert Secret.
-* Use the current `user.p12` and `user.password`, or `user.crt` and `user.key`, published in their _<user-name>_ Secret to connect to the cluster, when using the User Operator to provision client certificates.
-For workloads running inside the same Kubernetes cluster, Secrets can be mounted as a volume so the client Pods construct their key- and truststores from the current state of the `Secrets`.
+* Use the credentials published in their _<user-name>_ Secret to connect to the cluster.
++
+The User Secret provides credentials in PEM and PKCS #12 formats.
+The User Operator creates the user credentials when a user is created.
+
+For workloads running inside the same Kubernetes cluster, Secrets can be mounted as a volume so the client Pods construct their keystores and truststores from the current state of the `Secrets`.
 For more details on this procedure, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[Configuring internal clients to trust the cluster CA].
 
 === Client certificate renewal
@@ -60,4 +64,4 @@ You must ensure clients continue to work after certificate renewal.
 The renewal process depends on how the clients are configured.
 
 If you are provisioning client certificates and keys manually, you must generate new client certificates and ensure the new certificates are used by clients within the renewal period.
-Failure to do this by the end of the renewal period could result in client applications being unable to connect.
+Failure to do this by the end of the renewal period could result in client applications being unable to connect to the cluster.

@@ -9,15 +9,20 @@ This procedure describes how to configure a Kafka client that resides inside the
 
 The easiest way to achieve this for an internal client is to use a volume mount to access the `Secrets` containing the necessary certificates and keys.
 
-Follow the steps to configure trust certificates signed by the cluster CA for Java-based Kafka Producer, Consumer, and Streams APIs.
+Follow the steps to configure trust certificates that are signed by the cluster CA for Java-based Kafka Producer, Consumer, and Streams APIs.
 
-Choose the steps according to the certificate format for the cluster CA: PKCS#12 (`.p12`) or PEM (`.crt`).
+Choose the steps to follow according to the certificate format of the cluster CA: PKCS #12 (`.p12`) or PEM (`.crt`).
+
+The steps describe how to:
+
+* Mount the Cluster Secret that verifies the identity of the Kafka cluster to the client pod
+* Configure the client credentials to use the extracted certificate
 
 .Prerequisites
 
-* The Cluster Operator is running.
-* A `Kafka` resource within the Kubernetes cluster.
-* A Kafka client application inside the Kubernetes cluster which will connect using TLS and needs to trust the cluster CA certificate.
+* The Cluster Operator must be running.
+* There needs to be a `Kafka` resource within the Kubernetes cluster.
+* You need a Kafka client application outside the Kubernetes cluster that will connect using TLS, and needs to trust the cluster CA certificate.
 
 .Using PKCS #12 format (.p12)
 
@@ -46,8 +51,8 @@ spec:
 
 . Configure the Kafka client with the following properties:
 +
-* Security protocol option:
-** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication)
+* A security protocol option:
+** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication).
 ** `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
 * `ssl.truststore.location`: the truststore location where the certificates were imported.
 * `ssl.truststore.password`: the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
@@ -84,8 +89,8 @@ keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
 
 . Configure the Kafka client with the following properties:
 +
-* Security protocol option:
-** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication)
+* A security protocol option:
+** `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication).
 ** `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
 * `ssl.truststore.location`: the truststore location where the certificates were imported.
 * `ssl.truststore.password`: the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
