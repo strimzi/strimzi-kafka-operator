@@ -265,7 +265,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |notJwt                          1.2+<.<|Configure if access token should not be treated as JWT. Set this to `true` if authorization server returns opaque tokens. Defaults to `false`.
 |boolean
-|skipTypeCheck                   1.2+<.<|Configure if access token type check should be skipped. Set this to `true` if authorization server doesn't return 'typ' claim inside JWT token. Defaults to `false`.
+|skipTypeCheck                   1.2+<.<|Configure if access token type check should be skipped. Set this to `true` if authorization server does not include 'typ' claim in JWT token. Defaults to `false`.
 |boolean
 |tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array

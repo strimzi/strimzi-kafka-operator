@@ -141,7 +141,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("Configure if access token type check should be skipped. Set this to `true` if authorization server " +
-            "doesn't return 'typ' claim inside JWT token. Defaults to `false`.")
+            "does not include 'typ' claim in JWT token. Defaults to `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isSkipTypeCheck() {
         return skipTypeCheck;
