@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * Represents a status of the Kafka Mirror Maker 2 resource
+ * Represents a status of the Kafka MirrorMaker 2.0 resource
  */
 @Buildable(
         editableEnabled = false,
@@ -28,7 +28,7 @@ public class KafkaMirrorMaker2Status extends Status {
 
     private String url;
 
-    @Description("The URL of the REST API endpoint for managing and monitoring the Kafka Mirror Maker 2 connectors.")
+    @Description("The URL of the REST API endpoint for managing and monitoring the Kafka MirrorMaker 2.0 connectors.")
     public String getUrl() {
         return url;
     }

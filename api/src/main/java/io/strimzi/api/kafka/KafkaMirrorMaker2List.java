@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 
 /**
- * A {@code CustomResourceList<KafkaMirrorMake2r>} required for using Fabric8 CRD support.
+ * A {@code CustomResourceList<KafkaMirrorMaker2>} required for using Fabric8 CRD support.
  */
 public class KafkaMirrorMaker2List extends CustomResourceList<KafkaMirrorMaker2> {
     private static final long serialVersionUID = 1L;

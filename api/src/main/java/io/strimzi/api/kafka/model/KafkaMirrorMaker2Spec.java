@@ -22,7 +22,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"replicas", "config", "image",
+@JsonPropertyOrder({"replicas", "connectCluster", "config", "image",
         "livenessProbe", "readinessProbe", "jvmOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing", "template", "clusters", "mirrors"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
@@ -53,7 +53,7 @@ public class KafkaMirrorMaker2Spec extends KafkaConnectSpec {
         this.connectCluster = connectCluster;
     }
 
-    @Description("Configuration of the Mirror Maker 2 connectors.")
+    @Description("Configuration of the MirrorMaker 2.0 connectors.")
     public List<KafkaMirrorMaker2MirrorSpec> getMirrors() {
         return mirrors;
     }

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -41,17 +40,12 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaMirrorMaker2.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker2.SCOPE,
-                version = KafkaMirrorMaker2.V1BETA1,
+                version = KafkaMirrorMaker2.V1ALPHA1,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaMirrorMaker2.V1BETA1,
-                                served = true,
-                                storage = true
-                        ),
                         @Crd.Spec.Version(
                                 name = KafkaMirrorMaker2.V1ALPHA1,
                                 served = true,
-                                storage = false
+                                storage = true
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
@@ -60,7 +54,7 @@ import static java.util.Collections.unmodifiableList;
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired replicas",
-                                description = "The desired number of Kafka Mirror Maker 2 replicas",
+                                description = "The desired number of Kafka MirrorMaker 2.0 replicas",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
                         )
@@ -82,8 +76,7 @@ public class KafkaMirrorMaker2 extends CustomResource implements UnknownProperty
 
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = "v1alpha1";
-    public static final String V1BETA1 = "v1beta1";
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaMirrorMaker2";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
@@ -127,7 +120,7 @@ public class KafkaMirrorMaker2 extends CustomResource implements UnknownProperty
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the Kafka Mirror Maker 2 cluster.")
+    @Description("The specification of the Kafka MirrorMaker 2.0 cluster.")
     public KafkaMirrorMaker2Spec getSpec() {
         return spec;
     }
@@ -136,7 +129,7 @@ public class KafkaMirrorMaker2 extends CustomResource implements UnknownProperty
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka Mirror Maker 2 cluster.")
+    @Description("The status of the Kafka MirrorMaker 2.0 cluster.")
     public KafkaMirrorMaker2Status getStatus() {
         return status;
     }
@@ -147,7 +140,7 @@ public class KafkaMirrorMaker2 extends CustomResource implements UnknownProperty
 
     @Override
     public String toString() {
-        YAMLMapper mapper = new YAMLMapper().disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID);
+        YAMLMapper mapper = new YAMLMapper();
         try {
             return mapper.writeValueAsString(this);
         } catch (JsonProcessingException e) {

@@ -7,13 +7,10 @@ metadata:
 spec:
   group: kafka.strimzi.io
   versions:
-  - name: v1beta1
-    served: true
-    storage: true
   - name: v1alpha1
     served: true
-    storage: false
-  version: v1beta1
+    storage: true
+  version: v1alpha1
   scope: Namespaced
   names:
     kind: KafkaMirrorMaker2
@@ -24,7 +21,7 @@ spec:
     - kmm2
   additionalPrinterColumns:
   - name: Desired replicas
-    description: The desired number of Kafka Mirror Maker 2 replicas
+    description: The desired number of Kafka MirrorMaker 2.0 replicas
     JSONPath: .spec.replicas
     type: integer
   subresources:
@@ -37,6 +34,8 @@ spec:
           properties:
             replicas:
               type: integer
+            connectCluster:
+              type: string
             config:
               type: object
             image:
@@ -678,6 +677,23 @@ spec:
                     type: string
                   bootstrapServers:
                     type: string
+                  config:
+                    type: object
+                  tls:
+                    type: object
+                    properties:
+                      trustedCertificates:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            certificate:
+                              type: string
+                            secretName:
+                              type: string
+                          required:
+                          - certificate
+                          - secretName
                   authentication:
                     type: object
                     properties:
@@ -763,23 +779,6 @@ spec:
                         type: string
                     required:
                     - type
-                  config:
-                    type: object
-                  tls:
-                    type: object
-                    properties:
-                      trustedCertificates:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            certificate:
-                              type: string
-                            secretName:
-                              type: string
-                          required:
-                          - certificate
-                          - secretName
                 required:
                 - alias
                 - bootstrapServers
@@ -916,8 +915,6 @@ spec:
               required:
               - type
             bootstrapServers:
-              type: string
-            connectCluster:
               type: string
             externalConfiguration:
               type: object

@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka Mirror Maker 2 resources.
+ * Representation of a template for Kafka MirrorMaker 2.0 resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService"})
+        "deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -37,7 +37,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
     private ContainerTemplate mirrorMaker2Container;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Kafka Mirror Maker 2 `Deployment`.")
+    @Description("Template for Kafka MirrorMaker 2.0 `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getDeployment() {
         return deployment;
@@ -47,7 +47,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka Mirror Maker 2 `Pods`.")
+    @Description("Template for Kafka MirrorMaker 2.0 `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -57,7 +57,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
         this.pod = pod;
     }
 
-    @Description("Template for Kafka Mirror Maker 2 API `Service`.")
+    @Description("Template for Kafka MirrorMaker 2.0 API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getApiService() {
         return apiService;
@@ -67,7 +67,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
         this.apiService = apiService;
     }
 
-    @Description("Template for Kafka Mirror Maker 2 `PodDisruptionBudget`.")
+    @Description("Template for Kafka MirrorMaker 2.0 `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;
@@ -77,7 +77,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for the Kafka Mirror Maker 2 (MirrorMaker2) container")
+    @Description("Template for the Kafka MirrorMaker 2.0 container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getMirrorMaker2Container() {
         return mirrorMaker2Container;

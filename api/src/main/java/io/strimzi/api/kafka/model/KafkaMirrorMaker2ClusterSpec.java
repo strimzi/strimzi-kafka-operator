@@ -25,7 +25,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "alias", "bootstrapServers"})
+@JsonPropertyOrder({ "alias", "bootstrapServers", "config", "tls", "authentication"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -62,7 +62,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
     }
 
 
-    @Description("The Mirror Maker 2 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -71,7 +71,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
         this.config = config;
     }
 
-    @Description("TLS configuration for connecting Mirror Maker 2 connectors to a cluster.")
+    @Description("TLS configuration for connecting MirrorMaker 2.0 connectors to a cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaMirrorMaker2Tls getTls() {
         return tls;
@@ -81,7 +81,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
         this.tls = tls;
     }
 
-    @Description("A list of host:port pairs for establishing the connection to the Kafka cluster.")
+    @Description("A comma-separated list of `host:port` pairs for establishing the connection to the Kafka cluster.")
     @JsonProperty(required = true)
     public String getBootstrapServers() {
         return bootstrapServers;
