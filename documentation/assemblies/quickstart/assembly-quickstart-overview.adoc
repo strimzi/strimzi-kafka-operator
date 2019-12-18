@@ -12,14 +12,20 @@
 //standard intro
 include::../shared/snip-intro-text.adoc[leveloffset=+1]
 
+Before trying {ProductName}, it is useful to understand its capabilities and how you might wish to use it.
+This chapter introduces some of the key concepts behind Kafka, and also provides a brief overview of the {ProductName} Operators.
+
+//standard operator intro
+include::../shared/snip-intro-operators.adoc[leveloffset=+1]
+
 //description of Kafka features
-include::../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
+include::overview/modules/con-key-features-kafka.adoc[leveloffset=+1]
 
 //description of product features
-include::../modules/overview/con-key-features-product.adoc[leveloffset=+1]
+include::overview/modules/con-key-features-product.adoc[leveloffset=+1]
 
 //description of operators
-include::../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
+include::overview/modules/con-overview-components-operators.adoc[leveloffset=+1]
 
 //formatting conventions used in guide
 include::../shared/ref-document-conventions.adoc[leveloffset=+1]

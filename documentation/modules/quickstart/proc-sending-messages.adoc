@@ -6,14 +6,14 @@
 
 = Sending and receiving messages from a topic
 
-Test your {ProductName} installation by sending and receiving messages to `my-topic` from outside the cluster.
+You can test your {ProductName} installation by sending and receiving messages to `my-topic` from outside the cluster.
 
 Use a terminal to run a Kafka producer and consumer on a local machine.
 
 .Prerequisites
 
-* {ProductName} is installed on the Kubernetes cluster
-* ZooKeeper and Kafka are running
+* Ensure {ProductName} is installed on the Kubernetes cluster.
+* ZooKeeper and Kafka must be running to be able to send and receive messages.
 
 .Procedure
 
@@ -35,24 +35,22 @@ kubectl get service my-cluster-kafka-external-bootstrap -n my-kafka-project -o=j
 kubectl get nodes --output=jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
 ----
 
-. Open a terminal and start the Kafka console producer with the topic `my-topic`:
+. Open a terminal, and start the Kafka console producer with the topic `my-topic`:
 +
 [source,shell,subs=+quotes]
 ----
 bin/kafka-console-producer.sh --broker-list _<node-address>_:_<node-port>_ --topic my-topic
 ----
 
-. Type your message into the console where the producer is running.
+. Type your message into the console where the producer is running, and press *Enter* to send the message.
 
-. Press Enter to send the message.
-
-. Open a new terminal tab or window and start the consumer to receive the messages:
+. Open a new terminal tab or window, and start the consumer to receive the messages:
 +
 [source,shell,subs=+quotes]
 ----
 bin/kafka-console-consumer.sh --bootstrap-server _<node-address>_:_<node-port>_ --topic my-topic --from-beginning
 ----
 
-. Confirm that you see the incoming messages in the consumer console.
+. Verify that you see the incoming messages in the consumer console.
 
 . Press Crtl+C to exit the Kafka console producer and consumer.
