@@ -31,6 +31,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import io.vertx.micrometer.backends.BackendRegistries;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.kafka.KafkaConsumerMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -59,6 +67,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
     private final KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator;
     private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
+    private final PrometheusMeterRegistry registry;
 
     public ClusterOperator(String namespace,
                            long reconciliationInterval,
@@ -77,6 +86,8 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
+        this.registry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+        setupMetrics();
     }
 
     @Override
@@ -158,6 +169,9 @@ public class ClusterOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        request.response().setStatusCode(200)
+                                .end(registry.scrape());
                     }
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {
@@ -169,6 +183,15 @@ public class ClusterOperator extends AbstractVerticle {
                     result.handle(ar);
                 });
         return result.future();
+    }
+
+    private void setupMetrics() {
+        new ClassLoaderMetrics().bindTo(registry);
+        new JvmMemoryMetrics().bindTo(registry);
+        new ProcessorMetrics().bindTo(registry);
+        new JvmThreadMetrics().bindTo(registry);
+        new JvmGcMetrics().bindTo(registry);
+        new KafkaConsumerMetrics().bindTo(registry);
     }
 
     public static String secretName(String cluster) {
