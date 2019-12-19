@@ -306,12 +306,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Updates the Status field of the KafkaConnect CR. It diffs the desired status against the current status and calls
+     * Updates the Status field of the KafkaConnect or KafkaConnector CR. It diffs the desired status against the current status and calls
      * the update only when there is any difference in non-timestamp fields.
      *
-     * @param resource The CR of KafkaConnect
+     * @param resource The CR of KafkaConnect or KafkaConnector
      * @param reconciliation Reconciliation information
-     * @param desiredStatus The KafkaConnectStatus which should be set
+     * @param desiredStatus The KafkaConnectStatus or KafkaConnectorStatus which should be set
      *
      * @return
      */
@@ -356,11 +356,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         }
                     }
                 } else {
-                    log.error("{}: Current Kafka Connect resource not found", reconciliation);
-                    updateStatusPromise.fail("Current Kafka Connect resource not found");
+                    log.error("{}: Current {} resource not found", reconciliation, resource.getKind());
+                    updateStatusPromise.fail("Current " + resource.getKind() + " resource not found");
                 }
             } else {
-                log.error("{}: Failed to get the current Kafka Connect resource and its status", reconciliation, getRes.cause());
+                log.error("{}: Failed to get the current {} resource and its status", reconciliation, resource.getKind(), getRes.cause());
                 updateStatusPromise.fail(getRes.cause());
             }
         });
