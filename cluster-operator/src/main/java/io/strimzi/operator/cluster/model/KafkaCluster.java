@@ -1675,14 +1675,23 @@ public class KafkaCluster extends AbstractModel {
         }
 
         if (oAuth.isNotJwt()) {
+            if (oAuth.getJwksEndpointUri() != null) {
+                log.error("{}: notJwt can not be used together with jwksEndpointUri", listener);
+                throw new InvalidResourceException(listener + ": notJwt can not be used together with jwksEndpointUri");
+            }
             if (oAuth.getUserNameClaim() != null) {
-                log.error("{}: userNameClaim can't be set when notJwt is true", listener);
-                throw new InvalidResourceException(listener + ": userNameClaim can't be set when notJwt is true");
+                log.error("{}: userNameClaim can not be set when notJwt is true", listener);
+                throw new InvalidResourceException(listener + ": userNameClaim can not be set when notJwt is true");
             }
             if (oAuth.isSkipTypeCheck()) {
-                log.error("{}: skipTypeCheck can't be set when notJwt is true", listener);
-                throw new InvalidResourceException(listener + ": skipTypeCheck can't be set when notJwt is true");
+                log.error("{}: skipTypeCheck can not be set when notJwt is true", listener);
+                throw new InvalidResourceException(listener + ": skipTypeCheck can not be set when notJwt is true");
             }
+        }
+
+        if (oAuth.isSkipTypeCheck() && oAuth.getIntrospectionEndpointUri() != null) {
+            log.error("{}: skipTypeCheck can not be used together with introspectionEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": skipTypeCheck can not be used together with introspectionEndpointUri");
         }
     }
 

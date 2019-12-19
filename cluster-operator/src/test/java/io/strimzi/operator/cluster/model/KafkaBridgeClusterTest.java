@@ -728,8 +728,6 @@ public class KafkaBridgeClusterTest {
                                     .withSecretName("my-secret-secret")
                                     .withKey("my-secret-key")
                                 .endClientSecret()
-                                .withNotJwt(false)
-                                .withMaxTokenExpirySeconds(Integer.MAX_VALUE)
                                 .build())
                 .endSpec()
                 .build();
@@ -812,8 +810,6 @@ public class KafkaBridgeClusterTest {
                                 .endClientSecret()
                                 .withDisableTlsHostnameVerification(true)
                                 .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                .withNotJwt(false)
-                                .withMaxTokenExpirySeconds(0)
                                 .build())
                 .endSpec()
                 .build();
@@ -841,6 +837,35 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getKey(), is("tls.crt"));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "second-certificate".equals(vol.getName())).findFirst().orElse(null).getSecret().getItems().get(0).getPath(), is("second-certificate/tls.crt"));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthUsingOpaqueTokens() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withNewClientSecret()
+                                .withSecretName("my-secret-secret")
+                                .withKey("my-secret-key")
+                                .endClientSecret()
+                                .withNotJwt(true)
+                                .withMaxTokenExpirySeconds(600)
+                                .build())
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_TOKENS_NOT_JWT, "true", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
     }
 
     @Test

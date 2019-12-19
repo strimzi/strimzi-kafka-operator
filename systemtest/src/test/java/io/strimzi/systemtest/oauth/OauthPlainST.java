@@ -162,8 +162,6 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
                                     .withUserNameClaim(userNameClaim)
-                                    .withNotJwt(false)
-                                    .withSkipTypeCheck(false)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
                                             .withSecretName(SECRET_OF_KEYCLOAK)
@@ -179,8 +177,6 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksExpirySeconds(500)
                                     .withJwksRefreshSeconds(400)
                                     .withUserNameClaim(userNameClaim)
-                                    .withNotJwt(false)
-                                    .withSkipTypeCheck(true)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
                                             .withSecretName(SECRET_OF_KEYCLOAK)
@@ -196,8 +192,6 @@ public class OauthPlainST extends OauthBaseST {
                                     .withJwksRefreshSeconds(400)
                                     .withJwksEndpointUri(jwksEndpointUri)
                                     .withUserNameClaim(userNameClaim)
-                                    .withNotJwt(true)
-                                    .withSkipTypeCheck(false)
                                     .withTlsTrustedCertificates(
                                         new CertSecretSourceBuilder()
                                             .withSecretName(SECRET_OF_KEYCLOAK)
