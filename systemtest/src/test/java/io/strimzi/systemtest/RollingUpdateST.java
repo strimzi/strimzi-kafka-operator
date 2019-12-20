@@ -206,7 +206,7 @@ class RollingUpdateST extends MessagingBaseST {
                             .withTls(false)
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
-                    .addToConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig(singletonMap("default.replication.factor", 1))
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec().done();
@@ -221,11 +221,7 @@ class RollingUpdateST extends MessagingBaseST {
         assertEquals(3, initialReplicas);
 
         // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas)
-            .editSpec()
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
-            .endSpec()
-            .done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, initialReplicas - 1).done();
 
         sendMessagesExternal(NAMESPACE, topicName, messageCount);
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
@@ -272,24 +268,38 @@ class RollingUpdateST extends MessagingBaseST {
         receiveMessagesExternal(NAMESPACE, topicName, messageCount);
     }
 
+    /**
+     * This test cover case, when KafkaRoller will not roll Kafka pods, because created topic doesn't meet requirements for roll remaining pods
+     * 1. Deploy kafka cluster with 3 pods
+     * 2. Create topic and send there some messsages
+     * 3. Scale kafka cluster to 7 replicas and wait, until all pods are ready
+     * 4. Consume messages from created topic
+     *      - __consumer_offsets__ topic is created with 50 partitions (default value)
+     *      - some of the partitions are assigned to newly created brokers
+     * 5. Scale down kafka cluster to 3 replicas
+     * 6. Wait until some pods will remain unrolled, because topic __consumer_offsets__ doesn't meet requirements for rolling update
+     *      - min.insync.replicas will not be available in case of rolling update will be performed so KafkaRoller will not roll the remaining pods
+     */
     @Test
+    // TODO try to create topic with 4 replicas and 4 min insinc replicas and scale down to 3
     void testKafkaWontRollUp() throws Exception {
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         int messageCount = 50;
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .addToConfig("auto.create.topics.enable", "false")
+                .endKafka()
+            .endSpec().done();
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(3, initialReplicas);
 
         // Create topic before scale up to ensure no partitions created on last broker (which will mess up scale down)
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas)
-            .editSpec()
-                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, initialReplicas - 1)
-            .endSpec()
-            .done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, initialReplicas, 1).done();
 
         int sent = sendMessages(messageCount, CLUSTER_NAME, false, topicName, null, defaultKafkaClientsPodName);
         assertThat(sent, is(messageCount));
@@ -301,9 +311,10 @@ class RollingUpdateST extends MessagingBaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaStsName = kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, scaleTo, kafkaPods);
+        // No need to roll kafka cluster during scale up (no external listeners in Kafka)
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaleTo);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         LOGGER.info("Scaling to {} finished", scaleTo);
 
         //Test that the new pod does not have errors or failures in events
@@ -322,7 +333,7 @@ class RollingUpdateST extends MessagingBaseST {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
 
-        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 4);
+        PodUtils.waitUntilPodsCountIsPresent(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
         StUtils.waitForReconciliation(testClass, testName, NAMESPACE);
         Map<String, String> kafkaPodsScaleDown = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -504,7 +515,7 @@ class RollingUpdateST extends MessagingBaseST {
     }
 
     void deployTestSpecificResources() {
-        KafkaClientsResource.deployKafkaClients(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(Constants.KAFKA_CLIENTS).done();
     }
 
     @Override
@@ -517,7 +528,7 @@ class RollingUpdateST extends MessagingBaseST {
     void setKafkaClientsPodName() {
         // Get clients pod name
         defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                kubeClient().listPodsByPrefixInName(Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
     }
 
     @BeforeAll
