@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class KafkaTopicResource {
@@ -30,6 +31,10 @@ public class KafkaTopicResource {
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName) {
         return topic(defaultTopic(clusterName, topicName, 1, 1).build());
+    }
+
+    public static KafkaTopic topicWithoutWait(String clusterName, String topicName, Map<String, String> labels) {
+        return topicWithoutWait(defaultTopic(clusterName, topicName, 1, 1).editMetadata().withLabels(labels).endMetadata().build());
     }
 
     public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {

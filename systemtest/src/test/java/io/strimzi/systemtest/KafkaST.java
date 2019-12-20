@@ -90,6 +90,7 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -1099,11 +1100,7 @@ class KafkaST extends MessagingBaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Creating topic without any label
-        KafkaTopicResource.topic(CLUSTER_NAME, "topic-without-labels")
-            .editMetadata()
-                .withLabels(null)
-            .endMetadata()
-            .done();
+        KafkaTopicResource.topicWithoutWait(CLUSTER_NAME, "topic-without-labels", null);
 
         // Checking that resource was created
         assertThat(cmdKubeClient().list("kafkatopic"), hasItems("topic-without-labels"));
