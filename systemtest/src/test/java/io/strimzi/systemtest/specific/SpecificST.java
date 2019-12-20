@@ -120,9 +120,14 @@ public class SpecificST extends MessagingBaseST {
         LOGGER.info("Wait until Zookeeper stateful set is ready");
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 1);
 
-        String coLog = kubeClient().logs(kubeClient().listPodNames("name", "strimzi-cluster-operator").get(0));
-
-        assertThat(coLog.contains("Version " + nonExistingVersion + " is not supported"), is(true));
+        KafkaUtils.waitUntilKafkaStatusConditionIsPresent(CLUSTER_NAME);
+        Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getConditions().get(0);
+        verifyCRStatusCondition(
+                condition,
+                "Version " + nonExistingVersion + " is not supported.",
+                "InvalidResourceException",
+                "True",
+                "NotReady");
     }
 
     @BeforeAll
