@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-connect.adoc
+
+[id='proc-enabling-kafkaconnectors-{context}']
+= Enabling `KafkaConnector` resources
+
+Intro
+
+.Prerequisites
+
+* A running Kafka cluster.
+*
+*
+
+.Procedure
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+.Additional resources
+
+* For more information about, see .

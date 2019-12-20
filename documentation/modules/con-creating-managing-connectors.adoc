@@ -1,0 +1,15 @@
+// Module included in the following assemblies:
+//
+// ????????.adoc
+
+[id='con-creating-managing-connectors-{context}']
+= Creating and managing connectors
+The standard address space is the default address space in {ProductName}. It consists of an AMQP router network in combination with attachable storage units. Clients connect to a message router, which forwards messages to or from one or more message brokers. This address space type is appropriate when you have many connections and addresses. However, the standard address space has the following limitations:
+
+* No transaction support
+* No message ordering
+* No selectors on queues
+* No browsing on queues
+* No message groups
+
+Clients connect and send and receive messages in this address space using the AMQP or MQTT protocols. Note that MQTT does not support qos2 or retained messages.

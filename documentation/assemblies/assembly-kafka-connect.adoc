@@ -42,3 +42,7 @@ For more information on deploying a Kafka Connect S2I cluster on OpenShift, see 
 include::../modules/proc-deploying-kafka-connect.adoc[leveloffset=+1]
 
 include::assembly-using-kafka-connect-with-plugins.adoc[leveloffset=+1]
+
+include::../modules/con-creating-managing-connectors.adoc[leveloffset=+1]
+
+include::../modules/kafkaconnectors/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
