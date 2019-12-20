@@ -3,30 +3,59 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying a `KafkaConnector` resource to Kafka Connect
+= Deploying a `KafkaConnector resource to Kafka Connect
 
-Intro
+Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example file is configured to create a `FileStreamSourceConnector`.
+
+Note: `KafkaConnectors` must be xref:proc-enabling-kafkaconnectors-{context}[enabled for the Kafka Connect cluster].
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* A Kafka Connect deployment with `KafkaConnectors` enabled
+* A running Cluster Operator
 
 .Procedure
 
-. Step
+. View or edit the `examples/connector/source-connector.yaml` file:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: `KafkaConnector`
+metadata:
+  name: my-source-connector <1>
+  labels:   
+    strimzi.io/cluster: my-connect-cluster <2>
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
+  tasksMax: 2 <4>
+  Config: <5>
+    file: "/opt/kafka/LICENSE"
+    topic: my-topic
+    # ...
+----
++
+<1> The name of the `KafkaConnector` resource. You can enter any name.
+<2> The name of the Kafka Connect cluster in which to create the connector.
+<3> The name or alias of the connector class.
+<4> The maximum number of tasks for the connector.
+<5> Configuration settings for the connector. Available configuration options depend on the connector class.
 
-. Step
-
-. Step
-
-. Step
-
-. Step
-
-. Step
+. Create a `KafkaConnector` in your Kubernetes cluster:
++
+[source,shell,subs="+quotes"]
+----
+oc apply -f examples/connector/source-connector.yaml
+----
 
 .Additional resources
 
-* For more information about, see .
+* xref:proc-enabling-kafkaconnectors-{context}[] 
+
+* xref:kafka-connect-{context}[] 
+
+* xref:con-creating-managing-connectors-{context}[]
+
+* xref:type-KafkaConnect-reference[] 
+
+* xref:type-KafkaConnectS2I-reference[] 

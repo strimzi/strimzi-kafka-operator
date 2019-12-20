@@ -1,15 +1,40 @@
 // Module included in the following assemblies:
 //
-// ????????.adoc
+// assembly-kafka-connect.adoc
 
 [id='con-creating-managing-connectors-{context}']
+
 = Creating and managing connectors
-The standard address space is the default address space in {ProductName}. It consists of an AMQP router network in combination with attachable storage units. Clients connect to a message router, which forwards messages to or from one or more message brokers. This address space type is appropriate when you have many connections and addresses. However, the standard address space has the following limitations:
 
-* No transaction support
-* No message ordering
-* No selectors on queues
-* No browsing on queues
-* No message groups
+Once you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster. You can then configure, monitor, and manage a running connector instance. For example, you can:
 
-Clients connect and send and receive messages in this address space using the AMQP or MQTT protocols. Note that MQTT does not support qos2 or retained messages.
+* Check the status of a connector instance
+* Increase or decrease the number of tasks
+* Restart failed tasks
+* Pause a connector instance
+* Delete a connector instance
+
+{ProductName} provides two different APIs for creating and managing connectors:
+
+* `KafkaConnector` resources (referred to as `KafkaConnectors`)
+* Kafka Connect REST API
+
+For security reasons, we recommend that you use `KafkaConnectors` rather than the Kafka Connect REST API. `KafkaConnectors` use Kubernetes RBAC controls to secure the Kafka Connect REST API and lock down its resources.
+
+NOTE: You need to use the Kafka Connect REST API for restarting failed tasks and pausing and resuming connectors. Future {ProductName} releases might add this functionality to `KafkaConnectors`.
+
+.`KafkaConnector` resources
+
+`KafkaConnectors` allow you to create and manage source and sink connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required. Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create a corresponding connector instance. 
+
+You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates using `kubectl apply`. You remove a connector by deleting its corresponding `KafkaConnector`.
+
+To ensure compatibility with earlier versions of {ProductName}, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must configure the `KafkaConnect` custom resource to use `KafkaConnectors` for the creation and management of connectors. For instructions, see xref:proc-enabling-kafkaconnectors-{context}[].
+
+When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for them. Like other Kafka resources, the Cluster Operator updates the configurations of running connector instances to match the configurations defined in their `KafkaConnectors`.
+
+.Availability of the Kafka Connect REST API
+
+The Kafka Connect REST API is available on port 8083 as the `<connect-cluster-name>-connect-api` service.
+
+If `KafkaConnectors` are enabled, changes made using the Kafka Connect REST API are reverted by the Cluster Operator. 

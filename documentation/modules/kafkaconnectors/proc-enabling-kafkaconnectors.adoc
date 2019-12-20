@@ -5,28 +5,45 @@
 [id='proc-enabling-kafkaconnectors-{context}']
 = Enabling `KafkaConnector` resources
 
-Intro
+To enable `KafkaConnectors` for a Kafka Connect cluster, add the `strimzi.io/use-connector-resources` annotation to the `KafkaConnect` or `KafkaConnectS2I` custom resource. When enabled, connectors in the Kafka Connect cluster are created and managed using `KafkaConnectors`.
 
 .Prerequisites
 
-* A running Kafka cluster.
-*
-*
+* A running Cluster Operator
 
 .Procedure
 
-. Step
+. Edit a `KafkaConnect` or `KafkaConnectS2I` custom resource.
 
-. Step
+. Add the `strimzi.io/use-connector-resources` annotation to the custom resource. For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaConnect
+Metadata:
+  name: my-connect-cluster
+  Annotations: 
+    strimzi.io/use-connector-resources: "true"
+Spec:
+  # ...
+----
 
-. Step
-
-. Step
-
-. Step
-
-. Step
+. Create or update the resource using `kubectl apply`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f kafka-connect.yaml
+----
 
 .Additional resources
 
-* For more information about, see .
+* xref:con-creating-managing-connectors-{context}[]
+
+* xref:proc-deploying-kafkaconnector-{context}[] 
+
+* xref:kafka-connect-{context}[] 
+
+* xref:type-KafkaConnect-reference[] 
+
+* xref:type-KafkaConnectS2I-reference[] 
