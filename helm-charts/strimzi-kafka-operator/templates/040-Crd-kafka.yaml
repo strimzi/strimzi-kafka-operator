@@ -130,6 +130,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -154,10 +158,6 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
-                            notJwt:
-                              type: boolean
-                            skipTypeCheck:
-                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -238,6 +238,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -262,10 +266,6 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
-                            notJwt:
-                              type: boolean
-                            skipTypeCheck:
-                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -362,6 +362,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -386,10 +390,6 @@ spec:
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
-                            notJwt:
-                              type: boolean
-                            skipTypeCheck:
-                              type: boolean
                             tlsTrustedCertificates:
                               type: array
                               items:

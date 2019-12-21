@@ -851,7 +851,7 @@ public class KafkaBridgeClusterTest {
                                 .withSecretName("my-secret-secret")
                                 .withKey("my-secret-key")
                                 .endClientSecret()
-                                .withNotJwt(true)
+                                .withAccessTokenIsJwt(false)
                                 .withMaxTokenExpirySeconds(600)
                                 .build())
                 .endSpec()

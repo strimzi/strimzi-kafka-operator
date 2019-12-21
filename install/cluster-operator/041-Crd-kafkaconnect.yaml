@@ -682,6 +682,8 @@ spec:
                   required:
                   - key
                   - secretName
+                accessTokenIsJwt:
+                  type: boolean
                 certificateAndKey:
                   type: object
                   properties:
@@ -711,8 +713,6 @@ spec:
                   type: boolean
                 maxTokenExpirySeconds:
                   type: integer
-                notJwt:
-                  type: boolean
                 passwordSecret:
                   type: object
                   properties:

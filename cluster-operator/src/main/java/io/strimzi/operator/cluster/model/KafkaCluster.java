@@ -1674,24 +1674,24 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException(listener + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
         }
 
-        if (oAuth.isNotJwt()) {
+        if (!oAuth.isAccessTokenIsJwt()) {
             if (oAuth.getJwksEndpointUri() != null) {
-                log.error("{}: notJwt can not be used together with jwksEndpointUri", listener);
-                throw new InvalidResourceException(listener + ": notJwt can not be used together with jwksEndpointUri");
+                log.error("{}: accessTokenIsJwt=false can not be used together with jwksEndpointUri", listener);
+                throw new InvalidResourceException(listener + ": accessTokenIsJwt=false can not be used together with jwksEndpointUri");
             }
             if (oAuth.getUserNameClaim() != null) {
-                log.error("{}: userNameClaim can not be set when notJwt is true", listener);
-                throw new InvalidResourceException(listener + ": userNameClaim can not be set when notJwt is true");
+                log.error("{}: userNameClaim can not be set when accessTokenIsJwt is false", listener);
+                throw new InvalidResourceException(listener + ": userNameClaim can not be set when accessTokenIsJwt is false");
             }
-            if (oAuth.isSkipTypeCheck()) {
-                log.error("{}: skipTypeCheck can not be set when notJwt is true", listener);
-                throw new InvalidResourceException(listener + ": skipTypeCheck can not be set when notJwt is true");
+            if (!oAuth.isCheckAccessTokenType()) {
+                log.error("{}: checkAccessTokenType can not be set to false when accessTokenIsJwt is false", listener);
+                throw new InvalidResourceException(listener + ": checkAccessTokenType can not be set to false when accessTokenIsJwt is false");
             }
         }
 
-        if (oAuth.isSkipTypeCheck() && oAuth.getIntrospectionEndpointUri() != null) {
-            log.error("{}: skipTypeCheck can not be used together with introspectionEndpointUri", listener);
-            throw new InvalidResourceException(listener + ": skipTypeCheck can not be used together with introspectionEndpointUri");
+        if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
+            log.error("{}: checkAccessTokenType=false can not be used together with introspectionEndpointUri", listener);
+            throw new InvalidResourceException(listener + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
         }
     }
 
@@ -1712,8 +1712,8 @@ public class KafkaCluster extends AbstractModel {
         if (oauth.getJwksExpirySeconds() > 0) options.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, oauth.getJwksExpirySeconds()));
         if (oauth.getIntrospectionEndpointUri() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri()));
         if (oauth.getUserNameClaim() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim()));
-        if (oauth.isNotJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
-        if (oauth.isSkipTypeCheck()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
+        if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
+        if (!oauth.isCheckAccessTokenType()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
         if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
 
         return String.join(" ", options);
