@@ -38,7 +38,6 @@ import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.core.instrument.binder.kafka.KafkaConsumerMetrics;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -191,7 +190,6 @@ public class ClusterOperator extends AbstractVerticle {
         new ProcessorMetrics().bindTo(registry);
         new JvmThreadMetrics().bindTo(registry);
         new JvmGcMetrics().bindTo(registry);
-        new KafkaConsumerMetrics().bindTo(registry);
     }
 
     public static String secretName(String cluster) {
