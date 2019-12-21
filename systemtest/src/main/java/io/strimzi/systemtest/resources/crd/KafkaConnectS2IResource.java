@@ -38,6 +38,11 @@ public class KafkaConnectS2IResource {
         return deployKafkaConnectS2I(defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build());
     }
 
+    public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {
+        KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
+        return defaultKafkaConnectS2I(kafkaConnectS2I, name, kafkaClusterName, kafkaConnectReplicas);
+    }
+
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I, String name, String kafkaClusterName, int kafkaConnectReplicas) {
         return new KafkaConnectS2IBuilder(kafkaConnectS2I)
             .withNewMetadata()

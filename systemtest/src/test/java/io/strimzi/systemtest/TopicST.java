@@ -45,7 +45,8 @@ public class TopicST extends MessagingBaseST {
         int topicPartitions = 5;
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-        KafkaTopic kafkaTopic =  KafkaTopicResource.topic(CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor).done();
+        KafkaTopic kafkaTopic =
+                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, "topic-without-labels", topicPartitions, topicReplicationFactor, 1).build());
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName));
