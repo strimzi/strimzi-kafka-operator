@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
@@ -239,7 +240,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        reconcileState.reconcileCas(this::dateSupplier)
+        reconcileState.initialStatus()
+                .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
@@ -451,6 +453,47 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
 
             return updateStatusPromise.future();
+        }
+
+        /**
+         * Sets the initial status when the Kafka resource is created and the cluster starts deploying.
+         *
+         * @return
+         */
+        Future<ReconciliationState> initialStatus() {
+            Promise<ReconciliationState> initialStatusPromise = Promise.promise();
+
+            crdOperator.getAsync(namespace, name).setHandler(getRes -> {
+                if (getRes.succeeded())    {
+                    Kafka kafka = getRes.result();
+
+                    if (kafka != null && kafka.getStatus() == null) {
+                        log.debug("{}: Setting the initial status for a new resource", reconciliation);
+
+                        Condition deployingCondition = new ConditionBuilder()
+                                .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(dateSupplier()))
+                                .withType("NotReady")
+                                .withStatus("True")
+                                .withReason("Deploying")
+                                .withMessage("Kafka cluster is being deployed")
+                                .build();
+
+                        KafkaStatus initialStatus = new KafkaStatusBuilder()
+                                .addToConditions(deployingCondition)
+                                .build();
+
+                        updateStatus(initialStatus).map(this).setHandler(initialStatusPromise);
+                    } else {
+                        log.debug("{}: Status is already set. No need to set initial status", reconciliation);
+                        initialStatusPromise.complete(this);
+                    }
+                } else {
+                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
+                    initialStatusPromise.fail(getRes.cause());
+                }
+            });
+
+            return initialStatusPromise.future();
         }
 
         /**
