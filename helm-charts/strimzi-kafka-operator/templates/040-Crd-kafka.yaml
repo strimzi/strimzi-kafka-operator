@@ -130,6 +130,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -234,6 +238,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:
@@ -354,6 +362,10 @@ spec:
                         authentication:
                           type: object
                           properties:
+                            accessTokenIsJwt:
+                              type: boolean
+                            checkAccessTokenType:
+                              type: boolean
                             clientId:
                               type: string
                             clientSecret:

@@ -3500,6 +3500,140 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testGenerateDeploymentWithOAuthWithJwksWithSkipTypeCheck() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewPlain()
+                .withAuth(
+                        new KafkaListenerAuthenticationOAuthBuilder()
+                                .withValidIssuerUri("http://valid-issuer")
+                                .withJwksEndpointUri("http://jwks-endpoint")
+                                .withJwksExpirySeconds(160)
+                                .withJwksRefreshSeconds(50)
+                                .withUserNameClaim("preferred_username")
+                                .withCheckAccessTokenType(false)
+                                .build())
+                .endPlain()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint",
+                        ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50,
+                        ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 160,
+                        ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username",
+                        ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, "true")));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithIntrospectionWithNoTypeCheck() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                    image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                    .editSpec()
+                    .editKafka()
+                    .withNewListeners()
+                    .withNewPlain()
+                    .withAuth(
+                            new KafkaListenerAuthenticationOAuthBuilder()
+                                    .withValidIssuerUri("http://valid-issuer")
+                                    .withClientId("my-kafka-id")
+                                    .withNewClientSecret()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                    .endClientSecret()
+                                    .withIntrospectionEndpointUri("http://introspection-endpoint")
+                                    .withCheckAccessTokenType(false)
+                                    .build())
+                    .endPlain()
+                    .endListeners()
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithIntrospectionWithNotJwt() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewPlain()
+                .withAuth(
+                        new KafkaListenerAuthenticationOAuthBuilder()
+                                .withValidIssuerUri("http://valid-issuer")
+                                .withClientId("my-kafka-id")
+                                .withNewClientSecret()
+                                .withSecretName("my-secret-secret")
+                                .withKey("my-secret-key")
+                                .endClientSecret()
+                                .withIntrospectionEndpointUri("http://introspection-endpoint")
+                                .withAccessTokenIsJwt(false)
+                                .build())
+                .endPlain()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_KAFKA_CLIENT_AUTHENTICATION.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaCluster.ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"",
+                        ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id",
+                        ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer",
+                        ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint",
+                        ServerConfig.OAUTH_TOKENS_NOT_JWT, "true")));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithOAuthWithJwksWithNotJwt() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                    image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                    .editSpec()
+                    .editKafka()
+                    .withNewListeners()
+                    .withNewPlain()
+                    .withAuth(
+                            new KafkaListenerAuthenticationOAuthBuilder()
+                                    .withValidIssuerUri("http://valid-issuer")
+                                    .withJwksEndpointUri("http://jwks-endpoint")
+                                    .withJwksExpirySeconds(160)
+                                    .withJwksRefreshSeconds(50)
+                                    .withUserNameClaim("preferred_username")
+                                    .withAccessTokenIsJwt(false)
+                                    .build())
+                    .endPlain()
+                    .endListeners()
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientSecretAndTls() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
