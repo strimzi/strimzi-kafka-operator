@@ -159,7 +159,7 @@ public class KafkaClusterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
     }
 
     @Test
@@ -181,7 +181,11 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.METRICS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
         assertThat(headful.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
-        assertThat(headful.getMetadata().getAnnotations(), is(kc.getPrometheusAnnotations()));
+
+        assertThat(headful.getMetadata().getAnnotations(), is(AbstractModel.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation(), kc.getPrometheusAnnotations())));
+
+        assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("kafka"));
 
         checkOwnerReference(kc.createOwnerReference(), headful);
     }
@@ -215,6 +219,9 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
+        assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("kafka"));
+
         checkOwnerReference(kc.createOwnerReference(), headful);
     }
 
@@ -246,6 +253,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.JMX_PORT)));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
 
+        assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
+
         checkOwnerReference(kc.createOwnerReference(), headless);
     }
 
@@ -271,6 +280,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
+
+        assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
     }
 
     @Test

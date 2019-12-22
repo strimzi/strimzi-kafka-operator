@@ -79,13 +79,14 @@ public class LabelsTest {
     }
 
     @Test
-    public void testStrimziLabels()   {
+    public void testStrimziSelectorLabels()   {
         Map sourceMap = new HashMap<String, String>(5);
         sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
         sourceMap.put("key1", "value1");
         sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         sourceMap.put("key2", "value2");
         sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
+        sourceMap.put(Labels.STRIMZI_DISCOVERY_LABEL, "kafka");
         Labels labels = Labels.fromMap(sourceMap);
 
         Map expected = new HashMap<String, String>(2);
@@ -93,7 +94,7 @@ public class LabelsTest {
         expected.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         expected.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
 
-        assertThat(labels.strimziLabels().toMap(), is(expected));
+        assertThat(labels.strimziSelectorLabels().toMap(), is(expected));
     }
 
     @Test

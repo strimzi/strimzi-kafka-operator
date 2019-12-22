@@ -102,7 +102,7 @@ public class KafkaExporterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
     }
 
     private Map<String, String> expectedLabels()    {

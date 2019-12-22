@@ -89,6 +89,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -726,7 +728,46 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
+        return createDiscoverableService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(), templateServiceAnnotations), "kafka");
+    }
+
+    /**
+     * Generates a JSON String with the discovery annotation for the internal bootstrap service
+     *
+     * @return  JSON with discovery annotation
+     */
+    /*test*/ Map<String, String> getInternalDiscoveryAnnotation() {
+        JsonArray anno = new JsonArray();
+
+        if (listeners.getPlain() != null)   {
+            JsonObject discovery = new JsonObject();
+            discovery.put("port", 9092);
+            discovery.put("tls", false);
+
+            if (listeners.getPlain().getAuth() != null) {
+                discovery.put("auth", listeners.getPlain().getAuth().getType());
+            } else {
+                discovery.put("auth", "none");
+            }
+
+            anno.add(discovery);
+        }
+
+        if (listeners.getTls() != null)   {
+            JsonObject discovery = new JsonObject();
+            discovery.put("port", 9093);
+            discovery.put("tls", true);
+
+            if (listeners.getTls().getAuth() != null) {
+                discovery.put("auth", listeners.getTls().getAuth().getType());
+            } else {
+                discovery.put("auth", "none");
+            }
+
+            anno.add(discovery);
+        }
+
+        return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
     /**
