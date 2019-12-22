@@ -98,7 +98,7 @@ public class KafkaBridgeClusterTest {
 
     private Map<String, String> expectedServiceLabels(String name)    {
         Map<String, String> serviceLabels = expectedLabels(name);
-        serviceLabels.put(Labels.STRIMZI_DISCOVERY_LABEL, "http");
+        serviceLabels.put(Labels.STRIMZI_DISCOVERY_LABEL, "true");
 
         return serviceLabels;
     }

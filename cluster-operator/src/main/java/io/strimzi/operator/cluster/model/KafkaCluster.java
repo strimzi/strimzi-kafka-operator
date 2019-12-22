@@ -728,7 +728,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createDiscoverableService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(), templateServiceAnnotations), "kafka");
+        return createDiscoverableService("ClusterIP", getServicePorts(), mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     /**
@@ -743,6 +743,7 @@ public class KafkaCluster extends AbstractModel {
             JsonObject discovery = new JsonObject();
             discovery.put("port", 9092);
             discovery.put("tls", false);
+            discovery.put("protocol", "kafka");
 
             if (listeners.getPlain().getAuth() != null) {
                 discovery.put("auth", listeners.getPlain().getAuth().getType());
@@ -757,6 +758,7 @@ public class KafkaCluster extends AbstractModel {
             JsonObject discovery = new JsonObject();
             discovery.put("port", 9093);
             discovery.put("tls", true);
+            discovery.put("protocol", "kafka");
 
             if (listeners.getTls().getAuth() != null) {
                 discovery.put("auth", listeners.getTls().getAuth().getType());

@@ -263,12 +263,12 @@ public abstract class AbstractModel {
         return labels.withName(name).withUserLabels(userLabels).toMap();
     }
 
-    protected Map<String, String> getLabelsWithNameAndDiscovery(String name, String discoveryProtocol) {
-        return labels.withName(name).withDiscovery(discoveryProtocol).toMap();
+    protected Map<String, String> getLabelsWithNameAndDiscovery(String name) {
+        return labels.withName(name).withDiscovery().toMap();
     }
 
-    protected Map<String, String> getLabelsWithNameAndDiscovery(String name, Map<String, String> userLabels, String discoveryProtocol) {
-        return labels.withName(name).withDiscovery(discoveryProtocol).withUserLabels(userLabels).toMap();
+    protected Map<String, String> getLabelsWithNameAndDiscovery(String name, Map<String, String> userLabels) {
+        return labels.withName(name).withDiscovery().withUserLabels(userLabels).toMap();
     }
 
     /**
@@ -729,16 +729,16 @@ public abstract class AbstractModel {
         return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
     }
 
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations, String discoveryProtocol) {
-        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels, discoveryProtocol), getSelectorLabels(), annotations);
+    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithNameAndDiscovery(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
         return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
     }
 
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations, String discoveryProtocol) {
-        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithNameAndDiscovery(serviceName, discoveryProtocol), templateServiceLabels, labels), getSelectorLabels(), annotations);
+    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithNameAndDiscovery(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {

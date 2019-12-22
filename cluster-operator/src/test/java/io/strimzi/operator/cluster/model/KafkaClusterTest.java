@@ -185,7 +185,7 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getAnnotations(), is(AbstractModel.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation(), kc.getPrometheusAnnotations())));
 
         assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
-        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("kafka"));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
         checkOwnerReference(kc.createOwnerReference(), headful);
     }
@@ -220,7 +220,7 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
         assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
-        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("kafka"));
+        assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
         checkOwnerReference(kc.createOwnerReference(), headful);
     }

@@ -86,7 +86,7 @@ public class LabelsTest {
         sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         sourceMap.put("key2", "value2");
         sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
-        sourceMap.put(Labels.STRIMZI_DISCOVERY_LABEL, "kafka");
+        sourceMap.put(Labels.STRIMZI_DISCOVERY_LABEL, "true");
         Labels labels = Labels.fromMap(sourceMap);
 
         Map expected = new HashMap<String, String>(2);

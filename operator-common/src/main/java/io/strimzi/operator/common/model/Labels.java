@@ -279,12 +279,11 @@ public class Labels {
     }
 
     /**
-     * The same labels as this instance, but with the given {@code protocol} for the {@code strimzi.io/discovery} key.
-     * @param protocol The name of the protocol
+     * The same labels as this instance, but with "true" for the {@code strimzi.io/discovery} key.
      * @return A new instance with the given name added.
      */
-    public Labels withDiscovery(String protocol) {
-        return with(STRIMZI_DISCOVERY_LABEL, protocol);
+    public Labels withDiscovery() {
+        return with(STRIMZI_DISCOVERY_LABEL, "true");
     }
 
     /**

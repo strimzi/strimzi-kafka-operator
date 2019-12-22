@@ -221,7 +221,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createDiscoverableService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)), "http");
+        return createDiscoverableService("ClusterIP", ports, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS), mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
     /**
@@ -234,6 +234,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         discovery.put("port", port);
         discovery.put("tls", false);
         discovery.put("auth", "none");
+        discovery.put("protocol", "http");
 
         JsonArray anno = new JsonArray();
         anno.add(discovery);
