@@ -17,11 +17,12 @@ Depending on the deployment, the Cluster Operator can watch Kafka resources from
 
 NOTE: {ProductName} provides example YAML files to make the deployment process easier.
 
-The Cluster Operator watches the following resources:
+The Cluster Operator watches for changes to the following resources:
 
 * `Kafka` for the Kafka cluster.
 * `KafkaConnect` for the Kafka Connect cluster.
 * `KafkaConnectS2I` for the Kafka Connect cluster with Source2Image support.
+* `KafkaConnector` for creating and managing connectors in a Kafka Connect cluster.
 * `KafkaMirrorMaker` for the Kafka Mirror Maker instance.
 * `KafkaBridge` for the Kafka Bridge instance
 
