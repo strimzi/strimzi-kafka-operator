@@ -38,12 +38,6 @@ kubectl apply -f kafka-connect.yaml
 
 .Additional resources
 
-* xref:con-creating-managing-connectors-{context}[]
+* xref:con-creating-managing-connectors-str[]
 
-* xref:proc-deploying-kafkaconnector-{context}[] 
-
-* xref:kafka-connect-{context}[] 
-
-* xref:type-KafkaConnect-reference[] 
-
-* xref:type-KafkaConnectS2I-reference[] 
+* xref:proc-deploying-kafkaconnector-str[] 

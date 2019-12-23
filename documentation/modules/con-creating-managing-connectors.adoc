@@ -29,7 +29,7 @@ NOTE: You need to use the Kafka Connect REST API for restarting failed tasks and
 
 You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates using `kubectl apply`. You remove a connector by deleting its corresponding `KafkaConnector`.
 
-To ensure compatibility with earlier versions of {ProductName}, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must configure the `KafkaConnect` custom resource to use `KafkaConnectors` for the creation and management of connectors. For instructions, see xref:proc-enabling-kafkaconnectors-{context}[].
+To ensure compatibility with earlier versions of {ProductName}, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must configure the `KafkaConnect` custom resource to use `KafkaConnectors` for the creation and management of connectors. For instructions, see xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[].
 
 When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for them. Like other Kafka resources, the Cluster Operator updates the configurations of running connector instances to match the configurations defined in their `KafkaConnectors`.
 

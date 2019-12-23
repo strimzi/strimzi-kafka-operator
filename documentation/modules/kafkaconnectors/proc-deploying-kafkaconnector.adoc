@@ -3,13 +3,13 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying a `KafkaConnector resource to Kafka Connect
+= Deploying a `KafkaConnector` resource to Kafka Connect
 
 Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML file is configured to create a `FileStreamSourceConnector`.
 
 .Prerequisites
 
-* A Kafka Connect deployment in which xref:proc-enabling-kafkaconnectors-{context}[`KafkaConnectors` are enabled]
+* A Kafka Connect deployment in which xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled]
 * A running Cluster Operator
 
 .Procedure
@@ -48,11 +48,9 @@ oc apply -f examples/connector/source-connector.yaml
 
 .Additional resources
 
-* xref:proc-enabling-kafkaconnectors-{context}[] 
+* xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[] 
 
 * xref:kafka-connect-{context}[] 
-
-* xref:con-creating-managing-connectors-{context}[]
 
 * xref:type-KafkaConnect-reference[] 
 
