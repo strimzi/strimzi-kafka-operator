@@ -87,9 +87,9 @@ class ConnectST extends MessagingBaseST {
         String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
-        assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder("kafka", "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
-                hasItem(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))));
-        assertThat(StUtils.getPropertiesFromJson("kafka", kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
+        assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0,"KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
+                hasItem(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))));
+        assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
         testDockerImagesForKafkaConnect();
 
         verifyLabelsOnPods(CLUSTER_NAME, "connect", null, "KafkaConnect");
