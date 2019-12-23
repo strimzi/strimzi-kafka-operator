@@ -739,34 +739,36 @@ public class KafkaCluster extends AbstractModel {
     /*test*/ Map<String, String> getInternalDiscoveryAnnotation() {
         JsonArray anno = new JsonArray();
 
-        if (listeners.getPlain() != null)   {
-            JsonObject discovery = new JsonObject();
-            discovery.put("port", 9092);
-            discovery.put("tls", false);
-            discovery.put("protocol", "kafka");
+        if (listeners != null) {
+            if (listeners.getPlain() != null) {
+                JsonObject discovery = new JsonObject();
+                discovery.put("port", 9092);
+                discovery.put("tls", false);
+                discovery.put("protocol", "kafka");
 
-            if (listeners.getPlain().getAuth() != null) {
-                discovery.put("auth", listeners.getPlain().getAuth().getType());
-            } else {
-                discovery.put("auth", "none");
+                if (listeners.getPlain().getAuth() != null) {
+                    discovery.put("auth", listeners.getPlain().getAuth().getType());
+                } else {
+                    discovery.put("auth", "none");
+                }
+
+                anno.add(discovery);
             }
 
-            anno.add(discovery);
-        }
+            if (listeners.getTls() != null) {
+                JsonObject discovery = new JsonObject();
+                discovery.put("port", 9093);
+                discovery.put("tls", true);
+                discovery.put("protocol", "kafka");
 
-        if (listeners.getTls() != null)   {
-            JsonObject discovery = new JsonObject();
-            discovery.put("port", 9093);
-            discovery.put("tls", true);
-            discovery.put("protocol", "kafka");
+                if (listeners.getTls().getAuth() != null) {
+                    discovery.put("auth", listeners.getTls().getAuth().getType());
+                } else {
+                    discovery.put("auth", "none");
+                }
 
-            if (listeners.getTls().getAuth() != null) {
-                discovery.put("auth", listeners.getTls().getAuth().getType());
-            } else {
-                discovery.put("auth", "none");
+                anno.add(discovery);
             }
-
-            anno.add(discovery);
         }
 
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
