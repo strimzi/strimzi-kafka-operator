@@ -5,18 +5,16 @@
 [id='proc-deploying-kafkaconnector-{context}']
 = Deploying a `KafkaConnector resource to Kafka Connect
 
-Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example file is configured to create a `FileStreamSourceConnector`.
-
-Note: `KafkaConnectors` must be xref:proc-enabling-kafkaconnectors-{context}[enabled for the Kafka Connect cluster].
+Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML file is configured to create a `FileStreamSourceConnector`.
 
 .Prerequisites
 
-* A Kafka Connect deployment with `KafkaConnectors` enabled
+* A Kafka Connect deployment in which xref:proc-enabling-kafkaconnectors-{context}[`KafkaConnectors` are enabled]
 * A running Cluster Operator
 
 .Procedure
 
-. View or edit the `examples/connector/source-connector.yaml` file:
+. Edit the `examples/connector/source-connector.yaml` file:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -35,13 +33,13 @@ spec:
     # ...
 ----
 +
-<1> The name of the `KafkaConnector` resource. You can enter any name.
-<2> The name of the Kafka Connect cluster in which to create the connector.
+<1> Enter a name for the `KafkaConnector` resource. You can choose any name.
+<2> Enter the name of the Kafka Connect cluster in which to create the connector.
 <3> The name or alias of the connector class.
 <4> The maximum number of tasks for the connector.
 <5> Configuration settings for the connector. Available configuration options depend on the connector class.
 
-. Create a `KafkaConnector` in your Kubernetes cluster:
+. Create the `KafkaConnector` in your Kubernetes cluster:
 +
 [source,shell,subs="+quotes"]
 ----
