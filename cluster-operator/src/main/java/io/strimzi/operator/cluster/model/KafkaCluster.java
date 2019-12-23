@@ -157,11 +157,11 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka";
 
-    private static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
-    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-    private static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
-    private static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
+    protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
+    protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
+    protected static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
+    protected static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
 
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";

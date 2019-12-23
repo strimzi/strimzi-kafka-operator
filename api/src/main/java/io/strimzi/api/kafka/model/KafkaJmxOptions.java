@@ -24,6 +24,8 @@ import java.util.Map;
 public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
     private KafkaJmxAuthentication authentication;
+    private JmxTransSpec jmxTransSpec;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication configuration for connecting to the Kafka JMX port")
@@ -46,5 +48,15 @@ public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable 
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
-}
 
+    @Description("Configuration for JMX Trans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. " +
+            "More information can be found here https://github.com/jmxtrans/jmxtrans")
+    @JsonProperty("jmxTrans")
+    public JmxTransSpec getJmxTransSpec() {
+        return jmxTransSpec;
+    }
+
+    public void setJmxTransSpec(JmxTransSpec jmxTransSpec) {
+        this.jmxTransSpec = jmxTransSpec;
+    }
+}

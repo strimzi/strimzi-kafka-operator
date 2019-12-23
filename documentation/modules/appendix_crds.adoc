@@ -786,6 +786,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |Property               |Description
 |authentication  1.2+<.<|Authentication configuration for connecting to the Kafka JMX port. The type depends on the value of the `authentication.type` property within the given object, which must be one of [password].
 |xref:type-KafkaJmxAuthenticationPassword-{context}[`KafkaJmxAuthenticationPassword`]
+|jmxTrans        1.2+<.<|Configuration for JMX Trans. When the key is present a JmxTransSpec deployment is created for gathering JMX metrics from each Kafka broker. More information can be found here https://github.com/jmxtrans/jmxtrans.
+|xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |====
 
 [id='type-KafkaJmxAuthenticationPassword-{context}']
@@ -803,10 +805,67 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 |string
 |====
 
+[id='type-JmxTransSpec-{context}']
+### `JmxTransSpec` schema reference
+
+Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
+
+
+[options="header"]
+|====
+|Property                  |Description
+|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on.
+|xref:type-JmxTransOutputDefinitionTemplate-{context}[`JmxTransOutputDefinitionTemplate`] array
+|queries            1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker.
+|xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
+|resources          1.2+<.<|CPU and memory resources to reserve.
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|====
+
+[id='type-JmxTransOutputDefinitionTemplate-{context}']
+### `JmxTransOutputDefinitionTemplate` schema reference
+
+Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|outputType  1.2+<.<|Template for setting the format of the data that will be pushed.
+|string
+|host        1.2+<.<|The ip of the remote host that the data will be pushed to.
+|string
+|port        1.2+<.<|The port of the remote host that the data will be pushed tp.
+|integer
+|flushDelay  1.2+<.<|How many seconds the JmxTransSpec will wait before push a new set of data out.
+|integer
+|typeNames   1.2+<.<|Template for being able to filter out exactly what data you want when a wildcard query is sent. More information can be found here: https://github.com/jmxtrans/jmxtrans/wiki/Queries.
+|string array
+|name        1.2+<.<|Template for setting the name of the output definition which will be used to know where to send the data of the queries to.
+|string
+|====
+
+[id='type-JmxTransQueryTemplate-{context}']
+### `JmxTransQueryTemplate` schema reference
+
+Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
+
+
+[options="header"]
+|====
+|Property            |Description
+|targetMBean  1.2+<.<|If using a wildcard, the MBean(s) hat the data will be gathered from.
+|string
+|attributes   1.2+<.<|attributes determine which attributes of the targeted MBean will be read.
+|string array
+|outputs      1.2+<.<|outputs is a list of names of the Output Definitions which configures where the data will be pushed to and what data format it will be in.
+|string array
+|====
+
 [id='type-ResourceRequirements-{context}']
 ### `ResourceRequirements` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-JmxTransSpec-{context}[`JmxTransSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]

@@ -9,6 +9,7 @@ base_images="base"
 java_images="operator"
 kafka_image="kafka"
 kafka_images="kafka test-client"
+jmxtrans_image="jmxtrans"
 
 function dependency_check { 
 
@@ -184,6 +185,9 @@ function build {
         done
     done
 
+    echo "building jmxtrans image"
+    # jmx image
+    make -C "$jmxtrans_image" "$targets"
 }
 
 dependency_check
