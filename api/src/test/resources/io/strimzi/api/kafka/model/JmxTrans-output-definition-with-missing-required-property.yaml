@@ -1,0 +1,28 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: strimzi-jmxtrans
+spec:
+  kafka:
+    version: 2.3.1
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 500Gi
+    listeners:
+      plain: {}
+      tls: {}
+    jmxOptions:
+      jmxTrans:
+        outputDefinitions:
+          - host: "wont matter about the host"
+            port: 123
+            flushDelay: 321
+        queries:
+          - targetMBean: "MBean"
+            attributes:  ["attribute1"]
+            outputs: ["outputs"]
+  zookeeper:
+    replicas: 1
+    storage:
+      type: ephemeral

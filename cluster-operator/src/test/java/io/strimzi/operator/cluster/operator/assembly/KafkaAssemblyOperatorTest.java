@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
@@ -37,6 +38,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
+import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -47,6 +50,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.JmxTrans;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -352,6 +356,35 @@ public class KafkaAssemblyOperatorTest {
                 )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafka = getKafkaAssembly("foo");
+        kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
+            .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
+            .withJmxTransSpec(new JmxTransSpecBuilder()
+                    .withQueries(new JmxTransQueryTemplateBuilder()
+                            .withNewTargetMBean("mbean")
+                            .withAttributes("attribute")
+                            .withOutputs("output")
+                            .build())
+                    .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                            .withOutputType("host")
+                            .withName("output")
+                            .build())
+                    .build())
+            .build());
+        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
+                .withNewMetadata()
+                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withNamespace("test")
+                .endMetadata()
+                .withData(Collections.singletonMap("foo", "bar"))
+                .build()
+        ));
+    }
+
     private Map<String, PersistentVolumeClaim> createPvcs(String namespace, Storage storage, int replicas,
                                                    BiFunction<Integer, Integer, String> pvcNameFunction) {
 
@@ -549,6 +582,13 @@ public class KafkaAssemblyOperatorTest {
 
         ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet());
         when(mockCmOps.getAsync(clusterCmNamespace, KafkaCluster.metricAndLogConfigsName(clusterCmName))).thenReturn(Future.succeededFuture(metricsCm));
+
+        when(mockCmOps.getAsync(anyString(), eq(JmxTrans.jmxTransConfigName(clusterCmName)))).thenReturn(
+            Future.succeededFuture(new ConfigMapBuilder()
+                    .withNewMetadata().withResourceVersion("123").endMetadata()
+                    .build())
+        );
+
 
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);

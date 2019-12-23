@@ -19,25 +19,31 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
+import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
+import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.JmxTrans;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -657,6 +663,161 @@ public class KafkaAssemblyOperatorMockTest {
             // TODO assert no rolling update
             updateAsync.flag();
             context.completeNow();
+        });
+    }
+
+    /** Test Jmxtrans on scale Up of kafka brokers */
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testScaleUpKafkaBrokersOnJmx(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+        setFields(params);
+        KafkaAssemblyOperator kco = createCluster(params, context);
+        Kafka original = new KafkaBuilder(cluster).editSpec().editKafka()
+                .withJmxOptions(new KafkaJmxOptionsBuilder()
+                        .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
+                        .withJmxTransSpec(new JmxTransSpecBuilder()
+                                .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                                        .withOutputType("output")
+                                        .withName("name")
+                                        .build())
+                                .withQueries(new JmxTransQueryTemplateBuilder()
+                                        .withOutputs("name")
+                                        .withAttributes("attribute")
+                                        .withNewTargetMBean("mbean")
+                                        .build())
+                                .build())
+                        .build())
+                .endKafka().endSpec()
+                .build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(original);
+        Checkpoint updateAsync = context.checkpoint();
+
+        LOGGER.info("Deploying JmxTrans into cluster");
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
+                    is(notNullValue())));
+
+            context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.jmxSecretName(CLUSTER_NAME)), is(notNullValue())));
+            LOGGER.info("JmxTrans config map and jmx secreted have been created");
+
+            int originalJmxConfigMapLength = mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length();
+            int newScale = kafkaReplicas + 1;
+
+            Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
+                    .withReplicas(newScale)
+                    .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
+                            .withJmxTransSpec(new JmxTransSpecBuilder()
+                                    .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                                            .withOutputType("output")
+                                            .withName("name")
+                                            .build())
+                                    .withQueries(new JmxTransQueryTemplateBuilder()
+                                            .withOutputs("name")
+                                            .withAttributes("attribute")
+                                            .withNewTargetMBean("mbean")
+                                            .build())
+                                    .build())
+                            .build())
+                    .endKafka().endSpec()
+                    .build();
+            kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+
+            LOGGER.info("Scaling up to to {} Kafka pods", newScale);
+            kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar2 -> {
+                if (ar2.failed()) ar2.cause().printStackTrace();
+                context.verify(() -> assertThat(ar.succeeded(), is(true)));
+                context.verify(() -> assertThat(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas(), is(newScale)));
+                context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() > originalJmxConfigMapLength,
+                        is(true)));
+                LOGGER.info("JmxTrans config map has increased in response to change in brokers");
+
+                context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.jmxSecretName(CLUSTER_NAME)), is(notNullValue())));
+
+                // TODO assert no rolling update
+                updateAsync.flag();
+                context.completeNow();
+            });
+        });
+
+    }
+
+    /** Test JmxTrans on scale down of kafka brokers */
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testScaleDownKafkaBrokersOnJmx(Params params, VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
+        setFields(params);
+        KafkaAssemblyOperator kco = createCluster(params, context);
+        int scale = kafkaReplicas + 1;
+        Kafka original = new KafkaBuilder(cluster).editSpec().editKafka()
+                .withReplicas(scale)
+                .withJmxOptions(new KafkaJmxOptionsBuilder()
+                        .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
+                        .withJmxTransSpec(new JmxTransSpecBuilder()
+                                .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                                        .withOutputType("output")
+                                        .withName("name")
+                                        .build())
+                                .withQueries(new JmxTransQueryTemplateBuilder()
+                                        .withOutputs("name")
+                                        .withAttributes("attribute")
+                                        .withNewTargetMBean("mbean")
+                                        .build())
+                                .build())
+                        .build())
+                .endKafka().endSpec()
+                .build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(original);
+        Checkpoint updateAsync = context.checkpoint();
+
+        LOGGER.info("Deploying JmxTrans into cluster with {} brokers", scale);
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+            context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
+                    is(notNullValue())));
+            context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.jmxSecretName(CLUSTER_NAME)), is(notNullValue())));
+            LOGGER.info("JmxTrans config map and jmx secreted have been created");
+
+            int originalJmxConfigMapLength = mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length();
+            int newScale = kafkaReplicas;
+
+            Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
+                    .withReplicas(newScale)
+                    .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withKafkaJmxAuthenticationPassword(new KafkaJmxAuthenticationPasswordBuilder().build())
+                            .withJmxTransSpec(new JmxTransSpecBuilder()
+                                    .withOutputDefinitionTemplates(new JmxTransOutputDefinitionTemplateBuilder()
+                                            .withOutputType("output")
+                                            .withName("name")
+                                            .build())
+                                    .withQueries(new JmxTransQueryTemplateBuilder()
+                                            .withOutputs("name")
+                                            .withAttributes("attribute")
+                                            .withNewTargetMBean("mbean")
+                                            .build())
+                                    .build())
+                            .build())
+                    .endKafka().endSpec()
+                    .build();
+            kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+
+            LOGGER.info("Scaling down to {} Kafka pods", newScale);
+            kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar2 -> {
+                if (ar2.failed()) ar2.cause().printStackTrace();
+                context.verify(() -> assertThat(ar.succeeded(), is(true)));
+                context.verify(() -> assertThat(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas(), is(newScale)));
+                context.verify(() -> assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(JmxTrans.jmxTransConfigName(CLUSTER_NAME)).get().getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() < originalJmxConfigMapLength,
+                        is(true)));
+                context.verify(() -> assertThat(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.jmxSecretName(CLUSTER_NAME)), is(notNullValue())));
+                LOGGER.info("JmxTrans config map has decreased in response to change in brokers");
+
+                // TODO assert no rolling update
+                updateAsync.flag();
+                context.completeNow();
+            });
         });
     }
 

@@ -1,0 +1,117 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.api.kafka.model.template;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
+import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Representation for options to define where and how information will be pushed to remote sources of information
+ */
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = false,
+        builderPackage = "io.fabric8.kubernetes.api.builder"
+)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"outputType", "host", "port", "flushDelay", "typeNames", "name"})
+@EqualsAndHashCode
+public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPropertyPreserving {
+
+    private static final long serialVersionUID = 1L;
+
+    private String outputType;
+    private String host;
+    private Integer port;
+    private Integer flushDelay;
+    private String name;
+    private List<String> typeNames;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    @JsonProperty(value = "outputType", required = true)
+    @Description("Template for setting the format of the data that will be pushed")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getOutputType() {
+        return outputType;
+    }
+
+    public void setOutputType(String outputType) {
+        this.outputType = outputType;
+    }
+
+    @Description("The ip of the remote host that the data will be pushed to.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    @Description("The port of the remote host that the data will be pushed tp.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getPort() {
+        return port;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+    @Description("How many seconds the JmxTransSpec will wait before push a new set of data out")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getFlushDelay() {
+        return flushDelay;
+    }
+
+    public void setFlushDelay(Integer flushDelay) {
+        this.flushDelay = flushDelay;
+    }
+
+    @Description("Template for being able to filter out exactly what data you want when a wildcard query is sent. " +
+            "More information can be found here: https://github.com/jmxtrans/jmxtrans/wiki/Queries")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<String> getTypeNames() {
+        return typeNames;
+    }
+
+    public void setTypeNames(List<String> typeNames) {
+        this.typeNames = typeNames;
+    }
+
+    @Description("Template for setting the name of the output definition which will be used to know where to send " +
+            "the data of the queries to.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
+    }
+}
