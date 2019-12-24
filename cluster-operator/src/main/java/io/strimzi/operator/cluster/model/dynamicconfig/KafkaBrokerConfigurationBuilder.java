@@ -267,7 +267,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param oauth     OAuth type authentication object
      * @return  JAAS configuration options with the public variables
      */
-    private List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
+    /*test*/ static List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         List<String> options = new ArrayList<>(5);
 
         if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId()));

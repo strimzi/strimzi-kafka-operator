@@ -56,7 +56,6 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
-import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -103,11 +102,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
@@ -117,48 +114,15 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
-    /**
-     * {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled
-     */
-    private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
-    /**
-     * The authentication to configure for the CLIENT listener (PLAIN transport).
-     */
-    protected static final String ENV_VAR_KAFKA_CLIENT_AUTHENTICATION = "KAFKA_CLIENT_AUTHENTICATION";
-    /**
-     * {@code TRUE} when the CLIENTTLS listener (TLS transport) should be enabled
-     */
-    private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
-    /**
-     * The authentication to configure for the CLIENTTLS listener (TLS transport) .
-     */
-    protected static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
-    public static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
-    protected static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
-    protected static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
-    protected static final String ENV_VAR_KAFKA_EXTERNAL_TLS = "KAFKA_EXTERNAL_TLS";
-    private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
-    private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
-    public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
-    private static final String ENV_VAR_KAFKA_CUSTOM_EXTERNAL_CERT = "KAFKA_CUSTOM_EXTERNAL_CERT";
-    private static final String ENV_VAR_KAFKA_CUSTOM_TLS_CERT = "KAFKA_CUSTOM_TLS_CERT";
-    private static final String ENV_VAR_KAFKA_CUSTOM_EXTERNAL_KEY = "KAFKA_CUSTOM_EXTERNAL_KEY";
-    private static final String ENV_VAR_KAFKA_CUSTOM_TLS_KEY = "KAFKA_CUSTOM_TLS_KEY";
-
-    public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
 
     // OAUTH ENV VARS
-    protected static final String ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS = "STRIMZI_CLIENT_OAUTH_OPTIONS";
-    protected static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS = "STRIMZI_CLIENTTLS_OAUTH_OPTIONS";
-    protected static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS = "STRIMZI_EXTERNAL_OAUTH_OPTIONS";
-    protected static final String ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET = "STRIMZI_CLIENT_9092_OAUTH_CLIENT_SECRET";
-    protected static final String ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET = "STRIMZI_CLIENTTLS_9093_OAUTH_CLIENT_SECRET";
-    protected static final String ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET = "STRIMZI_PLAIN-9092_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET = "STRIMZI_TLS-9093_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL-9094_OAUTH_CLIENT_SECRET";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
@@ -232,7 +196,6 @@ public class KafkaCluster extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
-    private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
@@ -1670,117 +1633,58 @@ public class KafkaCluster extends AbstractModel {
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
 
-        if (configuration != null && !configuration.getConfiguration().isEmpty()) {
-            // DELETE
-            // varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));
-        }
-
         if (listeners != null) {
             if (listeners.getPlain() != null) {
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_ENABLED, "TRUE"));
-
                 if (listeners.getPlain().getAuth() != null) {
-                    // DELETE
-                    // varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuth().getType()));
-
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getPlain().getAuth().getType())) {
                         // set OAUTH configuration
                         KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getPlain().getAuth();
-                        // DELETE
-                        // varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENT_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
 
                         if (oauth.getClientSecret() != null)    {
-                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_CLIENT_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                         }
                     }
                 }
             }
 
             if (listeners.getTls() != null) {
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
-
                 if (listeners.getTls().getAuth() != null) {
-                    // DELETE
-                    // varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuth().getType()));
-
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getTls().getAuth().getType())) {
                         // set OAUTH configuration
                         KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getTls().getAuth();
-                        // DELETE
-                        // varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
 
                         if (oauth.getClientSecret() != null)    {
-                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_CLIENTTLS_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                         }
                     }
                 }
             }
 
             if (listeners.getExternal() != null) {
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses)));
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TLS, Boolean.toString(isExposedWithTls())));
-
                 if (listeners.getExternal().getAuth() != null) {
-                    // DELETE
-                    // varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
 
                     if (KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listeners.getExternal().getAuth().getType())) {
                         // set OAUTH configuration
                         KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listeners.getExternal().getAuth();
-                        // DELETE
-                        // varList.add(buildEnvVar(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_OPTIONS, getOauthConfiguration(oauth)));
 
                         if (oauth.getClientSecret() != null)    {
-                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_EXTERNAL_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                            varList.add(buildEnvVarFromSecret(ENV_VAR_STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                         }
                     }
                 }
             }
-
-            if (isJmxEnabled) {
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
-                if (isJmxAuthenticated) {
-                    varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                    varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
-                }
-            }
         }
 
-        if (authorization != null && KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
-            // DELETE
-            // varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZATION_TYPE, KafkaAuthorizationSimple.TYPE_SIMPLE));
-
-            KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
-            if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
-                String superUsers = simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.joining(";"));
-                // DELETE
-                // varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS, superUsers));
+        if (isJmxEnabled) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
+            if (isJmxAuthenticated) {
+                varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
+                varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
             }
         }
-
-        String logDirs = dataVolumeMountPaths.stream()
-                .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
-        // DELETE
-        // varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
 
         // Add user defined environment variables to the Kafka broker containers
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
-
-        // DELETE
-        // if (secretSourceExternal != null) {
-        /* varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXTERNAL_CERT, secretSourceExternal.getCertificate()));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_EXTERNAL_KEY, secretSourceExternal.getKey()));
-        }
-        if (secretSourceTls != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_CERT, secretSourceTls.getCertificate()));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CUSTOM_TLS_KEY, secretSourceTls.getKey()));
-        }*/
 
         return varList;
     }
@@ -2125,16 +2029,6 @@ public class KafkaCluster extends AbstractModel {
      */
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
-    }
-
-    /**
-     * Sets the Map with Kafka pod's external addresses.
-     *
-     * @param externalAddresses Set with external addresses.
-     */
-    public void setExternalAddresses(Set<String> externalAddresses) {
-        // DELETE
-        // this.externalAddresses = externalAddresses;
     }
 
     /**

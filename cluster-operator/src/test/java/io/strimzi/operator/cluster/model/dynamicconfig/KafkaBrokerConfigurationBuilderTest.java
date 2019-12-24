@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -18,6 +20,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import org.hamcrest.Description;
@@ -34,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.dynamicconfig.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 public class KafkaBrokerConfigurationBuilderTest {
     @Test
@@ -818,6 +823,38 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN-9092_OAUTH_CLIENT_SECRET}\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
+    }
+
+    @Test
+    public void testOAuthOptions()  {
+        KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
+                .withValidIssuerUri("http://valid-issuer")
+                .withJwksEndpointUri("http://jwks-endpoint")
+                .withIntrospectionEndpointUri("http://introspection-endpoint")
+                .withJwksExpirySeconds(160)
+                .withJwksRefreshSeconds(50)
+                .withUserNameClaim("preferred_username")
+                .withCheckAccessTokenType(false)
+                .withClientId("my-kafka-id")
+                .withAccessTokenIsJwt(false)
+                .withDisableTlsHostnameVerification(true)
+                .build();
+
+        List<String> expectedOptions = new ArrayList<>(5);
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id"));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer"));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint"));
+        expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50));
+        expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 160));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint"));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username"));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_TOKENS_NOT_JWT, true));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALIDATION_SKIP_TYPE_CHECK, true));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
+
+        List<String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
+
+        assertThat(actualOptions, is(equalTo(expectedOptions)));
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {

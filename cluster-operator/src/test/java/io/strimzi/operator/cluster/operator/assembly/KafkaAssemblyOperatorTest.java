@@ -111,6 +111,7 @@ import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -546,6 +547,9 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet());
+        when(mockCmOps.getAsync(clusterCmNamespace, KafkaCluster.metricAndLogConfigsName(clusterCmName))).thenReturn(Future.succeededFuture(metricsCm));
+
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
         if (openShift) {
@@ -900,13 +904,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
         when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
         when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
-        ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
-                    .withNamespace(clusterNamespace)
-                .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
-                .build();
+        ConfigMap metricsCm = originalKafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet());
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
+        when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsCm));
 
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))

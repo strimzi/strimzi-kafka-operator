@@ -81,9 +81,10 @@ public class AuthenticationUtils {
      *
      * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
-    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, boolean isOpenShift)   {
+    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
@@ -100,7 +101,7 @@ public class AuthenticationUtils {
                 volumeList.add(AbstractModel.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                volumeList.addAll(configureOauthCertificateVolumes("oauth-certs", oauth.getTlsTrustedCertificates(), isOpenShift));
+                volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
             }
         }
     }
@@ -113,8 +114,9 @@ public class AuthenticationUtils {
      * @param tlsVolumeMount    Path where the TLS certs should be mounted
      * @param passwordVolumeMount   Path where passwords should be mounted
      * @param oauthVolumeMount      Path where the OAuth certificates would be mounted
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
      */
-    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount)   {
+    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount, String oauthVolumeNamePrefix)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
@@ -132,7 +134,7 @@ public class AuthenticationUtils {
                 volumeMountList.add(AbstractModel.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                volumeMountList.addAll(configureOauthCertificateVolumeMounts("oauth-certs", oauth.getTlsTrustedCertificates(), oauthVolumeMount));
+                volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthVolumeMount));
             }
         }
     }

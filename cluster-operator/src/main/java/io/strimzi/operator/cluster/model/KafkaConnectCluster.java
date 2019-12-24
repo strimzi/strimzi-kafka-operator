@@ -282,7 +282,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -350,7 +350,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
