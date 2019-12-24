@@ -27,6 +27,8 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     static {
         FORBIDDEN_OPTIONS = new ArrayList<>();
         FORBIDDEN_OPTIONS.addAll(Arrays.asList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *")));
+        // This option is handled in the Zookeeper container startup script
+        FORBIDDEN_OPTIONS.add("snapshot.trust.empty");
 
         Map<String, String> config = new HashMap<>();
         config.put("tickTime", "2000");
