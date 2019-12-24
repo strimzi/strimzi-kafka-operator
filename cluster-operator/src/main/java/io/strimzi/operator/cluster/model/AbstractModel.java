@@ -19,6 +19,8 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KeyToPath;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -70,6 +72,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -600,7 +603,7 @@ public abstract class AbstractModel {
         return servicePort;
     }
 
-    protected PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
+    protected static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
 
@@ -667,7 +670,7 @@ public abstract class AbstractModel {
         return pvc;
     }
 
-    protected Volume createEmptyDirVolume(String name, String sizeLimit) {
+    protected static Volume createEmptyDirVolume(String name, String sizeLimit) {
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
         if (sizeLimit != null && !sizeLimit.isEmpty()) {
             emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
@@ -717,6 +720,37 @@ public abstract class AbstractModel {
         SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
                 .withDefaultMode(mode)
                 .withSecretName(secretName)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(name)
+                .withSecret(secretVolumeSource)
+                .build();
+        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        return volume;
+    }
+
+    protected static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+        int mode = 0444;
+        if (isOpenshift) {
+            mode = 0440;
+        }
+
+        List<KeyToPath> keysPaths = new ArrayList<>();
+
+        for (Map.Entry<String, String> item : items.entrySet()) {
+            KeyToPath keyPath = new KeyToPathBuilder()
+                    .withNewKey(item.getKey())
+                    .withNewPath(item.getValue())
+                    .build();
+
+            keysPaths.add(keyPath);
+        }
+
+        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
+                .withDefaultMode(mode)
+                .withSecretName(secretName)
+                .withItems(keysPaths)
                 .build();
 
         Volume volume = new VolumeBuilder()

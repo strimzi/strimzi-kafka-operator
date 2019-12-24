@@ -2017,11 +2017,15 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getExternalAdvertisedUrl(0, "some-host.com", "12345"), is("0://my-host-0.cz:10000"));
-        assertThat(kc.getExternalAdvertisedUrl(0, "", "12345"), is("0://my-host-0.cz:10000"));
+        assertThat(kc.getExternalAdvertisedHostname(0, "some-host.com"), is("0://my-host-0.cz"));
+        assertThat(kc.getExternalAdvertisedHostname(0, ""), is("0://my-host-0.cz:10000"));
+        assertThat(kc.getExternalAdvertisedHostname(1, "some-host.com"), is("1://some-host.com"));
+        assertThat(kc.getExternalAdvertisedHostname(1, ""), is("1://"));
 
-        assertThat(kc.getExternalAdvertisedUrl(1, "some-host.com", "12345"), is("1://some-host.com:12345"));
-        assertThat(kc.getExternalAdvertisedUrl(1, "", "12345"), is("1://:12345"));
+        assertThat(kc.getExternalAdvertisedPort(0, "12345"), is("0://10000"));
+        assertThat(kc.getExternalAdvertisedPort(0, "12345"), is("0://10000"));
+        assertThat(kc.getExternalAdvertisedPort(1, "12345"), is("1://12345"));
+        assertThat(kc.getExternalAdvertisedPort(1, "12345"), is("1://12345"));
     }
 
     @Test
@@ -2040,8 +2044,11 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getExternalAdvertisedUrl(0, "some-host.com", "12345"), is("0://some-host.com:12345"));
-        assertThat(kc.getExternalAdvertisedUrl(0, "", "12345"), is("0://:12345"));
+        assertThat(kc.getExternalAdvertisedHostname(0, "some-host.com"), is("0://some-host.com"));
+        assertThat(kc.getExternalAdvertisedHostname(0, ""), is("0://"));
+
+        assertThat(kc.getExternalAdvertisedPort(0, "12345"), is("0://12345"));
+        assertThat(kc.getExternalAdvertisedPort(0, "12345"), is("0://12345"));
     }
 
     @Test

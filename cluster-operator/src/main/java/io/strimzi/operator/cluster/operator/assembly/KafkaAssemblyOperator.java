@@ -107,6 +107,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -369,10 +370,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private Service kafkaService;
         private Service kafkaHeadlessService;
-        private ConfigMap kafkaMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> kafkaDiffs;
         private Set<String> kafkaExternalBootstrapDnsName = new HashSet<>();
-        private Set<String> kafkaExternalAddresses = new HashSet<>();
+        private Set<String> kafkaExternalAdvertisedHostnames = new LinkedHashSet<>();
+        private Set<String> kafkaExternalAdvertisedPorts = new LinkedHashSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
         private boolean kafkaAncillaryCmChange;
 
@@ -1331,14 +1332,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ));
         }
 
-        /* test */ void setZkAncillaryCmChange(boolean zkAncillaryCmChange) {
-            this.zkAncillaryCmChange = zkAncillaryCmChange;
-        }
-
-        /* test */ void setKafkaAncillaryCmChange(boolean kafkaAncillaryCmChange) {
-            this.kafkaAncillaryCmChange = kafkaAncillaryCmChange;
-        }
-
         /**
          * Scale up is divided by scaling up Zookeeper cluster in steps.
          * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
@@ -1402,13 +1395,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage);
 
-                        ConfigMap logAndMetricsConfigMap = kafkaCluster.generateMetricsAndLogConfigMap(
-                                kafkaCluster.getLogging() instanceof ExternalLogging ?
-                                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName()) :
-                                        null);
                         this.kafkaService = kafkaCluster.generateService();
                         this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
-                        this.kafkaMetricsAndLogsConfigMap = logAndMetricsConfigMap;
 
                         future.complete(this);
                     } catch (Throwable e) {
@@ -1574,7 +1562,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     dnsNames.add(host);
 
                     this.kafkaExternalDnsNames.put(i, dnsNames);
-                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(i, host, "443"));
+                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(i, host));
+                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(i, "443"));
 
                     routeFutures.add(ingressOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), ingress));
                 }
@@ -1749,7 +1738,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
                                     }
 
-                                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, serviceAddress, "9094"));
+                                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, serviceAddress));
+                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "9094"));
 
                                     // Collect the DNS names for certificates
                                     for (LoadBalancerIngress ingress : serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress())    {
@@ -1768,7 +1758,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         log.trace("{}: Found port {} for Service {}", reconciliation, port, serviceName);
                                     }
 
-                                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, "", port));
+                                    // For node ports, when the override is not set, we don't pass any advertised hostname
+                                    String advertisedHostname = kafkaCluster.getExternalAdvertisedHostname(podNumber, null);
+                                    if (advertisedHostname != null) {
+                                        this.kafkaExternalAdvertisedHostnames.add(advertisedHostname);
+                                    }
+
+                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, port));
                                 }
 
                                 this.kafkaExternalDnsNames.put(podNumber, dnsNames);
@@ -1886,7 +1882,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 // Get the advertised URL
                                 String routeAddress = route.getStatus().getIngress().get(0).getHost();
-                                this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, routeAddress, "443"));
+                                this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, routeAddress));
+                                this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "443"));
 
                                 if (log.isTraceEnabled()) {
                                     log.trace("{}: Found address {} for Route {}", reconciliation, routeAddress, routeName);
@@ -1994,7 +1991,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
-            return getReconciliationStateOfConfigMap(kafkaCluster, kafkaMetricsAndLogsConfigMap, this::withKafkaAncillaryCmChanged);
+            ConfigMap loggingCm = null;
+
+            if (kafkaCluster.getLogging() instanceof ExternalLogging) {
+                loggingCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
+            }
+
+            ConfigMap kafkaAncillaryCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+
+            return getReconciliationStateOfConfigMap(kafkaCluster, kafkaAncillaryCm, this::withKafkaAncillaryCmChanged);
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -2149,7 +2154,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
+            // DELETE
+            // kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
             StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
 

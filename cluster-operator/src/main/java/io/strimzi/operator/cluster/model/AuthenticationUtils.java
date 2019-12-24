@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -22,7 +21,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
@@ -99,7 +100,7 @@ public class AuthenticationUtils {
                 volumeList.add(AbstractModel.createSecretVolume(passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getSecretName(), isOpenShift));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                configureOauthCertificateVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift);
+                volumeList.addAll(configureOauthCertificateVolumes("oauth-certs", oauth.getTlsTrustedCertificates(), isOpenShift));
             }
         }
     }
@@ -131,7 +132,7 @@ public class AuthenticationUtils {
                 volumeMountList.add(AbstractModel.createVolumeMount(passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                configureOauthCertificateVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), oauthVolumeMount);
+                volumeMountList.addAll(configureOauthCertificateVolumeMounts("oauth-certs", oauth.getTlsTrustedCertificates(), oauthVolumeMount));
             }
         }
     }
@@ -192,47 +193,56 @@ public class AuthenticationUtils {
      * Generates volumes needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
      *
-     * @param volumeList    List of volumes where the new volumes will be added
+     * @param volumeNamePrefix    Prefix for naming the secret volumes
      * @param trustedCertificates   List of certificates which should be mounted
      * @param isOpenShift   Flag whether we are on OpenShift or not
+     *
+     * @return List of new Volumes
      */
-    public static void configureOauthCertificateVolumes(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            for (CertSecretSource certSecretSource : trustedCertificates) {
-                Volume vol = volumeList.stream().filter(v -> v.getName().equals(certSecretSource.getSecretName())).findFirst().orElse(null);
+    public static List<Volume> configureOauthCertificateVolumes(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
+        List<Volume> newVolumes = new ArrayList<>();
 
-                if (vol == null)    {
-                    vol = AbstractModel.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift);
-                    if (!vol.getSecret().getItems().stream().anyMatch(v -> v.getKey().equals(certSecretSource.getCertificate()))) {
-                        vol.getSecret().getItems().add(new KeyToPathBuilder().withKey(certSecretSource.getCertificate()).withPath(String.format("%s/%s", certSecretSource.getSecretName(), certSecretSource.getCertificate())).build());
-                    }
-                    volumeList.add(vol);
-                } else {
-                    if (!vol.getSecret().getItems().stream().anyMatch(v -> v.getKey().equals(certSecretSource.getCertificate()))) {
-                        vol.getSecret().getItems().add(new KeyToPathBuilder().withKey(certSecretSource.getCertificate()).withPath(String.format("%s/%s", certSecretSource.getSecretName(), certSecretSource.getCertificate())).build());
-                    }
-                }
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            int i = 0;
+
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
+                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
+
+                Volume vol = AbstractModel.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
+
+                newVolumes.add(vol);
+                i++;
             }
         }
+
+        return newVolumes;
     }
 
     /**
      * Generates volume mounts needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
      *
-     * @param volumeMountList   List of volume mounts where the new volumes will be added
+     * @param volumeNamePrefix   Prefix which was used to name the secret volumes
      * @param trustedCertificates   List of certificates which should be mounted
      * @param baseVolumeMount   The Base volume into which the certificates should be mounted
+     *
+     * @return List of new VolumeMounts
      */
-    public static void configureOauthCertificateVolumeMounts(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
+    public static List<VolumeMount> configureOauthCertificateVolumeMounts(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
+        List<VolumeMount> newVolumeMounts = new ArrayList<>();
+
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            int i = 0;
+
             for (CertSecretSource certSecretSource : trustedCertificates) {
-                // skipping if a volume mount with same Secret name was already added
-                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()) && baseVolumeMount.equals(vm.getMountPath()))) {
-                    volumeMountList.add(AbstractModel.createVolumeMount(certSecretSource.getSecretName(), baseVolumeMount));
-                }
+                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
+                newVolumeMounts.add(AbstractModel.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
+                i++;
             }
         }
+
+        return newVolumeMounts;
     }
 
     /**
