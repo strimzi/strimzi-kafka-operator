@@ -120,9 +120,9 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     // OAUTH ENV VARS
-    protected static final String ENV_VAR_STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET = "STRIMZI_PLAIN-9092_OAUTH_CLIENT_SECRET";
-    protected static final String ENV_VAR_STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET = "STRIMZI_TLS-9093_OAUTH_CLIENT_SECRET";
-    protected static final String ENV_VAR_STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL-9094_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET = "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET = "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET";
+    protected static final String ENV_VAR_STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET = "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects

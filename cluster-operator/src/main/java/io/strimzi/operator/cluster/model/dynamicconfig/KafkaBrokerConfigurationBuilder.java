@@ -203,6 +203,7 @@ public class KafkaBrokerConfigurationBuilder {
 
     private void configureAuthentication(PrintWriter writer, String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
         String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
+        String listenerNameInEnvVar = listenerName.replace("-", "_");
 
         if (auth instanceof KafkaListenerAuthenticationOAuth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
@@ -212,7 +213,7 @@ public class KafkaBrokerConfigurationBuilder {
             options.addAll(getOAuthOptions(oauth));
 
             if (oauth.getClientSecret() != null)    {
-                options.add("oauth.client.secret=\"${STRIMZI_" + listenerName + "_OAUTH_CLIENT_SECRET}\"");
+                options.add("oauth.client.secret=\"${STRIMZI_" + listenerNameInEnvVar + "_OAUTH_CLIENT_SECRET}\"");
             }
 
             if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
