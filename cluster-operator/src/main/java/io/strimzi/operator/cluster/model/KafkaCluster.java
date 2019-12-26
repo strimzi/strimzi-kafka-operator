@@ -2314,7 +2314,7 @@ public class KafkaCluster extends AbstractModel {
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
                 .withUserConfiguration(configuration)
-                .build();
+                .build().trim();
     }
 
     public ConfigMap generateAncillaryConfigMap(ConfigMap externalLoggingCm, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {

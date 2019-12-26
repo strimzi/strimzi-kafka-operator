@@ -909,7 +909,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Map<String, String> annotations = Annotations.annotations(sts);
             String config = cm.getData().getOrDefault("server.config", "");
-            String oldMessageFormatConfiguration = Arrays.stream(config.split("\\r?\\n")).filter(line -> line.startsWith(LOG_MESSAGE_FORMAT_VERSION + "=")).findFirst().orElse(null);
+            String oldMessageFormatConfiguration = Arrays.stream(config.split(System.lineSeparator())).filter(line -> line.startsWith(LOG_MESSAGE_FORMAT_VERSION + "=")).findFirst().orElse(null);
             String oldMessageFormat = oldMessageFormatConfiguration == null ? null : oldMessageFormatConfiguration.substring(oldMessageFormatConfiguration.lastIndexOf("=") + 1);
 
             if (versionChange.requiresMessageFormatChange() && oldMessageFormat == null) {
@@ -964,6 +964,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: Upgrade: Setting annotation {}={}",
                     reconciliation, ANNO_STRIMZI_IO_KAFKA_VERSION, versionChange.to().version());
             annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, versionChange.to().version());
+
             // update the annotations, image and environment
             StatefulSet newSts = new StatefulSetBuilder(sts)
                     .editMetadata()
@@ -981,16 +982,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .endSpec()
                 .build();
 
-            ConfigMap newCm = new ConfigMapBuilder(cm)
-                    .removeFromData("server.config")
-                    .addToData("server.config", config)
-                    .build();
+            ConfigMap newCm = new ConfigMapBuilder(cm).build();
+            newCm.getData().put("server.config", config);
 
             // patch and rolling upgrade
-            String name = KafkaCluster.kafkaClusterName(this.name);
-            String configCmName = KafkaCluster.metricAndLogConfigsName(name);
-            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, name, newSts), configMapOperations.reconcile(namespace, configCmName, newCm))
+            String stsName = KafkaCluster.kafkaClusterName(this.name);
+            String configCmName = KafkaCluster.metricAndLogConfigsName(this.name);
+            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, this.name);
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, configCmName, newCm))
                     .compose(result -> {
                         StatefulSet resultSts = null;
 
@@ -999,7 +998,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                            log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
+                            log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return true;
                         }).map(resultSts);
                     })
@@ -1034,6 +1033,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // Remove inter.broker.protocol.version (so the new version's default is used)
             String config = cm.getData().getOrDefault("server.config", "");
+            StringBuilder newConfigBuilder = new StringBuilder();
+            Arrays.stream(config.split(System.lineSeparator())).filter(line -> !line.startsWith(INTERBROKER_PROTOCOL_VERSION + "=")).forEach(line -> newConfigBuilder.append(line + System.lineSeparator()));
+            String newConfig = newConfigBuilder.toString();
 
             log.info("{}: Upgrade: Removing Kafka config {}, will default to {}",
                     reconciliation, INTERBROKER_PROTOCOL_VERSION, upgrade.to().protocolVersion());
@@ -1045,20 +1047,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .endMetadata()
                     .build();
 
-            StringBuilder newConfigBuilder = new StringBuilder();
-            Arrays.stream(config.split(System.lineSeparator())).filter(line -> !line.startsWith(INTERBROKER_PROTOCOL_VERSION + "=")).forEach(line -> newConfigBuilder.append(line + System.lineSeparator()));
-            String newConfig = newConfigBuilder.toString();
-
-            ConfigMap newCm = new ConfigMapBuilder(cm)
-                    .removeFromData("server.config")
-                    .addToData("server.config", newConfig)
-                    .build();
+            ConfigMap newCm = new ConfigMapBuilder(cm).build();
+            newCm.getData().put("server.config", newConfig);
 
             // Reconcile the STS and perform a rolling update of the pods
-            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, name, newSts), configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), newCm))
+            String stsName = KafkaCluster.kafkaClusterName(this.name);
+            String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
+            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
+                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return true;
                     }))
                     .compose(ignored -> {
@@ -1082,7 +1080,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Map<String, String> annotations = Annotations.annotations(sts);
             String config = cm.getData().getOrDefault("server.config", "");
             String newConfig;
-            String oldMessageFormatConfiguration = Arrays.stream(config.split("\\r?\\n")).filter(line -> line.startsWith(LOG_MESSAGE_FORMAT_VERSION + "=")).findFirst().orElse(null);
+            String oldMessageFormatConfiguration = Arrays.stream(config.split(System.lineSeparator())).filter(line -> line.startsWith(LOG_MESSAGE_FORMAT_VERSION + "=")).findFirst().orElse(null);
             String oldMessageFormat = oldMessageFormatConfiguration == null ? null : oldMessageFormatConfiguration.substring(oldMessageFormatConfiguration.lastIndexOf("=") + 1);
 
             // Force the user to explicitly set log.message.format.version
@@ -1106,8 +1104,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 phases = "2 (change in " + INTERBROKER_PROTOCOL_VERSION + " requires 2nd phase)";
                 // Set proto version and message version in Kafka config, if they're not already set
                 String newLowerVersionProtocol = lowerVersionProtocol == null ? versionChange.to().protocolVersion() : lowerVersionProtocol;
-
-                log.info("{}: Downgrade: Setting {} to {}", reconciliation, INTERBROKER_PROTOCOL_VERSION, lowerVersionProtocol);
+                log.info("{}: Downgrade: Setting {} to {}", reconciliation, INTERBROKER_PROTOCOL_VERSION, newLowerVersionProtocol);
 
                 if (config.contains(INTERBROKER_PROTOCOL_VERSION + "=")) {
                     StringBuilder newConfigBuilder = new StringBuilder();
@@ -1141,16 +1138,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .endMetadata()
                     .build();
 
-            ConfigMap newCm = new ConfigMapBuilder(cm)
-                    .removeFromData("server.config")
-                    .addToData("server.config", newConfig)
-                    .build();
+            ConfigMap newCm = new ConfigMapBuilder(cm).build();
+            newCm.getData().put("server.config", newConfig);
 
             // patch and rolling upgrade
-            String name = KafkaCluster.kafkaClusterName(this.name);
+            String stsName = KafkaCluster.kafkaClusterName(this.name);
             String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
-            log.info("{}: Downgrade: Patch + rolling update of {}", reconciliation, name);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, name, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
+            log.info("{}: Downgrade: Patch + rolling update of {}", reconciliation, stsName);
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(result -> {
                         StatefulSet resultSts = null;
 
@@ -1159,7 +1154,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         return kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                            log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
+                            log.info("{}: Downgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return true;
                         }).map(resultSts);
                     })
@@ -1207,16 +1202,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Arrays.stream(config.split(System.lineSeparator())).filter(line -> !line.startsWith(INTERBROKER_PROTOCOL_VERSION + "=")).forEach(line -> newConfigBuilder.append(line + System.lineSeparator()));
             String newConfig = newConfigBuilder.toString();
 
-            ConfigMap newCm = new ConfigMapBuilder(cm)
-                    .removeFromData("server.config")
-                    .addToData("server.config", newConfig)
-                    .build();
+            ConfigMap newCm = new ConfigMapBuilder(cm).build();
+            newCm.getData().put("server.config", newConfig);
 
             // Reconcile the STS and perform a rolling update of the pods
-            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, name);
-            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, name, newSts), configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), newCm))
+            String stsName = KafkaCluster.kafkaClusterName(this.name);
+            String cmName = KafkaCluster.metricAndLogConfigsName(this.name);
+            log.info("{}: Upgrade: Patch + rolling update of {}", reconciliation, stsName);
+            return CompositeFuture.join(kafkaSetOperations.reconcile(namespace, stsName, newSts), configMapOperations.reconcile(namespace, cmName, newCm))
                     .compose(ignored -> kafkaSetOperations.maybeRollingUpdate(sts, pod -> {
-                        log.info("{}: Upgrade: Patch + rolling update of {}: Pod {}", reconciliation, name, pod.getMetadata().getName());
+                        log.info("{}: Upgrade: Maybe patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                         return true;
                     }))
                     .compose(ignored -> {

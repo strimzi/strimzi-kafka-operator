@@ -93,6 +93,8 @@ public class KafkaBrokerConfigurationBuilder {
                 listeners.add(listenerName + "://0.0.0.0:9092");
                 advertisedListeners.add(String.format("%s://%s-${STRIMZI_BROKER_ID}.%s-brokers.%s.svc:9092", listenerName, KafkaResources.kafkaStatefulSetName(clusterName), KafkaResources.kafkaStatefulSetName(clusterName), namespace));
                 configureAuthentication(writer, listenerName, securityProtocol, false, kafkaListeners.getPlain().getAuth());
+
+                writer.println();
             }
 
             if (kafkaListeners.getTls() != null) {
