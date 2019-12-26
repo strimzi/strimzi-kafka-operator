@@ -405,8 +405,6 @@ public abstract class Ca {
 
                 CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
-
-                this.renewalType = RenewalType.REGENERATED_CERT;
             }   else {
 
                 certs.put(podName, certAndKey);

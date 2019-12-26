@@ -374,6 +374,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
+        // Certificate change indicators
+        private boolean isZookeeperCertsChanged = false;
+        private boolean isKafkaCertsChanged = false;
+        private boolean isKafkaExporterCertsChanged = false;
+        private boolean isEntityOperatorCertsChanged = false;
+        private boolean isTopicOperatorCertsChanged = false;
+
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
             this.kafkaAssembly = kafkaAssembly;
@@ -1143,8 +1150,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNodesSecret(Supplier<Date> dateSupplier) {
-            return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name),
-                    zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
+            Promise<ReconciliationState> resultPromise = Promise.promise();
+
+            secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name),
+                    zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .setHandler(res -> {
+                        if (res.succeeded()) {
+                            isZookeeperCertsChanged = res.result() instanceof ReconcileResult.Patched;
+                            resultPromise.complete(this);
+                        } else {
+                            resultPromise.fail(res.cause());
+                        }
+                    });
+
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> zkNetPolicy() {
@@ -1163,7 +1182,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, this.clusterCa)
+                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, isZookeeperCertsChanged, this.clusterCa)
             ));
         }
 
@@ -1738,7 +1757,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()));
+            Promise<ReconciliationState> resultPromise = Promise.promise();
+
+            secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret())
+                    .setHandler(res -> {
+                        if (res.succeeded()) {
+                            isKafkaCertsChanged = res.result() instanceof ReconcileResult.Patched;
+                            resultPromise.complete(this);
+                        } else {
+                            resultPromise.fail(res.cause());
+                        }
+                    });
+
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> kafkaJmxSecret() {
@@ -1899,7 +1930,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, this.clusterCa, this.clientsCa)
+                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, isKafkaCertsChanged, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -2509,7 +2540,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
-        private boolean isPodToRestart(StatefulSet sts, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
+        private boolean isPodToRestart(StatefulSet sts, Pod pod, boolean isAncillaryCmChange, boolean nodeCertsChange, Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
             boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
@@ -2522,6 +2553,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             boolean isPodToRestart = !isPodUpToDate || isAncillaryCmChange;
             isPodToRestart |= isCaCertsChanged;
+            isPodToRestart |= nodeCertsChange;
             isPodToRestart |= !isPodCaCertUpToDate;
 
             if (fsResizingRestartRequest.contains(pod.getMetadata().getName())) {
