@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -200,8 +199,7 @@ public class ModelUtils {
             reasons.add("certificate doesn't exist yet");
             shouldBeRegenerated = true;
         } else {
-            X509Certificate currentCert = clusterCa.getAsX509Certificate(secret, keyCertName + ".crt");
-            if (clusterCa.certRenewed() || (clusterCa.certNeedsRenewal(currentCert) && isMaintenanceTimeWindowsSatisfied)) {
+            if (clusterCa.certRenewed() || (clusterCa.isExpiring(secret, keyCertName + ".crt") && isMaintenanceTimeWindowsSatisfied)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }

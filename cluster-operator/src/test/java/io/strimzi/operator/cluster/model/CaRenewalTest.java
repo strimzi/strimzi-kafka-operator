@@ -36,7 +36,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean certNeedsRenewal(X509Certificate cert) {
+            public boolean isExpiring(Secret secret, String podName)  {
                 return false;
             }
 
@@ -93,7 +93,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean certNeedsRenewal(X509Certificate cert) {
+            public boolean isExpiring(Secret secret, String podName)  {
                 return false;
             }
 
@@ -168,7 +168,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean certNeedsRenewal(X509Certificate cert) {
+            public boolean isExpiring(Secret secret, String podName)  {
                 return true;
             }
 
@@ -253,7 +253,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean certNeedsRenewal(X509Certificate cert) {
+            public boolean isExpiring(Secret secret, String podName)  {
                 return true;
             }
 

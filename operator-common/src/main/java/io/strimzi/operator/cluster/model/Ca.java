@@ -395,9 +395,8 @@ public abstract class Ca {
                 shouldBeRegenerated = true;
             }
 
-            X509Certificate currentCert = getAsX509Certificate(secret, podName + ".crt");
-            if (certNeedsRenewal(currentCert) && isMaintenanceTimeWindowsSatisfied)  {
-                reasons.add("certificate needs renewal");
+            if (isExpiring(secret, podName) && isMaintenanceTimeWindowsSatisfied)  {
+                reasons.add("certificate is expiring");
                 shouldBeRegenerated = true;
             }
 
@@ -409,9 +408,6 @@ public abstract class Ca {
 
                 this.renewalType = RenewalType.REGENERATED_CERT;
             }   else {
-                if (certNeedsRenewal(currentCert) && !isMaintenanceTimeWindowsSatisfied)   {
-                    log.debug("Certificate for pod {} will be renewed in the next maintenance window.", podName);
-                }
 
                 certs.put(podName, certAndKey);
             }
@@ -434,6 +430,27 @@ public abstract class Ca {
         delete(brokerKeyStoreFile);
 
         return certs;
+    }
+
+    /**
+     * Returns whether the certificate is expiring or not
+     *
+     * @param secret  Secret with the certificate
+     * @param podName   Key under which is the certificate stored
+     * @return  True when the certificate should be renewed. False otherwise.
+     */
+    public boolean isExpiring(Secret secret, String podName)  {
+        boolean isExpiring = false;
+
+        try {
+            X509Certificate currentCert = cert(secret, podName + ".crt");
+            isExpiring = certNeedsRenewal(currentCert);
+        } catch (RuntimeException e) {
+            // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
+            log.debug("Failed to parse existing certificate", e);
+        }
+
+        return isExpiring;
     }
 
     /**
