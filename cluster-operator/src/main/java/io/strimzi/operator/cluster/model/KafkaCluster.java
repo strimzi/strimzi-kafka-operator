@@ -657,12 +657,15 @@ public class KafkaCluster extends AbstractModel {
      * @param clusterCa                The CA for cluster certificates
      * @param externalBootstrapDnsName The set of DNS names for bootstrap service (should be appended to every broker certificate)
      * @param externalDnsNames         The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
+            Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         log.debug("Generating certificates");
 
         try {
-            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames);
+            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             log.warn("Error while generating certificates", e);
         }

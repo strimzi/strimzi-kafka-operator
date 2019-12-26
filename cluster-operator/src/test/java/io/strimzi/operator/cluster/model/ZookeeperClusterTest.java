@@ -338,7 +338,7 @@ public class ZookeeperClusterTest {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null, true);
 
-        Secret secret = zc.generateNodesSecret(clusterCa, ka);
+        Secret secret = zc.generateNodesSecret(clusterCa, ka, true);
         assertThat(secret.getData().keySet(), is(set(
                 "foo-zookeeper-0.crt",  "foo-zookeeper-0.key", "foo-zookeeper-0.p12", "foo-zookeeper-0.password",
                 "foo-zookeeper-1.crt", "foo-zookeeper-1.key", "foo-zookeeper-1.p12", "foo-zookeeper-1.password",

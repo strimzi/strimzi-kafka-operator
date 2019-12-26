@@ -284,7 +284,7 @@ public abstract class Ca {
         return result;
     }
 
-    private CertAndKey generateSignedCert(Subject subject,
+    /*test*/ CertAndKey generateSignedCert(Subject subject,
                                             File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
         log.debug("Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
 
@@ -352,7 +352,8 @@ public abstract class Ca {
            int replicas,
            Function<Integer, Subject> subjectFn,
            Secret secret,
-           Function<Integer, String> podNameFn) throws IOException {
+           Function<Integer, String> podNameFn,
+           boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         int replicasInSecret = secret == null || this.certRenewed() ? 0 :
                 (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
 
@@ -386,30 +387,33 @@ public abstract class Ca {
                         Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
             }
 
-            Collection<String> desiredSbjAltNames = subject.subjectAltNames().values();
-            Collection<String> currentSbjAltNames =
-                    getSubjectAltNames(certAndKey.cert());
+            boolean shouldBeRegenerated = false;
+            List<String> reasons = new ArrayList<>(2);
 
-            if (currentSbjAltNames != null && desiredSbjAltNames.containsAll(currentSbjAltNames) && currentSbjAltNames.containsAll(desiredSbjAltNames))   {
-                log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
+            if (certSubjectChanged(certAndKey, subject, podName))   {
+                reasons.add("DNS names changed");
+                shouldBeRegenerated = true;
+            }
 
-                certs.put(podName, certAndKey);
-            } else {
-                if (log.isTraceEnabled()) {
-                    if (currentSbjAltNames != null) {
-                        log.trace("Current alternate subjects for pod {}: {}", podName, String.join(", ", currentSbjAltNames));
-                    } else {
-                        log.trace("Current certificate for pod {} has no alternate subjects", podName);
-                    }
-                    log.trace("Desired alternate subjects for pod {}: {}", podName, String.join(", ", desiredSbjAltNames));
+            X509Certificate currentCert = getAsX509Certificate(secret, podName + ".crt");
+            if (certNeedsRenewal(currentCert) && isMaintenanceTimeWindowsSatisfied)  {
+                reasons.add("certificate needs renewal");
+                shouldBeRegenerated = true;
+            }
+
+            if (shouldBeRegenerated)  {
+                log.debug("Certificate for pod {} need to be regenerated because:", podName, String.join(", ", reasons));
+
+                CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                certs.put(podName, newCertAndKey);
+
+                this.renewalType = RenewalType.REGENERATED_CERT;
+            }   else {
+                if (certNeedsRenewal(currentCert) && !isMaintenanceTimeWindowsSatisfied)   {
+                    log.debug("Certificate for pod {} will be renewed in the next maintenance window.", podName);
                 }
 
-                log.debug("Alternate subjects do not match. Certificate needs to be refreshed for pod {}.", podName);
-
-                CertAndKey k = generateSignedCert(subject,
-                        brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
-                certs.put(podName, k);
-                this.renewalType = RenewalType.REGENERATED_CERT;
+                certs.put(podName, certAndKey);
             }
         }
 
@@ -418,6 +422,7 @@ public abstract class Ca {
         // scale down -> does nothing
         for (int i = replicasInSecret; i < replicas; i++) {
             String podName = podNameFn.apply(i);
+
             log.debug("Certificate for {} to generate", podName);
             CertAndKey k = generateSignedCert(subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
@@ -429,6 +434,27 @@ public abstract class Ca {
         delete(brokerKeyStoreFile);
 
         return certs;
+    }
+
+    /**
+     * Checks whether subject alternate names changed and certificate needs a renewal
+     *
+     * @param certAndKey    Current certificate
+     * @param desiredSubject    Desired subject alternate names
+     * @param podName   Name of the pod to which this certificate belongs (used for log messages)
+     * @return  True if the subjects are different, false otherwise
+     */
+    /*test*/ boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+        Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
+        Collection<String> currentAltNames = getSubjectAltNames(certAndKey.cert());
+
+        if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
+            log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
+            return false;
+        } else {
+            log.debug("Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
+            return true;
+        }
     }
 
     /**
@@ -774,11 +800,22 @@ public abstract class Ca {
         return removed.size();
     }
 
-    private boolean certNeedsRenewal(X509Certificate cert)  {
+    public boolean certNeedsRenewal(X509Certificate cert)  {
         Date notAfter = cert.getNotAfter();
         log.trace("Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
         long msTillExpired = notAfter.getTime() - System.currentTimeMillis();
         return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
+    }
+
+    /**
+     * This is a no-static version of the `cert` method so that it can be mocked.
+     *
+     * @param secret    Secret with a certificates
+     * @param key   Key under which the certificate is stored
+     * @return  Decoced X509 certificate
+     */
+    public X509Certificate getAsX509Certificate(Secret secret, String key)  {
+        return cert(secret, key);
     }
 
     public static X509Certificate cert(Secret secret, String key)  {

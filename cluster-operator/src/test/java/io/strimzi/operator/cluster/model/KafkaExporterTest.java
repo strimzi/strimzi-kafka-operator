@@ -286,7 +286,7 @@ public class KafkaExporterTest {
 
         assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
         assertThat(ke.generateService(), is(nullValue()));
-        assertThat(ke.generateSecret(null), is(nullValue()));
+        assertThat(ke.generateSecret(null, true), is(nullValue()));
     }
 
     @Test

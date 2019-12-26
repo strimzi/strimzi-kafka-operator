@@ -450,9 +450,11 @@ public class ZookeeperCluster extends AbstractModel {
      *
      * @param clusterCa The cluster CA.
      * @param kafka The Kafka resource.
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka) {
+    public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) {
 
         Map<String, String> data = new HashMap<>();
 
@@ -460,7 +462,7 @@ public class ZookeeperCluster extends AbstractModel {
         Map<String, CertAndKey> certs;
         try {
             log.debug("Cluster communication certificates");
-            certs = clusterCa.generateZkCerts(kafka);
+            certs = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
             log.debug("End generating certificates");
             for (int i = 0; i < replicas; i++) {
                 CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));

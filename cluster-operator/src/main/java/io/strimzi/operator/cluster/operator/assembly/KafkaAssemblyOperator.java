@@ -234,7 +234,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         reconcileState.reconcileCas(this::dateSupplier)
-                .compose(state -> state.clusterOperatorSecret())
+                .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 .compose(state -> state.getZookeeperDescription())
@@ -248,7 +248,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
                 .compose(state -> state.zkAncillaryCm())
-                .compose(state -> state.zkNodesSecret())
+                .compose(state -> state.zkNodesSecret(this::dateSupplier))
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkScaleUp())
@@ -279,7 +279,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaReplicaServicesReady())
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
-                .compose(state -> state.kafkaGenerateCertificates())
+                .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
@@ -296,7 +296,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.topicOperatorServiceAccount())
                 .compose(state -> state.topicOperatorRoleBinding())
                 .compose(state -> state.topicOperatorAncillaryCm())
-                .compose(state -> state.topicOperatorSecret())
+                .compose(state -> state.topicOperatorSecret(this::dateSupplier))
                 .compose(state -> state.topicOperatorDeployment())
 
                 .compose(state -> state.getEntityOperatorDescription())
@@ -305,13 +305,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBinding())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorSecret())
+                .compose(state -> state.entityOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
                 .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
-                .compose(state -> state.kafkaExporterSecret())
+                .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
                 .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterService())
                 .compose(state -> state.kafkaExporterReady())
@@ -610,6 +610,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (dep != null) {
                                 log.debug("{}: Rolling Deployment {} to {}", reconciliation, EntityOperator.entityOperatorName(name), reasons);
                                 return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        })
+                        .compose(i -> deploymentOperations.getAsync(namespace, KafkaExporter.kafkaExporterName(name)))
+                        .compose(dep -> {
+                            if (dep != null) {
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, KafkaExporter.kafkaExporterName(name), reasons);
+                                return deploymentOperations.rollingUpdate(namespace, KafkaExporter.kafkaExporterName(name), operationTimeoutMs);
                             } else {
                                 return Future.succeededFuture();
                             }
@@ -1133,9 +1142,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return getReconciliationStateOfConfigMap(zkCluster, zkMetricsAndLogsConfigMap, this::withZkAncillaryCmChanged);
         }
 
-        Future<ReconciliationState> zkNodesSecret() {
+        Future<ReconciliationState> zkNodesSecret(Supplier<Date> dateSupplier) {
             return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name),
-                    zkCluster.generateNodesSecret(clusterCa, kafkaAssembly)));
+                    zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
         }
 
         Future<ReconciliationState> zkNetPolicy() {
@@ -1706,13 +1715,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(blockingPromise.future());
         }
 
-        Future<ReconciliationState> kafkaGenerateCertificates() {
+        Future<ReconciliationState> kafkaGenerateCertificates(Supplier<Date> dateSupplier) {
             Promise<ReconciliationState> resultPromise = Promise.promise();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
                         kafkaCluster.generateCertificates(kafkaAssembly,
-                                clusterCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames);
+                                clusterCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames,
+                                isMaintenanceTimeWindowsSatisfied(dateSupplier));
                         future.complete(this);
                     } catch (Throwable e) {
                         future.fail(e);
@@ -2317,8 +2327,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         @SuppressWarnings("deprecation")
-        Future<ReconciliationState> topicOperatorSecret() {
-            return withVoid(secretOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret(clusterCa)));
+        Future<ReconciliationState> topicOperatorSecret(Supplier<Date> dateSupplier) {
+            return withVoid(secretOperations.reconcile(namespace, io.strimzi.operator.cluster.model.TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
         }
 
         @SuppressWarnings("deprecation")
@@ -2476,9 +2486,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(Future.succeededFuture());
         }
 
-        Future<ReconciliationState> entityOperatorSecret() {
+        Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
             return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name),
-                    entityOperator == null ? null : entityOperator.generateSecret(clusterCa)));
+                    entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
         }
 
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
@@ -2594,7 +2604,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
         }
 
-        Future<ReconciliationState> clusterOperatorSecret() {
+        Future<ReconciliationState> clusterOperatorSecret(Supplier<Date> dateSupplier) {
             oldCoSecret = clusterCa.clusterOperatorSecret();
 
             Labels labels = Labels.fromResource(kafkaAssembly)
@@ -2613,7 +2623,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withController(false)
                     .build();
 
-            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace, ClusterOperator.secretName(name), "cluster-operator", "cluster-operator", labels, ownerRef);
+            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace,
+                    ClusterOperator.secretName(name), "cluster-operator", "cluster-operator",
+                    labels, ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
             return withVoid(secretOperations.reconcile(namespace, ClusterOperator.secretName(name),
                     secret));
@@ -2729,8 +2741,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     exporterDeployment != null ? kafkaExporter.generateServiceAccount() : null));
         }
 
-        Future<ReconciliationState> kafkaExporterSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaExporter.secretName(name), kafkaExporter.generateSecret(clusterCa)));
+        Future<ReconciliationState> kafkaExporterSecret(Supplier<Date> dateSupplier) {
+            return withVoid(secretOperations.reconcile(namespace, KafkaExporter.secretName(name), kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
         }
 
         Future<ReconciliationState> kafkaExporterDeployment() {
