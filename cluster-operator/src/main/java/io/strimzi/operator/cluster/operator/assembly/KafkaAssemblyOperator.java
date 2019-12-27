@@ -312,8 +312,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
                 .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
-                .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterService())
+                .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterReady())
 
                 .map((Void) null)
@@ -379,7 +379,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isKafkaCertsChanged = false;
         private boolean isKafkaExporterCertsChanged = false;
         private boolean isEntityOperatorCertsChanged = false;
-        private boolean isTopicOperatorCertsChanged = false;
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
@@ -2498,11 +2497,29 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
-                    return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
-                }).map(i -> this);
+                    return deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment);
+                }).compose(recon -> {
+                    if (recon instanceof ReconcileResult.Noop)   {
+                        // Lets check if we need to roll the deployment manually
+                        boolean needToRoll = false;
+
+                        needToRoll |= isEntityOperatorCertsChanged;
+
+                        if (needToRoll) {
+                            return entityOperatorRollingUpdate();
+                        }
+                    }
+
+                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
+                    return Future.succeededFuture(this);
+                });
             } else  {
                 return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
             }
+        }
+
+        Future<ReconciliationState> entityOperatorRollingUpdate() {
+            return withVoid(deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> entityOperatorReady() {
@@ -2518,8 +2535,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
-            return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name),
-                    entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
+            Promise<ReconciliationState> resultPromise = Promise.promise();
+
+            secretOperations.reconcile(namespace, EntityOperator.secretName(name),
+                    entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .setHandler(res -> {
+                        if (res.succeeded()) {
+                            isEntityOperatorCertsChanged = res.result() instanceof ReconcileResult.Patched;
+                            resultPromise.complete(this);
+                        } else {
+                            resultPromise.fail(res.cause());
+                        }
+                    });
+
+            return resultPromise.future();
         }
 
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
@@ -2570,8 +2599,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (ca.certsRemoved()) {
                         reasons.add(ca + " certificate removal");
                     }
-                    if (ca.certChanged()) {
-                        reasons.add(ca + " certificate metadata changed");
+                    if (nodeCertsChange) {
+                        reasons.add(ca + " certificate changed");
                     }
                     if (!isPodCaCertUpToDate(pod, ca)) {
                         reasons.add("Pod has old " + ca + " certificate generation");
@@ -2774,7 +2803,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaExporterSecret(Supplier<Date> dateSupplier) {
-            return withVoid(secretOperations.reconcile(namespace, KafkaExporter.secretName(name), kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier))));
+            Promise<ReconciliationState> resultPromise = Promise.promise();
+
+            secretOperations.reconcile(namespace, KafkaExporter.secretName(name),
+                    kafkaExporter == null ? null : kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .setHandler(res -> {
+                        if (res.succeeded()) {
+                            isKafkaExporterCertsChanged = res.result() instanceof ReconcileResult.Patched;
+                            resultPromise.complete(this);
+                        } else {
+                            resultPromise.fail(res.cause());
+                        }
+                    });
+
+            return resultPromise.future();
         }
 
         Future<ReconciliationState> kafkaExporterDeployment() {
@@ -2785,11 +2827,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     int caCertGeneration = getCaCertGeneration(this.clusterCa);
                     Annotations.annotations(exporterDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                    return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment));
-                }).map(i -> this);
+                    return deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment);
+                })
+                .compose(recon -> {
+                    if (recon instanceof ReconcileResult.Noop)   {
+                        // Lets check if we need to roll the deployment manually
+                        boolean needToRoll = false;
+
+                        needToRoll |= isKafkaExporterCertsChanged;
+
+                        if (needToRoll) {
+                            return kafkaExporterRollingUpdate();
+                        }
+                    }
+
+                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
+                    return Future.succeededFuture(this);
+                });
             } else  {
                 return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), null));
             }
+        }
+
+        Future<ReconciliationState> kafkaExporterRollingUpdate() {
+            return withVoid(deploymentOperations.rollingUpdate(namespace, KafkaExporter.kafkaExporterName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> kafkaExporterService() {
