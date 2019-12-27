@@ -36,7 +36,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String podName)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return false;
             }
 
@@ -93,7 +93,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String podName)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return false;
             }
 
@@ -168,7 +168,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String podName)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return true;
             }
 
@@ -253,7 +253,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String podName)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return true;
             }
 

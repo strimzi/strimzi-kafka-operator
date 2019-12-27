@@ -385,7 +385,7 @@ public abstract class Ca {
                 shouldBeRegenerated = true;
             }
 
-            if (isExpiring(secret, podName) && isMaintenanceTimeWindowsSatisfied)  {
+            if (isExpiring(secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
                 reasons.add("certificate is expiring");
                 shouldBeRegenerated = true;
             }
@@ -424,14 +424,14 @@ public abstract class Ca {
      * Returns whether the certificate is expiring or not
      *
      * @param secret  Secret with the certificate
-     * @param podName   Key under which is the certificate stored
+     * @param certKey   Key under which is the certificate stored
      * @return  True when the certificate should be renewed. False otherwise.
      */
-    public boolean isExpiring(Secret secret, String podName)  {
+    public boolean isExpiring(Secret secret, String certKey)  {
         boolean isExpiring = false;
 
         try {
-            X509Certificate currentCert = cert(secret, podName + ".crt");
+            X509Certificate currentCert = cert(secret, certKey);
             isExpiring = certNeedsRenewal(currentCert);
         } catch (RuntimeException e) {
             // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
