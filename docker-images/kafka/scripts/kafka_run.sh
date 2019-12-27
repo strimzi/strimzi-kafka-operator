@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set +x
 
+# Wait for the TLS sidecar to be ready and listen on port 2181
+./kafka_pre_start.sh
+
 export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 echo "KAFKA_BROKER_ID=$KAFKA_BROKER_ID"
 
