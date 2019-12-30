@@ -87,9 +87,9 @@ class ConnectST extends MessagingBaseST {
         String podName = PodUtils.getPodNameByPrefix(KafkaConnectResources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
-        assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder("kafka", "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
-                hasItem(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))));
-        assertThat(StUtils.getPropertiesFromJson("kafka", kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
+        assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
+                hasItem(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))));
+        assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
         testDockerImagesForKafkaConnect();
 
         verifyLabelsOnPods(CLUSTER_NAME, "connect", null, "KafkaConnect");
@@ -250,8 +250,8 @@ class ConnectST extends MessagingBaseST {
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
-        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas + 1);
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertThat(connectPods.size(), is(scaleTo));
         for (String pod : connectPods) {
@@ -264,9 +264,7 @@ class ConnectST extends MessagingBaseST {
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas));
-        while (kubeClient().listPods("strimzi.io/kind", "KafkaConnect").size() == scaleTo) {
-            LOGGER.info("Waiting for connect pod deletion");
-        }
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), initialReplicas);
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertThat(connectPods.size(), is(initialReplicas));
         for (String pod : connectPods) {

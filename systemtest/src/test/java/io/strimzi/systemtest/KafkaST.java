@@ -950,11 +950,11 @@ class KafkaST extends MessagingBaseST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Creating topic without any label
-        KafkaTopicResource.topic(CLUSTER_NAME, "topic-without-labels")
+        KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, "topic-without-labels", 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
-            .done();
+            .build());
 
         // Checking that resource was created
         assertThat(cmdKubeClient().list("kafkatopic"), hasItems("topic-without-labels"));
@@ -1192,6 +1192,7 @@ class KafkaST extends MessagingBaseST {
         ArrayList pvcs = new ArrayList();
 
         kubeClient().listPersistentVolumeClaims().stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains("kafka"))
                 .forEach(volume -> {
                     String volumeName = volume.getMetadata().getName();
                     pvcs.add(volumeName);

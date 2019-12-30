@@ -431,7 +431,7 @@ class SecurityST extends MessagingBaseST {
 
     private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -445,7 +445,6 @@ class SecurityST extends MessagingBaseST {
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
-                        .withReplicas(3)
                         .withNewPersistentClaimStorage()
                             .withSize("2Gi")
                             .withDeleteClaim(true)
@@ -566,7 +565,7 @@ class SecurityST extends MessagingBaseST {
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editSpec()
                 .editKafka()
                 .editListeners()
@@ -608,7 +607,7 @@ class SecurityST extends MessagingBaseST {
     @Tag(NODEPORT_SUPPORTED)
     void testCertRegeneratedAfterInternalCAisDeleted() throws Exception {
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
                         .editListeners()
