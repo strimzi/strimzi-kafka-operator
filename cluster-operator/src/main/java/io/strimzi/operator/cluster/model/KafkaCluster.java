@@ -111,6 +111,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
+    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
+
     /**
      * {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled
      */
@@ -1440,6 +1442,12 @@ public class KafkaCluster extends AbstractModel {
         if (isExposedWithNodePort()) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
+
+            KafkaListenerExternalNodePort listener = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getPreferredAddressType() != null)    {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE, listener.getConfiguration().getPreferredAddressType().toValue()));
+            }
         }
 
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
