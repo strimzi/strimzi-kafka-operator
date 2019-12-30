@@ -57,6 +57,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                     && (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
                     || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType()))))   {
                 patchNodePorts(current, desired);
+                patchHealthCheckPorts(current, desired);
             }
 
             return super.internalPatch(namespace, name, current, desired);
@@ -83,6 +84,21 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                     desiredPort.setNodePort(currentPort.getNodePort());
                 }
             }
+        }
+    }
+
+    /**
+     * When a dedicated health check port is used by the current service, this method will patch it in the desired
+     * service to avoid the health check port changing with every reconciliation. Similarly to the generated node ports,
+     * the health check port is set by Kubernetes in the spec section and needs to be manually reconciled to avoid issues.
+     *
+     * @param current   Current Service
+     * @param desired   Desired Service
+     */
+    protected void patchHealthCheckPorts(Service current, Service desired) {
+        if (current.getSpec().getHealthCheckNodePort() != null
+                && desired.getSpec().getHealthCheckNodePort() == null) {
+            desired.getSpec().setHealthCheckNodePort(current.getSpec().getHealthCheckNodePort());
         }
     }
 

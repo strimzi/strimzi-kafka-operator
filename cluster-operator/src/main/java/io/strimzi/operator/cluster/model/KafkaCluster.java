@@ -82,6 +82,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -238,6 +239,10 @@ public class KafkaCluster extends AbstractModel {
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
+    protected ExternalTrafficPolicy templateExternalBootstrapServiceTrafficPolicy;
+    protected List<String> templateExternalBootstrapServiceLoadBalancerSourceRanges;
+    protected ExternalTrafficPolicy templatePerPodServiceTrafficPolicy;
+    protected List<String> templatePerPodServiceLoadBalancerSourceRanges;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -568,14 +573,34 @@ public class KafkaCluster extends AbstractModel {
                 result.templateHeadlessServiceAnnotations = template.getBrokersService().getMetadata().getAnnotations();
             }
 
-            if (template.getExternalBootstrapService() != null && template.getExternalBootstrapService().getMetadata() != null) {
-                result.templateExternalBootstrapServiceLabels = template.getExternalBootstrapService().getMetadata().getLabels();
-                result.templateExternalBootstrapServiceAnnotations = template.getExternalBootstrapService().getMetadata().getAnnotations();
+            if (template.getExternalBootstrapService() != null) {
+                if (template.getExternalBootstrapService().getMetadata() != null) {
+                    result.templateExternalBootstrapServiceLabels = template.getExternalBootstrapService().getMetadata().getLabels();
+                    result.templateExternalBootstrapServiceAnnotations = template.getExternalBootstrapService().getMetadata().getAnnotations();
+                }
+
+                result.templateExternalBootstrapServiceTrafficPolicy = template.getExternalBootstrapService().getExternalTrafficPolicy();
+
+                if (result.isExposedWithLoadBalancer()) {
+                    result.templateExternalBootstrapServiceLoadBalancerSourceRanges = template.getExternalBootstrapService().getLoadBalancerSourceRanges();
+                } else {
+                    log.warn("The Kafka.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
+                }
             }
 
-            if (template.getPerPodService() != null && template.getPerPodService().getMetadata() != null) {
-                result.templatePerPodServiceLabels = template.getPerPodService().getMetadata().getLabels();
-                result.templatePerPodServiceAnnotations = template.getPerPodService().getMetadata().getAnnotations();
+            if (template.getPerPodService() != null) {
+                if (template.getPerPodService().getMetadata() != null) {
+                    result.templatePerPodServiceLabels = template.getPerPodService().getMetadata().getLabels();
+                    result.templatePerPodServiceAnnotations = template.getPerPodService().getMetadata().getAnnotations();
+                }
+
+                result.templatePerPodServiceTrafficPolicy = template.getPerPodService().getExternalTrafficPolicy();
+
+                if (result.isExposedWithLoadBalancer()) {
+                    result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
+                } else {
+                    log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
+                }
             }
 
             if (template.getExternalBootstrapRoute() != null && template.getExternalBootstrapRoute().getMetadata() != null) {
@@ -784,10 +809,24 @@ public class KafkaCluster extends AbstractModel {
                 }
             }
 
-            return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
+            Service service = createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
                 getSelectorLabels(),
                 mergeLabelsOrAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations), loadBalancerIP);
+
+            if (isExposedWithLoadBalancer()) {
+                if (templateExternalBootstrapServiceLoadBalancerSourceRanges != null) {
+                    service.getSpec().setLoadBalancerSourceRanges(templateExternalBootstrapServiceLoadBalancerSourceRanges);
+                }
+            }
+
+            if (isExposedWithLoadBalancer() || isExposedWithNodePort()) {
+                if (templateExternalBootstrapServiceTrafficPolicy != null)  {
+                    service.getSpec().setExternalTrafficPolicy(templateExternalBootstrapServiceTrafficPolicy.toValue());
+                }
+            }
+
+            return service;
         }
 
         return null;
@@ -854,9 +893,23 @@ public class KafkaCluster extends AbstractModel {
 
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
-            return createService(perPodServiceName, getExternalServiceType(), ports,
+            Service service = createService(perPodServiceName, getExternalServiceType(), ports,
                     getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
                     mergeLabelsOrAnnotations(dnsAnnotations, templatePerPodServiceAnnotations), loadBalancerIP);
+
+            if (isExposedWithLoadBalancer()) {
+                if (templatePerPodServiceLoadBalancerSourceRanges != null) {
+                    service.getSpec().setLoadBalancerSourceRanges(templatePerPodServiceLoadBalancerSourceRanges);
+                }
+            }
+
+            if (isExposedWithLoadBalancer() || isExposedWithNodePort()) {
+                if (templatePerPodServiceTrafficPolicy != null)  {
+                    service.getSpec().setExternalTrafficPolicy(templatePerPodServiceTrafficPolicy.toValue());
+                }
+            }
+
+            return service;
         }
 
         return null;

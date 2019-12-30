@@ -1259,6 +1259,15 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        externalTrafficPolicy:
+                          type: string
+                          enum:
+                          - Local
+                          - Cluster
+                        loadBalancerSourceRanges:
+                          type: array
+                          items:
+                            type: string
                     perPodService:
                       type: object
                       properties:
@@ -1269,6 +1278,15 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        externalTrafficPolicy:
+                          type: string
+                          enum:
+                          - Local
+                          - Cluster
+                        loadBalancerSourceRanges:
+                          type: array
+                          items:
+                            type: string
                     externalBootstrapRoute:
                       type: object
                       properties:
