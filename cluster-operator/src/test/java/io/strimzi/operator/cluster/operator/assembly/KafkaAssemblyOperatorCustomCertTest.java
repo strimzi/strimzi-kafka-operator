@@ -156,7 +156,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testWithUnchangedCertificates(VertxTestContext context) throws InterruptedException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);;
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
 
         // Mock the Kafka Operator
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
@@ -217,7 +217,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testWithChangedTlsCertificate(VertxTestContext context) throws InterruptedException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);;
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
 
         // Mock the Kafka Operator
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
@@ -281,7 +281,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void testWithChangedExternalCertificate(VertxTestContext context) throws InterruptedException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);;
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
 
         // Mock the Kafka Operator
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
@@ -356,7 +356,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 .endSpec()
                 .build();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);;
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS, null);
 
         // Mock the Kafka Operator
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
