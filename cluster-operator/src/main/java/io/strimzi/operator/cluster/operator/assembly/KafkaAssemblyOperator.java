@@ -1223,7 +1223,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
         }
 
-        private Future<ReconciliationState> getKafkaClusterDescription() {
+        /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -2864,7 +2864,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     }
 
-    private Date dateSupplier() {
+    /* test */ Date dateSupplier() {
         return new Date();
     }
 
