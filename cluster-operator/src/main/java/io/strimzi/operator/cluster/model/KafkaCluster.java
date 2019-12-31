@@ -205,6 +205,9 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
 
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-tls-listener-thumbprint";
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-external-listener-thumbprint";
+
     // Env vars for JMX service
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
