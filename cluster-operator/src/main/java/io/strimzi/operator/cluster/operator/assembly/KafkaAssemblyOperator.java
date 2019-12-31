@@ -2578,13 +2578,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private boolean isCustomCertUpToDate(StatefulSet sts, Pod pod, String annotation) {
-            final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), annotation, null);
-            final String podThumbprint = Annotations.stringAnnotation(pod, annotation, null);
+            final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), annotation, "");
+            final String podThumbprint = Annotations.stringAnnotation(pod, annotation, "");
             log.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
                     sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     annotation, podThumbprint,
                     annotation, stsThumbprint);
-            return podThumbprint == null ? podThumbprint == stsThumbprint : podThumbprint.equals(stsThumbprint);
+            return podThumbprint.equals(stsThumbprint);
         }
 
         private boolean isPodToRestart(StatefulSet sts, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
