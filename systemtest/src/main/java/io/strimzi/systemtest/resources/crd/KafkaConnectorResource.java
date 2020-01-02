@@ -19,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.function.Consumer;
+
 public class KafkaConnectorResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectorResource.class);
 
@@ -89,4 +91,7 @@ public class KafkaConnectorResource {
         return ResourceManager.deleteLater(kafkaConnectorClient(), kafkaConnector);
     }
 
+    public static void replaceKafkaConnectorResource(String resourceName, Consumer<KafkaConnector> editor) {
+        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class, resourceName, editor);
+    }
 }

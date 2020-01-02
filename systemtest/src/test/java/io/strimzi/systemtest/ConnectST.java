@@ -194,6 +194,13 @@ class ConnectST extends MessagingBaseST {
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), greaterThanOrEqualTo(messageCount));
         }
 
+        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String output = cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl http://localhost:8083/connectors/" + connectorName).out();
+        assertThat(output, containsString("\"name\":\"license-source\""));
+        assertThat(output, containsString("\"connector.class\":\"org.apache.kafka.connect.file.FileStreamSourceConnector\""));
+        assertThat(output, containsString("\"tasks.max\":\"2\""));
+        assertThat(output, containsString("\"topic\":\"" + topicName + "\""));
+
         LOGGER.info("Deleting connector {} CR", connectorName);
         cmdKubeClient().deleteByName("kafkaconnector", connectorName);
 

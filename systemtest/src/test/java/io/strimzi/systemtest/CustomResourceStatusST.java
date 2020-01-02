@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -22,6 +23,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -40,6 +42,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
@@ -170,8 +173,13 @@ class CustomResourceStatusST extends MessagingBaseST {
     @Test
     void testKafkaConnectStatus() {
         String connectUrl = "http://my-cluster-connect-api.status-cluster-test.svc:8083";
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
         waitForKafkaConnectStatus("Ready");
+        KafkaConnectorResource.kafkaConnector(CLUSTER_NAME, TOPIC_NAME).done();
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
         assertKafkaConnectStatus(1, connectUrl);
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
@@ -179,31 +187,50 @@ class CustomResourceStatusST extends MessagingBaseST {
                 .build()));
         waitForKafkaConnectStatus("NotReady");
 
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "NotReady");
+
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectStatus("Ready");
         assertKafkaConnectStatus(3, connectUrl);
+        KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CLUSTER_NAME)));
+        waitForKafkaConnectorStatus(CLUSTER_NAME, "Ready");
     }
 
     @Test
     void testKafkaConnectS2IStatus() {
         String connectS2IUrl = "http://my-cluster-s2i-connect-api.status-cluster-test.svc:8083";
         String connectS2IDeploymentConfigName = CONNECTS2I_CLUSTER_NAME + "-connect";
-        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1).done();
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+            .endMetadata().done();
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
+        KafkaConnectorResource.kafkaConnector(CONNECTS2I_CLUSTER_NAME, TOPIC_NAME).done();
+        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
 
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         waitForKafkaConnectS2IStatus("NotReady");
 
+        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", "non-existing-connect-cluster")));
+        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "NotReady");
+
         KafkaConnectS2IResource.replaceConnectS2IResource(CONNECTS2I_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         waitForKafkaConnectS2IStatus("Ready");
         assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
+        KafkaConnectorResource.replaceKafkaConnectorResource(CONNECTS2I_CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("strimzi.io/cluster", CONNECTS2I_CLUSTER_NAME)));
+        waitForKafkaConnectorStatus(CONNECTS2I_CLUSTER_NAME, "Ready");
     }
 
     @Test
@@ -309,6 +336,16 @@ class CustomResourceStatusST extends MessagingBaseST {
             return kafkaCondition.getType().equals(status);
         });
         LOGGER.info("Kafka ConnectS2I cluster is in desired state: {}", status);
+    }
+
+    void waitForKafkaConnectorStatus(String connectorName, String status) {
+        LOGGER.info("Wait until Kafka Connector is in desired state: {}", status);
+        TestUtils.waitFor("Kafka Connector status is not in desired state: " + status, Constants.GLOBAL_POLL_INTERVAL, Constants.CONNECT_STATUS_TIMEOUT, () -> {
+            Condition kafkaCondition = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(connectorName).get().getStatus().getConditions().get(0);
+            logCurrentStatus(kafkaCondition, KafkaConnector.RESOURCE_KIND);
+            return kafkaCondition.getType().equals(status);
+        });
+        LOGGER.info("Kafka Connector is in desired state: {}", status);
     }
 
     void waitForKafkaTopic(String status, String topicName) {
