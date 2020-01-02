@@ -5,7 +5,7 @@
 [id="overview-components_{context}"]
 = {ProductName} Operators
 
-Having discussed the basics of Kafka, we can now look at how {ProductName} supports Kafka using _Operators_ to deploy and manage the components and dependencies to Kubernetes.
+Having discussed the basics of Kafka, we can now look at how {ProductName} supports Kafka using _Operators_ to deploy and manage the components and dependencies of Kafka to Kubernetes.
 
 //standard operator intro
 include::../../shared/snip-intro-operators.adoc[leveloffset=+1]

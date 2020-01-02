@@ -42,7 +42,7 @@ kubectl get nodes --output=jsonpath='{range .items[*]}{.status.addresses[?(@.typ
 bin/kafka-console-producer.sh --broker-list _<node-address>_:_<node-port>_ --topic my-topic
 ----
 
-. Type your message into the console where the producer is running, and press *Enter* to send the message.
+. Type your message into the console where the producer is running.
 
 . Open a new terminal tab or window, and start the consumer to receive the messages:
 +
