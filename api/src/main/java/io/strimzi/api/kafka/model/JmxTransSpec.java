@@ -46,7 +46,8 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     @JsonProperty(value = "outputDefinitions", required = true)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Defines the output hosts that will be referenced later on")
+    @Description("Defines the output hosts that will be referenced later on. " +
+            "For more information, see `proc-jmxtrans-deployment.adoc`")
     public List<JmxTransOutputDefinitionTemplate> getOutputDefinitionTemplates() {
         return outputDefinitionTemplates;
     }
@@ -57,7 +58,8 @@ public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
 
     @JsonProperty(required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Queries to send to the Kafka brokers to define what data should be read from each broker")
+    @Description("Queries to send to the Kafka brokers to define what data should be read from each broker. " +
+            "For more information, see `proc-jmxtrans-deployment.adoc`")
     public List<JmxTransQueryTemplate> getQueries() {
         return queries;
     }

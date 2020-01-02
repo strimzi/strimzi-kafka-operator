@@ -814,9 +814,9 @@ Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 [options="header"]
 |====
 |Property                  |Description
-|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on.
+|outputDefinitions  1.2+<.<|Defines the output hosts that will be referenced later on. For more information, see `proc-jmxtrans-deployment.adoc`.
 |xref:type-JmxTransOutputDefinitionTemplate-{context}[`JmxTransOutputDefinitionTemplate`] array
-|queries            1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker.
+|queries            1.2+<.<|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information, see `proc-jmxtrans-deployment.adoc`.
 |xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
 |resources          1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
@@ -835,9 +835,9 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |string
 |host        1.2+<.<|The ip of the remote host that the data will be pushed to.
 |string
-|port        1.2+<.<|The port of the remote host that the data will be pushed tp.
+|port        1.2+<.<|The port of the remote host that the data will be pushed to.
 |integer
-|flushDelay  1.2+<.<|How many seconds the JmxTransSpec will wait before push a new set of data out.
+|flushDelay  1.2+<.<|How many seconds the JmxTransSpec will wait before pushing a new set of data out.
 |integer
 |typeNames   1.2+<.<|Template for being able to filter out exactly what data you want when a wildcard query is sent. More information can be found here: https://github.com/jmxtrans/jmxtrans/wiki/Queries.
 |string array

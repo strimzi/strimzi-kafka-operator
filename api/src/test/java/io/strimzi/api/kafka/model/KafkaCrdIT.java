@@ -163,11 +163,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "JmxTrans-output-definition-with-missing-required-property.yaml");
             });
 
-        String expectedString1 = "spec.kafka.jmxOptions.jmxTrans.outputDefinitions.outputType in body is required";
-        String expectedString2 = "spec.kafka.jmxOptions.jmxTrans.outputDefinitions.name in body is required";
-
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase(expectedString1));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase(expectedString2));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.kafka.jmxOptions.jmxTrans.outputDefinitions.outputType in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.kafka.jmxOptions.jmxTrans.outputDefinitions.name in body is required"));
     }
 
     @Test
@@ -178,13 +175,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 createDelete(Kafka.class, "JmxTrans-queries-with-missing-required-property.yaml");
             });
 
-        String expectedString1 = "spec.kafka.jmxOptions.jmxTrans.queries.attributes in body is required";
-        String expectedString2 = "spec.kafka.jmxOptions.jmxTrans.queries.targetMBean in body is required";
-        String expectedString3 = "spec.kafka.jmxOptions.jmxTrans.queries.outputs in body is required";
-
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase(expectedString1));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase(expectedString2));
-        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase(expectedString3));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.kafka.jmxOptions.jmxTrans.queries.attributes in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.kafka.jmxOptions.jmxTrans.queries.targetMBean in body is required"));
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("spec.kafka.jmxOptions.jmxTrans.queries.outputs in body is required"));
     }
 
     @BeforeAll

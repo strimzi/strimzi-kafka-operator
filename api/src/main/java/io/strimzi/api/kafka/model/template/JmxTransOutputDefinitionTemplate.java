@@ -62,7 +62,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.host = host;
     }
 
-    @Description("The port of the remote host that the data will be pushed tp.")
+    @Description("The port of the remote host that the data will be pushed to.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getPort() {
         return port;
@@ -72,7 +72,7 @@ public class JmxTransOutputDefinitionTemplate implements Serializable, UnknownPr
         this.port = port;
     }
 
-    @Description("How many seconds the JmxTransSpec will wait before push a new set of data out")
+    @Description("How many seconds the JmxTransSpec will wait before pushing a new set of data out.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getFlushDelay() {
         return flushDelay;
