@@ -39,7 +39,7 @@
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[{oauth} site^]
-:oauth-artifact-version: 0.1.0.redhat-00002
+:oauth-artifact-version: 0.2.0
 
 // External links
 :docs-okd: link:https://docs.okd.io/3.9/dev_guide/builds/index.html[builds^]
