@@ -63,7 +63,6 @@ public class KafkaJmxOptionsTest {
         assertThat(opts.getJmxTransSpec().getQueries().get(0).getAttributes().get(1),  is("attribute1"));
         assertThat(opts.getJmxTransSpec().getQueries().get(0).getOutputs().get(0),  is("output0"));
         assertThat(opts.getJmxTransSpec().getQueries().get(0).getOutputs().get(1),  is("output1"));
-
     }
 
     @Test

@@ -40,6 +40,10 @@ import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
+/*
+ * Class for handling JmxTrans configuration passed by the user. Used to get the resources needed to create the
+ * JmxTrans deployment including: config map, deployment, and service accounts.
+ */
 public class JmxTrans extends AbstractModel {
 
     // Configuration defaults
@@ -48,7 +52,7 @@ public class JmxTrans extends AbstractModel {
     private static final String DEFAULT_JMXTRANS_IMAGE = "strimzi/jmxtrans:latest";
     public static final Probe LIVENESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
-    // Configuration for mounting certificates
+    // Configuration for mounting `config.json` to be used as Config during run time of the JmxTrans
     public static final String JMXTRANS_CONFIGMAP_KEY = "config.json";
     public static final String JMXTRANS_VOLUME_NAME = "jmx-config";
     public static final String CONFIG_MAP_ANNOTATION_KEY = "config-map-revision";
@@ -119,13 +123,10 @@ public class JmxTrans extends AbstractModel {
                         .build())
                 .build();
 
-        Map<String, String> podAnnotations = new HashMap<>();
-        podAnnotations.put(CONFIG_MAP_ANNOTATION_KEY, "WHERE_WILL_YOU_BE");
-
         return createDeployment(
                 updateStrategy,
                 Collections.emptyMap(),
-                podAnnotations,
+                Collections.emptyMap(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
