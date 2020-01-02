@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
@@ -428,6 +429,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                 if (fetchedResource != null) {
                     if ((!(fetchedResource instanceof KafkaConnector))
+                            && (!(fetchedResource instanceof KafkaMirrorMaker2))
                             && StatusUtils.isResourceV1alpha1(fetchedResource)) {
                         log.warn("{}: {} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
                                 reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());

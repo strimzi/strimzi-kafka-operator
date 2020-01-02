@@ -1023,6 +1023,8 @@ spec:
                     - secretName
             version:
               type: string
+          required:
+          - connectCluster
         status:
           type: object
           properties:

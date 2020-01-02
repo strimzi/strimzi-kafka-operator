@@ -1,0 +1,73 @@
+---
+apiVersion: "kafka.strimzi.io/v1alpha1"
+kind: "KafkaMirrorMaker2"
+metadata:
+  name: "test-kafka-mirror-maker-2"
+spec:
+  replicas: 6
+  connectCluster: "target"
+  config:
+    name: "bar"
+  image: "foo"
+  tolerations:
+  - effect: "NoSchedule"
+    key: "key1"
+    operator: "Equal"
+    value: "value1"
+  - effect: "NoSchedule"
+    key: "key2"
+    operator: "Equal"
+    value: "value2"
+  logging:
+    type: "inline"
+    loggers: {}
+  clusters:
+  - alias: "source"
+    bootstrapServers: "my-source-kafka:9092"
+    config: {}
+  - alias: "target"
+    bootstrapServers: "my-target-kafka:9092"
+    config: {}
+  mirrors:
+  - sourceCluster: "source"
+    targetCluster: "target"
+    sourceConnector:
+      tasksMax: 2
+      config:
+        replication.factor: 1
+        offset-syncs.topic.replication.factor: 1
+    checkpointConnector:
+      tasksMax: 2
+      config:
+        checkpoints.topic.replication.factor: 1
+    heartbeatConnector:
+      tasksMax: 2
+      config:
+        heartbeats.topic.replication.factor: 1
+    topics: "my-topic"
+    groups: "my-group"
+  externalConfiguration:
+    env:
+    - name: "SOME_VARIABLE"
+      valueFrom:
+        secretKeyRef:
+          key: "access-key"
+          name: "mysecret"
+    - name: "SOME_OTHER_VARIABLE"
+      valueFrom:
+        configMapKeyRef:
+          key: "secret-access-key"
+          name: "mysecret"
+    volumes:
+    - name: "secret-volume"
+      secret:
+        secretName: "ssh-key-secret"
+    - name: "foo"
+      secret:
+        secretName: "mysecret"
+    - name: "config-map-volume"
+      configMap:
+        name: "my-config-map"
+    - name: "config-vol"
+      configMap:
+        name: "log-config"

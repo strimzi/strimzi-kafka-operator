@@ -45,6 +45,7 @@ public class KafkaMirrorMaker2Spec extends KafkaConnectSpec {
     }
 
     @Description("The cluster alias used for Kafka Connect.")
+    @JsonProperty(required = true)
     public String getConnectCluster() {
         return connectCluster;
     }
