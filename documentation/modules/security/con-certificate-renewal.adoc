@@ -52,10 +52,10 @@ When connecting to the cluster, and to ensure they operate correctly, client app
 * Trust the cluster CA certificate published in the _<cluster>_-cluster-ca-cert Secret.
 * Use the credentials published in their _<user-name>_ Secret to connect to the cluster.
 +
-The User Secret provides credentials in PEM and PKCS #12 formats.
+The User Secret provides credentials in PEM and PKCS #12 formats, and can also provide a password when using SCRAM authentication.
 The User Operator creates the user credentials when a user is created.
 
-For workloads running inside the same Kubernetes cluster, Secrets can be mounted as a volume so the client Pods construct their keystores and truststores from the current state of the `Secrets`.
+For workloads running inside the same Kubernetes cluster and namespace, Secrets can be mounted as a volume so the client Pods construct their keystores and truststores from the current state of the Secrets.
 For more details on this procedure, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[Configuring internal clients to trust the cluster CA].
 
 === Client certificate renewal
