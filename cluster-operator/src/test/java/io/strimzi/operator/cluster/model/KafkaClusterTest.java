@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -942,6 +943,32 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP"))));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
+    }
+
+    @Test
+    public void testExternalNodePortsWithAddressType() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewConfiguration()
+                                    .withPreferredAddressType(NodeAddressType.INTERNAL_DNS)
+                                .endConfiguration()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check StatefulSet changes
+        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        Container initCont = sts.getSpec().getTemplate().getSpec().getInitContainers().get(0);
+
+        assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(NodeAddressType.INTERNAL_DNS.toValue()), is(true));
     }
 
     @Test

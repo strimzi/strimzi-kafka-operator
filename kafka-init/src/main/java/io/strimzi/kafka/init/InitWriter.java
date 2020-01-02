@@ -144,6 +144,11 @@ public class InitWriter {
 
         Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
 
+        // If user set preferred address type, we should check it first
+        if (config.getAddressType() != null && addressMap.containsKey(config.getAddressType())) {
+            return addressMap.get(config.getAddressType());
+        }
+
         if (addressMap.containsKey("ExternalDNS"))  {
             return addressMap.get("ExternalDNS");
         } else if (addressMap.containsKey("ExternalIP"))  {

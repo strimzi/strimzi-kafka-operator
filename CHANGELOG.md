@@ -3,6 +3,7 @@
 
 ## 0.16.0
 
+* Let user choose which node address will be used as advertised host (`ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` or `Hostname`)
 * Add support for tini
 * When not explicitly configured by the user in `jvmOptions`, `-Xmx` option is calculated from memory requests rather than from memory limits
 * Expose JMX port on Kafka brokers via an internal service
