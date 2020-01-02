@@ -5,7 +5,7 @@
 [id='con-customizing-external-services-{context}']
 = Customizing external Services
 
-When exposing Kafka to the outside of Kubernetes using load balancers or node prots, you can in addition to Labels and Annotations customize some more fields .
+When exposing Kafka to the outside of Kubernetes using load balancers or node ports, you can customize some more fields in addition to Labels and Annotations.
 These fields are described in the following table and affect how the Service is created.
 
 [table,stripes=none]

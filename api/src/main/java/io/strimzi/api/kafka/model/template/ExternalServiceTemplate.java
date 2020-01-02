@@ -27,8 +27,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata"})
+@JsonPropertyOrder({"metadata", "externalTrafficPolicy", "loadBalancerSourceRanges"})
 @EqualsAndHashCode
 public class ExternalServiceTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
