@@ -28,6 +28,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
@@ -90,9 +91,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -280,6 +286,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
                 .compose(state -> state.kafkaGenerateCertificates())
+                .compose(state -> state.getCustomTlsListenerThumbprint())
+                .compose(state -> state.getCustomExternalListenerThumbprint())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
@@ -373,6 +381,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ Deployment exporterDeployment = null;
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
+
+        // Custom Listener certificates
+        private String tlsListenerCustomCertificateThumbprint;
+        private String externalListenerCustomCertificateThumbprint;
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
@@ -1211,7 +1223,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
         }
 
-        private Future<ReconciliationState> getKafkaClusterDescription() {
+        /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
             Promise<ReconciliationState> promise = Promise.promise();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -1723,6 +1735,54 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return resultPromise.future();
         }
 
+        Future<ReconciliationState> getCustomTlsListenerThumbprint() {
+            return getCertificateSignature(kafkaCluster.getSecretSourceTls()).map(thumbprint -> {
+                tlsListenerCustomCertificateThumbprint = thumbprint;
+                return this;
+            });
+        }
+
+        Future<ReconciliationState> getCustomExternalListenerThumbprint() {
+            return getCertificateSignature(kafkaCluster.getSecretSourceExternal()).map(thumbprint -> {
+                externalListenerCustomCertificateThumbprint = thumbprint;
+                return this;
+            });
+        }
+
+        Future<String> getCertificateSignature(CertAndKeySecretSource customCertSecret)  {
+            Promise<String> thumbprintPromise = Promise.promise();
+
+            if (customCertSecret != null)   {
+                secretOperations.getAsync(namespace, customCertSecret.getSecretName())
+                        .setHandler(result -> {
+                            if (result.succeeded()) {
+                                Secret certSecret = result.result();
+
+                                if (certSecret != null) {
+                                    try {
+                                        X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
+                                        byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+                                        thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
+                                    } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
+                                        log.warn("{}: Failed to get certificate signature of {} from Secret {}.", reconciliation, customCertSecret.getCertificate(), customCertSecret.getSecretName());
+                                        thumbprintPromise.fail(new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e));
+                                    }
+                                } else {
+                                    log.warn("{}: Secret {} with custom TLS certificate does not exist.", reconciliation, customCertSecret.getSecretName());
+                                    thumbprintPromise.fail("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist.");
+                                }
+                            } else {
+                                log.warn("{}: Failed to get secret {} with custom TLS certificate.", reconciliation, customCertSecret.getSecretName());
+                                thumbprintPromise.fail("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate.");
+                            }
+                        });
+            } else {
+                thumbprintPromise.complete(null);
+            }
+
+            return thumbprintPromise.future();
+        }
+
         Future<ReconciliationState> kafkaAncillaryCm() {
             return getReconciliationStateOfConfigMap(kafkaCluster, kafkaMetricsAndLogsConfigMap, this::withKafkaAncillaryCmChanged);
         }
@@ -1878,12 +1938,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
             StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
+
+            // Annotations with CA generations to help with rolling updates when CA changes
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
+
+            // Annotations with custom cert thumbprints to help with rolling updates when they change
+            if (tlsListenerCustomCertificateThumbprint != null) {
+                Annotations.annotations(template).put(
+                        KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
+                        tlsListenerCustomCertificateThumbprint);
+            }
+
+            if (externalListenerCustomCertificateThumbprint != null) {
+                Annotations.annotations(template).put(
+                        KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
+                        externalListenerCustomCertificateThumbprint);
+            }
+
             return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSts));
         }
 
@@ -2499,8 +2575,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
+        private boolean isCustomCertUpToDate(StatefulSet sts, Pod pod, String annotation) {
+            final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), annotation, "");
+            final String podThumbprint = Annotations.stringAnnotation(pod, annotation, "");
+            log.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+                    sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
+                    annotation, podThumbprint,
+                    annotation, stsThumbprint);
+            return podThumbprint.equals(stsThumbprint);
+        }
+
         private boolean isPodToRestart(StatefulSet sts, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
+            boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
+            boolean isCustomCertExternalListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER);
             boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
             boolean isFsResizeNeeded = false;
@@ -2511,6 +2599,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             boolean isPodToRestart = !isPodUpToDate || isAncillaryCmChange;
+            isPodToRestart |= !isCustomCertTlsListenerUpToDate;
+            isPodToRestart |= !isCustomCertExternalListenerUpToDate;
             isPodToRestart |= isCaCertsChanged;
             isPodToRestart |= !isPodCaCertUpToDate;
 
@@ -2543,6 +2633,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 if (isFsResizeNeeded)   {
                     reasons.add("file system needs to be resized");
+                }
+                if (!isCustomCertTlsListenerUpToDate)   {
+                    reasons.add("custom certificate on the TLS listener changes");
+                }
+                if (!isCustomCertExternalListenerUpToDate)   {
+                    reasons.add("custom certificate on the external listener changes");
                 }
                 if (!reasons.isEmpty()) {
                     if (isPodToRestart) {
@@ -2766,7 +2862,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     }
 
-    private Date dateSupplier() {
+    /* test */ Date dateSupplier() {
         return new Date();
     }
 
