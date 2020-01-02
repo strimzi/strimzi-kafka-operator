@@ -173,10 +173,11 @@ class UserST extends BaseST {
         String uOlogs = kubeClient().logs(entityOperatorPodName, "user-operator");
         assertThat(uOlogs.contains(messageUserWasAdded), is(true));
 
-        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users --entity-name " + userName;
+        String command = "sh bin/kafka-configs.sh --zookeeper " + "localhost:2181" + " --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
         ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        assertThat(result.out().contains("Configs for user-principal 'CN=" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
