@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
  * Configures External node port listeners
  */
 
-@JsonPropertyOrder({"brokerCertChainAndKey", "addressType"})
+@JsonPropertyOrder({"brokerCertChainAndKey", "preferredAddressType"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
