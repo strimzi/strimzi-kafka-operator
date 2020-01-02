@@ -1761,9 +1761,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 if (certSecret != null) {
                                     try {
                                         X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-                                        byte[] der = cert.getEncoded();
-                                        MessageDigest sha = MessageDigest.getInstance("SHA-256");
-                                        byte[] signature = sha.digest(der);
+                                        byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
                                         thumbprintPromise.complete(Base64.getEncoder().encodeToString(signature));
                                     } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
                                         log.warn("{}: Failed to get certificate signature of {} from Secret {}.", reconciliation, customCertSecret.getCertificate(), customCertSecret.getSecretName());
