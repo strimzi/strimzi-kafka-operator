@@ -3,25 +3,26 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-oauth-{context}']
-= Using {oauth} token based authentication
+= Using {oauth} token-based authentication
 
 {ProductName} supports the use of {oauth} authentication using the _SASL OAUTHBEARER_ mechanism.
 
-{oauth} enables standardized token based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
+{oauth} enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
 In {ProductName}, {oauth} is currently only supported for authentication, with no authorization support.
 However, {oauth} authentication can be used in conjunction with xref:simple-acl-using-uo[ACL-based Kafka authorization].
 
-Using {oauth} token based authentication, application clients can access resources on application servers (called ‘resource servers’) without exposing account credentials.
-The client passes an access token as a means of authenticating, which application servers can also use to ascertain the level of access granted.
+Using {oauth} token-based authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
+
+The application client passes an access token as a means of authenticating, which application servers can also use to determine the level of access to grant.
 The authorization server handles the granting of access and inquiries about access.
 
 In the context of {ProductName}:
 
-* Kafka brokers act as resource servers
-* Kafka clients act as resource clients
+* Kafka brokers act as {oauth} resource servers
+* Kafka clients act as {oauth} application clients
 
-The brokers are the servers to which the clients authenticate.
+Kafka clients authenticate to Kafka brokers.
 The brokers and clients communicate with the {oauth} authorization server, as necessary, to obtain or validate access tokens.
 
 For a deployment of {ProductName}, {oauth} integration provides:
@@ -38,4 +39,4 @@ include::modules/con-oauth-authentication-broker.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-client.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-client-options.adoc[leveloffset=+1]
 include::modules/con-oauth-config.adoc[leveloffset=+1]
-include::modules/con-oauth-config-keycloak.adoc[leveloffset=+1]
+include::modules/con-oauth-server-examples.adoc[leveloffset=+1]

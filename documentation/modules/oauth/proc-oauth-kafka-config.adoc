@@ -83,7 +83,7 @@ spec:
 <2> URI of the token endpoint for authentication.
 <3> Trusted certificates for TLS connection to the authorization server.
 +
-Depending on how you applying {oauth} authentication, and the type of authorization server, there are additional configuration options you can use:
+Depending on how you apply {oauth} authentication, and the type of authorization server, there are additional configuration options you can use:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -93,12 +93,12 @@ spec:
   authentication:
     # ...
     disableTlsHostnameVerification: true <1>
-    skipTypeCheck: true <2>
-    notJwt: true <3>
+    checkAccessTokenType: false <2>
+    accessTokenIsJwt: false <3>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
-<2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can skip the token type check. Default is `false`.
-<3> If you are using opaque tokens, you can apply `notJwt: true` so that access tokens are not treated as JWT tokens.
+<2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
+<3> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
 
 . Apply the changes to the deployment of your Kafka resource.
 +

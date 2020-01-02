@@ -24,8 +24,6 @@ For more information on the configuration of {oauth} authentication for Kafka br
 * xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
 * xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[Authentication and Authorization]
 
-//type-KafkaClientAuthenticationOAuth
-
 .Prerequisites
 
 * {ProductName} and Kafka are running

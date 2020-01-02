@@ -7,18 +7,21 @@
 
 Kafka broker configuration for {oauth} involves:
 
-* Client configuration (for the Kafka broker) on an authorization server
-* {oauth} authentication configuration in the Kafka cluster
+* Creating the {oauth} client in the authorization server
+* Configuring {oauth} authentication in the Kafka custom resource
 
 NOTE: In relation to the authorization server, Kafka brokers and Kafka clients are both regarded as {oauth} clients.
 
 == {oauth} client configuration on an authorization server
 
 To configure a Kafka broker to validate the token received during session initiation,
-the recommended approach is to create a {oauth} _client_ definition in an authorization server, configured as _confidential_, with client credentials enabled:
+the recommended approach is to create an {oauth} _client_ definition in an authorization server, configured as _confidential_, with client credentials enabled:
 
 * Client ID of `Kafka`
-* Client ID and secret as the authentication mechanism
+* Client ID and Secret as the authentication mechanism
+
+NOTE: You only need to use a client ID and secret when using a non-public introspection endpoint of the authorization server.
+The credentials are not typically required when using public authorization server endpoints, as with fast local JWT token validation.
 
 == {oauth} authentication configuration in the Kafka cluster
 
@@ -70,19 +73,19 @@ The procedure to configure {oauth} for listeners, with descriptions and examples
 
 Fast local JWT token validation checks a JWT token signature locally.
 
-The local check ensures a token:
+The local check ensures that a token:
 
 * Conforms to type by containing a (_typ_) claim value of `Bearer` for an access token
 * Is valid (not expired)
 * Has an issuer that matches a `validIssuerURI`
 
-You specify a `validIssuerUri` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
+You specify a `validIssuerUrI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
 
 The authorization server does not need to be contacted during fast local JWT token validation.
 You activate fast local JWT token validation by specifying a `jwksEndpointUri` attribute, the endpoint exposed by the {oauth} authorization server.
 The endpoint contains the public keys used to validate signed JWT tokens, which are sent as credentials by Kafka clients.
 
-NOTE: All communication with the authorization server should be performed using HyperText Transfer Protocol Secure (HTTPS).
+NOTE: All communication with the authorization server should be performed using TLS encryption.
 
 You can configure a certificate truststore as a Kubernetes Secret in your {ProductName} project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
 
@@ -112,7 +115,7 @@ spec:
 [[con-oauth-authentication-broker-intro-local]]
 == {oauth} introspection endpoint configuration
 
-Token validation using {oauth} an introspection endpoint treats a received access token as opaque.
+Token validation using {oauth} as an introspection endpoint treats a received access token as opaque.
 The Kafka broker sends an access token to the introspection endpoint, which responds with the token information necessary for validation.
 Importantly, it returns up-to-date information if the specific access token is valid, and also information about when the token expires.
 

@@ -17,8 +17,8 @@ The following types of listener are supported:
 * External listener on port 9094 for access from outside of Kubernetes
 
 .{oauth}
-If you are using {oauth} token based authentication, you can configure the listeners to connect to your authorization server.
-For more information, see xref:assembly-oauth-str[Using {oauth} token based authentication].
+If you are using {oauth} token-based authentication, you can configure the listeners to connect to your authorization server.
+For more information, see xref:assembly-oauth-str[Using {oauth} token-based authentication].
 
 include::../modules/con-kafka-listeners.adoc[leveloffset=+1]
 
