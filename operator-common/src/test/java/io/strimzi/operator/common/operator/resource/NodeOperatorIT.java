@@ -53,7 +53,6 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
                 .endMetadata()
                 .withNewSpec()
                     .withNewUnschedulable(true)
-                    .withTaints(new TaintBuilder().withKey("key").withValue("value").withEffect("NoSchedule").build())
                 .endSpec()
                 .build();
     }
@@ -63,6 +62,5 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
         context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
         context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
         context.verify(() -> assertThat(actual.getSpec().getUnschedulable(), is(expected.getSpec().getUnschedulable())));
-        context.verify(() -> assertThat(actual.getSpec().getTaints().size(), is(expected.getSpec().getTaints().size())));
     }
 }
