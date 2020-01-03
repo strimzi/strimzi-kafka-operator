@@ -104,4 +104,35 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
         assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
         assertThat(current.getSpec().getPorts().get(1).getNodePort(), is(desired.getSpec().getPorts().get(0).getNodePort()));
     }
+
+    @Test
+    public void testHealthCheckPortPatching()  {
+        KubernetesClient client = mock(KubernetesClient.class);
+
+        Service current = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("Loadbalancer")
+                    .withHealthCheckNodePort(34321)
+                .endSpec()
+                .build();
+
+        Service desired = new ServiceBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                .withType("Loadbalancer")
+                .endSpec()
+                .build();
+
+        ServiceOperator op = new ServiceOperator(vertx, client);
+        op.patchHealthCheckPorts(current, desired);
+
+        assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
+    }
 }
