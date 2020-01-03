@@ -67,6 +67,7 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -397,6 +398,7 @@ public class KafkaAssemblyOperatorTest {
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         RouteOperator mockRotueOps = supplier.routeOperations;
+        NodeOperator mockNodeOps = supplier.nodeOperator;
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -425,6 +427,10 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock pod readiness
         when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock node ops
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(clusterCmNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
             (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperPodName(clusterCmName, replica));
@@ -832,6 +838,7 @@ public class KafkaAssemblyOperatorTest {
         RoleBindingOperator mockRbo = supplier.roleBindingOperations;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         RouteOperator mockRouteOps = supplier.routeOperations;
+        NodeOperator mockNodeOps = supplier.nodeOperator;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -927,8 +934,12 @@ public class KafkaAssemblyOperatorTest {
                 .build();
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
 
-        // Mock pod readiness
+        // Mock pod ops
         when(mockPodOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock node ops
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock Service gets
         when(mockServiceOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(

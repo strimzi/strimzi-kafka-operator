@@ -124,7 +124,8 @@ public class KafkaUpdateTest {
     private List<StatefulSet> upgrade(VertxTestContext context, Map<String, String> versionMap,
                                       Kafka initialKafka, StatefulSet initialSs, Kafka updatedKafka,
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
-        KafkaSetOperator kso = mock(KafkaSetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        KafkaSetOperator kso = supplier.kafkaSetOperations;
 
         StatefulSet kafkaSts = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, VERSIONS).generateStatefulSet(false, null, null);
 
@@ -147,9 +148,7 @@ public class KafkaUpdateTest {
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                new ResourceOperatorSupplier(null, null, null,
-                        kso, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null, null),
+                supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 

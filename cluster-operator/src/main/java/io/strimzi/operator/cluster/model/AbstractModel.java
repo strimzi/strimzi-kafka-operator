@@ -239,12 +239,18 @@ public abstract class AbstractModel {
         return headlessServiceName;
     }
 
+    /**
+     * @return The selector labels as an instance of the Labels object.
+     */
+    public Labels getSelectorLabels() {
+        return labels.withName(name).strimziLabels();
+    }
 
     /**
-     * @return The selector labels.
+     * @return The selector labels as Map.
      */
-    public Map<String, String> getSelectorLabels() {
-        return labels.withName(name).strimziSelectorLabels().toMap();
+    public Map<String, String> getSelectorLabelsAsMap() {
+        return labels.withName(name).strimziLabels().toMap();
     }
 
     protected Map<String, String> getLabelsWithName() {
@@ -726,7 +732,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithName(serviceName, templateServiceLabels), getSelectorLabelsAsMap(), annotations);
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
@@ -734,7 +740,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, mergeLabelsOrAnnotations(getLabelsWithName(serviceName), templateServiceLabels, labels), getSelectorLabelsAsMap(), annotations);
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
@@ -778,7 +784,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withType("ClusterIP")
                     .withClusterIP("None")
-                    .withSelector(getSelectorLabels())
+                    .withSelector(getSelectorLabelsAsMap())
                     .withPorts(ports)
                     .withPublishNotReadyAddresses(true)
                 .endSpec()
@@ -818,7 +824,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withPodManagementPolicy("Parallel")
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                     .withServiceName(headlessServiceName)
                     .withReplicas(replicas)
                     .withNewTemplate()
@@ -869,7 +875,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withStrategy(updateStrategy)
                     .withReplicas(replicas)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                     .withNewTemplate()
                         .withNewMetadata()
                             .withLabels(getLabelsWithName(templatePodLabels))
@@ -1114,7 +1120,7 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabelsAsMap()).build())
                 .endSpec()
                 .build();
     }

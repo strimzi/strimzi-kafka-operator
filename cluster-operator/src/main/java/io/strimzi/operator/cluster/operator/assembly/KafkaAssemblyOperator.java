@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
+import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -62,6 +63,7 @@ import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -78,6 +80,7 @@ import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOper
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -151,6 +154,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
+    private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
 
     /**
@@ -178,6 +182,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
         this.crdOperator = supplier.kafkaOperator;
+        this.nodeOperator = supplier.nodeOperator;
     }
 
     @Override
@@ -301,6 +306,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaPodsReady())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
+                .compose(state -> state.kafkaNodePortExternalListenerStatus())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
 
                 .compose(state -> state.getTopicOperatorDescription())
@@ -395,6 +401,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // Custom Listener certificates
         private String tlsListenerCustomCertificateThumbprint;
         private String externalListenerCustomCertificateThumbprint;
+
+        // Stores node port of the external bootstrap service for use in KafkaStatus
+        /* test */ int externalBootstrapNodePort;
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
@@ -1622,12 +1631,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         .build());
                             } else if (kafkaCluster.isExposedWithNodePort()) {
                                 ServiceSpec sts = serviceOperations.get(namespace, serviceName).getSpec();
-                                Integer nodePort = sts.getPorts().get(0).getNodePort();
-
-                                setExternalListenerStatus(new ListenerAddressBuilder()
-                                        .withHost("<AnyNodeAddress>")
-                                        .withPort(nodePort)
-                                        .build());
+                                externalBootstrapNodePort = sts.getPorts().get(0).getNodePort();
                             }
                             future.complete();
                         } else {
@@ -1649,6 +1653,52 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 });
 
             return withVoid(blockingPromise.future());
+        }
+
+        Future<ReconciliationState> kafkaNodePortExternalListenerStatus() {
+            List<Node> nodes = new ArrayList<>();
+
+            if (kafkaCluster.isExposedWithNodePort())   {
+                return nodeOperator.listAsync(Labels.EMPTY)
+                        .compose(result -> {
+                            nodes.addAll(result);
+                            return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels());
+                        })
+                        .map(pods -> {
+                            Set<ListenerAddress> statusAddresses = new HashSet<>();
+
+                            for (Pod broker : pods) {
+                                if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
+                                    String hostIP = broker.getStatus().getHostIP();
+                                    Node podNode = nodes.stream().filter(node -> {
+                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
+                                            return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
+                                        } else {
+                                            return false;
+                                        }
+                                    }).findFirst().orElse(null);
+
+                                    if (podNode != null) {
+                                        ListenerAddress address = new ListenerAddressBuilder()
+                                                .withHost(NodeUtils.findAddress(podNode.getStatus().getAddresses(), kafkaCluster.getPreferredNodeAddressType()))
+                                                .withPort(externalBootstrapNodePort)
+                                                .build();
+
+                                        statusAddresses.add(address);
+                                    }
+
+                                } else {
+                                    continue;
+                                }
+                            }
+
+                            setExternalListenerStatus(statusAddresses.toArray(new ListenerAddress[statusAddresses.size()]));
+
+                            return this;
+                        });
+            } else {
+                return Future.succeededFuture(this);
+            }
         }
 
         Future<ReconciliationState> kafkaReplicaServicesReady() {
@@ -2178,7 +2228,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             futureSts.setHandler(res -> {
                 if (res.succeeded())    {
                     List<PersistentVolumeClaim> desiredPvcs = zkCluster.generatePersistentVolumeClaims();
-                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
+                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabelsAsMap()));
 
                     maybeCleanPodAndPvc(zkSetOperations, res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultPromise);
                 } else {
@@ -2208,7 +2258,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // This is needed because the restarted pod will be created from old statefulset with old storage configuration.
                     List<PersistentVolumeClaim> desiredPvcs = kafkaCluster.generatePersistentVolumeClaims(getOldStorage(sts));
 
-                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
+                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabelsAsMap()));
 
                     maybeCleanPodAndPvc(kafkaSetOperations, sts, desiredPvcs, existingPvcsFuture).setHandler(resultPromise);
                 } else {
@@ -2401,7 +2451,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> zkPersistentClaimDeletion() {
             Promise<ReconciliationState> resultPromise = Promise.promise();
-            Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
+            Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabelsAsMap()));
 
             futurePvcs.setHandler(res -> {
                 if (res.succeeded() && res.result() != null)    {
@@ -2429,7 +2479,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> kafkaPersistentClaimDeletion() {
             Promise<ReconciliationState> resultPromise = Promise.promise();
-            Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
+            Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabelsAsMap()));
 
             futurePvcs.setHandler(res -> {
                 if (res.succeeded() && res.result() != null)    {
