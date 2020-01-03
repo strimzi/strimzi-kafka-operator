@@ -2586,20 +2586,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
-            Promise<ReconciliationState> resultPromise = Promise.promise();
-
-            secretOperations.reconcile(namespace, EntityOperator.secretName(name),
+            return secretOperations.reconcile(namespace, EntityOperator.secretName(name),
                     entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
-                    .setHandler(res -> {
-                        if (res.succeeded()) {
-                            isEntityOperatorCertsChanged = res.result() instanceof ReconcileResult.Patched;
-                            resultPromise.complete(this);
-                        } else {
-                            resultPromise.fail(res.cause());
-                        }
+                    .map(res -> {
+                        isEntityOperatorCertsChanged = res instanceof ReconcileResult.Patched;
+                        return this;
                     });
-
-            return resultPromise.future();
         }
 
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {

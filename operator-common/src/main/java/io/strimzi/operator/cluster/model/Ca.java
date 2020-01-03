@@ -377,26 +377,22 @@ public abstract class Ca {
                         Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
             }
 
-            boolean shouldBeRegenerated = false;
             List<String> reasons = new ArrayList<>(2);
 
             if (certSubjectChanged(certAndKey, subject, podName))   {
                 reasons.add("DNS names changed");
-                shouldBeRegenerated = true;
             }
 
             if (isExpiring(secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
                 reasons.add("certificate is expiring");
-                shouldBeRegenerated = true;
             }
 
-            if (shouldBeRegenerated)  {
+            if (!reasons.isEmpty())  {
                 log.debug("Certificate for pod {} need to be regenerated because:", podName, String.join(", ", reasons));
 
                 CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
             }   else {
-
                 certs.put(podName, certAndKey);
             }
         }
