@@ -328,13 +328,16 @@ public class KafkaExporter extends AbstractModel {
      * It also contains the related Kafka Exporter private key.
      *
      * @param clusterCa The cluster CA.
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa) {
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }
         Secret secret = clusterCa.kafkaExporterSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name, "kafka-exporter", labels, createOwnerReference());
+        return ModelUtils.buildSecret(clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
+                "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }
