@@ -29,6 +29,8 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
@@ -524,6 +526,21 @@ public class ResourceUtils {
                     .withMetrics(metricsCm)
                     .withHttp(http)
                 .endSpec()
+                .build();
+    }
+
+    /**
+     * Generate empty Kafka MirrorMaker 2.0 ConfigMap
+     */
+    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2Cluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaMirrorMaker2Builder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec().endSpec()
                 .build();
     }
 
