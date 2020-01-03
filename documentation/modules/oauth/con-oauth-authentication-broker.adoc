@@ -65,7 +65,7 @@ Fast local JWT token validation checks a JWT token signature locally.
 
 The local check ensures a token:
 
-* Conforms to type (`oauth`)
+* Conforms to type by containing a (_typ_) claim value of `Bearer` for an access token
 * Is valid (not expired)
 * Has an issuer that matches a `validIssuerURI`
 

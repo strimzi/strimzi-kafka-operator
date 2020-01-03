@@ -18,7 +18,7 @@ Depending on the authorization server used, and the configuration options availa
 Using fast local token validation requires the authorization server to provide a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
 
 Another option is to use an {oauth} introspection endpoint on the authorization server.
-Each time a Kafka broker connection is established, the broker sends the access token it receives to the authorization server, and a response confirming whether or not the token is valid is returned.
+Each time a new Kafka broker connection is established, the broker passes the access token received from the client to the authorization server, and checks the response to confirm whether or not the token is valid.
 
 Kafka client credentials can also be configured for:
 
