@@ -47,10 +47,10 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
         this.metadata = metadata;
     }
 
-    @Description("Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints. " +
+    @Description("Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. " +
             "`Cluster` may cause a second hop to another node and obscures the client source IP. " +
             "`Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). " +
-            "When not specified, Kubernetes will use `Cluster` as default.")
+            "If unspecified, Kubernetes will use `Cluster` as the default.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ExternalTrafficPolicy getExternalTrafficPolicy() {
         return externalTrafficPolicy;
@@ -60,10 +60,10 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
         this.externalTrafficPolicy = externalTrafficPolicy;
     }
 
-    @Description("A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients will be able to connect to load balancer type listeners. " +
-            "If supported by the platform, this will restrict traffic through the load balancer to the specified CIDR ranges in this list. " +
-            "This field is applicable only for load balancer type services and will be ignored if the cloud-provider does not support the feature. " +
-            "For more info see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/")
+    @Description("A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. " +
+            "If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. " +
+            "This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. " +
+            "For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getLoadBalancerSourceRanges() {
         return loadBalancerSourceRanges;
