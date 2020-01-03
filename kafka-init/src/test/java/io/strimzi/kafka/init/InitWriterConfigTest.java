@@ -7,6 +7,7 @@ package io.strimzi.kafka.init;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -31,6 +32,16 @@ public class InitWriterConfigTest {
         assertThat(config.getNodeName(), is("localhost"));
         assertThat(config.getRackTopologyKey(), is("failure-domain.beta.kubernetes.io/zone"));
         assertThat(config.isExternalAddress(), is(true));
+        assertThat(config.getAddressType(), is(nullValue()));
+    }
+
+    @Test
+    public void testEnvVarsWithAddressType() {
+        Map<String, String> envs = new HashMap<>(envVars);
+        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
+
+        InitWriterConfig config = InitWriterConfig.fromMap(envs);
+        assertThat(config.getAddressType(), is("InternalDNS"));
     }
 
     @Test

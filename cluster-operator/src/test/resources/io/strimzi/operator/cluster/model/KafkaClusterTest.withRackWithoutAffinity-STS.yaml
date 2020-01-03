@@ -1,4 +1,10 @@
 ---
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+    - matchExpressions:
+      - key: "failure-domain.beta.kubernetes.io/zone"
+        operator: "Exists"
 podAntiAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
   - podAffinityTerm:

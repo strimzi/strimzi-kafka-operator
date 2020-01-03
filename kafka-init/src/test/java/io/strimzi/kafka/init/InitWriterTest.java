@@ -124,6 +124,18 @@ public class InitWriterTest {
     }
 
     @Test
+    public void testFindAddressWithType()   {
+        Map<String, String> envs = new HashMap<>(envVars);
+        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
+        InitWriterConfig config = InitWriterConfig.fromMap(envs);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+        InitWriter writer = new InitWriter(client, config);
+        String address = writer.findAddress(addresses);
+
+        assertThat(address, is("my.internal.address"));
+    }
+
+    @Test
     public void testFindAddress()   {
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
         KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);

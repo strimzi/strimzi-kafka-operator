@@ -821,7 +821,7 @@ public abstract class Ca {
         try {
             return x509Certificate(bytes);
         } catch (CertificateException e) {
-            throw new RuntimeException("Certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
+            throw new RuntimeException("Failed to decode certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
         }
     }
 

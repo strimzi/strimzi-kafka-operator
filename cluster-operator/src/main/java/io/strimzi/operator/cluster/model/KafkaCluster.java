@@ -13,6 +13,9 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -111,6 +114,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
+    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
+
     /**
      * {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled
      */
@@ -204,6 +209,9 @@ public class KafkaCluster extends AbstractModel {
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
+
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-tls-listener-thumbprint";
+    public static final String ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER = Annotations.STRIMZI_DOMAIN + "/custom-cert-external-listener-thumbprint";
 
     // Env vars for JMX service
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
@@ -1414,7 +1422,15 @@ public class KafkaCluster extends AbstractModel {
         Affinity userAffinity = getUserAffinity();
         AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
         if (rack != null) {
+            NodeSelectorTerm selector = new NodeSelectorTermBuilder()
+                    .withMatchExpressions(new NodeSelectorRequirementBuilder()
+                            .withNewOperator("Exists")
+                            .withNewKey(rack.getTopologyKey())
+                            .build())
+                    .build();
+
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
+            // and node affinity to make sure the pods are scheduled only on nodes with the rack label
             builder = builder
                     .editOrNewPodAntiAffinity()
                         .addNewPreferredDuringSchedulingIgnoredDuringExecution()
@@ -1427,7 +1443,12 @@ public class KafkaCluster extends AbstractModel {
                                 .endLabelSelector()
                             .endPodAffinityTerm()
                         .endPreferredDuringSchedulingIgnoredDuringExecution()
-                    .endPodAntiAffinity();
+                    .endPodAntiAffinity()
+                    .editOrNewNodeAffinity()
+                        .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                            .addToNodeSelectorTerms(selector)
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
+                    .endNodeAffinity();
         }
         return builder.build();
     }
@@ -1443,6 +1464,12 @@ public class KafkaCluster extends AbstractModel {
         if (isExposedWithNodePort()) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
+
+            KafkaListenerExternalNodePort listener = (KafkaListenerExternalNodePort) listeners.getExternal();
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getPreferredAddressType() != null)    {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE, listener.getConfiguration().getPreferredAddressType().toValue()));
+            }
         }
 
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);

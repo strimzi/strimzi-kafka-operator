@@ -62,13 +62,13 @@ public class VerifiableClient {
      */
     public void setArguments(ClientArgumentMap args) {
         arguments.clear();
-        String test;
+        String argument;
         for (ClientArgument arg : args.getArguments()) {
             if (validateArgument(arg)) {
                 for (String value : args.getValues(arg)) {
                     if (arg.equals(ClientArgument.USER)) {
-                        test = String.format("%s=%s", arg.command(), value);
-                        arguments.add(test);
+                        argument = String.format("%s=%s", arg.command(), value);
+                        arguments.add(argument);
                     } else {
                         arguments.add(arg.command());
                         if (!value.isEmpty()) {

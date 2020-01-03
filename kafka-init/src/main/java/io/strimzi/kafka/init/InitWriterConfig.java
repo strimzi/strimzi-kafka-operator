@@ -15,6 +15,7 @@ public class InitWriterConfig {
     public static final String RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     public static final String NODE_NAME = "NODE_NAME";
     public static final String EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    public static final String EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
     public static final String EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
 
     public static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
@@ -22,6 +23,7 @@ public class InitWriterConfig {
     private String nodeName;
     private String rackTopologyKey;
     private boolean externalAddress;
+    private String addressType;
     private String initFolder;
     private String externalAdvertisedAddresses;
 
@@ -50,15 +52,18 @@ public class InitWriterConfig {
 
         String externalAdvertisedAddressesEnvVar = map.get(InitWriterConfig.EXTERNAL_ADVERTISED_ADDRESSES);
 
-        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder, externalAdvertisedAddressesEnvVar);
+        String externalAddressType = map.get(InitWriterConfig.EXTERNAL_ADDRESS_TYPE);
+
+        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder, externalAdvertisedAddressesEnvVar, externalAddressType);
     }
 
-    public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAdvertisedHost) {
+    public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAdvertisedHost, String externalAddressType) {
         this.nodeName = nodeName;
         this.rackTopologyKey = rackTopologyKey;
         this.externalAddress = externalAddress;
         this.initFolder = initFolder;
         this.externalAdvertisedAddresses = externalAdvertisedHost;
+        this.addressType = externalAddressType;
     }
 
     /**
@@ -96,6 +101,13 @@ public class InitWriterConfig {
         return externalAdvertisedAddresses;
     }
 
+    /**
+     * @return The address type which should be preferred in the selection
+     */
+    public String getAddressType() {
+        return addressType;
+    }
+
     @Override
     public String toString() {
         return "InitWriterConfig(" +
@@ -104,6 +116,7 @@ public class InitWriterConfig {
                 ",externalAddress=" + externalAddress +
                 ",initFolder=" + initFolder +
                 ",externalAdvertisedAddresses=" + externalAdvertisedAddresses +
+                ",addressType=" + addressType +
                 ")";
     }
 }
