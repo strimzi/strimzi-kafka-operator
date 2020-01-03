@@ -11,7 +11,7 @@
 
 = Using external configuration and secrets
 
-Connectors are created, reconfigured, and deleted using an HTTP REST interface unless `KafkaConnectors` are enabled for the Kafka Connect cluster. The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
+Connectors are created, reconfigured, and deleted using an HTTP REST interface unless `KafkaConnectors` are enabled for the Kafka Connect cluster (for more information, see xref:con-creating-managing-connectors-{context}[]). The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
 
 Some parts of the configuration of a connector can be externalized using ConfigMaps or Secrets.
 You can then reference the configuration values in HTTP REST commands (this keeps the configuration separate and more secure, if needed).

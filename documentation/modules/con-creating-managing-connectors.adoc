@@ -19,15 +19,13 @@ Once you have created a container image for your connector plug-in, you need to 
 * `KafkaConnector` resources (referred to as `KafkaConnectors`)
 * Kafka Connect REST API
 
-For security reasons, we recommend that you use `KafkaConnectors` rather than the Kafka Connect REST API. `KafkaConnectors` use Kubernetes RBAC controls to secure the Kafka Connect REST API and lock down its resources.
-
-NOTE: You need to use the Kafka Connect REST API for restarting failed tasks and pausing and resuming connectors. Future {ProductName} releases might add this functionality to `KafkaConnectors`.
+NOTE: Currently, `KafkaConnectors` do not support restarting failed tasks and pausing and resuming connectors. You need to use the Kafka Connect REST API to perform these tasks.
 
 .`KafkaConnector` resources
 
-`KafkaConnectors` allow you to create and manage source and sink connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required. Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create a corresponding connector instance. 
+`KafkaConnectors` allow you to create and manage source and sink connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required. Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create the connector instance. 
 
-You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates using `kubectl apply`. You remove a connector by deleting its corresponding `KafkaConnector`.
+You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates (for example, using `kubectl apply`). You remove a connector by deleting its corresponding `KafkaConnector`.
 
 To ensure compatibility with earlier versions of {ProductName}, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must configure the `KafkaConnect` custom resource to use `KafkaConnectors` for the creation and management of connectors. For instructions, see xref:proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[].
 
@@ -37,4 +35,4 @@ When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for the
 
 The Kafka Connect REST API is available on port 8083 as the `<connect-cluster-name>-connect-api` service.
 
-If `KafkaConnectors` are enabled, changes made using the Kafka Connect REST API are reverted by the Cluster Operator. 
+If `KafkaConnectors` are enabled, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator. 

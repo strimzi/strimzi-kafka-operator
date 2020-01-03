@@ -5,7 +5,7 @@
 [id='proc-deploying-kafkaconnector-{context}']
 = Deploying a `KafkaConnector` resource to Kafka Connect
 
-Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML file is configured to create a `FileStreamSourceConnector`.
+Deploy the example `KafkaConnector` to a Kafka Connect cluster. The example YAML file is configured to create a `FileStreamSourceConnector` to send each line of the Kafka license file as a message in Kafka.
 
 .Prerequisites
 
@@ -27,7 +27,7 @@ metadata:
 spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
   tasksMax: 2 <4>
-  Config: <5>
+  config: <5>
     file: "/opt/kafka/LICENSE"
     topic: my-topic
     # ...

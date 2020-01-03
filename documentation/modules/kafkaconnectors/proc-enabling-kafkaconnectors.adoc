@@ -21,11 +21,11 @@ To enable `KafkaConnectors` for a Kafka Connect cluster, add the `strimzi.io/use
 ----
 apiVersion: kafka.strimzi.io/v1beta1
 kind: KafkaConnect
-Metadata:
+metadata:
   name: my-connect-cluster
-  Annotations: 
+  annotations: 
     strimzi.io/use-connector-resources: "true"
-Spec:
+spec:
   # ...
 ----
 
