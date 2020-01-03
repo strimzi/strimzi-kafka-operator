@@ -23,11 +23,16 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Properties;
 
@@ -46,8 +51,8 @@ class KafkaClientProperties {
      * @param clusterName kafka cluster name
      * @return producer properties
      */
-    static Properties createBasicProducerProperties(String namespace, String clusterName) {
-        return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.BASIC, null);
+    static Properties createProducerProperties(String namespace, String clusterName) {
+        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.BASIC, null);
     }
 
     /**
@@ -57,18 +62,19 @@ class KafkaClientProperties {
      * @return producer properties
      */
     static Properties createTracingProducerProperties(String namespace, String clusterName, String serviceName) {
-        return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.TRACING, serviceName);
+        return createProducerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, EClientType.TRACING, serviceName);
     }
 
     /**
      * Create producer properties with SSL security
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
+     * @param caSecretName CA secret name
      * @param userName user name for authorization
      * @param securityProtocol security protocol
      * @return producer configuration
      */
-    static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol, EClientType clientType, String serviceName) {
+    static Properties createProducerProperties(String namespace, String clusterName, String caSecretName, String userName, String securityProtocol, EClientType clientType, String serviceName) {
         Properties producerProperties = new Properties();
 
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getExternalBootstrapConnect(namespace, clusterName));
@@ -78,7 +84,7 @@ class KafkaClientProperties {
         producerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-producer");
         producerProperties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
 
-        producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
+        producerProperties.putAll(sharedClientProperties(namespace, caSecretName, userName, securityProtocol));
 
         // TODO: create Tracing client properties if (clientType == EClientType.TRACING) { setTracingProperties().... serviceName} same with Oauth
 
@@ -92,18 +98,19 @@ class KafkaClientProperties {
      * @return consumer configuration
      */
     static Properties createConsumerProperties(String namespace, String clusterName, String consumerGroup) {
-        return createConsumerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup);
+        return createConsumerProperties(namespace, clusterName, KafkaResources.clusterCaCertificateSecretName(clusterName), "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL, consumerGroup);
     }
 
     /**
      * Create consumer properties with SSL security
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
+     * @param caSecretName CA secret name
      * @param userName user name for authorization
      * @param securityProtocol security protocol
      * @return consumer configuration
      */
-    static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol, String consumerGroup) {
+    static Properties createConsumerProperties(String namespace, String clusterName, String caSecretName, String userName, String securityProtocol, String consumerGroup) {
         Properties consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
         consumerProperties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -113,7 +120,7 @@ class KafkaClientProperties {
         consumerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-consumer");
         consumerProperties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        consumerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
+        consumerProperties.putAll(sharedClientProperties(namespace, caSecretName, userName, securityProtocol));
 
         return consumerProperties;
     }
@@ -121,25 +128,44 @@ class KafkaClientProperties {
     /**
      * Create properties which are same pro producer and consumer
      * @param namespace kafka namespace
-     * @param clusterName kafka cluster name
+     * @param caSecretName CA secret name
      * @param userName user name for authorization
      * @param securityProtocol security protocol
      * @return shared client properties
      */
-    private static Properties sharedClientProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    private static Properties sharedClientProperties(String namespace, String caSecretName, String userName, String securityProtocol) {
         Properties properties = new Properties();
         // For turn off hostname verification
         properties.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
 
         try {
-            Secret clusterCaCertSecret = kubeClient(namespace).getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
+            Secret clusterCaCertSecret = kubeClient(namespace).getSecret(caSecretName);
 
-            String tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("ca.password")), StandardCharsets.US_ASCII);
             File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
-            String truststore = clusterCaCertSecret.getData().get("ca.p12");
-            Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
-            tsFile.deleteOnExit();
+            String tsPassword = "foo";
+            if (caSecretName.contains("custom-certificate")) {
+                tsFile.deleteOnExit();
+                KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
+                ts.load(null, tsPassword.toCharArray());
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                String clusterCaCert = kubeClient(namespace).getSecret(caSecretName).getData().get("ca.crt");
+                Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
+                ts.setCertificateEntry("ca.crt", cert);
+                FileOutputStream tsOs = new FileOutputStream(tsFile);
+                try {
+                    ts.store(tsOs, tsPassword.toCharArray());
+                } finally {
+                    tsOs.close();
+                }
+                properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            } else {
+                tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("ca.password")), StandardCharsets.US_ASCII);
+                String truststore = clusterCaCertSecret.getData().get("ca.p12");
+                Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
+                tsFile.deleteOnExit();
+            }
+
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
             properties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());

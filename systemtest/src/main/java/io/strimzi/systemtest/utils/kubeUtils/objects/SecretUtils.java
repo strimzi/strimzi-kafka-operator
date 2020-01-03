@@ -50,20 +50,31 @@ public class SecretUtils {
     }
 
     public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
+        createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, null);
+    }
+
+    public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace) {
+        createSecretFromFile(certFilesPath, name, namespace, null);
+    }
+
+    public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace, Map<String, String> labels) {
         byte[] encoded;
         try {
-            encoded = Files.readAllBytes(Paths.get(pathToOrigin));
-
             Map<String, String> data = new HashMap<>();
-            Base64.Encoder encoder = Base64.getEncoder();
-            data.put(key, encoder.encodeToString(encoded));
+            for (Map.Entry<String, String> entry : certFilesPath.entrySet()) {
+                encoded = Files.readAllBytes(Paths.get(entry.getValue()));
+
+                Base64.Encoder encoder = Base64.getEncoder();
+                data.put(entry.getKey(), encoder.encodeToString(encoded));
+            }
 
             Secret secret = new SecretBuilder()
                 .withData(data)
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                .endMetadata()
+                    .withNewMetadata()
+                        .withName(name)
+                        .withNamespace(namespace)
+                        .addToLabels(labels)
+                    .endMetadata()
                 .build();
             kubeClient().namespace(namespace).createSecret(secret);
 
