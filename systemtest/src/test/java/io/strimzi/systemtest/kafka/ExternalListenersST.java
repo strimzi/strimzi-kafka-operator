@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.kafka;
 
 import io.strimzi.systemtest.MessagingBaseST;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -13,11 +14,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ExternalListenersST extends MessagingBaseST {
@@ -26,6 +30,7 @@ public class ExternalListenersST extends MessagingBaseST {
     public static final String NAMESPACE = "certs-cluster-test";
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testCustomSoloCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSoloSecrets();
@@ -47,12 +52,12 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-1", "custom-certificate");
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testCustomChainCertificatesForNodePort() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSecretsFromChain();
@@ -74,13 +79,13 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-2", "custom-certificate");
     }
 
     @Disabled
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testCustomSoloCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSoloSecrets();
@@ -102,13 +107,13 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-3", "custom-certificate");
     }
 
     @Disabled
     @Test
+    @Tag(LOADBALANCER_SUPPORTED)
     void testCustomChainCertificatesForLoadBalancer() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSecretsFromChain();
@@ -130,12 +135,12 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-4", "custom-certificate");
     }
 
     @Test
+    @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSoloSecrets();
@@ -157,12 +162,12 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-5", "custom-certificate");
     }
 
     @Test
+    @OpenShiftOnly
     void testCustomChainCertificatesForRoute() throws Exception {
         String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
         createCustomSecretsFromChain();
@@ -184,12 +189,9 @@ public class ExternalListenersST extends MessagingBaseST {
                 .endKafka()
             .endSpec().done();
 
-
         sendMessagesExternalTls(NAMESPACE, topicName, 10, "", "custom-certificate");
         receiveMessagesExternalTls(NAMESPACE, topicName, 10, "", "consumer-group-certs-6", "custom-certificate");
     }
-
-
 
     private void createCustomSoloSecrets() {
         Map<String, String> secretLabels = new HashMap<>();
